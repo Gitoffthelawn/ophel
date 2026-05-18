@@ -78,9 +78,16 @@
     {
       "login": "hugo1120",
       "name": "hugo2233",
-      "avatar_url": "https://github.com/hugo1120.png",
+      "avatar_url": "https://avatars.githubusercontent.com/u/69150726?v=4",
       "profile": "https://github.com/hugo1120",
       "contributions": ["promotion"]
+    },
+    {
+      "login": "t0ny-peng",
+      "name": "t0ny-peng",
+      "avatar_url": "https://avatars.githubusercontent.com/u/4816327?v=4",
+      "profile": "https://github.com/t0ny-peng",
+      "contributions": ["code"]
     }
   ],
   "contributorsPerLine": 8,
