@@ -196,6 +196,10 @@
         <sub><b>Ice_wilderness</b></sub>
       </a>
     </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Jeff%20Peng%7Cko-fi%7C2026-05-18%7C%245&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="Jeff Peng" /><br />
+      <sub><b>Jeff Peng</b></sub>
+    </td>
   </tr>
   </tbody>
 </table>
