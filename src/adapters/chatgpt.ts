@@ -11,6 +11,7 @@ import {
   type ConversationInfo,
   type ConversationObserverConfig,
   type ExportConfig,
+  type ExportLifecycleContext,
   type MarkdownFixerConfig,
   type ModelSwitcherConfig,
   type NetworkMonitorConfig,
@@ -54,11 +55,43 @@ const CHATGPT_MODEL_MENU_SELECTOR =
 // 新版菜单项 role 为 menuitemradio，data-testid^="model-switcher-" 仍保留
 const CHATGPT_MODEL_MENU_ITEM_SELECTOR = `${CHATGPT_MODEL_MENU_SELECTOR} [data-testid^="model-switcher-"]`
 
+// ==================== 导出快照 ====================
+// ChatGPT 长会话采用虚拟滚动：滚出视口的消息内容会被卸载，
+// 只剩 [data-turn-id-container] 占位符。直接 querySelectorAll 会漏掉这些消息，
+// 导致导出内容缺失；而某些情况下旧版本/重生成的消息节点仍残留在 DOM 中，
+// 不去重又会让同一条消息出现多次。
+// 解决方案：导出前滚动遍历整个会话，按 message-id 去重收集快照，
+// 挂载到隐藏 DOM 后切换 ExportConfig 指向快照节点。
+
+const CHATGPT_EXPORT_ROOT_ATTR = "data-gh-chatgpt-export-root"
+const CHATGPT_EXPORT_TURN_ATTR = "data-gh-chatgpt-export-turn"
+const CHATGPT_EXPORT_ROLE_ATTR = "data-gh-chatgpt-export-role"
+const CHATGPT_EXPORT_ROLE_USER = "user"
+const CHATGPT_EXPORT_ROLE_ASSISTANT = "assistant"
+const CHATGPT_EXPORT_TURN_SELECTOR = `[${CHATGPT_EXPORT_ROOT_ATTR}="1"] [${CHATGPT_EXPORT_TURN_ATTR}="1"]`
+const CHATGPT_EXPORT_USER_SELECTOR = `[${CHATGPT_EXPORT_ROOT_ATTR}="1"] [${CHATGPT_EXPORT_ROLE_ATTR}="${CHATGPT_EXPORT_ROLE_USER}"]`
+const CHATGPT_EXPORT_ASSISTANT_SELECTOR = `[${CHATGPT_EXPORT_ROOT_ATTR}="1"] [${CHATGPT_EXPORT_ROLE_ATTR}="${CHATGPT_EXPORT_ROLE_ASSISTANT}"]`
+
+interface ChatGPTExportMessageSnapshot {
+  role: "user" | "assistant"
+  /** 去重键：优先用 turnId */
+  turnKey: string
+  /**
+   * 排序键：优先用 ChatGPT 自带的 `data-testid="conversation-turn-N"` 的 N
+   * （全局单调、虚拟滚动期间也不变）；缺失时为 Number.MAX_SAFE_INTEGER，
+   * 由 collect 阶段的 first-seen 兜底计数器二次排序。
+   */
+  order: number
+  content: string
+}
+
 interface ChatGPTOutlineCacheEntry {
   id: string
   level: number
   text: string
   turnId: string | null
+  /** turn 在本次会话内首次出现的全局序号（单调递增） */
+  firstSeenTurnIndex: number
   orderInTurn: number
   isUserQuery?: boolean
   isTruncated?: boolean
@@ -83,6 +116,17 @@ export class ChatGPTAdapter extends SiteAdapter {
   private lastKnownModelSlugObservedAt = 0
   private outlineCacheSessionKey = ""
   private outlineItemCache = new Map<string, ChatGPTOutlineCacheEntry>()
+  // turn 首次出现的 DOM 顺序，用于 turn-shell 被完全卸载后仍能维持稳定排序
+  private outlineTurnFirstSeenIndex = new Map<string, number>()
+  private outlineTurnFirstSeenCounter = 0
+  // SPA 切换会话后的过渡期截止时刻：在此之前 extractOutline 不写 cache 也不
+  // merge cache，避免把上一个会话残留的 DOM 内容污染到新会话的 cache 里。
+  private outlineCacheTransitionEndAt = 0
+
+  // 导出快照（参考 deepseek / aistudio 方案）：避免虚拟滚动导致漏抓或重复抓取
+  private exportSnapshotRoot: HTMLElement | null = null
+  private exportSnapshotActive = false
+  private exportIncludeThoughtsOverride: boolean | null = null
 
   match(): boolean {
     return window.location.hostname.includes("chatgpt.com")
@@ -1037,8 +1081,26 @@ export class ChatGPTAdapter extends SiteAdapter {
   }
 
   extractUserQueryExportContent(element: Element): string {
+    if (this.isExportSnapshotElement(element)) {
+      return element.textContent?.trim() || ""
+    }
     const markdown = this.extractUserQueryMarkdown(element).trim()
     return markdown || this.extractUserQueryText(element)
+  }
+
+  /**
+   * 覆盖基类的助手回复提取：导出快照模式下直接返回保存的文本，
+   * 避免再走 htmlToMarkdown 把已经是 markdown 的内容二次转换。
+   */
+  extractAssistantResponseText(element: Element): string {
+    if (this.isExportSnapshotElement(element)) {
+      return element.textContent?.trim() || ""
+    }
+    return super.extractAssistantResponseText(element)
+  }
+
+  private isExportSnapshotElement(element: Element): boolean {
+    return element.hasAttribute(CHATGPT_EXPORT_ROLE_ATTR)
   }
 
   /**
@@ -1135,6 +1197,15 @@ export class ChatGPTAdapter extends SiteAdapter {
   }
 
   getExportConfig(): ExportConfig {
+    if (this.exportSnapshotActive) {
+      return {
+        userQuerySelector: CHATGPT_EXPORT_USER_SELECTOR,
+        assistantResponseSelector: CHATGPT_EXPORT_ASSISTANT_SELECTOR,
+        turnSelector: CHATGPT_EXPORT_TURN_SELECTOR,
+        useShadowDOM: false,
+      }
+    }
+
     return {
       userQuerySelector: '[data-message-author-role="user"]',
       assistantResponseSelector: '[data-message-author-role="assistant"]',
@@ -1147,6 +1218,578 @@ export class ChatGPTAdapter extends SiteAdapter {
     return "native" as const
   }
 
+  // ==================== 导出生命周期 ====================
+
+  async prepareConversationExport(context: ExportLifecycleContext): Promise<unknown> {
+    this.exportIncludeThoughtsOverride = context.includeThoughts
+    this.clearExportSnapshot()
+
+    const responseRoot =
+      (document.querySelector(this.getResponseContainerSelector()) as HTMLElement | null) ||
+      (document.body as HTMLElement)
+    const scrollContainer = this.getScrollContainer() || responseRoot
+
+    const messages =
+      scrollContainer instanceof HTMLElement
+        ? await this.collectExportMessageSnapshots(scrollContainer)
+        : this.readVisibleExportMessageSnapshots(responseRoot)
+
+    if (messages.length === 0) {
+      return null
+    }
+
+    this.mountExportSnapshot(messages)
+    return { count: messages.length }
+  }
+
+  async restoreConversationAfterExport(
+    _context: ExportLifecycleContext,
+    _state: unknown,
+  ): Promise<void> {
+    this.clearExportSnapshot()
+    this.exportIncludeThoughtsOverride = null
+  }
+
+  /**
+   * 按 turn shell 目标驱动的快照采集。
+   *
+   * 关键观察（参考 new4.html，一段约 60 轮的会话有 135 个 turn 全部在 DOM 里）：
+   * - 即便是离屏 turn，ChatGPT 也保留它的 `<section data-turn data-testid="conversation-turn-N">` 占位
+   *   以及外层 `data-is-intersecting="false"` + `--last-known-height` 的高度占位 div；
+   * - 离屏 turn 的 section **是空的**，`[data-message-author-role]` 节点不在 DOM 里——
+   *   仅当用户滚动到附近 ChatGPT 才会真正挂载内容。
+   * - 旧方案按 `scrollTop = top` 步进扫描，受 scroll anchoring 干扰会跳过大量 turn
+   *   （60 轮的会话只抓到 30 条 user 提问就是这样来的）。
+   *
+   * 因此改成：先一次性把所有 turn shell 拉出来按 conversation-turn-N 排序，
+   * 然后逐个 `scrollIntoView({ block: "center" })` 触发挂载，每个 turn 单独等待
+   * 内容出现再抓取。已挂载的 turn 跳过滚动直接抓，把 N 次滚动开销摊平到不滚的部分。
+   */
+  private async collectExportMessageSnapshots(
+    scrollContainer: HTMLElement,
+  ): Promise<ChatGPTExportMessageSnapshot[]> {
+    const originalScrollTop = scrollContainer.scrollTop
+    const collected = new Map<string, ChatGPTExportMessageSnapshot>()
+    // 兜底排序键：仅在某 turn 缺少 conversation-turn-N（snapshot.order === MAX_SAFE_INTEGER）时使用
+    const firstSeenOrder = new Map<string, number>()
+    let firstSeenCounter = 0
+
+    const recordSnapshots = (snapshots: ChatGPTExportMessageSnapshot[]): void => {
+      for (const snapshot of snapshots) {
+        if (!firstSeenOrder.has(snapshot.turnKey)) {
+          firstSeenOrder.set(snapshot.turnKey, firstSeenCounter++)
+        }
+        const existing = collected.get(snapshot.turnKey)
+        if (!existing) {
+          collected.set(snapshot.turnKey, snapshot)
+          continue
+        }
+        const order = Math.min(existing.order, snapshot.order)
+        if (snapshot.content.length > existing.content.length) {
+          collected.set(snapshot.turnKey, { ...snapshot, order })
+        } else if (order !== existing.order) {
+          collected.set(snapshot.turnKey, { ...existing, order })
+        }
+      }
+    }
+
+    try {
+      const turns = this.getAllTurnShellsSorted()
+
+      if (turns.length === 0) {
+        // 罕见兜底：连一个 turn shell 都找不到（站点结构变更/旧版）。退回到当前可见快照。
+        recordSnapshots(this.readVisibleExportMessageSnapshots(scrollContainer))
+      } else {
+        // First pass：按 conversation-turn-N 顺序逐个滚动 / 抓取
+        for (const turn of turns) {
+          if (!this.turnHasMountedMessage(turn)) {
+            this.scrollTurnIntoView(turn)
+            scrollContainer.dispatchEvent(new Event("scroll", { bubbles: true }))
+            await this.waitForTurnMessageMounted(turn, 900)
+          }
+          if (this.turnHasMountedMessage(turn)) {
+            recordSnapshots(this.extractTurnExportSnapshots(turn, null))
+            // **关键**：每个 turn 在挂载状态下立即把 user / heading 写入大纲缓存，
+            // 不能等到全部 collect 完再统一抓——ChatGPT 在抓取过程中会 mount + unmount，
+            // 等到 finally 时大量 turn 已经被卸载，extractOutline 抓不到了。
+            this.absorbTurnIntoOutlineCache(turn)
+          }
+        }
+
+        // Retry pass：第一遍没挂载成功的 turn 给更长 timeout 再试一次
+        const collectedTurnIds = this.extractCollectedTurnIds(collected)
+        const missingTurns = turns.filter((turn) => {
+          const turnId =
+            turn.getAttribute("data-turn-id") || turn.getAttribute("data-turn-id-container") || ""
+          return turnId.length > 0 && !collectedTurnIds.has(turnId)
+        })
+
+        if (missingTurns.length > 0) {
+          // 给 ChatGPT 喘口气；连续快速滚动可能让 IntersectionObserver 处理不过来
+          await this.sleep(200)
+          for (const turn of missingTurns) {
+            this.scrollTurnIntoView(turn)
+            scrollContainer.dispatchEvent(new Event("scroll", { bubbles: true }))
+            await this.waitForTurnMessageMounted(turn, 1800)
+            if (this.turnHasMountedMessage(turn)) {
+              recordSnapshots(this.extractTurnExportSnapshots(turn, null))
+              this.absorbTurnIntoOutlineCache(turn)
+            }
+          }
+        }
+      }
+    } finally {
+      // 退出前主动让大纲缓存吸收一次本轮被 mount 过的所有 turn——
+      // 我们刚滚过每个 turn 的内容，这是最完整的状态；恢复 scrollTop 后 ChatGPT 会
+      // 重新卸载远端 turn，下一次 OutlineManager extract 时仅靠当前 DOM 又会变少，
+      // 这里主动跑一次 extractOutline 让 outlineItemCache 把每个 turn 的 user 提问 /
+      // heading 都记下来，大纲就能在导出后立即显示完整内容。
+      // includeUserQueries=true：写入所有 user query；mergeCachedChatGPTOutlineItems
+      // 会按调用方传入的 includeUserQueries 过滤渲染，所以不会污染显示。
+      try {
+        this.extractOutline(6, true, false)
+      } catch {
+        /* 不影响导出主流程 */
+      }
+      scrollContainer.scrollTop = originalScrollTop
+      scrollContainer.dispatchEvent(new Event("scroll", { bubbles: true }))
+    }
+
+    // 排序：先按 conversation-turn-N（snapshot.order）；两个 turn 同 N（不应发生）
+    // 或都缺失 N 时，用 first-seen 计数器兜底。
+    return Array.from(collected.values()).sort((a, b) => {
+      if (a.order !== b.order) return a.order - b.order
+      const aFallback = firstSeenOrder.get(a.turnKey) ?? Number.MAX_SAFE_INTEGER
+      const bFallback = firstSeenOrder.get(b.turnKey) ?? Number.MAX_SAFE_INTEGER
+      return aFallback - bFallback
+    })
+  }
+
+  /** 列出当前 DOM 中所有 turn 的 section，按 conversation-turn-N 升序。 */
+  private getAllTurnShellsSorted(): HTMLElement[] {
+    // scrollContainer 在 ChatGPT 上未必包含 #thread（它可能是后者的祖先 / 兄弟节点），
+    // 用响应容器选择器作为查询根更稳。
+    const root: ParentNode = document.querySelector(this.getResponseContainerSelector()) || document
+    const candidates = Array.from(
+      root.querySelectorAll('section[data-turn], [data-testid^="conversation-turn"]'),
+    ).filter((element): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false
+      if (element.closest(`[${CHATGPT_EXPORT_ROOT_ATTR}]`)) return false
+      if (element.closest(".gh-root, .gh-main-panel")) return false
+      return true
+    })
+
+    // 嵌套去重：若候选 A 包含另一个候选 B，则保留 B
+    const innermost = candidates.filter(
+      (candidate) => !candidates.some((other) => other !== candidate && candidate.contains(other)),
+    )
+
+    return innermost.sort((a, b) => this.getExportTurnSortIndex(a) - this.getExportTurnSortIndex(b))
+  }
+
+  /** turn 是否已挂载真实内容（不是只剩 shell）。 */
+  private turnHasMountedMessage(turn: HTMLElement): boolean {
+    const message = turn.querySelector("[data-message-author-role]")
+    if (!(message instanceof HTMLElement)) return false
+    return Boolean(message.textContent && message.textContent.trim().length > 0)
+  }
+
+  /** scrollIntoView 触发后轮询等待 turn 内的真实 message 节点挂载好。 */
+  private async waitForTurnMessageMounted(turn: HTMLElement, timeoutMs: number): Promise<boolean> {
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      if (this.turnHasMountedMessage(turn)) return true
+      await this.sleep(50)
+    }
+    return false
+  }
+
+  /** 容错地把 turn 滚到视口中央。 */
+  private scrollTurnIntoView(turn: HTMLElement): void {
+    try {
+      turn.scrollIntoView({
+        block: "center",
+        behavior: "instant",
+      } as ScrollIntoViewOptions)
+    } catch {
+      turn.scrollIntoView({ block: "center" })
+    }
+  }
+
+  /** 从已 collected 的 snapshot.turnKey（形如 `user:turn:<id>` / `assistant:turn:<id>`）反查出 turnId 集合。 */
+  private extractCollectedTurnIds(
+    collected: Map<string, ChatGPTExportMessageSnapshot>,
+  ): Set<string> {
+    const ids = new Set<string>()
+    for (const key of collected.keys()) {
+      const match = /^(?:user|assistant):turn:(.+)$/.exec(key)
+      if (match) ids.add(match[1])
+    }
+    return ids
+  }
+
+  /**
+   * 把当前 turn 的用户提问 / 标题节点写入 OutlineManager 共享的缓存。
+   *
+   * 关键点：必须在每个 turn 仍处于挂载状态时立刻写入，**不能等到 collect 全部
+   * 结束后再统一 extractOutline()**。ChatGPT 在 collect 流程中会一边 mount
+   * 我们刚滚到的 turn、一边 unmount 上一个 turn；等遍历完，大部分 turn 的真实
+   * message 节点已经被卸载到只剩空 section 占位，extractOutline 抓不到，
+   * 大纲就缺一大段（用户报告的"导出后仍少 13 轮"由此而来）。
+   * 写进 outlineItemCache 之后，OutlineManager 下次 refresh 时通过
+   * mergeCachedChatGPTOutlineItems 就能拼回完整大纲。
+   */
+  private absorbTurnIntoOutlineCache(turn: HTMLElement): void {
+    const turnId =
+      turn.getAttribute("data-turn-id") || turn.getAttribute("data-turn-id-container") || null
+
+    if (turnId && !this.outlineTurnFirstSeenIndex.has(turnId)) {
+      this.outlineTurnFirstSeenIndex.set(turnId, this.outlineTurnFirstSeenCounter++)
+    }
+    const firstSeenTurnIndex =
+      turnId && this.outlineTurnFirstSeenIndex.has(turnId)
+        ? (this.outlineTurnFirstSeenIndex.get(turnId) as number)
+        : Number.MAX_SAFE_INTEGER
+
+    // user query：用 data-message-id 作为缓存 key，与 extractOutline 同结构
+    const userMessages = Array.from(
+      turn.querySelectorAll('[data-message-author-role="user"]'),
+    ).filter((element): element is HTMLElement => element instanceof HTMLElement)
+    for (const message of userMessages) {
+      const msgId =
+        message.getAttribute("data-message-id") ||
+        message.closest("[data-message-id]")?.getAttribute("data-message-id") ||
+        ""
+      if (!msgId) continue
+      const rawText = this.extractUserQueryText(message).trim()
+      if (!rawText) continue
+      let text = rawText
+      let isTruncated = false
+      if (text.length > 200) {
+        text = text.substring(0, 200)
+        isTruncated = true
+      }
+      this.outlineItemCache.set(msgId, {
+        id: msgId,
+        level: 0,
+        text,
+        turnId,
+        firstSeenTurnIndex,
+        orderInTurn: 0,
+        isUserQuery: true,
+        isTruncated,
+      })
+    }
+
+    // assistant 内的 heading：ID 形如 `msgId::tag-text::count`
+    const assistantMessages = Array.from(
+      turn.querySelectorAll('[data-message-author-role="assistant"]'),
+    ).filter((element): element is HTMLElement => element instanceof HTMLElement)
+    for (const message of assistantMessages) {
+      const msgId =
+        message.getAttribute("data-message-id") ||
+        message.closest("[data-message-id]")?.getAttribute("data-message-id") ||
+        ""
+      if (!msgId) continue
+
+      const headings = Array.from(message.querySelectorAll("h1,h2,h3,h4,h5,h6"))
+      const counts: Record<string, number> = {}
+      let orderInTurn = 0
+      for (const heading of headings) {
+        if (this.shouldSkipElement(heading)) continue
+        if (this.isInRenderedMarkdownContainer(heading)) continue
+        const tagName = heading.tagName.toLowerCase()
+        const text = (heading.textContent || "").trim()
+        if (!text) continue
+
+        const key = `${tagName}-${text}`
+        const count = counts[key] || 0
+        counts[key] = count + 1
+        const headingId = `${msgId}::${key}::${count}`
+        this.outlineItemCache.set(headingId, {
+          id: headingId,
+          level: parseInt(tagName.charAt(1), 10),
+          text,
+          turnId,
+          firstSeenTurnIndex,
+          orderInTurn: orderInTurn++,
+          isUserQuery: false,
+        })
+      }
+    }
+  }
+
+  private readVisibleExportMessageSnapshots(container: ParentNode): ChatGPTExportMessageSnapshot[] {
+    const referenceContainer =
+      container instanceof HTMLElement
+        ? container
+        : (document.querySelector(this.getResponseContainerSelector()) as HTMLElement | null)
+
+    const turns = this.findExportTurnContainers(container)
+    if (turns.length === 0) {
+      // 极端兜底：找不到 turn 包装层时按扁平 message 抓取（最少不会漏内容）
+      return Array.from(
+        container.querySelectorAll(
+          '[data-message-author-role="user"], [data-message-author-role="assistant"]',
+        ),
+      )
+        .filter((element): element is HTMLElement => {
+          if (!(element instanceof HTMLElement)) return false
+          if (element.closest(`[${CHATGPT_EXPORT_ROOT_ATTR}]`)) return false
+          if (element.closest(".gh-root, .gh-main-panel")) return false
+          return true
+        })
+        .map((message) => this.extractExportMessageSnapshot(message, referenceContainer))
+        .filter((message): message is ChatGPTExportMessageSnapshot => message !== null)
+    }
+
+    const snapshots: ChatGPTExportMessageSnapshot[] = []
+    for (const turn of turns) {
+      const turnSnapshots = this.extractTurnExportSnapshots(turn, referenceContainer)
+      snapshots.push(...turnSnapshots)
+    }
+    return snapshots
+  }
+
+  /**
+   * 找出当前可见区域内的 turn 容器。
+   * ChatGPT 新版结构：<section data-turn="user|assistant" data-turn-id="..." data-testid="conversation-turn-N">。
+   * 老版可能只有 [data-testid^="conversation-turn"]。
+   */
+  private findExportTurnContainers(container: ParentNode): HTMLElement[] {
+    const candidates = Array.from(
+      container.querySelectorAll('section[data-turn], [data-testid^="conversation-turn"]'),
+    ).filter((element): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false
+      if (element.closest(`[${CHATGPT_EXPORT_ROOT_ATTR}]`)) return false
+      if (element.closest(".gh-root, .gh-main-panel")) return false
+      return true
+    })
+
+    // 去除嵌套：若候选 A 包含另一个候选 B，则去掉 A（保留更内层）
+    return candidates.filter((candidate) => {
+      return !candidates.some((other) => other !== candidate && candidate.contains(other))
+    })
+  }
+
+  /**
+   * 抓取一个 turn 内的消息快照。
+   *
+   * ChatGPT 新版结构：单个 assistant turn 内可能并列多个 [data-message-author-role="assistant"]，
+   * 中间用一个独立 div 包着 "已思考 Ns" 折叠按钮做分隔。
+   * 关键点：按钮前后两侧的 message **都是 ChatGPT 真正想给用户看的正文**——
+   * 模型会先输出一段引子、再展开深度思考、再回到正文。**真正的"思考内容"在右侧 side rail，
+   * 根本不会出现在主 DOM 的 turn 子树里**，所以我们也无需识别/过滤。
+   *
+   * 因此策略简化为：把 turn 内所有 assistant message 的文本按 DOM 顺序拼成一条 snapshot。
+   * 折叠按钮（普通 <button> 元素）已经在 extractAssistantResponseTextFromLiveDom
+   * 的 'button, [role="button"]' 过滤中被排除，不会污染合并结果。
+   *
+   * turnKey 用 turnId 而非 messageId，让虚拟滚动多次抓取稳定去重。
+   */
+  private extractTurnExportSnapshots(
+    turn: HTMLElement,
+    _referenceContainer: HTMLElement | null,
+  ): ChatGPTExportMessageSnapshot[] {
+    const messages = this.collectOwnAuthorMessagesForTurn(turn)
+    if (messages.length === 0) return []
+
+    const firstRole = messages[0].getAttribute("data-message-author-role")
+    const turnRoleAttr = turn.getAttribute("data-turn")
+    const role: "user" | "assistant" =
+      turnRoleAttr === "user" || firstRole === "user"
+        ? CHATGPT_EXPORT_ROLE_USER
+        : CHATGPT_EXPORT_ROLE_ASSISTANT
+
+    const turnId =
+      turn.getAttribute("data-turn-id") || turn.getAttribute("data-turn-id-container") || ""
+    const order = this.getExportTurnSortIndex(turn)
+
+    if (role === CHATGPT_EXPORT_ROLE_USER) {
+      // user turn：通常一条；若有多条同样按顺序拼接
+      const parts = messages
+        .map((message) =>
+          this.normalizeExportMessageContent(
+            this.extractUserQueryMarkdown(message) || this.extractUserQueryText(message),
+          ),
+        )
+        .filter((text) => text.length > 0)
+      if (parts.length === 0) return []
+
+      const content = parts.join("\n\n")
+      return [
+        {
+          role: CHATGPT_EXPORT_ROLE_USER,
+          turnKey: turnId
+            ? `user:turn:${turnId}`
+            : `user:content:${content.replace(/\s+/g, " ").slice(0, 120)}`,
+          order,
+          content,
+        },
+      ]
+    }
+
+    // assistant turn：把 turn 内所有 message 按 DOM 顺序合并
+    const parts = messages
+      .map((message) =>
+        this.normalizeExportMessageContent(this.extractAssistantResponseTextFromLiveDom(message)),
+      )
+      .filter((text) => text.length > 0)
+    if (parts.length === 0) return []
+
+    const combinedContent = parts.join("\n\n")
+    const turnKey = turnId
+      ? `assistant:turn:${turnId}`
+      : `assistant:content:${combinedContent.replace(/\s+/g, " ").slice(0, 120)}`
+
+    return [
+      {
+        role: CHATGPT_EXPORT_ROLE_ASSISTANT,
+        turnKey,
+        order,
+        content: combinedContent,
+      },
+    ]
+  }
+
+  /**
+   * 收集这个 turn 直接归属的 author-role 节点（不包含嵌套子 turn 的节点）。
+   */
+  private collectOwnAuthorMessagesForTurn(turn: HTMLElement): HTMLElement[] {
+    return Array.from(
+      turn.querySelectorAll(
+        '[data-message-author-role="user"], [data-message-author-role="assistant"]',
+      ),
+    ).filter((element): element is HTMLElement => {
+      if (!(element instanceof HTMLElement)) return false
+      if (element.closest(`[${CHATGPT_EXPORT_ROOT_ATTR}]`)) return false
+      if (element.closest(".gh-root, .gh-main-panel")) return false
+      // 仅保留祖先链中最近的 turn 就是当前 turn 的元素
+      const innerTurn = element.closest('section[data-turn], [data-testid^="conversation-turn"]')
+      return innerTurn === turn
+    })
+  }
+
+  private extractExportMessageSnapshot(
+    message: HTMLElement,
+    _referenceContainer: HTMLElement | null,
+  ): ChatGPTExportMessageSnapshot | null {
+    const role =
+      message.getAttribute("data-message-author-role") === "assistant"
+        ? CHATGPT_EXPORT_ROLE_ASSISTANT
+        : CHATGPT_EXPORT_ROLE_USER
+
+    const content = this.normalizeExportMessageContent(
+      role === CHATGPT_EXPORT_ROLE_ASSISTANT
+        ? this.extractAssistantResponseTextFromLiveDom(message)
+        : this.extractUserQueryMarkdown(message) || this.extractUserQueryText(message),
+    )
+    if (!content) return null
+
+    const messageId =
+      message.getAttribute("data-message-id") ||
+      message.closest("[data-message-id]")?.getAttribute("data-message-id") ||
+      ""
+    const turnKey = messageId
+      ? `${role}:${messageId}`
+      : `${role}:content:${content.replace(/\s+/g, " ").slice(0, 120)}`
+
+    // 从父链中找最近的 conversation-turn-N 作为稳定排序键
+    const ownerTurn = message.closest(
+      'section[data-turn], [data-testid^="conversation-turn"]',
+    ) as HTMLElement | null
+    const order = ownerTurn ? this.getExportTurnSortIndex(ownerTurn) : Number.MAX_SAFE_INTEGER
+
+    return {
+      role,
+      turnKey,
+      order,
+      content,
+    }
+  }
+
+  /**
+   * 用于实时 DOM 的助手回复提取（避免与 extractAssistantResponseText 的快照分支互相递归）。
+   */
+  private extractAssistantResponseTextFromLiveDom(element: Element): string {
+    // 优先抓 .markdown / .prose 容器的内容
+    const markdownContainer =
+      element.querySelector(".markdown, .prose, [class*='prose']") || element
+    const clone = markdownContainer.cloneNode(true) as HTMLElement
+    clone
+      .querySelectorAll('.sr-only, button, [role="button"], svg, [aria-hidden="true"]')
+      .forEach((node) => node.remove())
+
+    const markdown = htmlToMarkdown(clone).trim()
+    if (markdown) return markdown
+    return this.extractTextWithLineBreaks(clone)
+  }
+
+  /**
+   * 解析 turn 的稳定全局排序键。
+   *
+   * ChatGPT 每个 turn 都有 `data-testid="conversation-turn-N"`，N 是该会话内
+   * 从开始往后的 1-based 单调序号，**与虚拟滚动当前的滚动状态、shell 高度变化
+   * 完全无关**。相比之前用 `scrollTop + rect.top` 算出来的坐标，这个 N 不会
+   * 因为 scroll anchoring、shell 卸载、`--last-known-height` 误差而漂移。
+   *
+   * 拿不到 N（理论上极少见，比如更老的 ChatGPT 或自定义版本）时返回 MAX，
+   * 由 collect 层的 first-seen 计数器兜底。
+   */
+  private getExportTurnSortIndex(turn: HTMLElement): number {
+    const testid = turn.getAttribute("data-testid") || ""
+    const match = /^conversation-turn-(\d+)/.exec(testid)
+    return match ? parseInt(match[1], 10) : Number.MAX_SAFE_INTEGER
+  }
+
+  private normalizeExportMessageContent(content: string): string {
+    return content
+      .replace(/\r\n/g, "\n")
+      .replace(/\u00a0/g, " ")
+      .trim()
+  }
+
+  private mountExportSnapshot(messages: ChatGPTExportMessageSnapshot[]): void {
+    this.clearExportSnapshot()
+
+    const root = document.createElement("div")
+    root.setAttribute(CHATGPT_EXPORT_ROOT_ATTR, "1")
+    root.style.display = "none"
+
+    messages.forEach((message) => {
+      const turn = document.createElement("div")
+      turn.setAttribute(CHATGPT_EXPORT_TURN_ATTR, "1")
+
+      const node = document.createElement("div")
+      node.setAttribute(CHATGPT_EXPORT_ROLE_ATTR, message.role)
+      node.textContent = message.content
+      turn.appendChild(node)
+      root.appendChild(turn)
+    })
+
+    document.body.appendChild(root)
+    this.exportSnapshotRoot = root
+    this.exportSnapshotActive = true
+  }
+
+  private clearExportSnapshot(): void {
+    this.exportSnapshotActive = false
+    const root = this.exportSnapshotRoot
+    this.exportSnapshotRoot = null
+
+    if (root?.isConnected) {
+      root.remove()
+    }
+
+    document.querySelectorAll(`[${CHATGPT_EXPORT_ROOT_ATTR}]`).forEach((node) => {
+      if (node !== root) {
+        node.parentNode?.removeChild(node)
+      }
+    })
+  }
+
+  // ==================== 大纲缓存（虚拟滚动兜底） ====================
+
   private getOutlineCacheSessionKey(): string {
     const cid = this.getCurrentCid() || "default"
     const sessionId = this.getSessionId() || "default"
@@ -1157,8 +1800,22 @@ export class ChatGPTAdapter extends SiteAdapter {
     const sessionKey = this.getOutlineCacheSessionKey()
     if (sessionKey === this.outlineCacheSessionKey) return
 
+    const isFirstSession = this.outlineCacheSessionKey === ""
     this.outlineCacheSessionKey = sessionKey
     this.outlineItemCache.clear()
+    this.outlineTurnFirstSeenIndex.clear()
+    this.outlineTurnFirstSeenCounter = 0
+    // SPA 切换会话时（不是首次初始化）进入过渡期：ChatGPT 的 URL 同步切换、但
+    // DOM 替换是异步的；此时 extractOutline 抓到的仍是上一个会话的残留节点，
+    // 若立刻当成"新会话 cache"写进去，等 DOM 完成切换、新会话内容到位时再做
+    // merge 就会把上一个会话的条目追加到末尾。
+    // 过渡期内 extractOutline 跳过 cache 写入与合并，只返回 DOM 实时内容；
+    // 等过了过渡期再恢复正常的"虚拟滚动兜底"行为。
+    this.outlineCacheTransitionEndAt = isFirstSession ? 0 : Date.now() + 2000
+  }
+
+  private isInOutlineCacheTransition(): boolean {
+    return Date.now() < this.outlineCacheTransitionEndAt
   }
 
   private getChatGPTTurnId(element: Element | null): string | null {
@@ -1191,19 +1848,46 @@ export class ChatGPTAdapter extends SiteAdapter {
     return anchors
   }
 
-  private isChatGPTOutlinePartiallyUnmounted(
-    container: Element,
-    turnAnchors: Map<string, ChatGPTTurnAnchor>,
-  ): boolean {
-    if (turnAnchors.size === 0) return false
+  /**
+   * 记录每个出现过的 turn 的 first-seen DOM 顺序。
+   * 即使后续 turn-shell 也被虚拟滚动卸载，仍能依靠这个稳定序号排序。
+   */
+  private recordTurnDocumentOrders(turnAnchors: Map<string, ChatGPTTurnAnchor>): void {
+    if (turnAnchors.size === 0) return
 
-    const roleCount = container.querySelectorAll(
-      '[data-message-author-role="user"], [data-message-author-role="assistant"]',
-    ).length
-    return roleCount > 0 && turnAnchors.size > roleCount
+    // 收集本次还未记录的 turn 并按当前 DOM 顺序入册
+    const newTurns: string[] = []
+    turnAnchors.forEach((_anchor, turnId) => {
+      if (!this.outlineTurnFirstSeenIndex.has(turnId)) {
+        newTurns.push(turnId)
+      }
+    })
+
+    if (newTurns.length === 0) return
+
+    // 如果之前已经有记录，且首次出现的 turn 位于已知 turn 之前（比如用户向上滚动揭示出更早的 turn），
+    // 把新 turn 插入到对应位置之前。简单实现：用 turnAnchors 当前的 anchor.index 作为相对序，
+    // 但为保持全局单调性，统一在尾部追加，靠 anchor.index 的当前值作为合并排序时的次要键。
+    for (const turnId of newTurns) {
+      this.outlineTurnFirstSeenIndex.set(turnId, this.outlineTurnFirstSeenCounter++)
+    }
   }
 
-  private updateChatGPTOutlineCache(outline: OutlineItem[]): void {
+  private getTurnSortIndex(
+    turnId: string | null,
+    turnAnchors: Map<string, ChatGPTTurnAnchor>,
+  ): number {
+    if (!turnId) return Number.MAX_SAFE_INTEGER
+    const anchor = turnAnchors.get(turnId)
+    if (anchor) return anchor.index
+    const firstSeen = this.outlineTurnFirstSeenIndex.get(turnId)
+    return typeof firstSeen === "number" ? firstSeen + 1_000_000 : Number.MAX_SAFE_INTEGER
+  }
+
+  private updateChatGPTOutlineCache(
+    outline: OutlineItem[],
+    turnAnchors: Map<string, ChatGPTTurnAnchor>,
+  ): void {
     const orderByTurn = new Map<string, number>()
 
     for (const item of outline) {
@@ -1214,24 +1898,22 @@ export class ChatGPTAdapter extends SiteAdapter {
       const orderInTurn = orderByTurn.get(orderKey) || 0
       orderByTurn.set(orderKey, orderInTurn + 1)
 
+      const firstSeenTurnIndex =
+        turnId && this.outlineTurnFirstSeenIndex.has(turnId)
+          ? (this.outlineTurnFirstSeenIndex.get(turnId) as number)
+          : turnAnchors.get(turnId || "")?.index ?? Number.MAX_SAFE_INTEGER
+
       this.outlineItemCache.set(item.id, {
         id: item.id,
         level: item.level,
         text: item.text,
         turnId,
+        firstSeenTurnIndex,
         orderInTurn,
         isUserQuery: item.isUserQuery,
         isTruncated: item.isTruncated,
         wordCount: item.wordCount,
       })
-    }
-  }
-
-  private pruneChatGPTOutlineCache(turnAnchors: Map<string, ChatGPTTurnAnchor>): void {
-    for (const [id, entry] of this.outlineItemCache) {
-      if (entry.turnId && !turnAnchors.has(entry.turnId)) {
-        this.outlineItemCache.delete(id)
-      }
     }
   }
 
@@ -1242,17 +1924,18 @@ export class ChatGPTAdapter extends SiteAdapter {
     includeUserQueries: boolean,
     showWordCount: boolean,
   ): OutlineItem[] {
+    if (this.outlineItemCache.size === 0) return outline
+
     const currentIds = new Set(outline.map((item) => item.id).filter((id): id is string => !!id))
-    const merged = [...outline]
+    let appended = 0
+    const merged: OutlineItem[] = [...outline]
 
     for (const entry of this.outlineItemCache.values()) {
       if (currentIds.has(entry.id)) continue
       if (entry.isUserQuery && !includeUserQueries) continue
       if (!entry.isUserQuery && entry.level > maxLevel) continue
-      if (!entry.turnId) continue
-
-      const anchor = turnAnchors.get(entry.turnId)
-      if (!anchor) continue
+      // 二次防御：缓存里若残留空文本条目（例如来自更早版本写入的脏数据），不要再回填到大纲
+      if (!entry.text || !entry.text.trim()) continue
 
       merged.push({
         level: entry.level,
@@ -1263,20 +1946,21 @@ export class ChatGPTAdapter extends SiteAdapter {
         id: entry.id,
         wordCount: showWordCount ? entry.wordCount : undefined,
       })
+      appended += 1
     }
 
-    if (merged.length === outline.length) return outline
+    if (appended === 0) return outline
 
     return merged
       .map((item, originalIndex) => {
         const cached = item.id ? this.outlineItemCache.get(item.id) : undefined
         const turnId = cached?.turnId || this.getChatGPTTurnId(item.element)
-        const turnIndex = turnId ? turnAnchors.get(turnId)?.index : undefined
+        const turnIndex = this.getTurnSortIndex(turnId, turnAnchors)
         return {
           item,
           originalIndex,
           orderInTurn: cached?.orderInTurn ?? originalIndex,
-          turnIndex: turnIndex ?? Number.MAX_SAFE_INTEGER,
+          turnIndex,
         }
       })
       .sort((a, b) => {
@@ -1287,28 +1971,140 @@ export class ChatGPTAdapter extends SiteAdapter {
       .map(({ item }) => item)
   }
 
+  /**
+   * 通过缓存的 message-id 反查跳转目标。
+   * 若真实节点已挂载 → 直接返回该节点；
+   * 若仅有 turn-shell  → 返回 shell（点击后 ChatGPT 会重新挂载真实内容）；
+   * 若两者都不在 DOM → 由调用方走兜底逻辑。
+   */
   private resolveCachedChatGPTOutlineTarget(id: string | undefined): Element | null {
     if (!id) return null
 
     this.ensureOutlineCacheSession()
 
     const entry = this.outlineItemCache.get(id)
-    if (!entry?.turnId) return null
+    if (!entry) return null
 
     const container = document.querySelector(this.getResponseContainerSelector())
     if (!container) return null
 
-    return this.getOrderedChatGPTTurnAnchors(container).get(entry.turnId)?.element ?? null
+    // 1) message-id 是稳定的；先尝试用它找到真实节点
+    const messageId = this.extractMessageIdFromCachedId(entry)
+    if (messageId) {
+      const escaped = this.escapeAttributeValue(messageId)
+      const messageElement = container.querySelector(`[data-message-id="${escaped}"]`)
+      if (messageElement) {
+        if (entry.isUserQuery) {
+          return messageElement
+        }
+        const heading = this.findHeadingInsideMessage(messageElement, entry)
+        if (heading) return heading
+        // 真实消息已挂载但 heading 尚未渲染完成，先返回消息容器，由调用方触发滚动后再二次定位
+        return messageElement
+      }
+    }
+
+    // 2) 退而求其次：返回 turn-shell
+    if (entry.turnId) {
+      const shell = this.getOrderedChatGPTTurnAnchors(container).get(entry.turnId)?.element
+      if (shell) return shell
+    }
+
+    return null
+  }
+
+  private extractMessageIdFromCachedId(entry: ChatGPTOutlineCacheEntry): string | null {
+    if (!entry.id) return null
+    if (entry.isUserQuery) return entry.id
+    // 标题 id 形如 msgId::tag-text::count；text 内可能含 "::"，所以只截首段
+    const firstSep = entry.id.indexOf("::")
+    return firstSep > 0 ? entry.id.slice(0, firstSep) : null
+  }
+
+  private escapeAttributeValue(value: string): string {
+    if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+      return CSS.escape(value)
+    }
+    return value.replace(/["\\]/g, "\\$&")
+  }
+
+  private findHeadingInsideMessage(
+    messageElement: Element,
+    entry: ChatGPTOutlineCacheEntry,
+  ): Element | null {
+    // id 形如 msgId::tag-text::count；text 可能含 "::"，所以从两端定位分隔符
+    const firstSep = entry.id.indexOf("::")
+    const lastSep = entry.id.lastIndexOf("::")
+    if (firstSep <= 0 || lastSep <= firstSep) return null
+
+    const tagAndText = entry.id.slice(firstSep + 2, lastSep)
+    const countStr = entry.id.slice(lastSep + 2)
+
+    const dashIndex = tagAndText.indexOf("-")
+    if (dashIndex <= 0) return null
+
+    const tagName = tagAndText.slice(0, dashIndex).toLowerCase()
+    const expectedText = tagAndText.slice(dashIndex + 1)
+    if (!/^h[1-6]$/.test(tagName)) return null
+
+    const targetCount = Number.parseInt(countStr, 10) || 0
+    const headings = Array.from(messageElement.querySelectorAll(tagName))
+    let matched = 0
+    for (const heading of headings) {
+      if ((heading.textContent || "").trim() !== expectedText) continue
+      if (matched === targetCount) return heading
+      matched += 1
+    }
+    return null
   }
 
   async resolveOutlineTarget(
     item: Pick<OutlineItem, "level" | "text" | "isUserQuery" | "id">,
     queryIndex?: number,
   ): Promise<Element | null> {
-    return (
-      this.resolveCachedChatGPTOutlineTarget(item.id) ||
-      super.resolveOutlineTarget(item, queryIndex)
-    )
+    const cachedTarget = this.resolveCachedChatGPTOutlineTarget(item.id)
+    if (cachedTarget) {
+      // 若拿到的是 turn-shell 而非真实消息节点，主动滚动让 ChatGPT 重新挂载真实内容，
+      // 然后再尝试拿到真实节点。避免点击后只跳到一个空占位符且没办法高亮真实标题。
+      const isShell =
+        cachedTarget instanceof HTMLElement && cachedTarget.hasAttribute("data-turn-id-container")
+      if (isShell) {
+        this.scrollIntoViewForRevive(cachedTarget)
+        const remounted = await this.waitForCachedChatGPTOutlineTargetRemount(item.id)
+        if (remounted) return remounted
+      }
+      return cachedTarget
+    }
+
+    return super.resolveOutlineTarget(item, queryIndex)
+  }
+
+  private scrollIntoViewForRevive(element: HTMLElement): void {
+    try {
+      element.scrollIntoView({ block: "center", behavior: "instant" } as ScrollIntoViewOptions)
+    } catch {
+      // 旧浏览器不支持 instant
+      element.scrollIntoView({ block: "center" })
+    }
+  }
+
+  private async waitForCachedChatGPTOutlineTargetRemount(
+    id: string | undefined,
+    timeoutMs = 1500,
+  ): Promise<Element | null> {
+    if (!id) return null
+    const deadline = Date.now() + timeoutMs
+    while (Date.now() < deadline) {
+      await this.sleep(60)
+      const target = this.resolveCachedChatGPTOutlineTarget(id)
+      if (
+        target &&
+        !(target instanceof HTMLElement && target.hasAttribute("data-turn-id-container"))
+      ) {
+        return target
+      }
+    }
+    return null
   }
 
   extractOutline(maxLevel = 6, includeUserQueries = false, showWordCount = false): OutlineItem[] {
@@ -1451,8 +2247,12 @@ export class ChatGPTAdapter extends SiteAdapter {
       if (isHeading) {
         // 过滤不可见/无效 heading
         if (!this.shouldSkipElement(element) && !this.isInRenderedMarkdownContainer(element)) {
+          const headingText = (element.textContent || "").trim()
           const level = parseInt(tagName.charAt(1), 10)
-          if (level <= maxLevel) shouldCollect = true
+          // 跳过空文本 heading：ChatGPT 流式生成时会先渲染空 <h2></h2> 占位再填文本，
+          // 抓到的瞬间会污染缓存——之后 text 写入后 ID 因为带 text 而变化，
+          // 老空 entry 仍残留在缓存里，merge 时就会把"空白条目"加回到大纲。
+          if (headingText && level <= maxLevel) shouldCollect = true
         }
       }
 
@@ -1530,13 +2330,20 @@ export class ChatGPTAdapter extends SiteAdapter {
     })
 
     const turnAnchors = this.getOrderedChatGPTTurnAnchors(container)
-    this.updateChatGPTOutlineCache(outline)
-    this.pruneChatGPTOutlineCache(turnAnchors)
 
-    if (!this.isChatGPTOutlinePartiallyUnmounted(container, turnAnchors)) {
+    // SPA 切换过渡期：跳过 cache 写入与合并，仅返回当前 DOM 真实可见的内容。
+    // ChatGPT 在 URL 改变后还会异步把旧会话的 DOM 替换为新会话的，提前写 cache
+    // 会把旧会话节点污染进新会话；提前 merge 又会把上次留存的 cache（如果有）
+    // 追加到末尾。等过渡期结束再让 cache 介入即可。
+    if (this.isInOutlineCacheTransition()) {
       return outline
     }
 
+    this.recordTurnDocumentOrders(turnAnchors)
+    this.updateChatGPTOutlineCache(outline, turnAnchors)
+
+    // 始终尝试与缓存合并：虚拟滚动可能让 shell 数量也缩水，仅靠"shell > role 数"
+    // 的判定会漏掉只剩当前视口可见的极端情况。合并函数自身在没有可追加项时是 no-op。
     return this.mergeCachedChatGPTOutlineItems(
       outline,
       turnAnchors,

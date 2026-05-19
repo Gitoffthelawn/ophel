@@ -14,6 +14,11 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - **Quick Buttons proximity wake radius** (`Settings → Quick Buttons`): A new slider controls how close the cursor must be before the floating widget auto-expands (default 150 px, matching previous behavior). Set it to **0** for a true dwell-hover mode — the widget only expands after the cursor rests on the water-drop for 300 ms, preventing accidental expansion from the cursor passing through. (#492)
 - **Drag conversations into folders**: In the Conversations tab, you can now drag a chat onto any folder to move it there. Thanks @t0ny-peng (#512)
 
+### 🐛 Bug Fixes
+
+- **Fixed ChatGPT outline display and navigation issues**: Resolved cases where the outline was incomplete or clicks failed to navigate to the message in long chats, and fixed routing issues where switching conversations caused the outline to lag, display incorrect entries, or show empty headings. (#402)
+- **Resolved ChatGPT export duplication, scrambling, and truncation issues in long conversations**: Re-engineered the export process to handle virtualization, ensuring all turns are fully loaded, ordered correctly, and deduplicated without missing segments or repeating messages.
+
 ---
 
 ## [1.0.50] - 2026-05-15
