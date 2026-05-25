@@ -64,6 +64,42 @@ const CLAUDE_INLINE_MATH_PATTERNS = [
   /\\\([^\n]+?\\\)/,
 ]
 
+function applyClaudeThemeDomHints(mode: "light" | "dark") {
+  const root = document.documentElement
+  const body = document.body
+
+  root.classList.toggle("dark", mode === "dark")
+  root.classList.toggle("light", mode === "light")
+  root.setAttribute("data-theme", mode)
+  root.style.colorScheme = mode
+
+  if (!body) return
+
+  body.classList.toggle("dark", mode === "dark")
+  body.classList.toggle("light", mode === "light")
+  body.setAttribute("data-theme", mode)
+  body.style.colorScheme = mode
+
+  const colorSchemeMeta = document.querySelector('meta[name="color-scheme"]')
+  if (colorSchemeMeta) {
+    colorSchemeMeta.setAttribute("content", mode)
+  }
+}
+
+function getClaudeThemeTabId(): string {
+  try {
+    const raw = localStorage.getItem("LSS-userThemeMode")
+    if (raw) {
+      const parsed = JSON.parse(raw) as { tabId?: unknown }
+      if (typeof parsed.tabId === "string" && parsed.tabId.trim()) {
+        return parsed.tabId
+      }
+    }
+  } catch {}
+
+  return crypto.randomUUID()
+}
+
 function stripClaudeCodeContent(text: string): string {
   return text.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "")
 }
@@ -116,8 +152,13 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // Claude 分享链接示例：https://claude.ai/public/artifacts/xxx
-    return window.location.pathname.startsWith("/public/")
+    // Claude 分享链接支持两种格式：
+    // 旧版：https://claude.ai/public/artifacts/xxx
+    // 新版：https://claude.ai/share/xxx
+    return (
+      window.location.pathname.startsWith("/public/") ||
+      window.location.pathname.startsWith("/share/")
+    )
   }
 
   isUserConversationPage(): boolean {
@@ -966,7 +1007,7 @@ export class ClaudeAdapter extends SiteAdapter {
     return {
       targetModelKeyword: keyword,
       selectorButtonSelectors: ['button[data-testid="model-selector-dropdown"]'],
-      menuItemSelector: 'div[role="menuitem"]',
+      menuItemSelector: '[role="menuitem"], [role="menuitemradio"]',
       checkInterval: 1000,
       maxAttempts: 20,
       // 语言无关：通过 aria-haspopup 检测子菜单触发器
@@ -980,19 +1021,55 @@ export class ClaudeAdapter extends SiteAdapter {
    * Claude 使用 Radix UI，可能需要模拟 PointerEvent
    */
   protected simulateClick(element: HTMLElement): void {
-    // 尝试标准点击，如果不行再切 PointerEvent (参考 ChatGPT 实现)
-    // 目前先用标准点击，若有问题需参考 ChatGPTAdapter 的 simulateClick
-    const eventTypes = ["pointerdown", "mousedown", "pointerup", "mouseup", "click"]
-    for (const type of eventTypes) {
+    const rect = element.getBoundingClientRect()
+    const clientX = rect.left + Math.max(1, Math.min(rect.width / 2, Math.max(rect.width - 1, 1)))
+    const clientY = rect.top + Math.max(1, Math.min(rect.height / 2, Math.max(rect.height - 1, 1)))
+    const commonInit = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      view: window,
+      button: 0,
+      buttons: 1,
+      clientX,
+      clientY,
+    }
+    const dispatchPointer = (type: string) => {
+      if (typeof PointerEvent !== "function") return
       element.dispatchEvent(
         new PointerEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          view: window,
+          ...commonInit,
           pointerId: 1,
+          pointerType: "mouse",
+          isPrimary: true,
         }),
       )
     }
+    const dispatchHover = () => {
+      dispatchPointer("pointerenter")
+      dispatchPointer("pointerover")
+      dispatchPointer("pointermove")
+      element.dispatchEvent(new MouseEvent("mouseenter", commonInit))
+      element.dispatchEvent(new MouseEvent("mouseover", commonInit))
+      element.dispatchEvent(new MouseEvent("mousemove", commonInit))
+    }
+
+    dispatchHover()
+
+    const role = element.getAttribute("role")
+    const text = (element.textContent || "").toLowerCase()
+    const isSubMenuTrigger =
+      role === "menuitem" &&
+      (element.matches('[aria-haspopup="menu"]') ||
+        text.includes("more models") ||
+        text.includes("更多模型"))
+    if (isSubMenuTrigger) return
+
+    dispatchPointer("pointerdown")
+    element.dispatchEvent(new MouseEvent("mousedown", commonInit))
+    dispatchPointer("pointerup")
+    element.dispatchEvent(new MouseEvent("mouseup", commonInit))
+    element.dispatchEvent(new MouseEvent("click", commonInit))
   }
 
   // ==================== 杂项 ====================
@@ -1166,6 +1243,10 @@ export class ClaudeAdapter extends SiteAdapter {
 
       // 跳过侧边栏分组标题
       if (h.classList.contains("pointer-events-none")) return
+
+      // 跳过屏幕阅读器专用元素（如 "You said:" / "Claude responded:" 提示文本）
+      // 使用类名定位而非文本匹配，以支持多语言
+      if (h.classList.contains("sr-only")) return
 
       const text = h.textContent?.trim() || ""
       if (!text) return
@@ -1520,18 +1601,23 @@ export class ClaudeAdapter extends SiteAdapter {
     try {
       // Claude 使用 localStorage.LSS-userThemeMode 存储主题
       // 格式: {"value":"dark","tabId":"xxx","timestamp":xxx}
+      const previousValue = localStorage.getItem("LSS-userThemeMode")
       const themeData = {
         value: targetMode,
-        tabId: crypto.randomUUID(),
+        tabId: getClaudeThemeTabId(),
         timestamp: Date.now(),
       }
-      localStorage.setItem("LSS-userThemeMode", JSON.stringify(themeData))
+      const nextValue = JSON.stringify(themeData)
+      localStorage.setItem("LSS-userThemeMode", nextValue)
+      applyClaudeThemeDomHints(targetMode)
 
       // 触发 storage 事件通知其他组件
       window.dispatchEvent(
         new StorageEvent("storage", {
           key: "LSS-userThemeMode",
-          newValue: JSON.stringify(themeData),
+          oldValue: previousValue,
+          newValue: nextValue,
+          storageArea: localStorage,
         }),
       )
 

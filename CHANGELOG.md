@@ -15,6 +15,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🐛 Bug Fixes
 
+- **Claude adapter** — Adapted to Claude's recent page redesign: outline no longer picks up screen-reader-only headings, share links with new URL format are now recognized, theme switching works again, model locking and click simulation are compatible with the new UI components.
 - **Doubao virtual scroll navigation** — Adapted Doubao to its new virtual-list chat DOM so outline jumps, return anchors, and top/bottom navigation now use the real `v_list_scroller` container. The outline also keeps an in-memory cache of headings and user prompts that have entered the viewport, preventing previously seen outline items from disappearing when Doubao unloads them from the DOM.
 - **Kimi conversation navigation** — Fixed the Conversations tab failing to switch Kimi chats when clicking history items from Kimi's sidebar. Kimi chat links are now matched by parsed conversation ID instead of a broad selector, with an SPA route fallback when the native link is not mounted.
 - **Ima user prompt extraction** — Restored user-question detection for Ima's updated chat DOM, so prompts inside the new `userBubbleWrap` / `chatMainBubble` structure are included in outline, export, usage stats, and user-query Markdown rendering again.
