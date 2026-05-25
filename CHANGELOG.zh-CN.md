@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.0.53] - 2026-05-25
+
 ### ✨ 新功能
 
 - **公式复制格式设置** — 双击复制公式现在可选择输出 LaTeX 源码或 MathML 源码。LaTeX 模式仍支持自动添加分隔符；MathML 模式会在站点提供 `<math>` 源码时复制序列化后的 MathML。
@@ -1060,6 +1064,7 @@
 
 ---
 
+[1.0.53]: https://github.com/urzeye/ophel/releases/tag/v1.0.53
 [1.0.52]: https://github.com/urzeye/ophel/releases/tag/v1.0.52
 [1.0.51]: https://github.com/urzeye/ophel/releases/tag/v1.0.51
 [1.0.50]: https://github.com/urzeye/ophel/releases/tag/v1.0.50

@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.0.53] - 2026-05-25
+
 ### ✨ New Features
 
 - **Formula copy format setting** — Double-click formula copy can now output either LaTeX source or MathML source. LaTeX delimiter wrapping remains available for LaTeX mode, while MathML mode copies the serialized `<math>` source when the site exposes one.
@@ -1060,6 +1064,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.0.53]: https://github.com/urzeye/ophel/releases/tag/v1.0.53
 [1.0.52]: https://github.com/urzeye/ophel/releases/tag/v1.0.52
 [1.0.51]: https://github.com/urzeye/ophel/releases/tag/v1.0.51
 [1.0.50]: https://github.com/urzeye/ophel/releases/tag/v1.0.50
