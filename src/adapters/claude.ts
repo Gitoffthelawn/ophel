@@ -2,7 +2,24 @@
  * Claude.ai 适配器
  */
 import { SITE_IDS } from "~constants"
-import { htmlToMarkdown } from "~utils/exporter"
+import {
+  extractHeadingOutline,
+  findHeadingByText,
+  findScrollableAncestor,
+  scrollElementInContainer,
+} from "~core/outline/dom-outline"
+import {
+  addFileExportAsset,
+  addImageExportAsset,
+  createExportAssetCollector,
+  createMarkdownDocumentAssetLink,
+  escapeMarkdownLinkText,
+  isDownloadableExportAssetUrl,
+  normalizeExportAssetUrl,
+  type ExportAssetCollector,
+} from "~utils/export-assets"
+import { htmlToMarkdown, type ExportBundle, type ExportMessage } from "~utils/exporter"
+import { t } from "~utils/i18n"
 import { renderMarkdown } from "~utils/markdown"
 
 import {
@@ -12,9 +29,11 @@ import {
   type ConversationInfo,
   type ConversationObserverConfig,
   type ExportConfig,
+  type ExportLifecycleContext,
   type ModelSwitcherConfig,
   type NetworkMonitorConfig,
   type OutlineItem,
+  type OutlineSource,
   type SiteDeleteConversationResult,
 } from "./base"
 
@@ -63,6 +82,38 @@ const CLAUDE_INLINE_MATH_PATTERNS = [
   /((^|[^\\$])\$[^\s$](?:[^$\n]*[^\s$])?\$(?!\$))/,
   /\\\([^\n]+?\\\)/,
 ]
+
+const CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID = "document"
+const CLAUDE_DOCUMENT_ROOT_SELECTOR = "#wiggle-file-content"
+const CLAUDE_DOCUMENT_MARKDOWN_SELECTOR =
+  "#wiggle-file-content .standard-markdown, #wiggle-file-content .progressive-markdown"
+const CLAUDE_RESPONSE_MARKDOWN_SELECTOR = ".standard-markdown, .progressive-markdown"
+const CLAUDE_ARTIFACT_CELL_SELECTOR = ".artifact-block-cell"
+const CLAUDE_USER_FILE_THUMBNAIL_SELECTOR = '[data-testid="file-thumbnail"]'
+
+interface ClaudeExportLifecycleState {
+  documentPanelWasOpen: boolean
+  documentSignature?: string
+  documentTitle?: string | null
+  documentArtifactIndex?: number | null
+}
+
+interface ClaudeDocumentExportCacheEntry {
+  element: Element
+  index: number
+  content: string
+  title: string
+  artifactTitle: string
+  signature: string
+}
+
+interface ClaudeUserAttachment {
+  kind: "image" | "file"
+  name: string
+  type?: string
+  source?: string
+  alt?: string
+}
 
 function applyClaudeThemeDomHints(mode: "light" | "dark") {
   const root = document.documentElement
@@ -122,6 +173,7 @@ function shouldEnhanceClaudeParagraph(text: string): boolean {
 export class ClaudeAdapter extends SiteAdapter {
   private activeOrganizationId: string | null = null
   private activeOrganizationIdExpiresAt = 0
+  private exportDocumentCache: ClaudeDocumentExportCacheEntry[] = []
 
   match(): boolean {
     return (
@@ -917,9 +969,9 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   private findClaudeScrollContainer(): HTMLElement | null {
-    const conversationAnchor = document.querySelector(
-      '.font-claude-response, [data-testid="user-message"]',
-    ) as HTMLElement | null
+    const conversationAnchor = Array.from(
+      document.querySelectorAll('.font-claude-response, [data-testid="user-message"]'),
+    ).find((element) => !element.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR)) as HTMLElement | undefined
 
     const isScrollable = (element: HTMLElement | null): boolean => {
       if (!element) return false
@@ -935,7 +987,7 @@ export class ClaudeAdapter extends SiteAdapter {
       return element.scrollHeight > element.clientHeight + 4
     }
 
-    let current: HTMLElement | null = conversationAnchor
+    let current: HTMLElement | null = conversationAnchor || null
     while (current && current !== document.body) {
       if (isScrollable(current)) {
         return current
@@ -990,6 +1042,105 @@ export class ClaudeAdapter extends SiteAdapter {
 
   getChatContentSelectors(): string[] {
     return ['div[data-testid="user-message"]', "div.font-claude-response"]
+  }
+
+  private isClaudeDocumentPanelOpen(): boolean {
+    return this.getClaudeDocumentMarkdownElement() !== null
+  }
+
+  private getClaudeDocumentRoot(): HTMLElement | null {
+    return document.querySelector(CLAUDE_DOCUMENT_ROOT_SELECTOR) as HTMLElement | null
+  }
+
+  private getClaudeDocumentMarkdownElement(): Element | null {
+    return document.querySelector(CLAUDE_DOCUMENT_MARKDOWN_SELECTOR)
+  }
+
+  private getClaudeDocumentTitle(): string | null {
+    const title = this.getClaudeDocumentRoot()?.querySelector("h1")?.textContent?.trim() || ""
+    return title || null
+  }
+
+  private getClaudeArtifactCells(root: ParentNode = document): Element[] {
+    return Array.from(root.querySelectorAll(CLAUDE_ARTIFACT_CELL_SELECTOR))
+  }
+
+  private getClaudeDocumentArtifactCells(root: ParentNode = document): Element[] {
+    return this.getClaudeArtifactCells(root).filter((cell) => this.isMarkdownDocumentArtifact(cell))
+  }
+
+  private isMarkdownDocumentArtifact(artifact: Element): boolean {
+    return /\bMD\b/i.test(this.getClaudeArtifactMetadata(artifact))
+  }
+
+  private getClaudeArtifactMetadata(artifact: Element): string {
+    return artifact.querySelector(".text-text-400")?.textContent?.trim() || ""
+  }
+
+  private getClaudeArtifactTitle(artifact: Element): string {
+    const title = artifact.querySelector(".line-clamp-1")?.textContent?.trim() || ""
+    return title || "Document"
+  }
+
+  private getClaudeArtifactButton(artifact: Element): HTMLElement | null {
+    const container = artifact.closest(".group\\/artifact-block, [class*='group/artifact-block']")
+    const button =
+      container?.querySelector('button[aria-label="View Document"]') ||
+      artifact.querySelector('button[aria-label="View Document"]')
+    return button instanceof HTMLElement ? button : null
+  }
+
+  private async openClaudeArtifactDocument(artifact: Element): Promise<Element | null> {
+    const button = this.getClaudeArtifactButton(artifact)
+    if (!button) return null
+
+    const previousSignature = this.getClaudeDocumentSignature()
+    button.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    this.simulateClick(button)
+
+    return this.waitForClaudeDocumentMarkdown(previousSignature)
+  }
+
+  private getClaudeDocumentSignature(markdown = this.getClaudeDocumentMarkdownElement()): string {
+    const text = markdown?.textContent?.trim() || ""
+    return text ? `${text.length}:${text.slice(0, 160)}:${text.slice(-160)}` : ""
+  }
+
+  private async waitForClaudeDocumentMarkdown(
+    previousSignature = "",
+    timeoutMs = 3000,
+  ): Promise<Element | null> {
+    const startedAt = Date.now()
+    while (Date.now() - startedAt < timeoutMs) {
+      const markdown = this.getClaudeDocumentMarkdownElement()
+      const signature = this.getClaudeDocumentSignature()
+      if (markdown && signature && signature !== previousSignature) return markdown
+      if (markdown && !previousSignature) return markdown
+      await new Promise((resolve) => setTimeout(resolve, 100))
+    }
+
+    return this.getClaudeDocumentMarkdownElement()
+  }
+
+  private closeClaudeDocumentPanel(): void {
+    const backButton = this.findClaudeDocumentPanelButton('button[aria-label="Go back"]')
+    if (backButton instanceof HTMLElement) {
+      this.simulateClick(backButton)
+    }
+  }
+
+  private findClaudeDocumentPanelButton(selector: string): HTMLElement | null {
+    const root = this.getClaudeDocumentRoot()
+    let current = root?.parentElement || null
+
+    while (current && current !== document.body) {
+      const button = current.querySelector(selector)
+      if (button instanceof HTMLElement) return button
+      current = current.parentElement
+    }
+
+    return null
   }
 
   // ==================== 模型管理 ====================
@@ -1184,6 +1335,46 @@ export class ClaudeAdapter extends SiteAdapter {
 
   // ==================== 大纲功能 ====================
 
+  getOutlineSources(): OutlineSource[] {
+    const sources: OutlineSource[] = [
+      { id: "conversation", kind: "conversation", label: "对话", available: true },
+    ]
+    const documentOutline = this.extractClaudeDocumentOutline(6, false)
+    if (documentOutline.length > 0) {
+      sources.push({
+        id: CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID,
+        kind: "document",
+        label: "文档",
+        available: true,
+        count: documentOutline.length,
+      })
+    }
+
+    return sources
+  }
+
+  supportsDynamicOutlineSources(): boolean {
+    return true
+  }
+
+  getOutlineSourcesSignature(): string {
+    const documentSignature = this.getClaudeDocumentSignature()
+    return `conversation:1|${CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID}:${documentSignature || "0"}`
+  }
+
+  extractOutlineForSource(
+    sourceId: string,
+    maxLevel = 6,
+    includeUserQueries = false,
+    showWordCount = false,
+  ): OutlineItem[] {
+    if (sourceId === CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID) {
+      return this.extractClaudeDocumentOutline(maxLevel, showWordCount)
+    }
+
+    return this.extractOutline(maxLevel, includeUserQueries, showWordCount)
+  }
+
   extractOutline(maxLevel = 6, includeUserQueries = false, showWordCount = false): OutlineItem[] {
     const outline: OutlineItem[] = []
     const outlineRoot = this.getOutlineRoot()
@@ -1201,7 +1392,9 @@ export class ClaudeAdapter extends SiteAdapter {
       // Claude 结构：用户消息和AI回复在同一滚动容器中，不是严格的siblings
       // 需要向下遍历找到下一个用户消息之前的所有AI回复
       const allUserQueries = Array.from(outlineRoot.querySelectorAll(userQuerySelector))
-      const allResponses = Array.from(outlineRoot.querySelectorAll(".font-claude-response"))
+      const allResponses = Array.from(outlineRoot.querySelectorAll(".font-claude-response")).filter(
+        (response) => !response.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR),
+      )
 
       const startIndex = allUserQueries.indexOf(startEl)
       if (startIndex === -1) return 0
@@ -1233,9 +1426,12 @@ export class ClaudeAdapter extends SiteAdapter {
       return totalLength
     }
 
-    // Claude 的标题在 AI 回复中，有 text-text-100 class
-    // 排除侧边栏的 H3 (RecentsHide 等)
-    const headings = Array.from(outlineRoot.querySelectorAll("h1, h2, h3, h4, h5, h6"))
+    // Claude 对话大纲只收 AI 回复里的标题；侧边栏、导航等页面标题不应进入对话大纲。
+    const headings = Array.from(outlineRoot.querySelectorAll("h1, h2, h3, h4, h5, h6")).filter(
+      (heading) =>
+        !heading.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR) &&
+        heading.closest(".font-claude-response") !== null,
+    )
 
     headings.forEach((h, index) => {
       const level = parseInt(h.tagName[1])
@@ -1317,6 +1513,65 @@ export class ClaudeAdapter extends SiteAdapter {
     return outline
   }
 
+  private extractClaudeDocumentOutline(maxLevel = 6, showWordCount = false): OutlineItem[] {
+    const root = this.getClaudeDocumentMarkdownElement()
+    if (!(root instanceof Element)) return []
+
+    return extractHeadingOutline(root, {
+      maxLevel,
+      showWordCount,
+      idPrefix: "claude-document",
+      shouldSkipHeading: (heading) => this.shouldSkipClaudeDocumentHeading(heading),
+      calculateWordCount: (heading, nextBoundary, outlineRoot) => {
+        return this.calculateRangeWordCount(heading, nextBoundary, outlineRoot)
+      },
+    })
+  }
+
+  private shouldSkipClaudeDocumentHeading(heading: Element): boolean {
+    return heading.classList.contains("sr-only") || this.isInRenderedMarkdownContainer(heading)
+  }
+
+  private findClaudeDocumentHeading(level: number, text: string): Element | null {
+    const root = this.getClaudeDocumentMarkdownElement()
+    if (!root) return null
+    return findHeadingByText(root, level, text, (heading) =>
+      this.shouldSkipClaudeDocumentHeading(heading),
+    )
+  }
+
+  getOutlineScrollContainer(sourceId = "conversation"): HTMLElement | null {
+    if (sourceId === CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID) {
+      const root = this.getClaudeDocumentMarkdownElement()
+      return findScrollableAncestor(root) || this.getClaudeDocumentRoot()
+    }
+
+    return this.getScrollContainer()
+  }
+
+  async resolveOutlineTarget(
+    item: Pick<OutlineItem, "level" | "text" | "isUserQuery">,
+    queryIndex?: number,
+    sourceId = "conversation",
+  ): Promise<Element | null> {
+    if (sourceId === CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID) {
+      return this.findClaudeDocumentHeading(item.level, item.text)
+    }
+
+    return super.resolveOutlineTarget(item, queryIndex, sourceId)
+  }
+
+  scrollToOutlineSourceTarget(element: HTMLElement, sourceId = "conversation"): void {
+    if (sourceId === CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID) {
+      const container = findScrollableAncestor(element) || this.getOutlineScrollContainer(sourceId)
+      if (scrollElementInContainer(element, container)) {
+        return
+      }
+    }
+
+    this.scrollToOutlineTarget(element)
+  }
+
   // ==================== 生成状态 ====================
 
   isGenerating(): boolean {
@@ -1363,7 +1618,9 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   getLatestReplyText(): string | null {
-    const responses = document.querySelectorAll(".font-claude-response")
+    const responses = Array.from(document.querySelectorAll(".font-claude-response")).filter(
+      (element) => !element.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR),
+    )
     if (responses.length === 0) return null
 
     const lastResponse = responses[responses.length - 1]
@@ -1383,6 +1640,128 @@ export class ClaudeAdapter extends SiteAdapter {
     return ".font-claude-response"
   }
 
+  async prepareConversationExport(context: ExportLifecycleContext): Promise<unknown> {
+    this.exportDocumentCache = []
+    const state: ClaudeExportLifecycleState = {
+      documentPanelWasOpen: this.isClaudeDocumentPanelOpen(),
+      documentSignature: this.getClaudeDocumentSignature(),
+      documentTitle: this.getClaudeDocumentTitle(),
+      documentArtifactIndex: null,
+    }
+
+    if (!this.shouldCollectClaudeDocumentsForExport(context)) {
+      return state
+    }
+
+    this.exportDocumentCache = await this.collectClaudeDocumentArtifacts()
+
+    if (state.documentPanelWasOpen && state.documentSignature) {
+      const originalDocument = this.findCachedClaudeDocumentByState(state)
+      state.documentArtifactIndex = originalDocument?.index ?? null
+    }
+
+    return state
+  }
+
+  async restoreConversationAfterExport(
+    _context: ExportLifecycleContext,
+    state: unknown,
+  ): Promise<void> {
+    try {
+      if (!this.isClaudeExportLifecycleState(state)) return
+
+      if (state.documentPanelWasOpen) {
+        await this.restoreClaudeDocumentPanel(state)
+        return
+      }
+
+      this.closeClaudeDocumentPanel()
+    } finally {
+      this.exportDocumentCache = []
+    }
+  }
+
+  private isClaudeExportLifecycleState(state: unknown): state is ClaudeExportLifecycleState {
+    return (
+      typeof state === "object" &&
+      state !== null &&
+      "documentPanelWasOpen" in state &&
+      typeof (state as ClaudeExportLifecycleState).documentPanelWasOpen === "boolean"
+    )
+  }
+
+  private shouldCollectClaudeDocumentsForExport(context: ExportLifecycleContext): boolean {
+    return context.format === "markdown" || context.format === "clipboard"
+  }
+
+  private async restoreClaudeDocumentPanel(state: ClaudeExportLifecycleState): Promise<void> {
+    if (!state.documentSignature || this.getClaudeDocumentSignature() === state.documentSignature) {
+      return
+    }
+
+    const originalDocument = this.findCachedClaudeDocumentByState(state)
+    const artifact =
+      originalDocument?.element.isConnected === true
+        ? originalDocument.element
+        : this.getClaudeDocumentArtifactCells()[originalDocument?.index ?? -1]
+
+    if (artifact) {
+      await this.openClaudeArtifactDocument(artifact)
+    }
+  }
+
+  private findCachedClaudeDocumentByState(
+    state: ClaudeExportLifecycleState,
+  ): ClaudeDocumentExportCacheEntry | null {
+    if (state.documentArtifactIndex !== null && state.documentArtifactIndex !== undefined) {
+      const byIndex = this.exportDocumentCache.find(
+        (item) => item.index === state.documentArtifactIndex,
+      )
+      if (byIndex) return byIndex
+    }
+
+    if (state.documentSignature) {
+      const bySignature = this.exportDocumentCache.find(
+        (item) => item.signature === state.documentSignature,
+      )
+      if (bySignature) return bySignature
+    }
+
+    if (state.documentTitle) {
+      const titleMatches = this.exportDocumentCache.filter(
+        (item) => item.title === state.documentTitle,
+      )
+      if (titleMatches.length === 1) return titleMatches[0]
+    }
+
+    return null
+  }
+
+  async extractExportBundle(_context: ExportLifecycleContext): Promise<ExportBundle | null> {
+    if (!this.hasClaudeExportAssets()) {
+      return null
+    }
+
+    const collector = createExportAssetCollector()
+    const messages = this.extractClaudeExportMessages(collector)
+    return {
+      messages,
+      assets: collector.assets,
+    }
+  }
+
+  async extractExportMessages(_context: ExportLifecycleContext): Promise<ExportMessage[] | null> {
+    if (
+      this.exportDocumentCache.length === 0 &&
+      !this.isClaudeDocumentPanelOpen() &&
+      !this.hasClaudeUserAttachments()
+    ) {
+      return null
+    }
+
+    return this.extractClaudeExportMessages()
+  }
+
   /**
    * Claude 的大纲根容器是滚动容器，而非单条回复 .font-claude-response，
    * 所以 MutationObserver 也应观察滚动容器，避免漏掉列表头部变更。
@@ -1399,6 +1778,20 @@ export class ClaudeAdapter extends SiteAdapter {
 
   extractUserQueryText(element: Element): string {
     return element.textContent?.trim() || ""
+  }
+
+  extractUserQueryExportContent(element: Element): string {
+    return this.extractClaudeUserQueryExportContent(element)
+  }
+
+  private hasClaudeExportAssets(): boolean {
+    return this.exportDocumentCache.length > 0 || this.hasClaudeUserAttachments()
+  }
+
+  private hasClaudeUserAttachments(): boolean {
+    const root = this.getOutlineRoot()
+    const userMessages = Array.from(root.querySelectorAll(this.getUserQuerySelector()))
+    return userMessages.some((message) => this.extractClaudeUserAttachments(message).length > 0)
   }
 
   extractUserQueryMarkdown(element: Element): string {
@@ -1470,47 +1863,393 @@ export class ClaudeAdapter extends SiteAdapter {
     return hasChanges
   }
 
+  private extractClaudeUserQueryExportContent(
+    element: Element,
+    collector?: ExportAssetCollector,
+  ): string {
+    const textContent = this.extractUserQueryText(element).trim()
+    const attachments = this.extractClaudeUserAttachments(element)
+    if (attachments.length === 0) return textContent
+
+    const imageMarkdown = this.formatClaudeUserImageAttachments(attachments, collector)
+    const fileMarkdown = this.formatClaudeUserFileAttachments(attachments, collector)
+    const fileBlock =
+      fileMarkdown.length > 0
+        ? `${t("exportAttachmentsLabel") || "Attachments"}:\n${fileMarkdown.join("\n")}`
+        : ""
+
+    return [imageMarkdown.join("\n\n"), fileBlock, textContent].filter(Boolean).join("\n\n")
+  }
+
+  private extractClaudeUserAttachments(userMessage: Element): ClaudeUserAttachment[] {
+    const container = this.getClaudeUserMessageContainer(userMessage)
+    if (!container) return []
+
+    const attachments: ClaudeUserAttachment[] = []
+    const seen = new Set<string>()
+
+    this.extractClaudeUserImageAttachments(container).forEach((attachment) => {
+      const key = `image:${attachment.source || attachment.name}`
+      if (seen.has(key)) return
+      seen.add(key)
+      attachments.push(attachment)
+    })
+
+    this.extractClaudeUserFileAttachments(container).forEach((attachment) => {
+      const key = `file:${attachment.source || attachment.name}:${attachment.type || ""}`
+      if (seen.has(key)) return
+      seen.add(key)
+      attachments.push(attachment)
+    })
+
+    return attachments
+  }
+
+  private getClaudeUserMessageContainer(userMessage: Element): Element | null {
+    const bubble = userMessage.closest('[data-user-message-bubble="true"]')
+    if (!bubble) return userMessage
+
+    let best: Element | null = null
+    let current = bubble.parentElement
+    while (
+      current &&
+      current !== document.body &&
+      !current.matches(".font-claude-response, main, [role='main']")
+    ) {
+      if (current.querySelectorAll(this.getUserQuerySelector()).length > 1) break
+      if (
+        current.querySelector(CLAUDE_USER_FILE_THUMBNAIL_SELECTOR) ||
+        current.querySelector("img")
+      ) {
+        best = current
+      }
+      current = current.parentElement
+    }
+
+    return best || bubble
+  }
+
+  private extractClaudeUserImageAttachments(container: Element): ClaudeUserAttachment[] {
+    const images = Array.from(container.querySelectorAll("img")).filter(
+      (node): node is HTMLImageElement =>
+        node instanceof HTMLImageElement && !node.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR),
+    )
+
+    return images.flatMap((image) => {
+      if (image.closest(CLAUDE_USER_FILE_THUMBNAIL_SELECTOR)) return []
+
+      const source = normalizeExportAssetUrl(
+        image.currentSrc || image.src || image.getAttribute("src") || "",
+      )
+      if (!source || !isDownloadableExportAssetUrl(source)) return []
+
+      const alt = (image.alt || "uploaded image").replace(/\s+/g, " ").trim()
+      return [
+        {
+          kind: "image" as const,
+          name: alt || "uploaded image",
+          alt,
+          source,
+        },
+      ]
+    })
+  }
+
+  private extractClaudeUserFileAttachments(container: Element): ClaudeUserAttachment[] {
+    const files = Array.from(container.querySelectorAll(CLAUDE_USER_FILE_THUMBNAIL_SELECTOR))
+
+    return files.flatMap((file) => {
+      const name = this.extractClaudeUserFileName(file)
+      if (!name) return []
+
+      const type = this.extractClaudeUserFileType(file)
+      const source = this.extractClaudeUserFileSource(file)
+      return [
+        {
+          kind: "file" as const,
+          name,
+          type,
+          source,
+        },
+      ]
+    })
+  }
+
+  private extractClaudeUserFileName(file: Element): string {
+    const visibleTitle = file.querySelector("h1, h2, h3, h4, h5, h6")?.textContent?.trim()
+    if (visibleTitle) return visibleTitle
+
+    const ariaLabel = file.querySelector("[aria-label]")?.getAttribute("aria-label") || ""
+    return ariaLabel.split(",")[0]?.trim() || ""
+  }
+
+  private extractClaudeUserFileType(file: Element): string {
+    const badge = Array.from(file.querySelectorAll("p"))
+      .map((node) => node.textContent?.trim() || "")
+      .find((text) => /^[A-Za-z0-9.+-]{1,12}$/.test(text))
+    if (badge) return badge.toLowerCase()
+
+    const ariaLabel = file.querySelector("[aria-label]")?.getAttribute("aria-label") || ""
+    return ariaLabel.split(",")[1]?.trim().toLowerCase() || ""
+  }
+
+  private extractClaudeUserFileSource(file: Element): string {
+    const links = Array.from(file.querySelectorAll("a[href]")).filter(
+      (node): node is HTMLAnchorElement => node instanceof HTMLAnchorElement,
+    )
+
+    for (const link of links) {
+      const href = normalizeExportAssetUrl(link.href || link.getAttribute("href") || "")
+      if (isDownloadableExportAssetUrl(href)) return href
+    }
+
+    const image = file.querySelector("img")
+    if (image instanceof HTMLImageElement) {
+      const source = normalizeExportAssetUrl(
+        image.currentSrc || image.src || image.getAttribute("src") || "",
+      )
+      if (isDownloadableExportAssetUrl(source)) return source
+    }
+
+    return ""
+  }
+
+  private formatClaudeUserImageAttachments(
+    attachments: ClaudeUserAttachment[],
+    collector?: ExportAssetCollector,
+  ): string[] {
+    return attachments
+      .filter((attachment) => attachment.kind === "image" && attachment.source)
+      .map((attachment) => {
+        const alt = escapeMarkdownLinkText(attachment.alt || attachment.name || "uploaded image")
+        const source = attachment.source || ""
+        const assetPath = collector
+          ? addImageExportAsset(collector, {
+              source,
+              alt: attachment.alt || attachment.name,
+              extensionHint: attachment.name || attachment.alt,
+              idPrefix: "claude-user-image",
+              filenamePrefix: "claude-user-image",
+            })
+          : source
+        return assetPath ? `![${alt || "uploaded image"}](${assetPath})` : ""
+      })
+      .filter(Boolean)
+  }
+
+  private formatClaudeUserFileAttachments(
+    attachments: ClaudeUserAttachment[],
+    collector?: ExportAssetCollector,
+  ): string[] {
+    return attachments
+      .filter((attachment) => attachment.kind === "file")
+      .map((attachment) => {
+        const label =
+          attachment.type && !this.fileNameEndsWithType(attachment.name, attachment.type)
+            ? `${attachment.name} (${attachment.type})`
+            : attachment.name
+        const source = attachment.source || ""
+        const assetPath =
+          source && collector
+            ? addFileExportAsset(collector, {
+                source,
+                name: attachment.name,
+                mimeHint: attachment.type,
+                idPrefix: "claude-user-file",
+              })
+            : source
+
+        return assetPath ? `- [${escapeMarkdownLinkText(label)}](${assetPath})` : `- ${label}`
+      })
+  }
+
+  private fileNameEndsWithType(name: string, type: string): boolean {
+    const normalizedName = name.toLowerCase()
+    const normalizedType = type.replace(/^\./, "").toLowerCase()
+    return normalizedType ? normalizedName.endsWith(`.${normalizedType}`) : false
+  }
+
+  private async collectClaudeDocumentArtifacts(): Promise<ClaudeDocumentExportCacheEntry[]> {
+    const results: ClaudeDocumentExportCacheEntry[] = []
+    const artifacts = this.getClaudeDocumentArtifactCells()
+
+    for (let index = 0; index < artifacts.length; index += 1) {
+      const artifact = artifacts[index]
+      const artifactTitle = this.getClaudeArtifactTitle(artifact)
+      const markdownRoot = await this.openClaudeArtifactDocument(artifact)
+      if (!markdownRoot) continue
+
+      const content = this.extractClaudeDocumentMarkdown(markdownRoot)
+      if (!content) continue
+
+      results.push({
+        element: artifact,
+        index,
+        content,
+        title: this.getClaudeDocumentTitle() || artifactTitle,
+        artifactTitle,
+        signature: this.getClaudeDocumentSignature(markdownRoot),
+      })
+    }
+
+    return results
+  }
+
+  private extractClaudeDocumentMarkdown(markdownRoot: Element): string {
+    const markdown = htmlToMarkdown(markdownRoot).trim()
+    return markdown || markdownRoot.textContent?.trim() || ""
+  }
+
+  private findCachedClaudeDocumentForArtifact(
+    artifact: Element,
+  ): ClaudeDocumentExportCacheEntry | null {
+    const cached = this.exportDocumentCache.find((item) => item.element === artifact)
+    if (cached) return cached
+    if (!this.isMarkdownDocumentArtifact(artifact)) return null
+
+    const artifactIndex = this.getClaudeDocumentArtifactCells().indexOf(artifact)
+    if (artifactIndex >= 0) {
+      const byIndex = this.exportDocumentCache.find((item) => item.index === artifactIndex)
+      if (byIndex) return byIndex
+    }
+
+    const artifactTitle = this.getClaudeArtifactTitle(artifact)
+    const titleMatches = this.exportDocumentCache.filter(
+      (item) => item.artifactTitle === artifactTitle || item.title === artifactTitle,
+    )
+    if (titleMatches.length === 1) return titleMatches[0]
+
+    return this.exportDocumentCache.length === 1 ? this.exportDocumentCache[0] : null
+  }
+
+  private extractClaudeExportMessages(collector?: ExportAssetCollector): ExportMessage[] {
+    const messages: ExportMessage[] = []
+    const root = this.getOutlineRoot()
+    const userMessages = Array.from(root.querySelectorAll(this.getUserQuerySelector()))
+    const assistantMessages = Array.from(root.querySelectorAll(".font-claude-response")).filter(
+      (element) => !element.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR),
+    )
+
+    const maxLen = Math.max(userMessages.length, assistantMessages.length)
+    for (let index = 0; index < maxLen; index += 1) {
+      if (userMessages[index]) {
+        const content = this.extractClaudeUserQueryExportContent(
+          userMessages[index],
+          collector,
+        ).trim()
+        if (content) messages.push({ role: "user", content })
+      }
+
+      if (assistantMessages[index]) {
+        const content = this.extractClaudeAssistantResponseTextWithDocuments(
+          assistantMessages[index],
+          collector,
+        ).trim()
+        if (content) messages.push({ role: "assistant", content })
+      }
+    }
+
+    return messages
+  }
+
+  private extractClaudeAssistantResponseTextWithDocuments(
+    element: Element,
+    collector?: ExportAssetCollector,
+  ): string {
+    const parts: string[] = []
+    const blocks = this.getClaudeAssistantExportBlocks(element)
+
+    blocks.forEach((block) => {
+      if (block.matches(CLAUDE_ARTIFACT_CELL_SELECTOR)) {
+        parts.push(this.formatClaudeArtifactExportContent(block, collector))
+        return
+      }
+
+      const markdown =
+        htmlToMarkdown(
+          this.prepareClaudeAssistantMarkdownBlockForExport(block, collector),
+        ).trim() ||
+        block.textContent?.trim() ||
+        ""
+      parts.push(markdown)
+    })
+
+    return parts.filter(Boolean).join("\n\n").trim()
+  }
+
+  private getClaudeAssistantExportBlocks(element: Element): Element[] {
+    const candidates = Array.from(
+      element.querySelectorAll(
+        `${CLAUDE_RESPONSE_MARKDOWN_SELECTOR}, ${CLAUDE_ARTIFACT_CELL_SELECTOR}`,
+      ),
+    ).filter((block) => !block.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR))
+
+    return candidates.filter((block) => {
+      const parentBlock = block.parentElement?.closest(
+        `${CLAUDE_RESPONSE_MARKDOWN_SELECTOR}, ${CLAUDE_ARTIFACT_CELL_SELECTOR}`,
+      )
+      return !parentBlock || !element.contains(parentBlock)
+    })
+  }
+
+  private prepareClaudeAssistantMarkdownBlockForExport(
+    block: Element,
+    collector?: ExportAssetCollector,
+  ): Element {
+    const sourceArtifacts = this.getClaudeArtifactCells(block)
+    const clone = block.cloneNode(true) as Element
+    const artifacts = Array.from(clone.querySelectorAll(CLAUDE_ARTIFACT_CELL_SELECTOR))
+
+    artifacts.forEach((artifact, index) => {
+      const sourceArtifact = sourceArtifacts[index] || artifact
+      const replacement = document.createElement("p")
+      replacement.textContent = this.formatClaudeArtifactExportContent(sourceArtifact, collector)
+      artifact.replaceWith(replacement)
+    })
+
+    return clone
+  }
+
+  private formatClaudeArtifactExportContent(
+    artifact: Element,
+    collector?: ExportAssetCollector,
+  ): string {
+    const title = this.getClaudeArtifactTitle(artifact)
+    const cached = this.findCachedClaudeDocumentForArtifact(artifact)
+
+    if (!cached?.content) {
+      return this.formatClaudeArtifactPlaceholder(artifact)
+    }
+
+    return collector
+      ? createMarkdownDocumentAssetLink(collector, cached.content, {
+          title: cached.title || title,
+          fallbackTitle: "claude-document",
+          directory: "assets/documents",
+          idPrefix: "claude-document",
+        })
+      : this.formatClaudeDocumentInlineContent(cached.content, cached.title || title)
+  }
+
+  private formatClaudeDocumentInlineContent(content: string, title: string): string {
+    const trimmed = content.trim()
+    if (!trimmed) return ""
+    if (/^#{1,6}\s+/m.test(trimmed)) return trimmed
+    return `### ${title}\n\n${trimmed}`
+  }
+
+  private formatClaudeArtifactPlaceholder(artifact: Element, downloadHref = ""): string {
+    const title = this.getClaudeArtifactTitle(artifact)
+    const metadata = this.getClaudeArtifactMetadata(artifact)
+    return `[Artifact: ${title}${metadata ? ` - ${metadata}` : ""}${downloadHref ? ` | Download: ${downloadHref}` : ""}]`
+  }
+
   /**
    * 提取AI回复文本,过滤Artifact卡片但标注其存在
    * Claude特有:Artifacts以卡片形式嵌入在回复中,需要特殊处理
    */
   extractAssistantResponseText(element: Element): string {
-    let result = ""
-
-    // 检查是否有Artifacts卡片
-    const artifacts = element.querySelectorAll(".artifact-block-cell")
-    if (artifacts.length > 0) {
-      artifacts.forEach((artifact) => {
-        // 提取标题
-        const titleElem = artifact.querySelector(".line-clamp-1")
-        const title = titleElem?.textContent?.trim() || "Untitled"
-
-        // 提取版本信息
-        const versionElem = artifact.querySelector(".text-text-400")
-        const version = versionElem?.textContent?.trim()
-
-        // 尝试查找下载链接(可能在同级或父级元素的菜单中)
-        // 下载菜单通常需要点击才会出现,所以可能找不到
-        const downloadLink = element.querySelector('a[download][href^="blob:"]')
-        const link = downloadLink?.getAttribute("href")
-
-        // 构建Artifact标注
-        if (link) {
-          result += `\n[Artifact: ${title}${version ? ` - ${version}` : ""} | Download: ${link}]\n\n`
-        } else {
-          result += `\n[Artifact: ${title}${version ? ` - ${version}` : ""}]\n\n`
-        }
-      })
-    }
-
-    // 提取正常回复内容(在.standard-markdown或.progressive-markdown中)
-    const markdownContent = element.querySelector(".standard-markdown, .progressive-markdown")
-    if (markdownContent) {
-      const markdown = htmlToMarkdown(markdownContent)
-      result += markdown || markdownContent.textContent?.trim() || ""
-    }
-
-    return result.trim()
+    return this.extractClaudeAssistantResponseTextWithDocuments(element)
   }
 
   // ==================== 会话观察器 ====================
