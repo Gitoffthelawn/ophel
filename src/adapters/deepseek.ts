@@ -11,10 +11,9 @@
 import { SITE_IDS } from "~constants"
 import { deepseekNativeThemeCss } from "~styles/native-theme-adapters/deepseek"
 import {
-  addFileExportAsset,
-  addImageExportAsset,
   createExportAssetCollector,
-  escapeMarkdownLinkText,
+  formatExportFileAttachments,
+  formatExportImageAttachments,
   isDownloadableExportAssetUrl,
   normalizeExportAssetUrl,
   type ExportAssetCollector,
@@ -1991,7 +1990,7 @@ export class DeepSeekAdapter extends SiteAdapter {
 
   private extractDomUserFileAttachments(message: Element): DeepSeekUserAttachment[] {
     const cards = Array.from(message.querySelectorAll("div")).filter((node) =>
-      this.isLikelyUserAttachmentCard(node, message),
+      this.isLikelyUserFileAttachmentCard(node, message),
     )
 
     return cards.flatMap((card) => {
@@ -1999,7 +1998,7 @@ export class DeepSeekAdapter extends SiteAdapter {
       if (!name) return []
 
       const source = this.extractAttachmentCardSource(card)
-      const type = this.extractAttachmentCardType(card) || this.extractFileTypeFromName(name)
+      const type = this.extractAttachmentCardType(card, name) || this.extractFileTypeFromName(name)
       const kind = this.isImageAttachmentName(name, type) ? "image" : "file"
 
       return [
@@ -2019,8 +2018,9 @@ export class DeepSeekAdapter extends SiteAdapter {
     attachments: DeepSeekUserAttachment[],
     collector?: ExportAssetCollector,
   ): string {
+    const cleanBody = this.stripUserAttachmentBodyText(body, attachments)
     if (attachments.length === 0) {
-      return body
+      return cleanBody
     }
 
     const imageMarkdown = this.formatUserImageAttachments(attachments, collector)
@@ -2028,57 +2028,25 @@ export class DeepSeekAdapter extends SiteAdapter {
     const fileBlock =
       fileMarkdown.length > 0 ? `${t("exportAttachmentsLabel")}:\n${fileMarkdown.join("\n")}` : ""
 
-    return [imageMarkdown.join("\n\n"), fileBlock, body].filter(Boolean).join("\n\n")
+    return [imageMarkdown.join("\n\n"), fileBlock, cleanBody].filter(Boolean).join("\n\n")
   }
 
   private formatUserImageAttachments(
     attachments: DeepSeekUserAttachment[],
     collector?: ExportAssetCollector,
   ): string[] {
-    return attachments
-      .filter((attachment) => attachment.kind === "image" && attachment.source)
-      .map((attachment) => {
-        const label = escapeMarkdownLinkText(attachment.name || "uploaded image")
-        const source = attachment.source
-
-        const assetPath = collector
-          ? addImageExportAsset(collector, {
-              source,
-              alt: attachment.name,
-              extensionHint: attachment.name || attachment.type,
-              directory: "assets/images",
-              idPrefix: "deepseek-user-image",
-              filenamePrefix: "deepseek-user-image",
-            })
-          : source
-
-        return assetPath ? `![${label}](${assetPath})` : ""
-      })
-      .filter(Boolean)
+    return formatExportImageAttachments(attachments, collector, { siteId: this.getSiteId() })
   }
 
   private formatUserFileAttachments(
     attachments: DeepSeekUserAttachment[],
     collector?: ExportAssetCollector,
   ): string[] {
-    return attachments
-      .filter((attachment) => attachment.kind !== "image" || !attachment.source)
-      .map((attachment) => {
-        const label = escapeMarkdownLinkText(this.formatAttachmentLabel(attachment))
-        const source = attachment.source
-        const assetPath =
-          source && collector
-            ? addFileExportAsset(collector, {
-                source,
-                name: attachment.name,
-                mimeHint: attachment.type || attachment.name,
-                directory: "assets/files",
-                idPrefix: "deepseek-user-file",
-              })
-            : source
-
-        return assetPath ? `- [${label}](${assetPath})` : `- ${label}`
-      })
+    return formatExportFileAttachments(attachments, collector, {
+      siteId: this.getSiteId(),
+      includeAttachment: (attachment) => attachment.kind !== "image" || !attachment.source,
+      getLabel: (attachment) => this.formatAttachmentLabel(attachment),
+    })
   }
 
   private formatAttachmentLabel(attachment: DeepSeekUserAttachment): string {
@@ -2122,11 +2090,11 @@ export class DeepSeekAdapter extends SiteAdapter {
     return candidates.map((value) => this.normalizeAttachmentText(value)).find(Boolean) || "image"
   }
 
-  private isLikelyUserAttachmentCard(card: Element, message: Element): boolean {
+  private isLikelyUserFileAttachmentCard(card: Element, message: Element): boolean {
     if (card === message) return false
     if (card.closest(".gh-user-query-markdown")) return false
     if (!this.isWithinUserAttachmentContainer(card, message)) return false
-    if (!card.querySelector("svg, img")) return false
+    if (!card.querySelector("svg") || card.querySelector("img")) return false
 
     const name = this.extractAttachmentCardName(card)
     if (!name) return false
@@ -2161,6 +2129,38 @@ export class DeepSeekAdapter extends SiteAdapter {
     return this.extractAttachmentCardName(element) !== ""
   }
 
+  private stripUserAttachmentBodyText(body: string, attachments: DeepSeekUserAttachment[]): string {
+    if (!body || attachments.length === 0) return body
+
+    return body
+      .replace(/\r\n/g, "\n")
+      .split("\n")
+      .filter((line) => !this.isUserAttachmentBodyLine(line, attachments))
+      .join("\n")
+      .trim()
+  }
+
+  private isUserAttachmentBodyLine(line: string, attachments: DeepSeekUserAttachment[]): boolean {
+    const normalizedLine = this.normalizeAttachmentComparisonText(line)
+    if (!normalizedLine) return false
+
+    return attachments.some((attachment) => {
+      const name = this.normalizeAttachmentComparisonText(attachment.name)
+      if (!name || !normalizedLine.includes(name)) return false
+
+      const size = this.normalizeAttachmentComparisonText(attachment.size)
+      if (size && normalizedLine.includes(size)) return true
+
+      const type =
+        attachment.type && !this.fileNameEndsWithExtension(attachment.name, attachment.type)
+          ? this.normalizeAttachmentComparisonText(attachment.type)
+          : ""
+      if (type && normalizedLine.includes(type)) return true
+
+      return normalizedLine === name
+    })
+  }
+
   private extractAttachmentCardName(card: Element): string {
     const textNodes = Array.from(card.querySelectorAll("div, span, p")).filter(
       (node) => !node.querySelector("svg, img"),
@@ -2193,13 +2193,15 @@ export class DeepSeekAdapter extends SiteAdapter {
     return ""
   }
 
-  private extractAttachmentCardType(card: Element): string {
+  private extractAttachmentCardType(card: Element, name = ""): string {
+    const normalizedName = this.normalizeAttachmentText(name).toLowerCase()
     const textParts = Array.from(card.querySelectorAll("div, span, p"))
       .map((node) => this.normalizeAttachmentText(node.textContent || ""))
       .filter(Boolean)
 
     const info = textParts.find(
       (value) =>
+        (!normalizedName || !value.toLowerCase().includes(normalizedName)) &&
         !this.looksLikeFilename(value) &&
         /^[A-Za-z0-9.+-]{1,12}(?:\s+\d+(?:\.\d+)?\s*[KMGT]?B)?$/i.test(value),
     )
@@ -2220,11 +2222,6 @@ export class DeepSeekAdapter extends SiteAdapter {
       if (!(link instanceof HTMLAnchorElement)) continue
       const href = normalizeExportAssetUrl(link.getAttribute("href") || link.href || "")
       if (isDownloadableExportAssetUrl(href)) return href
-    }
-
-    const image = card.querySelector("img")
-    if (image instanceof HTMLImageElement) {
-      return this.getDeepSeekImageExportSource(image)
     }
 
     return ""
@@ -2282,6 +2279,14 @@ export class DeepSeekAdapter extends SiteAdapter {
 
   private normalizeAttachmentText(value: string): string {
     return value.replace(/\s+/g, " ").trim()
+  }
+
+  private normalizeAttachmentComparisonText(value: string): string {
+    return this.normalizeAttachmentText(value)
+      .toLowerCase()
+      .replace(/[（]/g, "(")
+      .replace(/[）]/g, ")")
+      .replace(/\s+/g, "")
   }
 
   private fileNameEndsWithExtension(name: string, extension: string): boolean {
