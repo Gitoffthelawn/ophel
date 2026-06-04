@@ -11,6 +11,7 @@ import { getConversationsStore, useConversationsStore } from "~stores/conversati
 import { getFoldersStore, useFoldersStore } from "~stores/folders-store"
 import { useSettingsStore } from "~stores/settings-store"
 import { getTagsStore, useTagsStore } from "~stores/tags-store"
+import { sanitizeConversationTitleCandidate } from "~utils/conversation-title"
 import { DOMToolkit } from "~utils/dom-toolkit"
 import {
   createExportMetadata,
@@ -24,7 +25,7 @@ import {
   formatToTXT,
   htmlToMarkdown,
 } from "~utils/exporter"
-import { t } from "~utils/i18n"
+import { getAllLocalizedTexts, t } from "~utils/i18n"
 import { consumeRestoreFlag } from "~utils/storage"
 import { showToast } from "~utils/toast"
 
@@ -965,6 +966,53 @@ export class ConversationManager {
       .filter((id): id is string => Boolean(id))
   }
 
+  private sanitizeConversationTitleForUse(
+    title?: string | null,
+    options: { dropLocalizedFallback?: boolean; managedTitleReference?: string | null } = {},
+  ): string | null {
+    const settings = useSettingsStore.getState().settings
+    const sanitizeOptions = {
+      privacyTitle: settings.tab?.privacyTitle || "Google",
+      siteName: this.siteAdapter.getName(),
+      titleFormat: settings.tab?.titleFormat,
+    }
+    let sanitized = sanitizeConversationTitleCandidate(title, sanitizeOptions)
+    const referenceTitle = sanitizeConversationTitleCandidate(
+      options.managedTitleReference,
+      sanitizeOptions,
+    )
+
+    if (referenceTitle) {
+      const managedSanitized = sanitizeConversationTitleCandidate(title, {
+        ...sanitizeOptions,
+        hasManagedTitleSignal: true,
+      })
+      if (
+        managedSanitized &&
+        managedSanitized !== sanitized &&
+        managedSanitized === referenceTitle
+      ) {
+        sanitized = managedSanitized
+      }
+    }
+
+    if (options.dropLocalizedFallback && this.isLocalizedFallbackConversationTitle(sanitized)) {
+      return null
+    }
+    return sanitized
+  }
+
+  private isLocalizedFallbackConversationTitle(title?: string | null): boolean {
+    const normalized = title?.replace(/\s+/g, " ").trim()
+    if (!normalized) return false
+
+    const fallbackTitles = getAllLocalizedTexts("untitledConversation").map((value) =>
+      value.replace(/\s+/g, " ").trim(),
+    )
+
+    return fallbackTitles.includes(normalized)
+  }
+
   // ================= Utility Methods =================
 
   /**
@@ -992,8 +1040,14 @@ export class ConversationManager {
       return existing || null
     }
 
-    // 导出时优先保留已同步到会话库中的原始标题，避免当前页面被标签页重命名后的 title 回写污染。
-    const title = existing?.title?.trim() || currentInfo.title?.trim() || t("untitledConversation")
+    // 导出时优先保留已同步到会话库中的原始标题，但本次导出要清理历史污染标题。
+    const title =
+      this.sanitizeConversationTitleForUse(existing?.title, {
+        dropLocalizedFallback: true,
+        managedTitleReference: currentInfo.title,
+      }) ||
+      this.sanitizeConversationTitleForUse(currentInfo.title) ||
+      t("untitledConversation")
     const url = currentInfo.url || existing?.url || window.location.href
     const cid = currentInfo.cid ?? existing?.cid
     const pinned = currentInfo.isPinned ?? existing?.pinned ?? false
@@ -1025,14 +1079,17 @@ export class ConversationManager {
       if (needsUpdate) {
         getConversationsStore().updateConversation(convId, updates)
         this.notifyDataChange()
-        return {
+        const updatedConversation = {
           ...existing,
           ...updates,
           updatedAt: Date.now(),
         }
+        return updatedConversation.title === title
+          ? updatedConversation
+          : { ...updatedConversation, title }
       }
 
-      return existing
+      return existing.title === title ? existing : { ...existing, title }
     }
 
     const now = Date.now()
@@ -1142,19 +1199,15 @@ export class ConversationManager {
       }
 
       // 格式化
-      const safeTitle = (conv.title || "conversation")
-        .replace(/[<>:"/\\|?*]/g, "_")
-        .substring(0, 50)
+      const localizedUntitledConversation = t("untitledConversation")
+      const exportTitle =
+        this.sanitizeConversationTitleForUse(conv.title) || localizedUntitledConversation
+      const safeTitle = exportTitle.replace(/[<>:"/\\|?*]/g, "_").substring(0, 50)
 
-      const metadata = createExportMetadata(
-        conv.title || "未命名",
-        this.siteAdapter.getName(),
-        conv.id,
-        {
-          customUserName: settings.export?.customUserName,
-          customModelName: settings.export?.customModelName,
-        },
-      )
+      const metadata = createExportMetadata(exportTitle, this.siteAdapter.getName(), conv.id, {
+        customUserName: settings.export?.customUserName,
+        customModelName: settings.export?.customModelName,
+      })
 
       let content: string
       let filename: string

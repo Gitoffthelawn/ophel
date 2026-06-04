@@ -205,7 +205,7 @@ export class QianwenAdapter extends SiteAdapter {
   }
 
   getSessionName(): string | null {
-    const title = document.title.trim()
+    const title = this.getDocumentConversationTitle() || ""
     if (!title) return null
 
     const cleaned = title
@@ -457,7 +457,7 @@ export class QianwenAdapter extends SiteAdapter {
 
     const rendered = document.createElement("div")
     rendered.className =
-      `${contentRoot instanceof HTMLElement ? contentRoot.className : ""} gh-user-query-markdown gh-markdown-preview`.trim()
+      `${contentRoot instanceof HTMLElement ? contentRoot.className : ""} gh-user-query-markdown gh-user-query-markdown-qianwen gh-markdown-preview`.trim()
     rendered.innerHTML = html
 
     if (contentRoot instanceof HTMLElement) {
@@ -513,9 +513,11 @@ export class QianwenAdapter extends SiteAdapter {
       document.querySelector(this.getResponseContainerSelector())
     if (!container) return items
 
-    const blocks = Array.from(
-      container.querySelectorAll(`${QUESTION_ITEM_SELECTOR}, ${ANSWER_ITEM_SELECTOR}`),
-    ).filter((el) => !el.closest(".gh-root"))
+    const blocks = this.collectTopLevelBlocks(
+      Array.from(
+        container.querySelectorAll(`${QUESTION_ITEM_SELECTOR}, ${ANSWER_ITEM_SELECTOR}`),
+      ).filter((el) => !el.closest(".gh-root")),
+    )
 
     blocks.forEach((block, index) => {
       const isUserBlock = block.matches(QUESTION_ITEM_SELECTOR)

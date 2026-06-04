@@ -12,7 +12,8 @@
  *
  * 路由兼容：
  * - /chat/{id} 和 /code/chat/{id} 指向同一会话
- * - 统一使用 chatPathPattern 提取会话 ID
+ * - /thread/{id} 指向分享页
+ * - 统一使用 conversationPathPattern 提取对话 ID
  */
 import { SITE_IDS } from "~constants"
 import {
@@ -40,8 +41,8 @@ import {
   type ZenModeConfig,
 } from "./base"
 
-/** 匹配 /chat/{id} 或 /code/chat/{id}，捕获会话 ID */
-const chatPathPattern = /^(?:\/code)?\/chat\/([^/?#]+)/
+/** 匹配 /chat/{id}、/code/chat/{id} 或 /thread/{id}，捕获对话 ID */
+const conversationPathPattern = /^(?:(?:\/code)?\/chat|\/thread)\/([^/?#]+)/
 const SIDEBAR_ROOT_SELECTOR = "#flow_chat_sidebar"
 const SIDEBAR_HISTORY_SELECTOR = `${SIDEBAR_ROOT_SELECTOR} [data-history-container="true"]`
 const CONVERSATION_ROW_SELECTOR = `${SIDEBAR_ROOT_SELECTOR} a[id^="conversation_"][href*="/chat/"]`
@@ -50,6 +51,7 @@ const NEW_CHAT_BUTTON_SELECTOR = `${SIDEBAR_ROOT_SELECTOR} > div:nth-child(2)`
 const VIRTUAL_SCROLL_SELECTOR = '[class*="v_list_scroller"]'
 const VIRTUAL_ROW_SELECTOR = ".v_list_row"
 const VIRTUAL_SCROLL_HOLDER_SELECTOR = '[data-name="scroll_holder"]'
+const SHARE_MESSAGE_LIST_SELECTOR = '[class*="message-list-root-"]'
 const MESSAGE_BLOCK_SELECTOR = '[data-target-id="message-box-target-id"]'
 const USER_QUERY_SELECTOR = "[data-message-id].justify-end"
 const RAW_USER_QUERY_TEXT_SELECTOR =
@@ -272,7 +274,7 @@ export class DoubaoAdapter extends SiteAdapter {
     if (rowId) return rowId
 
     const href = link.getAttribute("href") || ""
-    const idMatch = href.match(chatPathPattern)
+    const idMatch = href.match(conversationPathPattern)
     return idMatch?.[1] || null
   }
 
@@ -297,8 +299,15 @@ export class DoubaoAdapter extends SiteAdapter {
     let current = start as HTMLElement | null
     while (current && current !== document.body) {
       const style = window.getComputedStyle(current)
+      const overflowY = style.overflowY
+      const overflow = style.overflow
       if (
-        (style.overflowY === "auto" || style.overflowY === "scroll") &&
+        (overflowY === "auto" ||
+          overflowY === "scroll" ||
+          overflowY === "overlay" ||
+          overflow === "auto" ||
+          overflow === "scroll" ||
+          overflow === "overlay") &&
         current.clientHeight > 0
       ) {
         return current
@@ -351,6 +360,26 @@ export class DoubaoAdapter extends SiteAdapter {
     )
   }
 
+  private getSharePageMessageContainer(): HTMLElement | null {
+    if (!this.isSharePage()) return null
+
+    const messageList = document.querySelector(SHARE_MESSAGE_LIST_SELECTOR) as HTMLElement | null
+    if (messageList) {
+      return this.findScrollableAncestor(messageList) || messageList
+    }
+
+    const firstMessage = document.querySelector(
+      `${USER_QUERY_SELECTOR}, ${ASSISTANT_MESSAGE_SELECTOR}`,
+    ) as HTMLElement | null
+    if (!firstMessage) return null
+
+    return this.findScrollableAncestor(firstMessage) || firstMessage.parentElement || firstMessage
+  }
+
+  private getOutlineContentContainer(): HTMLElement | null {
+    return this.getVirtualScrollContainer() || this.getSharePageMessageContainer()
+  }
+
   private getAssistantContentRoots(root: ParentNode): HTMLElement[] {
     const roots: HTMLElement[] = []
 
@@ -384,9 +413,10 @@ export class DoubaoAdapter extends SiteAdapter {
   // ===== 会话与路由 =====
 
   getSessionId(): string {
-    const m = window.location.pathname.match(chatPathPattern)
-    if (!m || m[1] === "new") return ""
-    return m[1]
+    const match = window.location.pathname.match(conversationPathPattern)
+    const id = match?.[1] || ""
+    if (!id || id === "new") return ""
+    return id
   }
 
   isNewConversation(): boolean {
@@ -560,11 +590,11 @@ export class DoubaoAdapter extends SiteAdapter {
   }
 
   getScrollContainer(): HTMLElement | null {
-    return this.getVirtualScrollContainer()
+    return this.getOutlineContentContainer()
   }
 
   getObserveTarget(): Element | null {
-    return this.getVirtualScrollContainer() || super.getObserveTarget()
+    return this.getOutlineContentContainer() || super.getObserveTarget()
   }
 
   getResponseContainerSelector(): string {
@@ -1698,7 +1728,7 @@ export class DoubaoAdapter extends SiteAdapter {
     const entry = this.outlineItemCache.get(id)
     if (!entry) return null
 
-    const container = this.getVirtualScrollContainer()
+    const container = this.getOutlineContentContainer()
     if (!container) return null
 
     const messageElement = this.findMessageElementByCacheEntry(container, entry)
@@ -1748,7 +1778,8 @@ export class DoubaoAdapter extends SiteAdapter {
 
       const entry = this.outlineItemCache.get(item.id)
       const container = this.getVirtualScrollContainer()
-      if (!entry || !container) return null
+      if (!entry) return null
+      if (!container) return super.resolveOutlineTarget(item, queryIndex)
 
       this.scrollVirtualContainerTo(container, entry.scrollTop)
       const revivedTarget = await this.waitForCachedDoubaoOutlineTargetMount(item.id)
@@ -1762,7 +1793,7 @@ export class DoubaoAdapter extends SiteAdapter {
 
   extractOutline(maxLevel = 6, includeUserQueries = false, showWordCount = false): OutlineItem[] {
     const items: OutlineItem[] = []
-    const container = this.getVirtualScrollContainer()
+    const container = this.getOutlineContentContainer()
     if (!container) return items
 
     this.ensureOutlineCacheSession()

@@ -9,6 +9,17 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🐛 Bug Fixes
+
+- **Conversation title isolation** — Browser tab renaming now keeps Ophel-managed status/model labels separate from raw conversation titles, preventing exported conversation titles and filenames from inheriting tab status, model names, or repeated `->` separators when a page cannot expose its model name.
+- **Doubao share-page export and outline** — Doubao share links under `/thread/` are now recognized as exportable conversations, and share-page message lists can now feed the Outline tab instead of requiring the regular chat-page virtual list.
+- **Z.ai share-page outline** — Z.ai share pages now reuse the same conversation content container detection as export, so Outline extraction works when the share DOM does not include the regular `#chat-container` wrapper.
+- **ChatGLM code-block export** — ChatGLM assistant replies split around code blocks now export the full answer instead of stopping at the first rendered Markdown segment.
+- **Localized untitled exports** — Untitled export titles now follow the current UI language even when an older fallback title was saved in another language.
+- **Qianwen user-query Markdown contrast** — Rendered user-query Markdown on Qianwen now uses a dedicated readable bubble style instead of inheriting low-contrast native question-card colors.
+- **Qianwen/Qwen Studio Outline duplicates** — User questions wrapped by nested site containers now appear once in the Outline while preserving the correct export output.
+- **Custom tab-title formats** — Missing model names and previously managed tab titles are now resolved from the configured placeholder structure instead of separator-specific cleanup, preventing recursive title growth with arbitrary custom formats.
+
 ---
 
 ## [1.0.57] - 2026-06-03
