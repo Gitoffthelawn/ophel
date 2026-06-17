@@ -210,6 +210,21 @@ export class ChatGLMAdapter extends SiteAdapter {
     return { primary: "#2454FF", secondary: "#1F46D6" }
   }
 
+  getQuickQuoteSupportMode() {
+    return "native" as const
+  }
+
+  getNativeQuotePopoverSelectors(): string[] {
+    return [
+      // 部分类名匹配（容错，但可能不够精确）
+      '[class*="quote-button"]',
+      '[class*="reference-button"]',
+      // aria-label 匹配（多语言友好，但依赖站点实现）
+      '[aria-label*="引用"]',
+      '[aria-label*="quote"]',
+    ]
+  }
+
   async toggleTheme(targetMode: "light" | "dark" | "system"): Promise<boolean> {
     const nextValue = SKIN_MODE_MAP[targetMode] || SKIN_MODE_MAP.light
     try {
