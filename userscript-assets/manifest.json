@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-10T15:53:49.583Z",
-  "version": "1.0.60",
+  "generatedAt": "2026-06-22T05:47:23.780Z",
+  "version": "1.1.0",
   "resources": {
     "ophelStyles": {
-      "fileName": "ophel.user.2ef2258df2f2.css",
-      "relativePath": "userscript-assets/ophel.user.2ef2258df2f2.css"
+      "fileName": "ophel.user.6b184d00d76b.css",
+      "relativePath": "userscript-assets/ophel.user.6b184d00d76b.css"
     },
     "ophelMarkdownPreviewStyles": {
       "fileName": "ophel.markdown-preview.a99d491d0b81.css",
@@ -47,59 +47,59 @@
       "relativePath": "userscript-assets/ophel-watermark-bg-96.3e26f2233a12.png"
     },
     "ophelLocaleZhCN": {
-      "fileName": "ophel.locale.zh-CN.c544151d9cbc.json",
-      "relativePath": "userscript-assets/ophel.locale.zh-CN.c544151d9cbc.json"
+      "fileName": "ophel.locale.zh-CN.db65174c99fb.json",
+      "relativePath": "userscript-assets/ophel.locale.zh-CN.db65174c99fb.json"
     },
     "ophelLocaleZhTW": {
-      "fileName": "ophel.locale.zh-TW.2835d8a38a99.json",
-      "relativePath": "userscript-assets/ophel.locale.zh-TW.2835d8a38a99.json"
+      "fileName": "ophel.locale.zh-TW.b48aca11c7d4.json",
+      "relativePath": "userscript-assets/ophel.locale.zh-TW.b48aca11c7d4.json"
     },
     "ophelLocaleEn": {
-      "fileName": "ophel.locale.en.d7e94f34e0e5.json",
-      "relativePath": "userscript-assets/ophel.locale.en.d7e94f34e0e5.json"
+      "fileName": "ophel.locale.en.af4f2be7f16e.json",
+      "relativePath": "userscript-assets/ophel.locale.en.af4f2be7f16e.json"
     },
     "ophelLocaleJa": {
-      "fileName": "ophel.locale.ja.a8d8bf043018.json",
-      "relativePath": "userscript-assets/ophel.locale.ja.a8d8bf043018.json"
+      "fileName": "ophel.locale.ja.98c697b4046b.json",
+      "relativePath": "userscript-assets/ophel.locale.ja.98c697b4046b.json"
     },
     "ophelLocaleKo": {
-      "fileName": "ophel.locale.ko.eac3f63362ff.json",
-      "relativePath": "userscript-assets/ophel.locale.ko.eac3f63362ff.json"
+      "fileName": "ophel.locale.ko.cf1582bb793d.json",
+      "relativePath": "userscript-assets/ophel.locale.ko.cf1582bb793d.json"
     },
     "ophelLocaleFr": {
-      "fileName": "ophel.locale.fr.824cc4e2a7cc.json",
-      "relativePath": "userscript-assets/ophel.locale.fr.824cc4e2a7cc.json"
+      "fileName": "ophel.locale.fr.123030c18b9c.json",
+      "relativePath": "userscript-assets/ophel.locale.fr.123030c18b9c.json"
     },
     "ophelLocaleDe": {
-      "fileName": "ophel.locale.de.1bc802f22f8c.json",
-      "relativePath": "userscript-assets/ophel.locale.de.1bc802f22f8c.json"
+      "fileName": "ophel.locale.de.2c3d3e74e444.json",
+      "relativePath": "userscript-assets/ophel.locale.de.2c3d3e74e444.json"
     },
     "ophelLocaleRu": {
-      "fileName": "ophel.locale.ru.5e61c9fc2f2d.json",
-      "relativePath": "userscript-assets/ophel.locale.ru.5e61c9fc2f2d.json"
+      "fileName": "ophel.locale.ru.646fc030560b.json",
+      "relativePath": "userscript-assets/ophel.locale.ru.646fc030560b.json"
     },
     "ophelLocaleEs": {
-      "fileName": "ophel.locale.es.f0a51a4c4c34.json",
-      "relativePath": "userscript-assets/ophel.locale.es.f0a51a4c4c34.json"
+      "fileName": "ophel.locale.es.1777e70d470e.json",
+      "relativePath": "userscript-assets/ophel.locale.es.1777e70d470e.json"
     },
     "ophelLocalePt": {
-      "fileName": "ophel.locale.pt.f151436cfc0e.json",
-      "relativePath": "userscript-assets/ophel.locale.pt.f151436cfc0e.json"
+      "fileName": "ophel.locale.pt.36f02ce7d4d3.json",
+      "relativePath": "userscript-assets/ophel.locale.pt.36f02ce7d4d3.json"
     }
   },
   "requires": {
     "geminiWatermarkRemover": {
-      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.0.60.js",
-      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.0.60.js",
+      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.1.0.js",
+      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.0.js",
       "version": "1.0.17"
     },
     "markdownVendor": {
-      "fileName": "ophel-markdown-vendor-ophel-1.0.60.js",
-      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.0.60.js"
+      "fileName": "ophel-markdown-vendor-ophel-1.1.0.js",
+      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.1.0.js"
     }
   },
   "requireUrls": {
-    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.0.60.js",
-    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.0.60.js"
+    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.0.js",
+    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.1.0.js"
   }
 }
