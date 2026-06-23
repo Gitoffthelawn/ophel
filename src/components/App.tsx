@@ -1667,24 +1667,17 @@ export const App = () => {
       return
     }
 
-    const syncOutlineForSearch = () => {
-      outlineManager.refresh()
-      setOutlineSearchVersion((previousVersion) => previousVersion + 1)
-    }
-
-    syncOutlineForSearch()
+    outlineManager.setGlobalSearchActive(true)
+    outlineManager.refresh()
+    setOutlineSearchVersion((previousVersion) => previousVersion + 1)
 
     const unsubscribe = outlineManager.subscribe(() => {
       setOutlineSearchVersion((previousVersion) => previousVersion + 1)
     })
 
-    const pollingId = window.setInterval(() => {
-      syncOutlineForSearch()
-    }, 1200)
-
     return () => {
       unsubscribe()
-      window.clearInterval(pollingId)
+      outlineManager.setGlobalSearchActive(false)
     }
   }, [isGlobalSettingsSearchOpen, outlineManager])
 
