@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.1] - 2026-06-25
+
 ### ✨ Improvements
 
 - **Long conversation outline performance** — Large outlines now render only visible rows, skip collapsed or filtered nodes, coalesce automatic refresh and scroll updates, reduce layout measurements, and cache ChatGPT/Claude/Gemini word counts, reducing lag in long chats. (#677, #682, #683, #691, #695, #696, #698, #699)
@@ -1239,6 +1243,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0
 [1.0.60]: https://github.com/urzeye/ophel/releases/tag/v1.0.60
 [1.0.59]: https://github.com/urzeye/ophel/releases/tag/v1.0.59

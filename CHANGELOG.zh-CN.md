@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.1] - 2026-06-25
+
 ### ✨ 功能优化
 
 - **长对话大纲性能** — 大型大纲现在只渲染可见行，跳过折叠或过滤隐藏的节点，并合并自动刷新、滚动和尺寸更新；同时减少位置测量并缓存 ChatGPT/Claude/Gemini 字数统计，降低长对话卡顿。(#677, #682, #683, #691, #695, #696, #698, #699)
@@ -1238,6 +1242,7 @@
 
 ---
 
+[1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0
 [1.0.60]: https://github.com/urzeye/ophel/releases/tag/v1.0.60
 [1.0.59]: https://github.com/urzeye/ophel/releases/tag/v1.0.59
