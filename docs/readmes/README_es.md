@@ -247,6 +247,10 @@
       <img src="https://lh3.googleusercontent.com/a-/ALV-UjUqWp1juNONMkqERRF-T1qsyf-bvPFWcqrBehBTtNkoDQ8axvA=s48-w48-h48" width="84px;" alt="Steel Maestro" /><br />
       <sub><b>Steel Maestro</b></sub>
     </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Aaron%20Green%7Cko-fi%7C2026-06-29%7C%2420&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="Aaron Green" /><br />
+      <sub><b>Aaron Green</b></sub>
+    </td>
   </tr>
   </tbody>
 </table>
