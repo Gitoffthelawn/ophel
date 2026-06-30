@@ -6,12 +6,7 @@
  */
 
 import type { SiteAdapter } from "~adapters/base"
-import {
-  getScrollInfo,
-  isFlutterProxy,
-  smartScrollTo,
-  smartScrollToTop,
-} from "~utils/scroll-helper"
+import { getScrollInfo, isFlutterProxy, smartScrollToTop } from "~utils/scroll-helper"
 
 // ==================== 类型定义 ====================
 
@@ -43,6 +38,23 @@ export interface LoadHistoryResult {
   isFlutterMode: boolean
   /** 是否静默完成（短会话） */
   silent: boolean
+}
+
+export interface LoadCompleteHistoryForExportOptions {
+  adapter: SiteAdapter | null
+  getSignature: (container: HTMLElement) => string
+  waitMs?: number
+  maxRounds?: number
+  stableRounds?: number
+  wheelDeltaY?: number
+}
+
+export interface LoadCompleteHistoryForExportResult {
+  success: boolean
+  rounds: number
+  stableRounds: number
+  finalHeight: number
+  finalSignature: string
 }
 
 // ==================== 配置常量 ====================
@@ -246,35 +258,109 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
   }
 }
 
-/**
- * 加载历史并滚动到指定位置（用于阅读恢复）
- *
- * @deprecated 此函数当前未被使用，保留以备将来需要
- * 阅读恢复逻辑已迁移到 reading-history.ts 的 restoreProgress 方法
- *
- * @param options 加载选项
- * @param targetScrollTop 目标滚动位置
- * @returns 是否成功
- */
-export async function loadAndScrollTo(
-  options: Omit<LoadHistoryOptions, "loadAll">,
-  targetScrollTop: number,
-): Promise<boolean> {
-  const result = await loadHistoryUntil({
-    ...options,
-    targetHeight: targetScrollTop,
-  })
+export async function loadCompleteHistoryForExport(
+  options: LoadCompleteHistoryForExportOptions,
+): Promise<LoadCompleteHistoryForExportResult> {
+  const {
+    adapter,
+    getSignature,
+    waitMs = 800,
+    maxRounds = 60,
+    stableRounds = 4,
+    wheelDeltaY = -800,
+  } = options
 
-  if (!result.success) {
-    return false
+  let container = adapter?.getScrollContainer() || null
+  if (!container) {
+    return {
+      success: false,
+      rounds: 0,
+      stableRounds: 0,
+      finalHeight: 0,
+      finalSignature: "",
+    }
   }
 
-  // 滚动到目标位置
-  await smartScrollTo(options.adapter, targetScrollTop)
-  return true
+  if (container.scrollHeight <= container.clientHeight + 5) {
+    return {
+      success: true,
+      rounds: 0,
+      stableRounds: 0,
+      finalHeight: container.scrollHeight,
+      finalSignature: getSignature(container),
+    }
+  }
+
+  let lastSignature = ""
+  let stableCount = 0
+  let finalSignature = ""
+
+  for (let round = 0; round < maxRounds; round++) {
+    const refreshedContainer = adapter?.getScrollContainer()
+    if (refreshedContainer) {
+      container = refreshedContainer
+    }
+
+    scrollLazyHistoryContainerToTop(container, wheelDeltaY)
+    await sleep(waitMs)
+
+    const settledContainer = adapter?.getScrollContainer()
+    if (settledContainer) {
+      container = settledContainer
+    }
+
+    finalSignature = getSignature(container)
+    if (finalSignature === lastSignature) {
+      stableCount++
+    } else {
+      lastSignature = finalSignature
+      stableCount = 0
+    }
+
+    if (stableCount >= stableRounds) {
+      return {
+        success: true,
+        rounds: round + 1,
+        stableRounds: stableCount,
+        finalHeight: container.scrollHeight,
+        finalSignature,
+      }
+    }
+  }
+
+  return {
+    success: false,
+    rounds: maxRounds,
+    stableRounds: stableCount,
+    finalHeight: container.scrollHeight,
+    finalSignature,
+  }
 }
 
 // ==================== 工具函数 ====================
+
+function scrollLazyHistoryContainerToTop(container: HTMLElement, wheelDeltaY: number): void {
+  if (container === document.documentElement || container === document.body) {
+    window.scrollTo({ top: 0, behavior: "auto" })
+  } else {
+    container.scrollTop = 0
+    container.scrollTo?.({
+      top: 0,
+      behavior: "auto",
+      ...{ __bypassLock: true },
+    } as ScrollToOptions)
+  }
+
+  container.dispatchEvent(new Event("scroll", { bubbles: true, composed: true }))
+  container.dispatchEvent(
+    new WheelEvent("wheel", {
+      bubbles: true,
+      cancelable: true,
+      deltaY: wheelDeltaY,
+    }),
+  )
+  window.dispatchEvent(new Event("scroll"))
+}
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))

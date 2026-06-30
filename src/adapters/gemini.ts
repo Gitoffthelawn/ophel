@@ -53,6 +53,7 @@ import {
   type GeminiMyStuffKind,
   type GeminiMyStuffRecord,
 } from "~utils/messaging"
+import { loadCompleteHistoryForExport } from "~utils/history-loader"
 import { SKIP_READING_HISTORY_RESTORE_PARAM } from "~utils/storage"
 import { hashTextForCache } from "~utils/text-hash"
 import { showToast } from "~utils/toast"
@@ -158,13 +159,29 @@ const GEMINI_CANVAS_CODE_ICON_SELECTOR = [
   'mat-icon[fonticon="code_blocks"]',
   'mat-icon[data-mat-icon-name="code_blocks"]',
 ].join(", ")
+const GEMINI_CANVAS_DOCUMENT_ICON_SELECTOR = [
+  'mat-icon[fonticon="article"]',
+  'mat-icon[data-mat-icon-name="article"]',
+].join(", ")
 const GEMINI_CANVAS_CARD_SELECTOR = '[data-test-id="gem-processing-card"]'
-const GEMINI_CANVAS_IMMERSIVE_PANEL_SELECTOR = "immersive-panel code-immersive-panel"
+const GEMINI_CANVAS_CODE_IMMERSIVE_PANEL_SELECTOR = "immersive-panel code-immersive-panel"
+const GEMINI_CANVAS_DOCUMENT_IMMERSIVE_PANEL_SELECTOR =
+  "immersive-panel extended-response-panel:has(canvas-create-button)"
+const GEMINI_CANVAS_IMMERSIVE_PANEL_SELECTOR = [
+  GEMINI_CANVAS_CODE_IMMERSIVE_PANEL_SELECTOR,
+  GEMINI_CANVAS_DOCUMENT_IMMERSIVE_PANEL_SELECTOR,
+].join(", ")
 const GEMINI_CANVAS_SHARE_ARTIFACT_SELECTOR = "share-landing-page .immersive-artifact-container"
 const GEMINI_CANVAS_CODE_TAB_SELECTOR = 'mat-button-toggle[value="code"]'
 const GEMINI_CANVAS_TAB_GROUP_SELECTOR = "mat-button-toggle-group.tab-group"
 const GEMINI_CANVAS_CODE_BLOCK_SELECTOR = "code-block"
 const GEMINI_CANVAS_CODE_EDITOR_SELECTOR = 'xap-code-editor[data-test-id="code-editor"]'
+const GEMINI_CANVAS_DOCUMENT_MARKDOWN_SELECTOR = [
+  "#extended-response-markdown-content .ProseMirror",
+  'immersive-editor[data-test-id="immersive-editor"] .ProseMirror',
+  "immersive-editor .ProseMirror",
+  "#extended-response-markdown-content",
+].join(", ")
 const GEMINI_CANVAS_CODE_REQUEST_TIMEOUT_MS = 900
 const GEMINI_PANEL_MARKDOWN_ACTIONS_CLASS = "gh-gemini-panel-markdown-actions"
 const GEMINI_PANEL_MARKDOWN_ACTION_CLASS = "gh-gemini-panel-markdown-action"
@@ -314,7 +331,6 @@ const GEMINI_MARKDOWN_FIXER_SOURCE_SELECTOR = [
 
 class GeminiMyStuffEnhancer {
   private started = false
-  private mediaWatchStop: (() => void) | null = null
   private tooltipBindings = new WeakMap<HTMLElement, DomTooltipBinding>()
   private pendingRequests = new Map<
     string,
@@ -340,11 +356,9 @@ class GeminiMyStuffEnhancer {
     this.started = true
 
     this.injectStyles()
-    this.mediaWatchStop = DOMToolkit.each(
-      ".library-item-card",
-      (element) => this.enhanceMediaCard(element),
-      { shadow: true },
-    )
+    DOMToolkit.each(".library-item-card", (element) => this.enhanceMediaCard(element), {
+      shadow: true,
+    })
 
     document.addEventListener("click", this.handleDocumentClick, true)
     window.addEventListener("message", this.handleWindowMessage)
@@ -1422,29 +1436,12 @@ export class GeminiAdapter extends SiteAdapter {
   }
 
   private async getGeminiCanvasPanelMarkdown(panel: Element): Promise<string> {
-    const artifact = await this.extractGeminiCanvasPanelArtifact(panel)
-    if (!artifact) return ""
-
-    return this.formatGeminiCanvasCodeArtifacts([artifact]).trim()
-  }
-
-  private async extractGeminiCanvasPanelArtifact(
-    panel: Element,
-  ): Promise<GeminiCanvasCodeArtifact | null> {
-    const title = this.getGeminiCanvasPanelTitle(panel) || "Gemini Canvas"
-    const codeBlock = this.findGeminiCanvasCodeBlock(panel)
-    if (codeBlock) {
-      return this.extractGeminiCanvasCodeBlockArtifact(codeBlock, title)
-    }
-
-    const editor = panel.querySelector(GEMINI_CANVAS_CODE_EDITOR_SELECTOR)
-    if (editor instanceof HTMLElement) {
-      const artifact = await this.extractGeminiCanvasCodeEditorArtifact(editor, title)
-      if (artifact) return artifact
-    }
-
-    await this.selectGeminiCanvasCodeTab(panel)
-    return this.extractGeminiCanvasCodeArtifact(panel, title)
+    return (
+      await this.extractGeminiCanvasArtifactMarkdown(
+        panel,
+        this.getGeminiCanvasPanelTitle(panel) || "Gemini Canvas",
+      )
+    ).trim()
   }
 
   private hasDeepResearchPanelContent(panel: Element): boolean {
@@ -1454,6 +1451,7 @@ export class GeminiAdapter extends SiteAdapter {
 
   private hasGeminiCanvasPanelExportSurface(panel: Element): boolean {
     return (
+      this.getGeminiCanvasDocumentMarkdownElement(panel) !== null ||
       this.findGeminiCanvasCodeBlock(panel) !== null ||
       panel.querySelector(GEMINI_CANVAS_CODE_EDITOR_SELECTOR) !== null ||
       this.findGeminiCanvasCodeTab(panel) !== null
@@ -2768,6 +2766,8 @@ export class GeminiAdapter extends SiteAdapter {
   }
 
   async prepareConversationExport(_context: ExportLifecycleContext): Promise<unknown> {
+    await this.loadCompleteExportHistory()
+
     this.exportOpenedCanvasPanel = false
     await this.prepareImagesForExport(_context)
 
@@ -2780,6 +2780,62 @@ export class GeminiAdapter extends SiteAdapter {
     }
 
     return state
+  }
+
+  private async loadCompleteExportHistory(): Promise<void> {
+    if (!this.isUserConversationPage()) return
+
+    const result = await loadCompleteHistoryForExport({
+      adapter: this,
+      waitMs: 800,
+      maxRounds: 60,
+      stableRounds: 4,
+      wheelDeltaY: -900,
+      getSignature: (container) => this.getExportHistoryLoadSignature(container),
+    })
+
+    if (!result.success) {
+      console.warn("[GeminiAdapter] Export history load reached max rounds before stabilizing", {
+        rounds: result.rounds,
+        stableRounds: result.stableRounds,
+        finalHeight: result.finalHeight,
+      })
+    }
+  }
+
+  private getExportHistoryLoadSignature(container: HTMLElement): string {
+    const root =
+      document.querySelector(this.getResponseContainerSelector()) || this.getScrollContainer()
+    const messages = root
+      ? Array.from(root.querySelectorAll("user-query, model-response")).filter(
+          (element) => !element.closest("immersive-panel"),
+        )
+      : []
+
+    const firstMessage = messages[0]
+    const lastMessage = messages[messages.length - 1]
+
+    return [
+      container.scrollHeight,
+      container.clientHeight,
+      container.scrollTop,
+      messages.length,
+      firstMessage ? this.getExportHistoryMessageMarker(firstMessage) : "",
+      lastMessage ? this.getExportHistoryMessageMarker(lastMessage) : "",
+    ].join(":")
+  }
+
+  private getExportHistoryMessageMarker(element: Element): string {
+    const source = element.closest("message-content, .conversation-turn") || element
+    const id =
+      source.id ||
+      source.getAttribute("data-message-id") ||
+      source.getAttribute("data-test-id") ||
+      source.getAttribute("aria-label")
+
+    if (id) return id
+
+    return (source.textContent || "").replace(/\s+/g, " ").trim().slice(0, 120)
   }
 
   async restoreConversationAfterExport(
@@ -3973,7 +4029,7 @@ export class GeminiAdapter extends SiteAdapter {
             ).trim()
           : this.joinExportSections(
               this.extractAssistantResponseTextWithAssets(element, collector),
-              await this.extractGeminiCanvasAppArtifactsFromResponse(element),
+              await this.extractGeminiCanvasAppArtifactsFromResponse(element, collector),
             )
 
       if (!content) continue
@@ -4192,9 +4248,7 @@ export class GeminiAdapter extends SiteAdapter {
 
   private getGeminiCanvasCardsFromResponse(element: Element): HTMLElement[] {
     return Array.from(element.querySelectorAll(GEMINI_CANVAS_CARD_SELECTOR)).filter(
-      (node): node is HTMLElement =>
-        node instanceof HTMLElement &&
-        node.querySelector(GEMINI_CANVAS_CODE_ICON_SELECTOR) !== null,
+      (node): node is HTMLElement => node instanceof HTMLElement && this.isGeminiCanvasCard(node),
     )
   }
 
@@ -4209,17 +4263,25 @@ export class GeminiAdapter extends SiteAdapter {
       .forEach((element) => candidates.add(element))
 
     return Array.from(candidates).filter(
-      (node): node is HTMLElement =>
-        node instanceof HTMLElement &&
-        node.querySelector(GEMINI_CANVAS_CODE_ICON_SELECTOR) !== null,
+      (node): node is HTMLElement => node instanceof HTMLElement && this.isGeminiCanvasCard(node),
     )
   }
 
-  private async extractGeminiCanvasAppArtifactsFromResponse(element: Element): Promise<string> {
+  private isGeminiCanvasCard(card: HTMLElement): boolean {
+    return (
+      card.querySelector(GEMINI_CANVAS_CODE_ICON_SELECTOR) !== null ||
+      card.querySelector(GEMINI_CANVAS_DOCUMENT_ICON_SELECTOR) !== null
+    )
+  }
+
+  private async extractGeminiCanvasAppArtifactsFromResponse(
+    element: Element,
+    collector?: GeminiExportAssetCollector,
+  ): Promise<string> {
     const cards = this.getGeminiCanvasCardsFromResponse(element)
     if (cards.length === 0) return ""
 
-    const artifacts: GeminiCanvasCodeArtifact[] = []
+    const sections: string[] = []
 
     for (const card of cards) {
       const title = this.extractGeminiCanvasTitle(card)
@@ -4227,51 +4289,134 @@ export class GeminiAdapter extends SiteAdapter {
         const panel = await this.openGeminiCanvasCardForExport(card)
         if (!panel) continue
 
-        await this.selectGeminiCanvasCodeTab(panel)
-
-        const artifact = await this.extractGeminiCanvasCodeArtifact(panel, title)
-        if (artifact) {
-          artifacts.push(artifact)
+        const content = await this.extractGeminiCanvasArtifactMarkdown(panel, title, collector)
+        if (content) {
+          sections.push(content)
         }
       } catch (error) {
         console.warn("[GeminiAdapter] Failed to export Gemini Canvas artifact", error)
       }
     }
 
-    return artifacts.length > 0
-      ? this.formatGeminiCanvasCodeArtifacts(artifacts)
+    return sections.length > 0
+      ? this.formatGeminiCanvasArtifactSections(sections)
       : this.formatGeminiCanvasFallbackTitles(
           cards.map((card) => this.extractGeminiCanvasTitle(card)),
         )
   }
 
-  private async extractGeminiCanvasShareArtifactsFromTurn(turn: Element): Promise<string> {
+  private async extractGeminiCanvasShareArtifactsFromTurn(
+    turn: Element,
+    collector?: GeminiExportAssetCollector,
+  ): Promise<string> {
     const artifactElements = this.getGeminiCanvasShareArtifactElements(turn)
     if (artifactElements.length === 0) return ""
 
-    const artifacts: GeminiCanvasCodeArtifact[] = []
+    const sections: string[] = []
 
     for (const artifactElement of artifactElements) {
       try {
-        await this.selectGeminiCanvasCodeTab(artifactElement)
-
-        const artifact = await this.extractGeminiCanvasCodeArtifact(
+        const content = await this.extractGeminiCanvasArtifactMarkdown(
           artifactElement,
           this.extractGeminiCanvasTitle(artifactElement),
+          collector,
         )
-        if (artifact) {
-          artifacts.push(artifact)
+        if (content) {
+          sections.push(content)
         }
       } catch (error) {
         console.warn("[GeminiAdapter] Failed to export Gemini Canvas share artifact", error)
       }
     }
 
-    return artifacts.length > 0
-      ? this.formatGeminiCanvasCodeArtifacts(artifacts)
+    return sections.length > 0
+      ? this.formatGeminiCanvasArtifactSections(sections)
       : this.formatGeminiCanvasFallbackTitles(
           artifactElements.map((artifactElement) => this.extractGeminiCanvasTitle(artifactElement)),
         )
+  }
+
+  private async extractGeminiCanvasArtifactMarkdown(
+    scope: ParentNode,
+    fallbackTitle: string,
+    collector?: GeminiExportAssetCollector,
+  ): Promise<string> {
+    if (this.isGeminiCanvasDocumentScope(scope)) {
+      const documentMarkdown = this.extractGeminiCanvasDocumentMarkdown(scope, collector)
+      if (documentMarkdown) {
+        return this.formatGeminiCanvasDocumentArtifact(scope, fallbackTitle, documentMarkdown)
+      }
+    }
+
+    const codeBlock = this.findGeminiCanvasCodeBlock(scope)
+    if (codeBlock) {
+      const artifact = this.extractGeminiCanvasCodeBlockArtifact(codeBlock, fallbackTitle)
+      if (artifact) return this.formatGeminiCanvasCodeArtifacts([artifact])
+    }
+
+    const editor = this.findGeminiCanvasCodeEditor(scope)
+    if (editor) {
+      const artifact = await this.extractGeminiCanvasCodeEditorArtifact(editor, fallbackTitle)
+      if (artifact) return this.formatGeminiCanvasCodeArtifacts([artifact])
+    }
+
+    await this.selectGeminiCanvasCodeTab(scope)
+
+    const artifact = await this.extractGeminiCanvasCodeArtifact(scope, fallbackTitle)
+    if (artifact) return this.formatGeminiCanvasCodeArtifacts([artifact])
+
+    const documentMarkdown = this.extractGeminiCanvasDocumentMarkdown(scope, collector)
+    return documentMarkdown
+      ? this.formatGeminiCanvasDocumentArtifact(scope, fallbackTitle, documentMarkdown)
+      : ""
+  }
+
+  private isGeminiCanvasDocumentScope(scope: ParentNode): boolean {
+    if (!(scope instanceof Element)) return false
+    return scope.closest(GEMINI_CANVAS_DOCUMENT_IMMERSIVE_PANEL_SELECTOR) !== null
+  }
+
+  private extractGeminiCanvasDocumentMarkdown(
+    scope: ParentNode,
+    collector?: GeminiExportAssetCollector,
+  ): string {
+    const markdown = this.getGeminiCanvasDocumentMarkdownElement(scope)
+    return markdown ? this.extractAssistantResponseTextWithAssets(markdown, collector).trim() : ""
+  }
+
+  private getGeminiCanvasDocumentMarkdownElement(scope: ParentNode): Element | null {
+    const candidates = Array.from(scope.querySelectorAll(GEMINI_CANVAS_DOCUMENT_MARKDOWN_SELECTOR))
+    return (
+      candidates.find(
+        (candidate) =>
+          candidate.closest("thinking-panel") === null && Boolean(candidate.textContent?.trim()),
+      ) || null
+    )
+  }
+
+  private formatGeminiCanvasDocumentArtifact(
+    scope: ParentNode,
+    fallbackTitle: string,
+    markdown: string,
+  ): string {
+    const title =
+      scope instanceof Element ? this.extractGeminiCanvasTitle(scope, fallbackTitle) : fallbackTitle
+    const heading = title ? `### Gemini Canvas: ${title}` : "### Gemini Canvas"
+    return `${heading}\n\n${markdown.trim()}`
+  }
+
+  private formatGeminiCanvasArtifactSections(sections: string[]): string {
+    const deduped: string[] = []
+    const seen = new Set<string>()
+
+    for (const section of sections) {
+      const normalized = section.trim()
+      if (!normalized || seen.has(normalized)) continue
+      seen.add(normalized)
+      deduped.push(normalized)
+    }
+
+    return deduped.join("\n\n")
   }
 
   private getGeminiCanvasPanelElement(): HTMLElement | null {
@@ -4340,8 +4485,8 @@ export class GeminiAdapter extends SiteAdapter {
   }
 
   private async closeGeminiCanvasPanel(): Promise<void> {
-    const closeButton = document.querySelector(
-      `${GEMINI_CANVAS_IMMERSIVE_PANEL_SELECTOR} toolbar [data-test-id="close-button"]`,
+    const closeButton = this.getGeminiCanvasPanelElement()?.querySelector(
+      'toolbar [data-test-id="close-button"]',
     )
     if (!(closeButton instanceof HTMLElement)) return
 
@@ -4977,7 +5122,7 @@ export class GeminiAdapter extends SiteAdapter {
             : this.joinExportSections(
                 this.extractAssistantResponseTextWithAssets(element, collector),
                 !canvasArtifactsAdded
-                  ? await this.extractGeminiCanvasShareArtifactsFromTurn(turn)
+                  ? await this.extractGeminiCanvasShareArtifactsFromTurn(turn, collector)
                   : "",
               )
         if (!content) continue
@@ -4989,7 +5134,7 @@ export class GeminiAdapter extends SiteAdapter {
       }
 
       if (!canvasArtifactsAdded) {
-        const canvasContent = await this.extractGeminiCanvasShareArtifactsFromTurn(turn)
+        const canvasContent = await this.extractGeminiCanvasShareArtifactsFromTurn(turn, collector)
         if (canvasContent) {
           messages.push({ role: "assistant", content: canvasContent })
         }
