@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.2] - 2026-06-30
+
 ### 🚀 新增功能
 
 - **Gemini Canvas 文档导出** — Gemini Canvas 导出现在支持普通文档 Canvas 面板，会把文章类 Canvas 正文写入对话导出和 Canvas Markdown 复制/下载结果。(#736)
@@ -1254,6 +1258,7 @@
 
 ---
 
+[1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0
 [1.0.60]: https://github.com/urzeye/ophel/releases/tag/v1.0.60

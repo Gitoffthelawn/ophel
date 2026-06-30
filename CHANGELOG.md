@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.2] - 2026-06-30
+
 ### 🚀 New Features
 
 - **Gemini Canvas document export** — Gemini Canvas export now supports regular document Canvas panels, so article Canvas content is included in conversation exports and Canvas Markdown copy/download actions. (#736)
@@ -1255,6 +1259,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0
 [1.0.60]: https://github.com/urzeye/ophel/releases/tag/v1.0.60
