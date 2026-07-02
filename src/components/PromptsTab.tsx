@@ -14,6 +14,7 @@ import {
   ImportIcon,
   MoreHorizontalIcon,
   PinIcon,
+  SearchIcon,
   SplitLinesToQueueIcon,
   SettingsIcon,
   TimeIcon,
@@ -903,6 +904,250 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   }
 }
 `
+
+const PROMPT_PREVIEW_MODAL_STYLES = `
+@keyframes ghPromptPreviewFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ghPromptPreviewSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gh-prompt-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+  background: var(--gh-overlay-bg, rgba(0, 0, 0, 0.5));
+  animation: ghPromptPreviewFadeIn 0.2s ease-out;
+}
+
+.gh-prompt-preview-dialog {
+  width: min(640px, 100%);
+  max-height: min(82vh, 760px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-border, #e5e7eb));
+  border-radius: 14px;
+  background: var(--gh-bg, #ffffff);
+  color: var(--gh-text, #1f2937);
+  box-shadow: var(--gh-shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.3));
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  animation: ghPromptPreviewSlideUp 0.24s ease-out;
+}
+
+.gh-prompt-preview-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 17px 20px 15px;
+  border-bottom: 1px solid var(--gh-border, #e5e7eb);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--gh-primary, #4285f4) 5%, var(--gh-bg, #ffffff)) 0%,
+    var(--gh-bg, #ffffff) 100%
+  );
+}
+
+.gh-prompt-preview-title-block {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.gh-prompt-preview-title-row {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 100%;
+}
+
+.gh-prompt-preview-title {
+  min-width: 0;
+  flex: 0 1 auto;
+  overflow: hidden;
+  color: var(--gh-text, #1f2937);
+  font-size: 17px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gh-prompt-preview-category {
+  max-width: min(260px, 100%);
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 8px;
+  box-sizing: border-box;
+  border: 1px solid
+    color-mix(
+      in srgb,
+      var(--gh-prompt-preview-category-bg, var(--gh-hover, #f3f4f6)) 72%,
+      var(--gh-border, #e5e7eb)
+    );
+  border-radius: 999px;
+  background: var(--gh-prompt-preview-category-bg, var(--gh-hover, #f3f4f6));
+  color: var(--gh-prompt-preview-category-text, #1f2937);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gh-prompt-preview-close {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--gh-hover, #f3f4f6);
+  color: var(--gh-text-secondary, #6b7280);
+  cursor: pointer;
+  transition:
+    background 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.gh-prompt-preview-close:hover {
+  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 18%, var(--gh-border, #e5e7eb));
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-hover, #f3f4f6));
+  color: var(--gh-text, #1f2937);
+}
+
+.gh-prompt-preview-close:active {
+  transform: translateY(1px);
+}
+
+.gh-prompt-preview-close:focus-visible {
+  outline: 2px solid var(--gh-primary, #4285f4);
+  outline-offset: 2px;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview {
+  flex: 1;
+  min-height: 0;
+  padding: 20px 22px 22px;
+  overflow-y: auto;
+  background: color-mix(in srgb, var(--gh-bg-secondary, #f9fafb) 34%, var(--gh-bg, #ffffff));
+  color: var(--gh-text, #1f2937);
+  font-size: 13px;
+  line-height: 1.65;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 62%, transparent)
+    transparent;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar {
+  width: 10px;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-thumb {
+  min-height: 44px;
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 56%, transparent);
+  background-clip: content-box;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--gh-text-secondary, #6b7280) 72%, transparent);
+  background-clip: content-box;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview > :first-child {
+  margin-top: 0;
+}
+
+.gh-prompt-preview-body.gh-markdown-preview > :last-child {
+  margin-bottom: 0;
+}
+
+@media (max-width: 520px) {
+  .gh-prompt-preview-overlay {
+    padding: 12px;
+  }
+
+  .gh-prompt-preview-dialog {
+    max-height: 86vh;
+    border-radius: 12px;
+  }
+
+  .gh-prompt-preview-header {
+    padding: 14px 15px 13px;
+  }
+
+  .gh-prompt-preview-title {
+    white-space: normal;
+  }
+
+  .gh-prompt-preview-title-row {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 7px;
+  }
+
+  .gh-prompt-preview-body.gh-markdown-preview {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-prompt-preview-overlay,
+  .gh-prompt-preview-dialog {
+    animation: none;
+  }
+
+  .gh-prompt-preview-close {
+    transition: none;
+  }
+}
+`
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null
 
@@ -949,6 +1194,45 @@ const getCategoryColorIndex = (categoryName: string): number => {
     hash = categoryName.charCodeAt(i) + ((hash << 5) - hash)
   }
   return (Math.abs(hash) % 7) + 1
+}
+
+const CATEGORY_COLOR_FALLBACKS: Record<number, string> = {
+  1: "#fecaca",
+  2: "#fed7aa",
+  3: "#fef08a",
+  4: "#bbf7d0",
+  5: "#a5f3fc",
+  6: "#c7d2fe",
+  7: "#f5d0fe",
+}
+
+const getResolvedCategoryColor = (colorIndex: number): string => {
+  const variableName = `--gh-category-${colorIndex}`
+
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    const targets: HTMLElement[] = []
+    const hosts = document.querySelectorAll<HTMLElement>("plasmo-csui, #ophel-userscript-root")
+
+    hosts.forEach((host) => {
+      targets.push(host)
+
+      const root = host.shadowRoot?.querySelector<HTMLElement>(".gh-root")
+      if (root) {
+        targets.push(root)
+      }
+    })
+
+    targets.push(document.documentElement)
+
+    for (const target of targets) {
+      const color = window.getComputedStyle(target).getPropertyValue(variableName).trim()
+      if (color) {
+        return color
+      }
+    }
+  }
+
+  return CATEGORY_COLOR_FALLBACKS[colorIndex] || "var(--gh-hover, #f3f4f6)"
 }
 
 export const PromptsTab: React.FC<PromptsTabProps> = ({
@@ -3205,108 +3489,73 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   const renderPreviewModal = () => {
     if (!previewModal.show || !previewModal.prompt) return null
 
+    const prompt = previewModal.prompt
+    const categoryLabel = prompt.category || t("uncategorized")
+    const categoryColorIndex = getCategoryColorIndex(categoryLabel)
+    const categoryStyle = {
+      "--gh-prompt-preview-category-bg": getResolvedCategoryColor(categoryColorIndex),
+      "--gh-prompt-preview-category-text": "#1f2937",
+    } as React.CSSProperties
+
     return createPortal(
-      <div
-        className="prompt-preview-modal gh-interactive"
-        {...OPHEL_INTERACTION_LAYER_PROPS}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            closePreviewModal()
-          }
-        }}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "var(--gh-overlay-bg, rgba(0, 0, 0, 0.5))",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 10001,
-          animation: "fadeIn 0.2s ease-out",
-        }}>
+      <>
+        <style>{PROMPT_PREVIEW_MODAL_STYLES}</style>
         <div
-          style={{
-            width: "90%",
-            maxWidth: "600px",
-            maxHeight: "80vh",
-            background: "var(--gh-bg, white)",
-            borderRadius: "12px",
-            boxShadow: "var(--gh-shadow-lg)",
-            overflow: "hidden",
-            display: "flex",
-            flexDirection: "column",
-            animation: "slideUp 0.3s ease-out",
+          className="gh-prompt-preview-overlay gh-interactive"
+          {...OPHEL_INTERACTION_LAYER_PROPS}
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              closePreviewModal()
+            }
           }}>
-          {/* 标题栏 */}
           <div
-            style={{
-              padding: "16px 20px",
-              borderBottom: "1px solid var(--gh-border, #e5e7eb)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}>
-            <div>
-              <div style={{ fontSize: "16px", fontWeight: 600, color: "var(--gh-text, #1f2937)" }}>
-                {previewModal.prompt.title}
+            className="gh-prompt-preview-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-label={prompt.title}
+            onClick={(e) => e.stopPropagation()}>
+            {/* 标题栏 */}
+            <div className="gh-prompt-preview-header">
+              <div className="gh-prompt-preview-title-block">
+                <div className="gh-prompt-preview-title-row">
+                  <div className="gh-prompt-preview-title">{prompt.title}</div>
+                  <span className="gh-prompt-preview-category" style={categoryStyle}>
+                    {categoryLabel}
+                  </span>
+                </div>
               </div>
-              <div
-                style={{
-                  fontSize: "12px",
-                  color: "var(--gh-text-secondary, #6b7280)",
-                  marginTop: "4px",
-                }}>
-                {previewModal.prompt.category}
-              </div>
+              <button
+                type="button"
+                className="gh-prompt-preview-close"
+                aria-label={t("close")}
+                onClick={closePreviewModal}>
+                <ClearIcon size={16} />
+              </button>
             </div>
-            <button
-              onClick={closePreviewModal}
-              style={{
-                width: "28px",
-                height: "28px",
-                border: "none",
-                background: "var(--gh-hover, #f3f4f6)",
-                borderRadius: "6px",
-                cursor: "pointer",
-                fontSize: "16px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-              <ClearIcon size={16} />
-            </button>
+            {/* 内容区域 */}
+            <div
+              className="gh-prompt-preview-body gh-markdown-preview"
+              ref={modalPreviewRef}
+              onClick={(e) => {
+                // 事件委托处理复制按钮（支持点击 SVG 内部）
+                const target = e.target as HTMLElement
+                const btn = target.closest(".gh-code-copy-btn") as HTMLElement
+                if (btn) {
+                  const code = btn.nextElementSibling?.textContent || ""
+                  navigator.clipboard.writeText(code).then(() => {
+                    showCopySuccess(btn, { size: 14 })
+                  })
+                }
+              }}
+              dangerouslySetInnerHTML={{
+                __html: createSafeHTML(renderMarkdown(prompt.content)),
+              }}
+            />
+            {/* highlight.js 样式 */}
+            <style>{getHighlightStyles()}</style>
           </div>
-          {/* 内容区域 */}
-          <div
-            className="gh-markdown-preview"
-            style={{
-              flex: 1,
-              padding: "20px",
-              overflowY: "auto",
-            }}
-            ref={modalPreviewRef}
-            onClick={(e) => {
-              // 事件委托处理复制按钮（支持点击 SVG 内部）
-              const target = e.target as HTMLElement
-              const btn = target.closest(".gh-code-copy-btn") as HTMLElement
-              if (btn) {
-                const code = btn.nextElementSibling?.textContent || ""
-                navigator.clipboard.writeText(code).then(() => {
-                  showCopySuccess(btn, { size: 14 })
-                })
-              }
-            }}
-            dangerouslySetInnerHTML={{
-              __html: createSafeHTML(renderMarkdown(previewModal.prompt.content)),
-            }}
-          />
-          {/* highlight.js 样式 */}
-          <style>{getHighlightStyles()}</style>
         </div>
-      </div>,
+      </>,
       document.body,
     )
   }
@@ -3401,151 +3650,94 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
       className="gh-prompts-tab"
       style={{ display: "flex", flexDirection: "column", height: "100%" }}>
       {/* 搜索栏 + 操作按钮 */}
-      <div
-        style={{
-          padding: "8px 12px",
-          borderBottom: "1px solid var(--gh-border, #e5e7eb)",
-          background: "var(--gh-bg-secondary, #f9fafb)",
-          display: "flex",
-          gap: "6px",
-          alignItems: "center",
-        }}>
-        <div className="gh-prompt-library-switch" role="tablist">
-          <button
-            type="button"
-            className="gh-prompt-library-switch-btn"
-            data-active={activeLibraryView === "prompts"}
-            onClick={() => setActiveLibraryView("prompts")}>
-            {t("promptsViewPrompts")}
-          </button>
-          <button
-            type="button"
-            className="gh-prompt-library-switch-btn"
-            data-active={activeLibraryView === "chains"}
-            onClick={() => setActiveLibraryView("chains")}>
-            {t("promptsViewChains")}
-          </button>
-        </div>
-        <input
-          type="text"
-          className="prompt-search-input"
-          placeholder={
-            activeLibraryView === "chains" ? t("chainSearchPlaceholder") : t("searchPlaceholder")
-          }
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            flex: "1 1 auto",
-            minWidth: "120px",
-            padding: "6px 10px",
-            border: "1px solid var(--gh-border, #d1d5db)",
-            borderRadius: "8px",
-            fontSize: "14px",
-            boxSizing: "border-box",
-            background: "var(--gh-bg, #ffffff)",
-            color: "var(--gh-text, #1f2937)",
-          }}
-        />
-        {activeLibraryView === "prompts" && (
-          <div style={{ position: "relative" }}>
-            <Tooltip content={t("promptImport") + " / " + t("promptExport")}>
-              <button
-                ref={importExportButtonRef}
-                onClick={() => setImportExportMenuOpen(!importExportMenuOpen)}
-                style={{
-                  width: "32px",
-                  height: "32px",
-                  border: "1px solid var(--gh-border, #d1d5db)",
-                  background: "var(--gh-bg, white)",
-                  borderRadius: "6px",
-                  cursor: "pointer",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  fontSize: "16px",
-                  flexShrink: 0,
-                }}>
-                <ImportIcon size={16} />
-              </button>
-            </Tooltip>
-            {importExportMenuOpen && (
-              <>
-                <div
-                  style={{
-                    position: "fixed",
-                    inset: 0,
-                    zIndex: 99,
-                  }}
-                  onClick={() => setImportExportMenuOpen(false)}
-                />
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 4px)",
-                    right: 0,
-                    zIndex: 100,
-                    minWidth: "140px",
-                    background: "var(--gh-bg, #ffffff)",
-                    border: "1px solid var(--gh-border, #e5e7eb)",
-                    borderRadius: "8px",
-                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.12)",
-                    overflow: "hidden",
-                  }}>
-                  <button
-                    onClick={() => {
-                      setImportExportMenuOpen(false)
-                      handleImport()
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "none",
-                      background: "transparent",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13px",
-                      color: "var(--gh-text, #1f2937)",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--gh-hover, #f3f4f6)")
-                    }
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                    <ImportIcon size={14} />
-                    {t("promptImport")}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setImportExportMenuOpen(false)
-                      handleExport()
-                    }}
-                    style={{
-                      width: "100%",
-                      padding: "8px 12px",
-                      border: "none",
-                      background: "transparent",
-                      textAlign: "left",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "13px",
-                      color: "var(--gh-text, #1f2937)",
-                    }}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.background = "var(--gh-hover, #f3f4f6)")
-                    }
-                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                    <ExportIcon size={14} />
-                    {t("promptExport")}
-                  </button>
-                </div>
-              </>
-            )}
+      <div className="gh-panel-tool-stack gh-prompts-tool-stack">
+        <div className="gh-panel-toolbar">
+          <div className="gh-prompt-library-switch" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              className="gh-prompt-library-switch-btn"
+              data-active={activeLibraryView === "prompts"}
+              aria-selected={activeLibraryView === "prompts"}
+              onClick={() => setActiveLibraryView("prompts")}>
+              {t("promptsViewPrompts")}
+            </button>
+            <button
+              type="button"
+              role="tab"
+              className="gh-prompt-library-switch-btn"
+              data-active={activeLibraryView === "chains"}
+              aria-selected={activeLibraryView === "chains"}
+              onClick={() => setActiveLibraryView("chains")}>
+              {t("promptsViewChains")}
+            </button>
           </div>
-        )}
+          <div className="gh-panel-search">
+            <span className="gh-panel-search-icon" aria-hidden="true">
+              <SearchIcon size={15} />
+            </span>
+            <input
+              type="text"
+              className="prompt-search-input gh-panel-search-input"
+              placeholder={
+                activeLibraryView === "chains"
+                  ? t("chainSearchPlaceholder")
+                  : t("searchPlaceholder")
+              }
+              aria-label={
+                activeLibraryView === "chains"
+                  ? t("chainSearchPlaceholder")
+                  : t("searchPlaceholder")
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          {activeLibraryView === "prompts" && (
+            <div className="gh-panel-menu-anchor">
+              <Tooltip content={t("promptImport") + " / " + t("promptExport")}>
+                <button
+                  type="button"
+                  ref={importExportButtonRef}
+                  onClick={() => setImportExportMenuOpen(!importExportMenuOpen)}
+                  className="gh-panel-icon-btn"
+                  aria-label={t("promptImport") + " / " + t("promptExport")}>
+                  <ImportIcon size={16} />
+                </button>
+              </Tooltip>
+              {importExportMenuOpen && (
+                <>
+                  <div
+                    className="gh-panel-menu-backdrop"
+                    onClick={() => setImportExportMenuOpen(false)}
+                  />
+                  <div className="gh-panel-menu">
+                    <button
+                      type="button"
+                      className="gh-panel-menu-item"
+                      onClick={() => {
+                        setImportExportMenuOpen(false)
+                        handleImport()
+                      }}>
+                      <ImportIcon size={14} />
+                      {t("promptImport")}
+                    </button>
+                    <button
+                      type="button"
+                      className="gh-panel-menu-item"
+                      onClick={() => {
+                        setImportExportMenuOpen(false)
+                        handleExport()
+                      }}>
+                      <ExportIcon size={14} />
+                      {t("promptExport")}
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 分类标签栏：左侧可滚动 + 右侧固定 */}
