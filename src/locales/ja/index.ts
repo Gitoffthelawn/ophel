@@ -638,8 +638,14 @@ export const ja = {
   // Page width settings
   pageWidthLabel: "ページ幅",
   pageWidthValueLabel: "幅の指定",
-  pageWidthDesc: "チャットエリアの最大幅を調整（サイトごとに設定）",
+  pageWidthDesc:
+    "チャットページの幅をリアルタイムに調整します（サイトごとに設定）。スマート回避が有効な場合、実際の幅はパネルの安全領域によって制限されることがあります。",
   enablePageWidth: "ページ幅の拡張を有効化",
+  panelAvoidanceTitle: "スマート回避",
+  betaBadge: "Beta",
+  panelAvoidanceLabel: "Ophel パネルを避ける",
+  panelAvoidanceDesc:
+    "パネル表示中に現在のサイトのコンテンツ領域を自動調整します。狭い画面では自動的に無効になります。",
   widthValue: "幅",
   widthUnit: "単位",
 

@@ -33,6 +33,7 @@ import {
   type NetworkMonitorConfig,
   type OutlineItem,
   type OutlineSource,
+  type PanelAvoidanceConfig,
   type SiteDeleteConversationResult,
 } from "./base"
 
@@ -91,6 +92,9 @@ const CLAUDE_ARTIFACT_CELL_SELECTOR = ".artifact-block-cell"
 const CLAUDE_USER_FILE_THUMBNAIL_SELECTOR = '[data-testid="file-thumbnail"]'
 const CLAUDE_THOUGHT_TOGGLE_SELECTOR = "button[aria-expanded]"
 const CLAUDE_THOUGHT_STATUS_SELECTOR = 'span[role="status"][aria-live="polite"]'
+const CLAUDE_LAYOUT_SCOPE_SELECTOR = "#main-content"
+const CLAUDE_CONTENT_WIDTH_SELECTORS = ["#main-content .max-w-3xl", "#main-content .max-w-4xl"]
+const CLAUDE_SCROLL_SAFE_AREA_SELECTOR = '#main-content [data-autoscroll-container="true"]'
 
 interface ClaudeExportLifecycleState {
   documentPanelWasOpen: boolean
@@ -1183,24 +1187,30 @@ export class ClaudeAdapter extends SiteAdapter {
   /**
    * Claude 使用 Radix UI，可能需要模拟 PointerEvent
    */
+  private getElementWindow(element: Element): Window & typeof globalThis {
+    return (element.ownerDocument.defaultView || window) as Window & typeof globalThis
+  }
+
   protected simulateClick(element: HTMLElement): void {
     const rect = element.getBoundingClientRect()
+    const eventWindow = this.getElementWindow(element)
     const clientX = rect.left + Math.max(1, Math.min(rect.width / 2, Math.max(rect.width - 1, 1)))
     const clientY = rect.top + Math.max(1, Math.min(rect.height / 2, Math.max(rect.height - 1, 1)))
     const commonInit = {
       bubbles: true,
       cancelable: true,
       composed: true,
-      view: window,
+      view: eventWindow,
       button: 0,
       buttons: 1,
       clientX,
       clientY,
     }
     const dispatchPointer = (type: string) => {
-      if (typeof PointerEvent !== "function") return
+      const PointerEventCtor = eventWindow.PointerEvent
+      if (!PointerEventCtor) return
       element.dispatchEvent(
-        new PointerEvent(type, {
+        new PointerEventCtor(type, {
           ...commonInit,
           pointerId: 1,
           pointerType: "mouse",
@@ -1212,9 +1222,9 @@ export class ClaudeAdapter extends SiteAdapter {
       dispatchPointer("pointerenter")
       dispatchPointer("pointerover")
       dispatchPointer("pointermove")
-      element.dispatchEvent(new MouseEvent("mouseenter", commonInit))
-      element.dispatchEvent(new MouseEvent("mouseover", commonInit))
-      element.dispatchEvent(new MouseEvent("mousemove", commonInit))
+      element.dispatchEvent(new eventWindow.MouseEvent("mouseenter", commonInit))
+      element.dispatchEvent(new eventWindow.MouseEvent("mouseover", commonInit))
+      element.dispatchEvent(new eventWindow.MouseEvent("mousemove", commonInit))
     }
 
     dispatchHover()
@@ -1229,10 +1239,10 @@ export class ClaudeAdapter extends SiteAdapter {
     if (isSubMenuTrigger) return
 
     dispatchPointer("pointerdown")
-    element.dispatchEvent(new MouseEvent("mousedown", commonInit))
+    element.dispatchEvent(new eventWindow.MouseEvent("mousedown", commonInit))
     dispatchPointer("pointerup")
-    element.dispatchEvent(new MouseEvent("mouseup", commonInit))
-    element.dispatchEvent(new MouseEvent("click", commonInit))
+    element.dispatchEvent(new eventWindow.MouseEvent("mouseup", commonInit))
+    element.dispatchEvent(new eventWindow.MouseEvent("click", commonInit))
   }
 
   // ==================== 杂项 ====================
@@ -2612,12 +2622,44 @@ export class ClaudeAdapter extends SiteAdapter {
 
   // ==================== 页面宽度 ====================
 
+  private normalizeContentMaxWidth(width: string): string {
+    const trimmed = width.trim()
+    if (!trimmed.endsWith("%")) {
+      return trimmed
+    }
+
+    const numeric = Number.parseFloat(trimmed)
+    if (!Number.isFinite(numeric)) {
+      return trimmed
+    }
+
+    // Claude has nested max-width containers. Use an absolute viewport-based
+    // ceiling so percentage width does not shrink at each nested layer.
+    return `min(${numeric}vw, calc(100vw - 32px))`
+  }
+
   getWidthSelectors() {
-    return [
-      // Claude 的主内容区域
-      { selector: "#main-content .max-w-3xl", property: "max-width" },
-      { selector: "#main-content .max-w-4xl", property: "max-width" },
-    ]
+    return CLAUDE_CONTENT_WIDTH_SELECTORS.map((selector) => ({
+      selector,
+      property: "max-width",
+      transformValue: (width: string) => this.normalizeContentMaxWidth(width),
+      extraCss: "width: 100% !important; min-width: 0 !important;",
+    }))
+  }
+
+  getPanelAvoidanceConfig(): PanelAvoidanceConfig {
+    return {
+      scopeSelector: CLAUDE_LAYOUT_SCOPE_SELECTOR,
+      widthSelectors: this.getWidthSelectors(),
+      insetSelectors: [
+        {
+          selector: CLAUDE_SCROLL_SAFE_AREA_SELECTOR,
+          extraCss: "box-sizing: border-box; width: 100% !important; min-width: 0 !important;",
+        },
+      ],
+      defaultWidth: "768px",
+      gap: 16,
+    }
   }
 
   getZenModeConfig() {
