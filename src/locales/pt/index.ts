@@ -626,8 +626,14 @@ export const pt = {
   // Page width settings
   pageWidthLabel: "Largura da Página",
   pageWidthValueLabel: "Valor da Largura",
-  pageWidthDesc: "Largura do chat (por site)",
+  pageWidthDesc:
+    "Ajusta a largura da página do chat em tempo real (configurado por site). Quando o desvio inteligente está ativado, a largura real pode ser limitada pela área segura do painel.",
   enablePageWidth: "Ativar Alargamento",
+  panelAvoidanceTitle: "Desvio inteligente",
+  betaBadge: "Beta",
+  panelAvoidanceLabel: "Evitar o painel Ophel",
+  panelAvoidanceDesc:
+    "Ajusta automaticamente a área de conteúdo do site atual enquanto o painel está aberto; desativado em telas estreitas.",
   widthValue: "Largura",
   widthUnit: "Unidade",
 

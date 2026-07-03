@@ -91,6 +91,10 @@ export interface ZenModeConfig {
   showExitButton?: boolean
 }
 
+export interface PanelAvoidanceSettings {
+  enabled: boolean
+}
+
 // 导出设置
 export interface ExportSettings {
   customUserName?: string // 自定义用户名称
@@ -213,6 +217,7 @@ export interface Settings {
     userQueryWidth: Record<string, PageWidthConfig>
     zenMode?: Record<string, ZenModeConfig>
     cleanMode?: Record<string, ZenModeConfig>
+    panelAvoidance?: Record<string, PanelAvoidanceSettings>
   }
 
   // 模型锁定（按站点独立）
@@ -346,6 +351,10 @@ const DEFAULT_ZEN_MODE: ZenModeConfig = {
   showExitButton: true,
 }
 
+const DEFAULT_PANEL_AVOIDANCE: PanelAvoidanceSettings = {
+  enabled: true,
+}
+
 // 默认净化模式配置
 const DEFAULT_CLEAN_MODE: ZenModeConfig = {
   enabled: true,
@@ -381,7 +390,7 @@ export const DEFAULT_SETTINGS: Settings = {
 
   panel: {
     panelExpanded: true,
-    panelMode: "edge-snap",
+    panelMode: "floating",
     preventAutoScroll: false,
     defaultPosition: "right",
     defaultEdgeDistance: 0,
@@ -437,10 +446,17 @@ export const DEFAULT_SETTINGS: Settings = {
     pageWidth: {
       gemini: { ...DEFAULT_PAGE_WIDTH },
       "gemini-enterprise": { ...DEFAULT_PAGE_WIDTH },
+      grok: { ...DEFAULT_PAGE_WIDTH },
       aistudio: { ...DEFAULT_PAGE_WIDTH },
+      chatgpt: { ...DEFAULT_PAGE_WIDTH },
+      claude: { ...DEFAULT_PAGE_WIDTH },
+      chatglm: { ...DEFAULT_PAGE_WIDTH },
       doubao: { ...DEFAULT_PAGE_WIDTH },
       ima: { ...DEFAULT_PAGE_WIDTH },
       deepseek: { ...DEFAULT_PAGE_WIDTH },
+      kimi: { ...DEFAULT_PAGE_WIDTH },
+      qianwen: { ...DEFAULT_PAGE_WIDTH },
+      qwenai: { ...DEFAULT_PAGE_WIDTH },
       yuanbao: { ...DEFAULT_PAGE_WIDTH },
       zai: { ...DEFAULT_PAGE_WIDTH },
       _default: { ...DEFAULT_PAGE_WIDTH },
@@ -448,10 +464,17 @@ export const DEFAULT_SETTINGS: Settings = {
     userQueryWidth: {
       gemini: { ...DEFAULT_USER_QUERY_WIDTH },
       "gemini-enterprise": { ...DEFAULT_USER_QUERY_WIDTH },
+      grok: { ...DEFAULT_USER_QUERY_WIDTH },
       aistudio: { ...DEFAULT_USER_QUERY_WIDTH },
+      chatgpt: { ...DEFAULT_USER_QUERY_WIDTH },
+      claude: { ...DEFAULT_USER_QUERY_WIDTH },
+      chatglm: { ...DEFAULT_USER_QUERY_WIDTH },
       doubao: { ...DEFAULT_USER_QUERY_WIDTH },
       ima: { ...DEFAULT_USER_QUERY_WIDTH },
       deepseek: { ...DEFAULT_USER_QUERY_WIDTH },
+      kimi: { ...DEFAULT_USER_QUERY_WIDTH },
+      qianwen: { ...DEFAULT_USER_QUERY_WIDTH },
+      qwenai: { ...DEFAULT_USER_QUERY_WIDTH },
       yuanbao: { ...DEFAULT_USER_QUERY_WIDTH },
       zai: { ...DEFAULT_USER_QUERY_WIDTH },
       _default: { ...DEFAULT_USER_QUERY_WIDTH },
@@ -459,10 +482,17 @@ export const DEFAULT_SETTINGS: Settings = {
     zenMode: {
       gemini: { ...DEFAULT_ZEN_MODE },
       "gemini-enterprise": { ...DEFAULT_ZEN_MODE },
+      grok: { ...DEFAULT_ZEN_MODE },
       aistudio: { ...DEFAULT_ZEN_MODE },
+      chatgpt: { ...DEFAULT_ZEN_MODE },
+      claude: { ...DEFAULT_ZEN_MODE },
+      chatglm: { ...DEFAULT_ZEN_MODE },
       doubao: { ...DEFAULT_ZEN_MODE },
       ima: { ...DEFAULT_ZEN_MODE },
       deepseek: { ...DEFAULT_ZEN_MODE },
+      kimi: { ...DEFAULT_ZEN_MODE },
+      qianwen: { ...DEFAULT_ZEN_MODE },
+      qwenai: { ...DEFAULT_ZEN_MODE },
       yuanbao: { ...DEFAULT_ZEN_MODE },
       zai: { ...DEFAULT_ZEN_MODE },
       _default: { ...DEFAULT_ZEN_MODE },
@@ -471,12 +501,36 @@ export const DEFAULT_SETTINGS: Settings = {
       gemini: { ...DEFAULT_CLEAN_MODE },
       "gemini-enterprise": { ...DEFAULT_CLEAN_MODE },
       aistudio: { ...DEFAULT_CLEAN_MODE },
+      chatgpt: { ...DEFAULT_CLEAN_MODE },
+      claude: { ...DEFAULT_CLEAN_MODE },
+      chatglm: { ...DEFAULT_CLEAN_MODE },
       doubao: { ...DEFAULT_CLEAN_MODE },
       ima: { ...DEFAULT_CLEAN_MODE },
       deepseek: { ...DEFAULT_CLEAN_MODE },
+      kimi: { ...DEFAULT_CLEAN_MODE },
+      qianwen: { ...DEFAULT_CLEAN_MODE },
+      qwenai: { ...DEFAULT_CLEAN_MODE },
       yuanbao: { ...DEFAULT_CLEAN_MODE },
       zai: { ...DEFAULT_CLEAN_MODE },
       _default: { ...DEFAULT_CLEAN_MODE },
+    },
+    panelAvoidance: {
+      gemini: { ...DEFAULT_PANEL_AVOIDANCE },
+      "gemini-enterprise": { ...DEFAULT_PANEL_AVOIDANCE },
+      grok: { ...DEFAULT_PANEL_AVOIDANCE },
+      aistudio: { ...DEFAULT_PANEL_AVOIDANCE },
+      chatgpt: { ...DEFAULT_PANEL_AVOIDANCE },
+      claude: { ...DEFAULT_PANEL_AVOIDANCE },
+      chatglm: { ...DEFAULT_PANEL_AVOIDANCE },
+      doubao: { ...DEFAULT_PANEL_AVOIDANCE },
+      ima: { ...DEFAULT_PANEL_AVOIDANCE },
+      deepseek: { ...DEFAULT_PANEL_AVOIDANCE },
+      kimi: { ...DEFAULT_PANEL_AVOIDANCE },
+      qianwen: { ...DEFAULT_PANEL_AVOIDANCE },
+      qwenai: { ...DEFAULT_PANEL_AVOIDANCE },
+      yuanbao: { ...DEFAULT_PANEL_AVOIDANCE },
+      zai: { ...DEFAULT_PANEL_AVOIDANCE },
+      _default: { ...DEFAULT_PANEL_AVOIDANCE },
     },
   },
 
@@ -685,6 +739,14 @@ export function getSiteCleanMode(settings: Settings, siteId: string): ZenModeCon
     return cleanMode[siteId]
   }
   return cleanMode?._default ?? DEFAULT_CLEAN_MODE
+}
+
+export function getSitePanelAvoidance(settings: Settings, siteId: string): PanelAvoidanceSettings {
+  const panelAvoidance = settings.layout?.panelAvoidance
+  if (panelAvoidance && siteId in panelAvoidance) {
+    return panelAvoidance[siteId]
+  }
+  return panelAvoidance?._default ?? DEFAULT_PANEL_AVOIDANCE
 }
 
 function getRawStorageValue<T>(key: string): Promise<T | undefined> {

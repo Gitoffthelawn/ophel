@@ -628,8 +628,14 @@ export const fr = {
   // Page width settings
   pageWidthLabel: "Largeur de Page",
   pageWidthValueLabel: "Valeur de Largeur",
-  pageWidthDesc: "Largeur du chat (par site)",
+  pageWidthDesc:
+    "Ajuste la largeur de la page de chat en temps réel (configuration par site). Lorsque l'évitement intelligent est activé, la largeur réelle peut être limitée par la zone sûre du panneau.",
   enablePageWidth: "Activer l'Élargissement",
+  panelAvoidanceTitle: "Évitement intelligent",
+  betaBadge: "Beta",
+  panelAvoidanceLabel: "Éviter le panneau Ophel",
+  panelAvoidanceDesc:
+    "Ajuste automatiquement la zone de contenu du site actuel lorsque le panneau est ouvert ; désactivé sur les écrans étroits.",
   widthValue: "Largeur",
   widthUnit: "Unité",
 

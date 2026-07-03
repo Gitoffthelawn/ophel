@@ -614,8 +614,13 @@ export const zhCN = {
   // 页面宽度设置
   pageWidthLabel: "页面宽度",
   pageWidthValueLabel: "宽度值",
-  pageWidthDesc: "调整聊天页面的宽度，即时生效（每个站点独立配置）",
+  pageWidthDesc:
+    "调整聊天页面的宽度，即时生效（每个站点独立配置）；开启智能避让时，实际宽度可能会受面板安全区限制。",
   enablePageWidth: "启用页面加宽",
+  panelAvoidanceTitle: "智能避让",
+  betaBadge: "Beta",
+  panelAvoidanceLabel: "避让 Ophel 面板",
+  panelAvoidanceDesc: "面板展开时自动调整当前站点的内容区域，减少遮挡；窄屏设备会自动停用。",
   widthValue: "宽度值",
   widthUnit: "单位",
 
