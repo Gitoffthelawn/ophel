@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.3] - 2026-07-03
+
 ### 🚀 New Features
 
 - **Smart panel-aware layout** — Added beta Smart Avoidance for All Platforms, so supported sites recalculate their chat safe area while the Ophel floating panel is open and keep messages, code blocks, and input boxes out from under the panel when pages are widened or browser windows are narrow. (#744, #752)
@@ -1280,6 +1284,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
 [1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0

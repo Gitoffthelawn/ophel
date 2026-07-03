@@ -2,15 +2,29 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.2",
-  date: "2026-06-30",
+  version: "1.1.3",
+  date: "2026-07-03",
   notes: {
-    en: "### 🚀 New Features\n\n- **Gemini Canvas document export** — Gemini Canvas export now supports regular document Canvas panels, so article Canvas content is included in conversation exports and Canvas Markdown copy/download actions. (#736)\n\n### ✨ Improvements\n\n- **Long conversation export loading** — Gemini and Qwen Studio exports now load earlier lazy-loaded history before collecting messages, reducing missed content in long conversation exports. (#739)\n\n### 🐛 Bug Fixes\n\n- **AI Studio model lock in userscript** — Fixed issue where the AI Studio model lock feature on the options page couldn't fetch the model list in the userscript build because it tried to use the background script proxy which doesn't exist in userscripts. Now it directly calls the adapter in userscript mode. (#733)",
-    zh: "### 🚀 新增功能\n\n- **Gemini Canvas 文档导出** — Gemini Canvas 导出现在支持普通文档 Canvas 面板，会把文章类 Canvas 正文写入对话导出和 Canvas Markdown 复制/下载结果。(#736)\n\n### ✨ 功能优化\n\n- **长对话导出加载** — Gemini 和 Qwen Studio 导出现在会先加载更早的懒加载历史再收集消息，减少长对话导出遗漏内容的情况。(#739)\n\n### 🐛 问题修复\n\n- **AI Studio 油猴脚本模型锁定** — 修复了选项页的 AI Studio 模型锁定功能在油猴脚本中无法获取模型列表的问题。原因是油猴脚本没有后台代理，现在改为在油猴模式下直接调用适配器获取模型列表。(#733)",
+    en: "### 🚀 New Features\n\n- **Smart panel-aware layout** — Added beta Smart Avoidance for All Platforms, so supported sites recalculate their chat safe area while the Ophel floating panel is open and keep messages, code blocks, and input boxes out from under the panel when pages are widened or browser windows are narrow. (#744, #752)\n\n<!-- release-note-media: panel-aware-layout-video -->\n\n- **Italian language support** — Ophel Atlas now supports Italian for the interface, extension metadata, and userscript resources, so Italian users can use the panel and settings in their language.\n\n### ✨ Improvements\n\n- **Main panel toolbars and quick buttons** — Unified Outline, Prompts, and Conversations toolbar/search styling and tuned quick-button feedback, so high-frequency controls are clearer across themes.\n- **Settings and theme management UI** — Refreshed the settings sidebar, theme preset cards, custom style list, and style editor so navigation reads more clearly and theme choices are easier to scan. (#749)\n- **Panel header and tabs** — Polished the panel header, drag hint, and tab bar styling to reduce visual noise and keep controls aligned with the rest of the interface. (#749)\n- **Prompt preview category tags** — Prompt previews now show the category as a colored tag matching the prompt category color, with a clearer preview header and content layout.\n\n### 🐛 Bug Fixes\n\n- **Custom tab title formats** — Fixed issue where Qianwen and Z.ai could reuse an already-renamed browser tab title after switching conversations, preventing duplicated title or model fragments when custom tab formats include `{model}`.\n- **Claude userscript export** — Fixed issue where exporting Claude conversations with thinking blocks could fail in userscript mode while preparing the page for export.\n- **Kimi Zen Mode** — Fixed issue where Zen Mode no longer hid Kimi's sidebar after the site updated its page layout.",
+    zh: "### 🚀 新增功能\n\n- **智能避让布局** — 新增 Beta 版智能避让，Ophel 面板处于悬浮模式时，站点会重新计算聊天安全区，在页面加宽或浏览器窗口较窄时减少消息、代码块和输入框被面板遮挡的情况。 (#744, #752)\n<!-- release-note-media: panel-aware-layout-video -->\n- **意大利语支持** — Ophel Atlas 现在支持意大利语界面、扩展元数据和油猴脚本资源，意大利语用户可直接使用本地化后的面板与设置。\n\n### ✨ 功能优化\n\n- **主面板工具栏与快捷按钮** — 统一大纲、提示词和会话面板的工具栏与搜索框样式，并调整快捷按钮反馈，让高频控制区在不同主题下更清楚。\n- **面板头部与标签栏** — 调整了面板头部、拖拽提示和标签栏样式，减少视觉噪音，让控制区和整体界面语言更一致。(#749)\n- **设置页与主题管理界面** — 重新整理了设置侧边栏、主题预置卡片、自定义样式列表和样式编辑器，让导航层级更清楚，主题选择也更容易扫读。(#749)\n- **提示词预览分类标签** — 提示词预览现在会用与分类一致的彩色标签展示分类，并调整预览标题区和内容区布局，让信息层级更清楚。\n\n### 🐛 问题修复\n\n- **Claude 油猴脚本导出** — 修复在油猴脚本中导出包含思考块的 Claude 对话时，导出前页面准备可能失败的问题。\n- **自定义标签页标题格式** — 修复千问和 Z.ai 切换会话后可能复用已重命名的浏览器标签页标题的问题，避免使用包含 `{model}` 的自定义格式时出现标题或模型片段重复。\n- **Kimi 禅模式** — 修复 Kimi 更新页面布局后，禅模式无法隐藏侧边栏的问题。",
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
     zh: "https://ophel.app/docs/zh/changelog",
   },
-  media: [],
+  media: [
+    {
+      id: "panel-aware-layout-video",
+      type: "video",
+      src: "https://github.com/user-attachments/assets/b642142e-8de3-4f9e-b006-ef87ce784e49",
+      alt: {
+        en: "Smart Avoidance keeps chat content clear of the Ophel panel",
+        zh: "智能避让让聊天内容避开 Ophel 面板",
+      },
+      caption: {
+        en: "Smart Avoidance keeps messages, code blocks, and input boxes visible while the Ophel panel is open.",
+        zh: "智能避让会在 Ophel 面板展开时让消息、代码块和输入框保持可见。",
+      },
+    },
+  ],
 } as const satisfies ReleaseNotesContent

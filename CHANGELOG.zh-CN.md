@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.3] - 2026-07-03
+
 ### 🚀 新增功能
 
 - **智能避让布局** — 新增 Beta 版智能避让，Ophel 面板处于悬浮模式时，站点会重新计算聊天安全区，在页面加宽或浏览器窗口较窄时减少消息、代码块和输入框被面板遮挡的情况。 (#744, #752)
@@ -1277,6 +1281,7 @@
 
 ---
 
+[1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
 [1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
 [1.1.0]: https://github.com/urzeye/ophel/releases/tag/v1.1.0
