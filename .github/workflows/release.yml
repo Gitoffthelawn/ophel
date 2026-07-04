@@ -213,8 +213,19 @@ jobs:
             | **Chrome** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-chrome.zip` | Manual extension package |
             | **Firefox** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-firefox.zip` | Manual extension package |
             | **Userscript** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}.user.js` | Tampermonkey script |
-            | **CWS Upload** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-cws-upload.zip` | **For Chrome Web Store Upload Only** (No Key) |
-            | **Edge Add-ons Upload** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-edge-addons-upload.zip` | **For Edge Add-ons Store Upload Only** (No Key) |
+            | **CWS Upload** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-cws-upload.zip` | **For Chrome Web Store submission only** (No Key) |
+            | **Edge Add-ons Upload** | `ophel-atlas-${{ steps.get_version.outputs.VERSION }}-edge-addons-upload.zip` | **For Microsoft Edge Add-ons submission only** (No Key) |
+
+            ### 🏪 Store Version Status | 商店版本状态
+
+            > A GitHub Release only means these release files have been built and published here. It does **not** mean Chrome Web Store, Microsoft Edge Add-ons, or Firefox Add-ons have already been updated.
+            > GitHub Release 只表示这里的发布文件已经构建并发布，并不表示 Chrome Web Store、Microsoft Edge Add-ons 或 Firefox Add-ons 已经同步更新。
+
+            > Official store updates are separate submission, review, approval, and rollout steps. Even after a new version is submitted, each store may publish it at a different time, so store versions can temporarily lag behind this GitHub Release or differ from each other.
+            > 官方商店更新是独立的提交、审核、批准和分发流程。即使新版本已经提交，各商店也可能在不同时间上架，因此商店版本可能暂时落后于本 GitHub Release，或彼此不同步。
+
+            > To confirm whether a store has received this version, check the version shown on that store's public listing. There is no fixed review or rollout time.
+            > 如需确认某个商店是否已更新到此版本，请以该商店公开详情页显示的版本为准；审核和分发时间没有固定时长。
 
             ### 🔧 Installation | 安装方法
 
@@ -225,8 +236,8 @@ jobs:
             > **Do not mix** GitHub release extension packages with store-installed versions. Manual packages and store versions can use different IDs, update channels, and storage areas, which may create duplicate extensions or separate data.
             > **请不要混用** GitHub Release 中的扩展包与应用商店版本。手动安装包和商店版本可能使用不同的扩展 ID、更新渠道和存储空间，可能导致重复安装或数据不互通。
 
-            > The `*-cws-upload.zip` and `*-edge-addons-upload.zip` files are for store submission only. Do not install them manually.
-            > `*-cws-upload.zip` 和 `*-edge-addons-upload.zip` 仅用于商店提交，请不要手动安装。
+            > The `*-cws-upload.zip` and `*-edge-addons-upload.zip` files are maintainer submission packages for browser stores. They are not proof that the store version has already been approved or rolled out, and should not be installed manually.
+            > `*-cws-upload.zip` 和 `*-edge-addons-upload.zip` 是维护者提交浏览器商店使用的包，不代表商店版本已经审核通过或完成分发，也不应手动安装。
 
             > If you already installed a store version, do not install these GitHub extension zips unless you are intentionally testing a separate development copy.
             > 如果你已经安装了商店版本，请不要再安装这些 GitHub 扩展 zip，除非你明确想测试一个独立的开发副本。
