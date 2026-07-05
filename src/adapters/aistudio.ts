@@ -111,6 +111,10 @@ const AISTUDIO_PROMPT_BOX_WIDTH_SELECTOR = ".chunk-editor-main footer ms-prompt-
 const AISTUDIO_CHAT_SAFE_AREA_SELECTOR = ".chunk-editor-main .chat-container .chat-view-container"
 const AISTUDIO_PROMPT_SAFE_AREA_SELECTOR = ".chunk-editor-main footer"
 const AISTUDIO_RUN_SETTINGS_PANEL_SELECTOR = "ms-chunk-editor > ms-right-side-panel"
+const AISTUDIO_PANEL_OBSTACLE_SELECTOR = [
+  ".ms-sliding-right-panel-dialog",
+  "mat-dialog-container.mat-mdc-dialog-container",
+].join(", ")
 
 interface AIStudioExportMessageSnapshot {
   role: "user" | "assistant"
@@ -559,6 +563,7 @@ export class AIStudioAdapter extends SiteAdapter {
       // AI Studio 的右侧 Run settings 是 .chunk-editor-main 的兄弟节点；
       // 用聊天主区域作为 scope，右侧设置面板会自然从可用宽度里扣除。
       scopeSelector: AISTUDIO_LAYOUT_SCOPE_SELECTOR,
+      obstacleSelectors: [AISTUDIO_PANEL_OBSTACLE_SELECTOR],
       widthSelectors: [
         {
           selector: AISTUDIO_CHAT_CONTENT_WIDTH_SELECTOR,
@@ -586,11 +591,13 @@ export class AIStudioAdapter extends SiteAdapter {
       insetSelectors: [
         {
           selector: AISTUDIO_CHAT_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
         },
         {
           selector: AISTUDIO_PROMPT_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
         },
@@ -599,8 +606,9 @@ export class AIStudioAdapter extends SiteAdapter {
           scopeSelector: AISTUDIO_EDITOR_SCOPE_SELECTOR,
           applySide: "right",
           insetMode: "edge",
-          rightProperty: "margin-right",
-          extraCss: "flex-shrink: 0 !important;",
+          rightProperty: "--gh-aistudio-run-settings-inset",
+          extraCss:
+            "flex-shrink: 0 !important; translate: calc(-1 * var(--gh-aistudio-run-settings-inset, 0px)) 0 !important;",
         },
       ],
       defaultWidth: "1000px",

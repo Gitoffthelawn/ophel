@@ -46,11 +46,16 @@ const QWENAI_SIDEBAR_SCROLL_SELECTOR = ".session-list-wrapper"
 const QWENAI_SIDEBAR_ITEM_SELECTOR = ".chat-item-drag"
 const QWENAI_SIDEBAR_TITLE_SELECTOR = ".chat-item-drag-link-content-tip-text"
 const QWENAI_NEW_CHAT_BUTTON_SELECTOR = ".sidebar-entry-fixed-list-content"
-const QWENAI_LAYOUT_SCOPE_SELECTOR = ".chat-left-panel"
+const QWENAI_LAYOUT_SCOPE_SELECTOR =
+  ".chat-left-panel, body:not(:has(.chat-left-panel)) .splitter-container-left-panel"
 const QWENAI_MESSAGE_SCROLL_SELECTOR = "#chat-messages-scroll-container"
 const QWENAI_MESSAGE_CONTAINER_SELECTOR = "#chat-message-container"
 const QWENAI_MESSAGE_WIDTH_SELECTOR = ".qwen-chat-message"
 const QWENAI_INPUT_SAFE_AREA_SELECTOR = ".chat-layout-input-container"
+const QWENAI_NEW_CHAT_INPUT_SAFE_AREA_SELECTOR =
+  "body:not(:has(.chat-left-panel)) .message-input-wrapper"
+const QWENAI_NEW_CHAT_PLACEHOLDER_SELECTOR =
+  "body:not(:has(.chat-left-panel)) .placeholder-logo-text"
 const QWENAI_INPUT_WIDTH_SELECTOR = ".message-input-wrapper"
 const QWENAI_USER_MESSAGE_ROOT_SELECTOR = ".qwen-chat-message-user"
 const QWENAI_USER_MESSAGE_SELECTOR = ".qwen-chat-message-user, .chat-user-message-wrapper"
@@ -868,6 +873,7 @@ export class QwenAiAdapter extends SiteAdapter {
   getPanelAvoidanceConfig(): PanelAvoidanceConfig {
     return {
       scopeSelector: QWENAI_LAYOUT_SCOPE_SELECTOR,
+      obstacleSelectors: [QWENAI_THOUGHT_PANEL_SELECTOR],
       widthSelectors: [
         {
           selector: QWENAI_MESSAGE_WIDTH_SELECTOR,
@@ -883,6 +889,18 @@ export class QwenAiAdapter extends SiteAdapter {
         },
         {
           selector: QWENAI_INPUT_SAFE_AREA_SELECTOR,
+          extraCss:
+            "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
+        },
+        {
+          selector: QWENAI_NEW_CHAT_INPUT_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
+          extraCss:
+            "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
+        },
+        {
+          selector: QWENAI_NEW_CHAT_PLACEHOLDER_SELECTOR,
+          insetMode: "edge",
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
         },
