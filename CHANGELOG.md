@@ -11,7 +11,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🚀 New Features
 
-- **Resizable panel width** — Added a panel edge handle for adjusting width directly, plus an optional hover widening setting for temporarily showing more Outline, Conversations, and Prompts text without changing the saved width.
+- **Resizable panel width** — Added a panel edge handle for adjusting width directly, plus an optional hover widening setting for temporarily showing more Outline, Conversations, and Prompts text without changing the saved width. (#763)
 
 ### ✨ Improvements
 
