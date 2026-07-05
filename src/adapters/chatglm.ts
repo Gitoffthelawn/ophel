@@ -50,6 +50,9 @@ const THEME_OPTION_SELECTOR = ".selecttheme-list"
 const RESPONSE_CONTAINER_SELECTOR = ".conversation-list"
 const CONVERSATION_SCOPE_SELECTOR = ".conversation-container"
 const CONVERSATION_INNER_SELECTOR = ".conversation-inner"
+const NEW_CHAT_GUIDE_SAFE_AREA_SELECTOR = ".init-page .main-chat-guide-container"
+const CANVAS_LAYOUT_SCOPE_SELECTOR = "section.el-container:has(> .code-preview-tabs)"
+const CANVAS_PREVIEW_SAFE_AREA_SELECTOR = ".code-preview-tabs"
 const CONVERSATION_ITEM_SELECTOR = ".conversation-item"
 const USER_QUERY_SELECTOR = ".conversation.question"
 const USER_TEXT_SELECTOR = ".question-txt"
@@ -1624,6 +1627,18 @@ export class ChatGLMAdapter extends SiteAdapter {
         {
           selector: CONVERSATION_INNER_SELECTOR,
           extraCss: "box-sizing: border-box;",
+        },
+        {
+          selector: NEW_CHAT_GUIDE_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
+          extraCss: "box-sizing: border-box;",
+        },
+        {
+          selector: CANVAS_PREVIEW_SAFE_AREA_SELECTOR,
+          scopeSelector: CANVAS_LAYOUT_SCOPE_SELECTOR,
+          applySide: "right",
+          insetMode: "edge",
+          extraCss: "box-sizing: border-box; min-width: 0;",
         },
       ],
       defaultWidth: "872px",

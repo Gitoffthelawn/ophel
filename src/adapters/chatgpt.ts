@@ -151,8 +151,24 @@ const CHATGPT_CODEX_TASK_MARKDOWN_SELECTOR = ".markdown.markdown-new-styling"
 const CHATGPT_CODEX_TASK_USER_QUERY_SELECTOR = ".self-end.bg-token-bg-tertiary .whitespace-pre-wrap"
 const CHATGPT_LAYOUT_SCOPE_SELECTOR = "main#main"
 const CHATGPT_THREAD_WIDTH_SELECTOR =
-  '#thread [class*="thread-content-max-width"], #thread [style*="--thread-content-max-width"]'
-const CHATGPT_THREAD_SAFE_AREA_SELECTOR = '#thread [class*="thread-content-margin"]'
+  '#thread [class*="thread-content-max-width"], #thread [style*="--thread-content-max-width"], main#main form[data-type="unified-composer"], main#main #composer-background'
+// ChatGPT 的新对话提示卡片内层横向滚动行也带 px-(--thread-content-margin)；
+// 这里只命中同时定义该变量的外层节点，避免把卡片行也塞进安全区 padding。
+const CHATGPT_THREAD_SAFE_AREA_SELECTOR =
+  '#thread [class*="--thread-content-margin:"][class*="px-(--thread-content-margin)"]'
+const CHATGPT_NEW_CHAT_HEADING_SAFE_AREA_SELECTOR =
+  "#thread .relative.basis-auto.flex-col.shrink.flex.justify-end:has(h1)"
+const CHATGPT_CANVAS_DIALOG_SAFE_AREA_SELECTOR =
+  'main#main [role="dialog"][class*="fixed"][class*="inset-0"]:has(.cm-editor)'
+const CHATGPT_LIBRARY_DIALOG_SELECTOR = '[role="dialog"]:has([data-testid="fullscreen-shell-body"])'
+const CHATGPT_LIBRARY_SHELL_SELECTOR = `${CHATGPT_LIBRARY_DIALOG_SELECTOR} [data-testid="fullscreen-shell-body"]`
+const CHATGPT_LIBRARY_EDITOR_WIDTH_SELECTOR = `${CHATGPT_LIBRARY_SHELL_SELECTOR} div:has(> .ProseMirror.markdown.prose)`
+const CHATGPT_LIBRARY_COMPOSER_WRAPPER_SELECTOR = `${CHATGPT_LIBRARY_DIALOG_SELECTOR} div.fixed[class*="start-1/2"]:has(> form[class*="group/composer"])`
+const CHATGPT_LIBRARY_COMPOSER_FORM_SELECTOR = `${CHATGPT_LIBRARY_SHELL_SELECTOR} ~ * form[class*="group/composer"]`
+const CHATGPT_PANEL_OBSTACLE_SELECTOR = [
+  CHATGPT_DEEP_RESEARCH_IFRAME_SELECTOR,
+  "#stage-slideover-sidebar",
+].join(", ")
 
 interface ChatGPTExportMessageSnapshot {
   role: "user" | "assistant"
@@ -1031,6 +1047,16 @@ export class ChatGPTAdapter extends SiteAdapter {
     return [
       { selector: '[class*="thread-content-max-width"]', property: "max-width" },
       { selector: '[style*="--thread-content-max-width"]', property: "max-width" },
+      {
+        selector: CHATGPT_LIBRARY_EDITOR_WIDTH_SELECTOR,
+        property: "max-width",
+        extraCss: "width: 100% !important; min-width: 0 !important;",
+      },
+      {
+        selector: CHATGPT_LIBRARY_COMPOSER_WRAPPER_SELECTOR,
+        property: "width",
+        extraCss: "max-width: calc(100vw - 32px) !important; min-width: 0 !important;",
+      },
     ]
   }
 
@@ -1049,18 +1075,50 @@ export class ChatGPTAdapter extends SiteAdapter {
   getPanelAvoidanceConfig(): PanelAvoidanceConfig {
     return {
       scopeSelector: CHATGPT_LAYOUT_SCOPE_SELECTOR,
+      obstacleSelectors: [CHATGPT_PANEL_OBSTACLE_SELECTOR],
       widthSelectors: [
         {
           selector: CHATGPT_THREAD_WIDTH_SELECTOR,
           property: "max-width",
           extraCss: "width: 100% !important; min-width: 0 !important;",
         },
+        {
+          selector: CHATGPT_LIBRARY_COMPOSER_FORM_SELECTOR,
+          property: "max-width",
+          extraCss: "width: 100% !important; min-width: 0 !important;",
+        },
       ],
       insetSelectors: [
         {
-          selector: CHATGPT_THREAD_SAFE_AREA_SELECTOR,
+          selector: CHATGPT_NEW_CHAT_HEADING_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
+        },
+        {
+          selector: CHATGPT_THREAD_SAFE_AREA_SELECTOR,
+          insetMode: "edge",
+          extraCss:
+            "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
+        },
+        {
+          selector: CHATGPT_CANVAS_DIALOG_SAFE_AREA_SELECTOR,
+          applySide: "right",
+          insetMode: "edge",
+          extraCss: "box-sizing: border-box !important; min-width: 0 !important;",
+        },
+        {
+          selector: CHATGPT_LIBRARY_SHELL_SELECTOR,
+          insetMode: "edge",
+          extraCss: "box-sizing: border-box !important; min-width: 0 !important;",
+        },
+        {
+          selector: CHATGPT_LIBRARY_COMPOSER_WRAPPER_SELECTOR,
+          leftProperty: "left",
+          rightProperty: "right",
+          insetMode: "edge",
+          extraCss:
+            "translate: none !important; transform: none !important; width: auto !important; max-width: none !important; min-width: 0 !important; box-sizing: border-box !important;",
         },
       ],
       defaultWidth: "768px",
