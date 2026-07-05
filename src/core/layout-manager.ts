@@ -37,6 +37,9 @@ const DEFAULT_PANEL_AVOIDANCE_GAP = 16
 const DEFAULT_PANEL_AVOIDANCE_MIN_VISIBLE_WIDTH = 120
 const DEFAULT_PANEL_AVOIDANCE_MIN_SAFE_WIDTH = 360
 const DEFAULT_PANEL_AVOIDANCE_MIN_VIEWPORT_WIDTH = 768
+const PANEL_HOVER_WIDTH_ACTIVE_ATTR = "data-panel-hover-width-active"
+const PANEL_BASE_WIDTH_ATTR = "data-panel-base-width"
+const PANEL_ANCHOR_SIDE_ATTR = "data-panel-anchor-side"
 
 interface PanelReservation {
   targetWidth: number
@@ -578,7 +581,7 @@ export class LayoutManager {
       return null
     }
 
-    const rect = element.getBoundingClientRect()
+    const rect = this.getPanelAvoidanceObstacleRect(element)
     const visibleLeft = Math.max(0, rect.left)
     const visibleRight = Math.min(window.innerWidth, rect.right)
     const visibleWidth = Math.max(0, visibleRight - visibleLeft)
@@ -588,6 +591,25 @@ export class LayoutManager {
     if (visibleWidth < minVisibleWidth || rect.height < minVisibleHeight) return null
 
     return rect
+  }
+
+  private getPanelAvoidanceObstacleRect(element: HTMLElement): DOMRect {
+    const rect = element.getBoundingClientRect()
+    if (
+      !element.classList.contains("gh-main-panel") ||
+      element.getAttribute(PANEL_HOVER_WIDTH_ACTIVE_ATTR) !== "true"
+    ) {
+      return rect
+    }
+
+    const baseWidth = Number.parseFloat(element.getAttribute(PANEL_BASE_WIDTH_ATTR) || "")
+    if (!Number.isFinite(baseWidth) || baseWidth <= 0 || baseWidth >= rect.width) {
+      return rect
+    }
+
+    const anchorSide = element.getAttribute(PANEL_ANCHOR_SIDE_ATTR)
+    const left = anchorSide === "right" ? rect.right - baseWidth : rect.left
+    return new DOMRect(left, rect.top, baseWidth, rect.height)
   }
 
   private dedupePanelAvoidanceObstacles(
@@ -700,7 +722,14 @@ export class LayoutManager {
         this.panelAvoidancePanelObserver = new MutationObserver(this.schedulePanelAvoidanceUpdate)
         this.panelAvoidancePanelObserver.observe(panel, {
           attributes: true,
-          attributeFilter: ["class", "style", "data-edge-snap-transitioning"],
+          attributeFilter: [
+            "class",
+            "style",
+            "data-edge-snap-transitioning",
+            PANEL_HOVER_WIDTH_ACTIVE_ATTR,
+            PANEL_BASE_WIDTH_ATTR,
+            PANEL_ANCHOR_SIDE_ATTR,
+          ],
         })
 
         if (typeof ResizeObserver !== "undefined") {

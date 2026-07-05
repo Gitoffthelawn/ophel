@@ -787,11 +787,19 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     [onMouseLeave, scheduleHoverWidthRelease],
   )
 
-  const handlePanelFocus = useCallback(() => {
-    clearHoverWidthReleaseTimer()
-    setIsPanelFocusWithin(true)
-    setIsHoverWidthRetained(true)
-  }, [clearHoverWidthReleaseTimer])
+  const handlePanelFocus = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      const target = event.target
+      if (!(target instanceof HTMLElement) || !target.matches(":focus-visible")) {
+        return
+      }
+
+      clearHoverWidthReleaseTimer()
+      setIsPanelFocusWithin(true)
+      setIsHoverWidthRetained(true)
+    },
+    [clearHoverWidthReleaseTimer],
+  )
 
   const handlePanelBlur = useCallback(
     (event: React.FocusEvent<HTMLDivElement>) => {
@@ -893,6 +901,10 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     [onInteractionStateChange, scheduleHoverWidthRelease, updateNestedSetting],
   )
 
+  const isHoverWidthPreviewActive =
+    isHoverWidthActive && !isPanelResizing && panelWidth > basePanelWidth
+  const panelAnchorSide = resizeHandleSide === "left" ? "right" : "left"
+
   if (!isOpen) return null
 
   // 过滤出启用的 Tab（设置页通过 header 按钮进入，不在 tab 栏显示）
@@ -932,6 +944,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         onFocus={handlePanelFocus}
         onBlur={handlePanelBlur}
         className={`gh-main-panel gh-interactive ${!isLauncherPeeking && edgeSnapState ? `edge-snapped-${edgeSnapState}` : ""} ${isLauncherPeeking ? "launcher-peek" : ""} ${isEdgePeeking ? "edge-peek" : ""} ${isScrolling ? "scroll-hidden" : ""} ${isPanelResizing ? "is-resizing" : ""} ${isHoverWidthActive && !isPanelResizing ? "hover-width-active" : ""}`}
+        data-panel-hover-width-active={isHoverWidthPreviewActive ? "true" : undefined}
+        data-panel-base-width={basePanelWidth}
+        data-panel-anchor-side={panelAnchorSide}
         style={
           {
             position: "fixed",
