@@ -823,6 +823,12 @@ export const ja = {
   defaultEdgeDistanceDesc: "ページ更新後、ブラウザウィンドウの端からのデフォルトの距離",
   panelWidthLabel: "パネルの幅",
   panelWidthDesc: "パネルの幅 (px)",
+  panelResizeOnHoverLabel: "ホバー時に広げる",
+  panelResizeOnHoverDesc:
+    "ポインターがフローティングパネル上にある間だけ一時的に広げ、離れると通常の幅に戻します",
+  panelHoverWidthLabel: "ホバー時の幅",
+  panelHoverWidthDesc: "ホバー中に一時的に使うパネル幅 (px)",
+  panelResizeHandleLabel: "ドラッグしてパネル幅を調整",
   panelHeightLabel: "パネルの高さ",
   panelHeightDesc: "画面高に対するパネルの割合",
   // Manual Anchor

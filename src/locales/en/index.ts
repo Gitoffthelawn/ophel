@@ -850,6 +850,12 @@ export const en = {
   defaultEdgeDistanceDesc: "Default distance from the browser window edge after page refresh",
   panelWidthLabel: "Panel Width",
   panelWidthDesc: "Width of the panel (px)",
+  panelResizeOnHoverLabel: "Widen on hover",
+  panelResizeOnHoverDesc:
+    "Temporarily widen the floating panel while the pointer is over it, then restore the normal width",
+  panelHoverWidthLabel: "Hover width",
+  panelHoverWidthDesc: "Temporary panel width while hovering (px)",
+  panelResizeHandleLabel: "Drag to resize panel width",
   panelHeightLabel: "Panel Height",
   panelHeightDesc: "Percentage of screen height the panel occupies",
   // Manual Anchor

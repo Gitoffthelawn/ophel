@@ -915,6 +915,11 @@ export const zhTW = {
   defaultEdgeDistanceDesc: "頁面重新整理後，懸浮面板距離瀏覽器視窗邊緣的初始距離",
   panelWidthLabel: "面板寬度",
   panelWidthDesc: "面板的寬度 (px)",
+  panelResizeOnHoverLabel: "懸停時加寬",
+  panelResizeOnHoverDesc: "游標停在懸浮面板上時暫時加寬，移開後恢復一般寬度",
+  panelHoverWidthLabel: "懸停寬度",
+  panelHoverWidthDesc: "懸停時暫時使用的面板寬度 (px)",
+  panelResizeHandleLabel: "拖曳調整面板寬度",
   panelHeightLabel: "面板高度",
   panelHeightDesc: "面板佔用螢幕高度的百分比",
   // 手動錨點

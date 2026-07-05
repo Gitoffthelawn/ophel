@@ -419,6 +419,88 @@
     filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* ============= 面板宽度调整 ============= */
+.gh-main-panel.hover-width-active {
+  transition: width 0.18s ease;
+}
+
+.gh-main-panel.is-resizing {
+  user-select: none;
+}
+
+.gh-main-panel.is-resizing,
+.gh-main-panel.is-resizing * {
+  cursor: ew-resize !important;
+}
+
+.gh-panel-resize-handle {
+  position: absolute;
+  top: 48px;
+  bottom: 10px;
+  width: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gh-text-tertiary, rgba(107, 114, 128, 0.72));
+  cursor: ew-resize;
+  z-index: 30;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  opacity: 0.38;
+  transition:
+    opacity 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.gh-panel-resize-handle-left {
+  left: 0;
+}
+
+.gh-panel-resize-handle-right {
+  right: 0;
+}
+
+.gh-panel-resize-grip {
+  width: 14px;
+  height: 28px;
+  margin-bottom: 12px;
+  background: color-mix(in srgb, var(--gh-bg, #ffffff) 72%, var(--gh-primary, #4285f4));
+  border: 1px solid color-mix(in srgb, var(--gh-border, #e5e7eb) 70%, var(--gh-primary, #4285f4));
+  box-shadow: var(--gh-shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.12));
+}
+
+.gh-panel-resize-handle-left .gh-panel-resize-grip {
+  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+}
+
+.gh-panel-resize-handle-right .gh-panel-resize-grip {
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+
+.gh-panel-resize-handle:hover,
+.gh-panel-resize-handle:focus-visible,
+.gh-main-panel.is-resizing .gh-panel-resize-handle {
+  color: var(--gh-primary, #4285f4);
+  opacity: 0.9;
+}
+
+.gh-panel-resize-handle-left:hover,
+.gh-panel-resize-handle-left:focus-visible {
+  transform: translateX(-1px);
+}
+
+.gh-panel-resize-handle-right:hover,
+.gh-panel-resize-handle-right:focus-visible {
+  transform: translateX(1px);
+}
+
+.gh-panel-resize-handle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 34%, transparent);
+  outline-offset: 1px;
+}
+
 /* ============= 面板 Header 样式 ============= */
 .gh-panel-header {
   /* 使用 CSS 变量，支持动态主题切换 */
@@ -2362,6 +2444,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gh-panel-icon-btn,
+  .gh-main-panel,
+  .gh-panel-resize-handle,
   .outline-toolbar-btn,
   .gh-panel-search-input,
   .gh-panel-search-action,

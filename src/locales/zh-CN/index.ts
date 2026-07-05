@@ -1000,6 +1000,11 @@ export const zhCN = {
   defaultEdgeDistanceDesc: "页面刷新后，悬浮面板距离浏览器窗口边缘的初始距离",
   panelWidthLabel: "面板宽度",
   panelWidthDesc: "面板的宽度 (px)",
+  panelResizeOnHoverLabel: "悬停时加宽",
+  panelResizeOnHoverDesc: "鼠标停在悬浮面板上时临时加宽，移开后恢复常规宽度",
+  panelHoverWidthLabel: "悬停宽度",
+  panelHoverWidthDesc: "悬停时临时使用的面板宽度 (px)",
+  panelResizeHandleLabel: "拖拽调整面板宽度",
   panelHeightLabel: "面板高度",
   panelHeightDesc: "面板占用屏幕高度的百分比",
   // 手动锚点

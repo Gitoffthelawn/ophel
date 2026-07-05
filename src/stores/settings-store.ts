@@ -238,6 +238,8 @@ const normalizePanelSettings = (panel?: Partial<Settings["panel"]>): Settings["p
     edgeSnapThreshold: panel?.edgeSnapThreshold ?? defaults.edgeSnapThreshold,
     height: panel?.height ?? defaults.height,
     width: panel?.width ?? defaults.width,
+    resizeOnHover: panel?.resizeOnHover ?? defaults.resizeOnHover,
+    hoverWidth: panel?.hoverWidth ?? defaults.hoverWidth,
   }
 }
 

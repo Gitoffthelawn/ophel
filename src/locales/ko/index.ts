@@ -805,6 +805,12 @@ export const ko = {
   defaultEdgeDistanceDesc: "페이지 새로고침 후 브라우저 창 가장자리로부터의 기본 거리",
   panelWidthLabel: "패널 너비",
   panelWidthDesc: "패널의 너비 (px)",
+  panelResizeOnHoverLabel: "호버 시 넓히기",
+  panelResizeOnHoverDesc:
+    "포인터가 플로팅 패널 위에 있을 때만 임시로 넓히고, 벗어나면 기본 너비로 돌아갑니다",
+  panelHoverWidthLabel: "호버 너비",
+  panelHoverWidthDesc: "호버 중 임시로 사용할 패널 너비 (px)",
+  panelResizeHandleLabel: "드래그하여 패널 너비 조정",
   panelHeightLabel: "패널 높이",
   panelHeightDesc: "패널이 차지하는 화면 높이의 백분율",
   // Interface Toggle

@@ -806,6 +806,12 @@ export const pt = {
     "Distância padrão da borda da janela do navegador após atualizar a página",
   panelWidthLabel: "Largura do painel",
   panelWidthDesc: "Largura do painel (px)",
+  panelResizeOnHoverLabel: "Ampliar ao passar o cursor",
+  panelResizeOnHoverDesc:
+    "Amplia temporariamente o painel flutuante enquanto o ponteiro está sobre ele e depois restaura a largura normal",
+  panelHoverWidthLabel: "Largura ao passar o cursor",
+  panelHoverWidthDesc: "Largura temporária do painel durante o foco do cursor (px)",
+  panelResizeHandleLabel: "Arraste para redimensionar o painel",
   panelHeightLabel: "Altura",
   panelHeightDesc: "% da tela",
   // Interface Toggle

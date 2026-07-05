@@ -146,6 +146,14 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
     setSettings(buildPanelPreview("width", val))
   }
 
+  const handleHoverWidthPreview = (val: number) => {
+    setPreviewSettings(buildPanelPreview("hoverWidth", val))
+  }
+
+  const handleHoverWidthChange = (val: number) => {
+    setSettings(buildPanelPreview("hoverWidth", val))
+  }
+
   // 处理拖拽开始
   const handleDragStart = (e: React.DragEvent, type: "tab" | "button", index: number) => {
     setDraggedItem({ type, index })
@@ -349,6 +357,45 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
               ariaLabel={t("panelWidthLabel")}
             />
           </SettingRow>
+
+          <ToggleRow
+            label={t("panelResizeOnHoverLabel")}
+            description={t("panelResizeOnHoverDesc")}
+            settingId="panel-resize-on-hover"
+            checked={settings.panel?.resizeOnHover ?? false}
+            onChange={() =>
+              updateNestedSetting(
+                "panel",
+                "resizeOnHover",
+                !(settings.panel?.resizeOnHover ?? false),
+              )
+            }
+          />
+
+          {(settings.panel?.resizeOnHover ?? false) && (
+            <SettingRow
+              label={t("panelHoverWidthLabel")}
+              description={t("panelHoverWidthDesc")}
+              settingId="panel-hover-width">
+              <Slider
+                value={Math.max(
+                  settings.panel?.hoverWidth ?? 520,
+                  settings.panel?.width ?? 320,
+                  240,
+                )}
+                onChange={handleHoverWidthChange}
+                onPreviewChange={handleHoverWidthPreview}
+                onCancelPreview={clearPreviewSettings}
+                min={240}
+                max={600}
+                step={10}
+                unit="px"
+                defaultValue={520}
+                formatValue={(value) => `${value}px`}
+                ariaLabel={t("panelHoverWidthLabel")}
+              />
+            </SettingRow>
+          )}
 
           {/* 面板高度 */}
           <SettingRow

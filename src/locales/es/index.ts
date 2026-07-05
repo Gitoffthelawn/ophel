@@ -807,6 +807,12 @@ export const es = {
     "Distancia predeterminada desde el borde de la ventana del navegador después de actualizar la página",
   panelWidthLabel: "Ancho del panel",
   panelWidthDesc: "Ancho del panel (px)",
+  panelResizeOnHoverLabel: "Ampliar al pasar el cursor",
+  panelResizeOnHoverDesc:
+    "Amplía temporalmente el panel flotante mientras el puntero está encima y luego restaura el ancho normal",
+  panelHoverWidthLabel: "Ancho al pasar el cursor",
+  panelHoverWidthDesc: "Ancho temporal del panel al pasar el cursor (px)",
+  panelResizeHandleLabel: "Arrastra para cambiar el ancho del panel",
   panelHeightLabel: "Altura",
   panelHeightDesc: "% de pantalla",
   // Interface Toggle

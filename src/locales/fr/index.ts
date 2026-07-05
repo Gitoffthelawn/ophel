@@ -807,6 +807,12 @@ export const fr = {
     "Distance par défaut par rapport au bord de la fenêtre du navigateur après actualisation de la page",
   panelWidthLabel: "Largeur du panneau",
   panelWidthDesc: "Largeur du panneau (px)",
+  panelResizeOnHoverLabel: "Élargir au survol",
+  panelResizeOnHoverDesc:
+    "Élargit temporairement le panneau flottant lorsque le pointeur le survole, puis restaure la largeur normale",
+  panelHoverWidthLabel: "Largeur au survol",
+  panelHoverWidthDesc: "Largeur temporaire du panneau pendant le survol (px)",
+  panelResizeHandleLabel: "Faire glisser pour redimensionner le panneau",
   panelHeightLabel: "Hauteur",
   panelHeightDesc: "% de l'écran",
   // Interface Toggle
