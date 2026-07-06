@@ -147,6 +147,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const [isPanelHovered, setIsPanelHovered] = useState(false)
   const [isPanelFocusWithin, setIsPanelFocusWithin] = useState(false)
   const [isHoverWidthRetained, setIsHoverWidthRetained] = useState(false)
+  const [isHoverWidthModeSwitchSuppressed, setIsHoverWidthModeSwitchSuppressed] = useState(false)
   const [isPanelResizing, setIsPanelResizing] = useState(false)
   const [draftPanelWidth, setDraftPanelWidth] = useState<number | null>(null)
   const hoverWidthReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -217,6 +218,17 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     hoverWidthActivityRef.current.isResizing = value
     setIsPanelResizing(value)
   }, [])
+
+  const prepareEdgeSnapToFloatingSwitch = useCallback(
+    (suppressHoverWidth: boolean = true) => {
+      clearHoverWidthReleaseTimer()
+      setPanelHoveredState(false)
+      setPanelFocusWithinState(false)
+      setIsHoverWidthRetained(false)
+      setIsHoverWidthModeSwitchSuppressed(suppressHoverWidth)
+    },
+    [clearHoverWidthReleaseTimer, setPanelFocusWithinState, setPanelHoveredState],
+  )
 
   const updatePanelPointerPosition = useCallback(
     (event: Pick<MouseEvent, "clientX" | "clientY">) => {
@@ -340,7 +352,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   // useDraggable 通过直接 DOM 操作设置了 left/top/right/transform，React 无法感知这些变化，
   // 所以需要在模式切换时手动重置
   const prevPanelModeRef = useRef(currentSettings.panel?.panelMode)
-  // 保存面板当前位置，用于 header 按钮触发的"原地固定"
+  // 保存面板可见位置，用于 edge peek 固定到悬浮时保留垂直位置
   const savedPeekingRectRef = useRef<DOMRect | null>(null)
   // (Generic tips have moved to MagicCodex)
   const pointerEventsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -364,8 +376,22 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const savedRect = savedPeekingRectRef.current
       savedPeekingRectRef.current = null
 
-      // 优先使用 header 按钮保存的 peeking 位置，否则用面板当前 rect 原地固定
+      // 优先使用 header 按钮保存的 peeking 位置，否则用面板当前 rect 判断可见性
       const fixRect = savedRect ?? panel.getBoundingClientRect()
+      const pointer = lastPanelPointerPositionRef.current
+      const isPointerInsideFixRect = pointer
+        ? pointer.clientX >= fixRect.left &&
+          pointer.clientX <= fixRect.right &&
+          pointer.clientY >= fixRect.top &&
+          pointer.clientY <= fixRect.bottom
+        : false
+      const shouldSuppressHoverWidth =
+        isHoverWidthModeSwitchSuppressed ||
+        hoverWidthActivityRef.current.isHovered ||
+        hoverWidthActivityRef.current.isFocused ||
+        isHoverWidthRetained ||
+        isPointerInsideFixRect
+      prepareEdgeSnapToFloatingSwitch(shouldSuppressHoverWidth)
 
       // 判断面板是否处于 peeking 展开态（至少 50% 宽度在视口内），排除吸附收缩（胶囊条）
       const visibleWidth = fixRect
@@ -374,11 +400,17 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const isVisible = fixRect.width > 0 && visibleWidth >= fixRect.width * 0.5
 
       if (isVisible) {
-        // 面板可见（peeking 展开）：原地固定，无论切换来源
-        panel.style.left = `${fixRect.left}px`
+        // 面板可见（peeking 展开）：按吸附侧贴边固定，避免 hover 宽度回收后留下边缘间距
+        const snappedSide = edgeSnapState ?? currentSettings.panel?.defaultPosition ?? "right"
         panel.style.top = `${fixRect.top}px`
-        panel.style.right = "auto"
         panel.style.transform = "none"
+        if (snappedSide === "left") {
+          panel.style.left = "0px"
+          panel.style.right = "auto"
+        } else {
+          panel.style.right = "0px"
+          panel.style.left = "auto"
+        }
       } else {
         // 面板不可见（吸附收缩态）：使用默认边距贴边展开，保留垂直位置（兜底）
         const pos = currentSettings.panel?.defaultPosition ?? "right"
@@ -431,7 +463,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     currentSettings.panel?.panelMode,
     currentSettings.panel?.defaultEdgeDistance,
     currentSettings.panel?.defaultPosition,
+    edgeSnapState,
+    isHoverWidthModeSwitchSuppressed,
+    isHoverWidthRetained,
     panelRef,
+    prepareEdgeSnapToFloatingSwitch,
   ])
 
   const prevEdgeDistanceRef = useRef(currentSettings.panel?.defaultEdgeDistance)
@@ -495,11 +531,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     !isEdgeSnapMode
   const isHoverWidthActive =
     canResizeOnHover &&
-    (isPanelHovered ||
-      isPanelFocusWithin ||
-      isHoverWidthRetained ||
-      isPanelResizing ||
-      isHoverWidthSettingsPreviewActive)
+    (isHoverWidthSettingsPreviewActive ||
+      (!isHoverWidthModeSwitchSuppressed &&
+        (isPanelHovered || isPanelFocusWithin || isHoverWidthRetained || isPanelResizing)))
   const panelWidth =
     isPanelResizing || !isHoverWidthActive
       ? basePanelWidth
@@ -646,10 +680,16 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const current = currentSettings.panel?.panelMode ?? "floating"
       if (current === "edge-snap" && panelRef.current) {
         savedPeekingRectRef.current = panelRef.current.getBoundingClientRect()
+        prepareEdgeSnapToFloatingSwitch()
       }
       updateNestedSetting("panel", "panelMode", current === "edge-snap" ? "floating" : "edge-snap")
     },
-    [currentSettings.panel?.panelMode, panelRef, updateNestedSetting],
+    [
+      currentSettings.panel?.panelMode,
+      panelRef,
+      prepareEdgeSnapToFloatingSwitch,
+      updateNestedSetting,
+    ],
   )
 
   useEffect(() => {
@@ -875,6 +915,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const handlePanelPointerLeave = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       updatePanelPointerPosition(event)
+      setIsHoverWidthModeSwitchSuppressed(false)
       setPanelHoveredState(false)
       scheduleHoverWidthRelease()
       onMouseLeave?.(event)
@@ -1168,9 +1209,10 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                 }
                 onClick={() => {
                   const current = currentSettings.panel?.panelMode ?? "floating"
-                  // 从吸附切换到悬浮时，保存当前面板位置用于"原地固定"
+                  // 从吸附切换到悬浮时，保存当前可见位置用于保留垂直位置
                   if (current === "edge-snap" && panelRef.current) {
                     savedPeekingRectRef.current = panelRef.current.getBoundingClientRect()
+                    prepareEdgeSnapToFloatingSwitch()
                   }
                   updateNestedSetting(
                     "panel",
