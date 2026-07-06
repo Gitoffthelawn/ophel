@@ -148,6 +148,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const [isPanelFocusWithin, setIsPanelFocusWithin] = useState(false)
   const [isHoverWidthRetained, setIsHoverWidthRetained] = useState(false)
   const [isHoverWidthModeSwitchSuppressed, setIsHoverWidthModeSwitchSuppressed] = useState(false)
+  const [isHoverWidthResizeSuppressed, setIsHoverWidthResizeSuppressed] = useState(false)
   const [isPanelResizing, setIsPanelResizing] = useState(false)
   const [draftPanelWidth, setDraftPanelWidth] = useState<number | null>(null)
   const hoverWidthReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -533,6 +534,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     canResizeOnHover &&
     (isHoverWidthSettingsPreviewActive ||
       (!isHoverWidthModeSwitchSuppressed &&
+        !isHoverWidthResizeSuppressed &&
         (isPanelHovered || isPanelFocusWithin || isHoverWidthRetained || isPanelResizing)))
   const panelWidth =
     isPanelResizing || !isHoverWidthActive
@@ -916,6 +918,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     (event: React.MouseEvent<HTMLDivElement>) => {
       updatePanelPointerPosition(event)
       setIsHoverWidthModeSwitchSuppressed(false)
+      setIsHoverWidthResizeSuppressed(false)
       setPanelHoveredState(false)
       scheduleHoverWidthRelease()
       onMouseLeave?.(event)
@@ -1031,6 +1034,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       setDraftPanelWidth(null)
       setPanelResizingState(false)
       if (state.hasMoved) {
+        setIsHoverWidthRetained(false)
+        setIsHoverWidthResizeSuppressed(true)
         updateNestedSetting("panel", "width", finalWidth)
       }
       onInteractionStateChange?.(false)

@@ -441,7 +441,10 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                     className="settings-panel-width-subrow"
                     data-setting-id="panel-resize-on-hover">
                     <div className="settings-row-info">
-                      <div className="settings-row-label">{t("panelResizeOnHoverLabel")}</div>
+                      <div className="settings-row-label settings-row-label-with-badge">
+                        <span>{t("panelResizeOnHoverLabel")}</span>
+                        <span className="settings-beta-badge">{t("betaBadge")}</span>
+                      </div>
                       <div className="settings-row-desc">{t("panelResizeOnHoverDesc")}</div>
                     </div>
                     <Switch
@@ -461,7 +464,10 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                     onFocus={activateHoverWidthPreview}
                     onBlur={handleHoverWidthPreviewBlur}>
                     <div className="settings-row-info">
-                      <div className="settings-row-label">{t("panelHoverWidthLabel")}</div>
+                      <div className="settings-row-label settings-row-label-with-badge">
+                        <span>{t("panelHoverWidthLabel")}</span>
+                        <span className="settings-beta-badge">{t("betaBadge")}</span>
+                      </div>
                       <div className="settings-row-desc">{t("panelHoverWidthDesc")}</div>
                     </div>
                     <div className="settings-row-control">
