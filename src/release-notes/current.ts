@@ -2,29 +2,15 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.3",
-  date: "2026-07-03",
+  version: "1.1.4",
+  date: "2026-07-06",
   notes: {
-    en: "### 🚀 New Features\n\n- **Smart panel-aware layout** — Added beta Smart Avoidance for All Platforms, so supported sites recalculate their chat safe area while the Ophel floating panel is open and keep messages, code blocks, and input boxes out from under the panel when pages are widened or browser windows are narrow. (#744, #752)\n\n<!-- release-note-media: panel-aware-layout-video -->\n\n- **Italian language support** — Ophel Atlas now supports Italian for the interface, extension metadata, and userscript resources, so Italian users can use the panel and settings in their language.\n\n### ✨ Improvements\n\n- **Main panel toolbars and quick buttons** — Unified Outline, Prompts, and Conversations toolbar/search styling and tuned quick-button feedback, so high-frequency controls are clearer across themes.\n- **Settings and theme management UI** — Refreshed the settings sidebar, theme preset cards, custom style list, and style editor so navigation reads more clearly and theme choices are easier to scan. (#749)\n- **Panel header and tabs** — Polished the panel header, drag hint, and tab bar styling to reduce visual noise and keep controls aligned with the rest of the interface. (#749)\n- **Prompt preview category tags** — Prompt previews now show the category as a colored tag matching the prompt category color, with a clearer preview header and content layout.\n\n### 🐛 Bug Fixes\n\n- **Custom tab title formats** — Fixed issue where Qianwen and Z.ai could reuse an already-renamed browser tab title after switching conversations, preventing duplicated title or model fragments when custom tab formats include `{model}`.\n- **Claude userscript export** — Fixed issue where exporting Claude conversations with thinking blocks could fail in userscript mode while preparing the page for export.\n- **Kimi Zen Mode** — Fixed issue where Zen Mode no longer hid Kimi's sidebar after the site updated its page layout.",
-    zh: "### 🚀 新增功能\n\n- **智能避让布局** — 新增 Beta 版智能避让，Ophel 面板处于悬浮模式时，站点会重新计算聊天安全区，在页面加宽或浏览器窗口较窄时减少消息、代码块和输入框被面板遮挡的情况。 (#744, #752)\n<!-- release-note-media: panel-aware-layout-video -->\n- **意大利语支持** — Ophel Atlas 现在支持意大利语界面、扩展元数据和油猴脚本资源，意大利语用户可直接使用本地化后的面板与设置。\n\n### ✨ 功能优化\n\n- **主面板工具栏与快捷按钮** — 统一大纲、提示词和会话面板的工具栏与搜索框样式，并调整快捷按钮反馈，让高频控制区在不同主题下更清楚。\n- **面板头部与标签栏** — 调整了面板头部、拖拽提示和标签栏样式，减少视觉噪音，让控制区和整体界面语言更一致。(#749)\n- **设置页与主题管理界面** — 重新整理了设置侧边栏、主题预置卡片、自定义样式列表和样式编辑器，让导航层级更清楚，主题选择也更容易扫读。(#749)\n- **提示词预览分类标签** — 提示词预览现在会用与分类一致的彩色标签展示分类，并调整预览标题区和内容区布局，让信息层级更清楚。\n\n### 🐛 问题修复\n\n- **Claude 油猴脚本导出** — 修复在油猴脚本中导出包含思考块的 Claude 对话时，导出前页面准备可能失败的问题。\n- **自定义标签页标题格式** — 修复千问和 Z.ai 切换会话后可能复用已重命名的浏览器标签页标题的问题，避免使用包含 `{model}` 的自定义格式时出现标题或模型片段重复。\n- **Kimi 禅模式** — 修复 Kimi 更新页面布局后，禅模式无法隐藏侧边栏的问题。",
+    en: "### 🚀 New Features\n\n- **Panel tab reordering** — Outline, Conversations, and Prompts tabs can now be reordered directly from the panel, keeping the same order in Settings without opening the options page first. (#764)\n- **Panel width controls** — Floating panels now support edge-drag resizing and an optional Beta hover-widening mode; related settings stay under Panel Width, are searchable in Search Everywhere, and avoid page-avoidance jumps while temporarily widening. (#763)\n\n### ✨ Improvements\n\n- **Smart panel-aware layout** — Smart Avoidance now covers more new chat, Canvas, side-panel, and file-view layouts, keeping page content, input boxes, and native panels aligned with the available safe area while the Ophel floating panel is open. (#761)\n\n### 🐛 Bug Fixes\n\n- **Kimi conversation sync** — Fixed issue where Kimi's updated sidebar layout could prevent new or recent chats from appearing in Conversations sync. (#759)",
+    zh: "### 🚀 新增功能\n\n- **面板 Tab 排序** — 现在可以直接在面板中拖拽调整大纲、会话和提示词 Tab 的顺序，设置页会同步显示同一顺序，不必先打开选项页。(#764)\n- **面板宽度控制** — 悬浮面板现在支持拖拽边缘调整宽度，并可开启 Beta 版悬停临时加宽；相关设置收在“面板宽度”下，可通过全局搜索定位，临时加宽时也不会触发页面避让跳动。(#763)\n\n### ✨ 功能优化\n\n- **智能避让布局** — 智能避让现在覆盖更多新对话、Canvas、侧边面板和文件查看场景，Ophel 悬浮面板打开时会让页面内容、输入框和站点原生面板更稳定地进入可见安全区。(#761)\n\n### 🐛 问题修复\n\n- **Kimi 会话同步** — 修复 Kimi 更新侧边栏布局后，新建或近期对话可能无法同步到会话面板的问题。(#759)",
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
     zh: "https://ophel.app/docs/zh/changelog",
   },
-  media: [
-    {
-      id: "panel-aware-layout-video",
-      type: "video",
-      src: "https://github.com/user-attachments/assets/b642142e-8de3-4f9e-b006-ef87ce784e49",
-      alt: {
-        en: "Smart Avoidance keeps chat content clear of the Ophel panel",
-        zh: "智能避让让聊天内容避开 Ophel 面板",
-      },
-      caption: {
-        en: "Smart Avoidance keeps messages, code blocks, and input boxes visible while the Ophel panel is open.",
-        zh: "智能避让会在 Ophel 面板展开时让消息、代码块和输入框保持可见。",
-      },
-    },
-  ],
+  media: [],
 } as const satisfies ReleaseNotesContent

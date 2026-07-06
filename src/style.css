@@ -419,6 +419,69 @@
     filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* ============= 面板宽度调整 ============= */
+.gh-main-panel.hover-width-active {
+  transition: width 0.18s ease;
+}
+
+.gh-main-panel.is-resizing {
+  user-select: none;
+}
+
+.gh-main-panel.is-resizing,
+.gh-main-panel.is-resizing * {
+  cursor: ew-resize !important;
+}
+
+.gh-panel-resize-handle {
+  position: absolute;
+  top: 56px;
+  bottom: 64px;
+  width: 18px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: ew-resize;
+  z-index: 30;
+  opacity: 1;
+  touch-action: none;
+  transition:
+    background 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.gh-panel-resize-handle-left {
+  left: 0;
+}
+
+.gh-panel-resize-handle-right {
+  right: 0;
+}
+
+.gh-panel-resize-handle:focus-visible {
+  outline: none;
+}
+
+.gh-panel-resize-handle-left:focus-visible,
+.gh-main-panel.is-resizing .gh-panel-resize-handle-left {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--gh-primary, #4285f4) 10%, transparent),
+    transparent
+  );
+  box-shadow: inset 2px 0 0 color-mix(in srgb, var(--gh-primary, #4285f4) 52%, transparent);
+}
+
+.gh-panel-resize-handle-right:focus-visible,
+.gh-main-panel.is-resizing .gh-panel-resize-handle-right {
+  background: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--gh-primary, #4285f4) 10%, transparent),
+    transparent
+  );
+  box-shadow: inset -2px 0 0 color-mix(in srgb, var(--gh-primary, #4285f4) 52%, transparent);
+}
+
 /* ============= 面板 Header 样式 ============= */
 .gh-panel-header {
   /* 使用 CSS 变量，支持动态主题切换 */
@@ -2384,6 +2447,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gh-panel-icon-btn,
+  .gh-main-panel,
+  .gh-panel-resize-handle,
   .outline-toolbar-btn,
   .gh-panel-search-input,
   .gh-panel-search-action,

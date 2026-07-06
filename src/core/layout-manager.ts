@@ -37,6 +37,10 @@ const DEFAULT_PANEL_AVOIDANCE_GAP = 16
 const DEFAULT_PANEL_AVOIDANCE_MIN_VISIBLE_WIDTH = 120
 const DEFAULT_PANEL_AVOIDANCE_MIN_SAFE_WIDTH = 360
 const DEFAULT_PANEL_AVOIDANCE_MIN_VIEWPORT_WIDTH = 768
+const PANEL_HOVER_WIDTH_ACTIVE_ATTR = "data-panel-hover-width-active"
+const PANEL_BASE_WIDTH_ATTR = "data-panel-base-width"
+const PANEL_ANCHOR_SIDE_ATTR = "data-panel-anchor-side"
+const PANEL_HOVER_WIDTH_AVOIDANCE_SUPPRESSION_MS = 260
 
 interface PanelReservation {
   targetWidth: number
@@ -94,6 +98,7 @@ export class LayoutManager {
   private panelAvoidanceScopeResizeObserver: ResizeObserver | null = null
   private panelAvoidanceObservedPanel: HTMLElement | null = null
   private panelAvoidanceObservedScope: HTMLElement | null = null
+  private panelHoverWidthAvoidanceSuppressedUntil = 0
 
   constructor(siteAdapter: SiteAdapter, pageWidthConfig: PageWidthConfig) {
     this.siteAdapter = siteAdapter
@@ -173,6 +178,7 @@ export class LayoutManager {
     this.panelAvoidanceScopeResizeObserver = null
     this.panelAvoidanceObservedPanel = null
     this.panelAvoidanceObservedScope = null
+    this.panelHoverWidthAvoidanceSuppressedUntil = 0
     this.clearPanelAvoidanceStyle()
     this.refreshShadowInjection()
   }
@@ -578,7 +584,7 @@ export class LayoutManager {
       return null
     }
 
-    const rect = element.getBoundingClientRect()
+    const rect = this.getPanelAvoidanceObstacleRect(element)
     const visibleLeft = Math.max(0, rect.left)
     const visibleRight = Math.min(window.innerWidth, rect.right)
     const visibleWidth = Math.max(0, visibleRight - visibleLeft)
@@ -588,6 +594,25 @@ export class LayoutManager {
     if (visibleWidth < minVisibleWidth || rect.height < minVisibleHeight) return null
 
     return rect
+  }
+
+  private getPanelAvoidanceObstacleRect(element: HTMLElement): DOMRect {
+    const rect = element.getBoundingClientRect()
+    if (
+      !element.classList.contains("gh-main-panel") ||
+      element.getAttribute(PANEL_HOVER_WIDTH_ACTIVE_ATTR) !== "true"
+    ) {
+      return rect
+    }
+
+    const baseWidth = Number.parseFloat(element.getAttribute(PANEL_BASE_WIDTH_ATTR) || "")
+    if (!Number.isFinite(baseWidth) || baseWidth <= 0 || baseWidth >= rect.width) {
+      return rect
+    }
+
+    const anchorSide = element.getAttribute(PANEL_ANCHOR_SIDE_ATTR)
+    const left = anchorSide === "right" ? rect.right - baseWidth : rect.left
+    return new DOMRect(left, rect.top, baseWidth, rect.height)
   }
 
   private dedupePanelAvoidanceObstacles(
@@ -688,6 +713,50 @@ export class LayoutManager {
     )
   }
 
+  private markPanelHoverWidthAvoidanceSuppressed() {
+    this.panelHoverWidthAvoidanceSuppressedUntil = Math.max(
+      this.panelHoverWidthAvoidanceSuppressedUntil,
+      performance.now() + PANEL_HOVER_WIDTH_AVOIDANCE_SUPPRESSION_MS,
+    )
+  }
+
+  private isPanelHoverWidthAvoidanceSuppressed(panel: HTMLElement | null): boolean {
+    if (panel?.classList.contains("dragging")) {
+      return false
+    }
+
+    return (
+      panel?.getAttribute(PANEL_HOVER_WIDTH_ACTIVE_ATTR) === "true" ||
+      performance.now() < this.panelHoverWidthAvoidanceSuppressedUntil
+    )
+  }
+
+  private handlePanelAvoidancePanelMutation = (records: MutationRecord[]) => {
+    const panel = this.panelAvoidanceObservedPanel
+    const hasHoverWidthMutation = records.some(
+      (record) =>
+        record.type === "attributes" &&
+        record.target === panel &&
+        record.attributeName === PANEL_HOVER_WIDTH_ACTIVE_ATTR,
+    )
+
+    if (hasHoverWidthMutation || this.isPanelHoverWidthAvoidanceSuppressed(panel)) {
+      this.markPanelHoverWidthAvoidanceSuppressed()
+      return
+    }
+
+    this.schedulePanelAvoidanceUpdate()
+  }
+
+  private handlePanelAvoidancePanelResize = () => {
+    if (this.isPanelHoverWidthAvoidanceSuppressed(this.panelAvoidanceObservedPanel)) {
+      this.markPanelHoverWidthAvoidanceSuppressed()
+      return
+    }
+
+    this.schedulePanelAvoidanceUpdate()
+  }
+
   private syncPanelAvoidanceObservers(panel: HTMLElement | null, scope: HTMLElement | null) {
     if (this.panelAvoidanceObservedPanel !== panel) {
       this.panelAvoidancePanelObserver?.disconnect()
@@ -697,14 +766,25 @@ export class LayoutManager {
       this.panelAvoidanceObservedPanel = panel
 
       if (panel) {
-        this.panelAvoidancePanelObserver = new MutationObserver(this.schedulePanelAvoidanceUpdate)
+        this.panelAvoidancePanelObserver = new MutationObserver(
+          this.handlePanelAvoidancePanelMutation,
+        )
         this.panelAvoidancePanelObserver.observe(panel, {
           attributes: true,
-          attributeFilter: ["class", "style", "data-edge-snap-transitioning"],
+          attributeFilter: [
+            "class",
+            "style",
+            "data-edge-snap-transitioning",
+            PANEL_HOVER_WIDTH_ACTIVE_ATTR,
+            PANEL_BASE_WIDTH_ATTR,
+            PANEL_ANCHOR_SIDE_ATTR,
+          ],
         })
 
         if (typeof ResizeObserver !== "undefined") {
-          this.panelAvoidanceResizeObserver = new ResizeObserver(this.schedulePanelAvoidanceUpdate)
+          this.panelAvoidanceResizeObserver = new ResizeObserver(
+            this.handlePanelAvoidancePanelResize,
+          )
           this.panelAvoidanceResizeObserver.observe(panel)
         }
       }

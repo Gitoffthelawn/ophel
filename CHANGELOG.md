@@ -9,9 +9,14 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.4] - 2026-07-06
+
 ### 🚀 New Features
 
 - **Panel tab reordering** — Outline, Conversations, and Prompts tabs can now be reordered directly from the panel, keeping the same order in Settings without opening the options page first. (#764)
+- **Panel width controls** — Floating panels now support edge-drag resizing and an optional Beta hover-widening mode; related settings stay under Panel Width, are searchable in Search Everywhere, and avoid page-avoidance jumps while temporarily widening. (#763)
 
 ### ✨ Improvements
 
@@ -1296,6 +1301,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
 [1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1

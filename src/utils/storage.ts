@@ -178,6 +178,8 @@ export interface Settings {
     edgeSnapThreshold: number // 吸附触发距离 (0-400, 默认 30)
     height: number // 面板高度 (50-100, 默认 85, 单位 vh)
     width: number // 面板宽度 (200-600, 默认 320, 单位 px)
+    resizeOnHover: boolean // 鼠标悬停时临时加宽面板
+    hoverWidth: number // 悬停时的临时面板宽度 (240-600, 默认 520, 单位 px)
   }
 
   // Gemini Enterprise 专属设置
@@ -197,7 +199,6 @@ export interface Settings {
     formulaCopyFormat: FormulaCopyFormat
     formulaDelimiter: boolean
     tableCopy: boolean
-    exportImagesToBase64: boolean
     userQueryMarkdown: boolean // 用户提问 Markdown 渲染
   }
 
@@ -397,6 +398,8 @@ export const DEFAULT_SETTINGS: Settings = {
     edgeSnapThreshold: 30,
     height: 85,
     width: 320,
+    resizeOnHover: false,
+    hoverWidth: 520,
   },
 
   geminiEnterprise: {
@@ -415,7 +418,6 @@ export const DEFAULT_SETTINGS: Settings = {
     formulaCopyFormat: "latex",
     formulaDelimiter: true,
     tableCopy: true,
-    exportImagesToBase64: false,
     userQueryMarkdown: true, // 默认开启
   },
 

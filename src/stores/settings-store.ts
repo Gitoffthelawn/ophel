@@ -238,6 +238,8 @@ const normalizePanelSettings = (panel?: Partial<Settings["panel"]>): Settings["p
     edgeSnapThreshold: panel?.edgeSnapThreshold ?? defaults.edgeSnapThreshold,
     height: panel?.height ?? defaults.height,
     width: panel?.width ?? defaults.width,
+    resizeOnHover: panel?.resizeOnHover ?? defaults.resizeOnHover,
+    hoverWidth: panel?.hoverWidth ?? defaults.hoverWidth,
   }
 }
 
@@ -257,6 +259,28 @@ const normalizeExportSettings = (
   }
 }
 
+const normalizeContentSettings = (
+  contentSettings?: Partial<Settings["content"]>,
+): Settings["content"] => {
+  const defaults = DEFAULT_SETTINGS.content
+  const formulaCopyFormat =
+    contentSettings?.formulaCopyFormat === "mathml" ||
+    contentSettings?.formulaCopyFormat === "latex"
+      ? contentSettings.formulaCopyFormat
+      : defaults.formulaCopyFormat
+
+  return {
+    assistantMermaid: contentSettings?.assistantMermaid ?? defaults.assistantMermaid,
+    markdownFix: contentSettings?.markdownFix ?? defaults.markdownFix,
+    watermarkRemoval: contentSettings?.watermarkRemoval ?? defaults.watermarkRemoval,
+    formulaCopy: contentSettings?.formulaCopy ?? defaults.formulaCopy,
+    formulaCopyFormat,
+    formulaDelimiter: contentSettings?.formulaDelimiter ?? defaults.formulaDelimiter,
+    tableCopy: contentSettings?.tableCopy ?? defaults.tableCopy,
+    userQueryMarkdown: contentSettings?.userQueryMarkdown ?? defaults.userQueryMarkdown,
+  }
+}
+
 const normalizeSettings = (settings: SettingsInput): Settings => {
   const {
     collapsedButtons: _legacyCollapsedButtons,
@@ -271,10 +295,7 @@ const normalizeSettings = (settings: SettingsInput): Settings => {
     ...DEFAULT_SETTINGS,
     ...rest,
     panel: normalizePanelSettings(settings.panel),
-    content: {
-      ...DEFAULT_SETTINGS.content,
-      ...settings.content,
-    },
+    content: normalizeContentSettings(settings.content),
     theme: {
       ...DEFAULT_SETTINGS.theme,
       ...settings.theme,
