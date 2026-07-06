@@ -742,6 +742,99 @@
   pointer-events: none;
 }
 
+.settings-panel-width-accordion {
+  border-bottom: 1px solid var(--gh-border, #f3f4f6);
+}
+
+.settings-panel-width-accordion > .settings-row.settings-panel-width-main {
+  border-bottom: none;
+  padding: 14px 0;
+}
+
+.settings-panel-width-trigger {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.settings-panel-width-trigger:hover {
+  color: var(--gh-primary, #4285f4);
+}
+
+.settings-panel-width-trigger:hover .settings-panel-width-icon {
+  color: var(--gh-primary, #4285f4);
+}
+
+.settings-panel-width-trigger:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 34%, transparent);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.settings-panel-width-icon {
+  flex: 0 0 auto;
+  color: var(--gh-text-secondary, #9ca3af);
+  transform: rotate(-90deg);
+  transition: transform 0.18s ease;
+}
+
+.settings-panel-width-accordion.open .settings-panel-width-icon {
+  transform: rotate(0deg);
+}
+
+.settings-panel-width-body {
+  padding: 0 0 12px 18px;
+  animation: settings-accordion-reveal 0.18s ease;
+}
+
+@keyframes settings-accordion-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.settings-panel-width-subrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 11px 0;
+  border-top: 1px solid color-mix(in srgb, var(--gh-border, #f3f4f6) 72%, transparent);
+}
+
+.settings-panel-width-subrow .settings-row-control {
+  margin-left: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .settings-panel-width-trigger,
+  .settings-panel-width-icon {
+    transition: none !important;
+  }
+
+  .settings-panel-width-body {
+    animation: none !important;
+  }
+}
+
 /* ==================== 表单控件 ==================== */
 
 .settings-select {
