@@ -820,6 +820,10 @@
   border-top: 1px solid color-mix(in srgb, var(--gh-border, #f3f4f6) 72%, transparent);
 }
 
+.settings-panel-width-subrow.disabled {
+  opacity: 0.5;
+}
+
 .settings-panel-width-subrow .settings-row-control {
   margin-left: 0;
 }

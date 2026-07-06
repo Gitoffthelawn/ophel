@@ -26,6 +26,7 @@ import { PageTitle, SettingCard, SettingRow, TabGroup, ToggleRow } from "../comp
 interface GeneralPageProps {
   siteId: string
   initialTab?: string
+  onPanelHoverWidthPreviewChange?: (isActive: boolean) => void
 }
 
 // 可排序项目组件
@@ -90,7 +91,11 @@ const SortableItem: React.FC<{
   </div>
 )
 
-const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }) => {
+const GeneralPage: React.FC<GeneralPageProps> = ({
+  siteId: _siteId,
+  initialTab,
+  onPanelHoverWidthPreviewChange,
+}) => {
   const [activeTab, setActiveTab] = useState(initialTab || "panel")
   const [isPanelWidthAdvancedOpen, setIsPanelWidthAdvancedOpen] = useState(false)
   const {
@@ -107,6 +112,13 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
       setActiveTab(initialTab)
     }
   }, [initialTab])
+
+  useEffect(
+    () => () => {
+      onPanelHoverWidthPreviewChange?.(false)
+    },
+    [onPanelHoverWidthPreviewChange],
+  )
 
   // 拖拽状态
   const [draggedItem, setDraggedItem] = useState<{ type: "tab" | "button"; index: number } | null>(
@@ -160,6 +172,49 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
   const handleHoverWidthChange = (val: number) => {
     setSettings(buildPanelPreview("hoverWidth", val))
   }
+
+  const activateHoverWidthPreview = () => {
+    if (!isHoverResizeEnabled) {
+      return
+    }
+
+    onPanelHoverWidthPreviewChange?.(true)
+  }
+
+  const deactivateHoverWidthPreview = () => {
+    onPanelHoverWidthPreviewChange?.(false)
+  }
+
+  const handleHoverWidthPreviewBlur: React.FocusEventHandler<HTMLDivElement> = (event) => {
+    const nextTarget = event.relatedTarget
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+      return
+    }
+
+    deactivateHoverWidthPreview()
+  }
+
+  const isFloatingPanelMode = (settings?.panel?.panelMode ?? "floating") === "floating"
+  const isHoverResizeEnabled = settings?.panel?.resizeOnHover ?? false
+
+  useEffect(() => {
+    if (
+      activeTab === "panel" &&
+      isFloatingPanelMode &&
+      isPanelWidthAdvancedOpen &&
+      isHoverResizeEnabled
+    ) {
+      return
+    }
+
+    onPanelHoverWidthPreviewChange?.(false)
+  }, [
+    activeTab,
+    isFloatingPanelMode,
+    isHoverResizeEnabled,
+    isPanelWidthAdvancedOpen,
+    onPanelHoverWidthPreviewChange,
+  ])
 
   // 处理拖拽开始
   const handleDragStart = (e: React.DragEvent, type: "tab" | "button", index: number) => {
@@ -216,9 +271,6 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
   }
 
   if (!settings) return null
-
-  const isFloatingPanelMode = (settings.panel?.panelMode ?? "floating") === "floating"
-  const isHoverResizeEnabled = settings.panel?.resizeOnHover ?? false
 
   const tabs = [
     { id: "panel", label: t("panelTab") },
@@ -400,35 +452,39 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
                     />
                   </div>
 
-                  {isHoverResizeEnabled && (
-                    <div
-                      className="settings-panel-width-subrow"
-                      data-setting-id="panel-hover-width">
-                      <div className="settings-row-info">
-                        <div className="settings-row-label">{t("panelHoverWidthLabel")}</div>
-                        <div className="settings-row-desc">{t("panelHoverWidthDesc")}</div>
-                      </div>
-                      <div className="settings-row-control">
-                        <Slider
-                          value={Math.max(
-                            settings.panel?.hoverWidth ?? 520,
-                            settings.panel?.width ?? 320,
-                            240,
-                          )}
-                          onChange={handleHoverWidthChange}
-                          onPreviewChange={handleHoverWidthPreview}
-                          onCancelPreview={clearPreviewSettings}
-                          min={240}
-                          max={600}
-                          step={10}
-                          unit="px"
-                          defaultValue={520}
-                          formatValue={(value) => `${value}px`}
-                          ariaLabel={t("panelHoverWidthLabel")}
-                        />
-                      </div>
+                  <div
+                    className={`settings-panel-width-subrow ${isHoverResizeEnabled ? "" : "disabled"}`.trim()}
+                    data-setting-id="panel-hover-width"
+                    aria-disabled={!isHoverResizeEnabled}
+                    onMouseEnter={activateHoverWidthPreview}
+                    onMouseLeave={deactivateHoverWidthPreview}
+                    onFocus={activateHoverWidthPreview}
+                    onBlur={handleHoverWidthPreviewBlur}>
+                    <div className="settings-row-info">
+                      <div className="settings-row-label">{t("panelHoverWidthLabel")}</div>
+                      <div className="settings-row-desc">{t("panelHoverWidthDesc")}</div>
                     </div>
-                  )}
+                    <div className="settings-row-control">
+                      <Slider
+                        value={Math.max(
+                          settings.panel?.hoverWidth ?? 520,
+                          settings.panel?.width ?? 320,
+                          240,
+                        )}
+                        onChange={handleHoverWidthChange}
+                        onPreviewChange={handleHoverWidthPreview}
+                        onCancelPreview={clearPreviewSettings}
+                        min={240}
+                        max={600}
+                        step={10}
+                        unit="px"
+                        defaultValue={520}
+                        disabled={!isHoverResizeEnabled}
+                        formatValue={(value) => `${value}px`}
+                        ariaLabel={t("panelHoverWidthLabel")}
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

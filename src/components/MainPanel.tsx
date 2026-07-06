@@ -37,7 +37,7 @@ import type { PromptManager } from "~core/prompt-manager"
 import type { ThemeTransitionOrigin } from "~core/theme-manager"
 import { useDraggable } from "~hooks/useDraggable"
 import { useSettingsStore } from "~stores/settings-store"
-import { attachEditableKeyboardFocusGuard, hasOphelInteractionLayer } from "~utils/dom-toolkit"
+import { attachEditableKeyboardFocusGuard, hasOphelHoverWidthRetainLayer } from "~utils/dom-toolkit"
 import { loadHistoryUntil } from "~utils/history-loader"
 import { t } from "~utils/i18n"
 import { getScrollInfo, smartScrollTo, smartScrollToBottom } from "~utils/scroll-helper"
@@ -72,6 +72,7 @@ interface MainPanelProps {
   onUnsnap?: () => void
   onInteractionStateChange?: (isActive: boolean) => void
   onOpenSettings?: () => void
+  isHoverWidthSettingsPreviewActive?: boolean
   onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
@@ -115,6 +116,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   onUnsnap,
   onInteractionStateChange,
   onOpenSettings,
+  isHoverWidthSettingsPreviewActive = false,
   onMouseEnter,
   onMouseLeave,
 }) => {
@@ -189,8 +191,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     return roots
   }, [panelRef])
 
-  const hasOpenPanelInteractionLayer = useCallback(
-    () => hasOphelInteractionLayer(getPanelInteractionRoots()),
+  const hasOpenHoverWidthRetainLayer = useCallback(
+    () => hasOphelHoverWidthRetainLayer(getPanelInteractionRoots()),
     [getPanelInteractionRoots],
   )
 
@@ -252,13 +254,13 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       return
     }
 
-    if (hasOpenPanelInteractionLayer()) {
+    if (hasOpenHoverWidthRetainLayer()) {
       setIsHoverWidthRetained(true)
       return
     }
 
     setIsHoverWidthRetained(false)
-  }, [hasOpenPanelInteractionLayer])
+  }, [hasOpenHoverWidthRetainLayer])
 
   const scheduleHoverWidthRelease = useCallback(
     (delayMs: number = HOVER_WIDTH_RELEASE_DELAY_MS) => {
@@ -304,20 +306,20 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     }
 
     const roots = getPanelInteractionRoots()
-    let hadInteractionLayer = hasOpenPanelInteractionLayer()
+    let hadRetainLayer = hasOpenHoverWidthRetainLayer()
     const observer = new MutationObserver(() => {
-      const hasInteractionLayer = hasOpenPanelInteractionLayer()
+      const hasRetainLayer = hasOpenHoverWidthRetainLayer()
 
-      if (hasInteractionLayer) {
-        hadInteractionLayer = true
+      if (hasRetainLayer) {
+        hadRetainLayer = true
         return
       }
 
-      if (!hadInteractionLayer) {
+      if (!hadRetainLayer) {
         return
       }
 
-      hadInteractionLayer = false
+      hadRetainLayer = false
       syncPanelHoveredStateFromPointer()
       scheduleHoverWidthRelease()
     })
@@ -327,7 +329,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     return () => observer.disconnect()
   }, [
     getPanelInteractionRoots,
-    hasOpenPanelInteractionLayer,
+    hasOpenHoverWidthRetainLayer,
     isHoverWidthRetained,
     isPanelResizing,
     scheduleHoverWidthRelease,
@@ -493,7 +495,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     !isEdgeSnapMode
   const isHoverWidthActive =
     canResizeOnHover &&
-    (isPanelHovered || isPanelFocusWithin || isHoverWidthRetained || isPanelResizing)
+    (isPanelHovered ||
+      isPanelFocusWithin ||
+      isHoverWidthRetained ||
+      isPanelResizing ||
+      isHoverWidthSettingsPreviewActive)
   const panelWidth =
     isPanelResizing || !isHoverWidthActive
       ? basePanelWidth

@@ -1140,6 +1140,7 @@ export const App = () => {
 
   // 设置模态框状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isHoverWidthSettingsPreviewActive, setIsHoverWidthSettingsPreviewActive] = useState(false)
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false)
   const [releaseNotesAutoSignal, setReleaseNotesAutoSignal] = useState(0)
   const [isGlobalSettingsSearchOpen, setIsGlobalSettingsSearchOpen] = useState(false)
@@ -2039,6 +2040,7 @@ export const App = () => {
   const closeSettingsModal = useCallback(() => {
     isSettingsOpenRef.current = false
     setIsSettingsOpen(false)
+    setIsHoverWidthSettingsPreviewActive(false)
 
     const currentSettings = settingsRef.current
     if (currentSettings?.panel?.panelMode !== "edge-snap") return
@@ -3573,6 +3575,7 @@ export const App = () => {
           hideEdgePeek()
         }}
         onInteractionStateChange={handlePanelInteractionChange}
+        isHoverWidthSettingsPreviewActive={isHoverWidthSettingsPreviewActive}
         onOpenSettings={() => {
           openSettingsModal()
         }}
@@ -3632,6 +3635,7 @@ export const App = () => {
         onClose={closeSettingsModal}
         siteId={adapter.getSiteId()}
         onOpenReleaseNotes={canShowCurrentReleaseNotes ? openReleaseNotes : undefined}
+        onPanelHoverWidthPreviewChange={setIsHoverWidthSettingsPreviewActive}
       />
       {isReleaseNotesOpen && canShowCurrentReleaseNotes && releaseNotesMarkdown.trim() ? (
         <ReleaseNotesModal

@@ -86,6 +86,7 @@ interface SettingsModalProps {
   onClose: () => void
   siteId: string
   onOpenReleaseNotes?: () => void
+  onPanelHoverWidthPreviewChange?: (isActive: boolean) => void
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -93,6 +94,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   onClose,
   siteId,
   onOpenReleaseNotes,
+  onPanelHoverWidthPreviewChange,
 }) => {
   const [activePage, setActivePage] = useState<string>(NAV_IDS.GENERAL)
   const [initialSubTab, setInitialSubTab] = useState<string | undefined>(undefined)
@@ -280,7 +282,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     switch (activePage) {
       case NAV_IDS.GENERAL:
-        return <GeneralPage siteId={siteId} initialTab={initialSubTab} />
+        return (
+          <GeneralPage
+            siteId={siteId}
+            initialTab={initialSubTab}
+            onPanelHoverWidthPreviewChange={onPanelHoverWidthPreviewChange}
+          />
+        )
       case NAV_IDS.SITE_SETTINGS:
         return (
           <SiteSettingsPage
@@ -304,7 +312,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       case NAV_IDS.ABOUT:
         return <AboutPage onOpenReleaseNotes={onOpenReleaseNotes} />
       default:
-        return <GeneralPage siteId={siteId} initialTab={initialSubTab} />
+        return (
+          <GeneralPage
+            siteId={siteId}
+            initialTab={initialSubTab}
+            onPanelHoverWidthPreviewChange={onPanelHoverWidthPreviewChange}
+          />
+        )
     }
   }
 
