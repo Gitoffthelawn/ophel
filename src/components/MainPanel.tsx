@@ -148,8 +148,14 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const [isPanelResizing, setIsPanelResizing] = useState(false)
   const [draftPanelWidth, setDraftPanelWidth] = useState<number | null>(null)
   const hoverWidthReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastPanelPointerDownAtRef = useRef(0)
   const resizeFrameRef = useRef<number | null>(null)
   const pendingResizeWidthRef = useRef<number | null>(null)
+  const hoverWidthActivityRef = useRef({
+    isFocused: false,
+    isHovered: false,
+    isResizing: false,
+  })
   const resizeStateRef = useRef<{
     pointerId: number
     startX: number
@@ -193,8 +199,24 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     }
   }, [])
 
+  const setPanelHoveredState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isHovered = value
+    setIsPanelHovered(value)
+  }, [])
+
+  const setPanelFocusWithinState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isFocused = value
+    setIsPanelFocusWithin(value)
+  }, [])
+
+  const setPanelResizingState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isResizing = value
+    setIsPanelResizing(value)
+  }, [])
+
   const releaseHoverWidthIfIdle = useCallback(() => {
-    if (isPanelHovered || isPanelFocusWithin || isPanelResizing) {
+    const activity = hoverWidthActivityRef.current
+    if (activity.isHovered || activity.isFocused || activity.isResizing) {
       return
     }
 
@@ -204,7 +226,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     }
 
     setIsHoverWidthRetained(false)
-  }, [hasOpenPanelInteractionLayer, isPanelFocusWithin, isPanelHovered, isPanelResizing])
+  }, [hasOpenPanelInteractionLayer])
 
   const scheduleHoverWidthRelease = useCallback(
     (delayMs: number = HOVER_WIDTH_RELEASE_DELAY_MS) => {
@@ -768,37 +790,42 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     setDraftPanelWidth(pendingResizeWidthRef.current)
   }, [])
 
+  const handlePanelPointerDownCapture = useCallback(() => {
+    lastPanelPointerDownAtRef.current = performance.now()
+  }, [])
+
   const handlePanelPointerEnter = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       clearHoverWidthReleaseTimer()
-      setIsPanelHovered(true)
+      setPanelHoveredState(true)
       setIsHoverWidthRetained(true)
       onMouseEnter?.(event)
     },
-    [clearHoverWidthReleaseTimer, onMouseEnter],
+    [clearHoverWidthReleaseTimer, onMouseEnter, setPanelHoveredState],
   )
 
   const handlePanelPointerLeave = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
-      setIsPanelHovered(false)
+      setPanelHoveredState(false)
       scheduleHoverWidthRelease()
       onMouseLeave?.(event)
     },
-    [onMouseLeave, scheduleHoverWidthRelease],
+    [onMouseLeave, scheduleHoverWidthRelease, setPanelHoveredState],
   )
 
   const handlePanelFocus = useCallback(
     (event: React.FocusEvent<HTMLDivElement>) => {
       const target = event.target
-      if (!(target instanceof HTMLElement) || !target.matches(":focus-visible")) {
+      const isPointerFocus = performance.now() - lastPanelPointerDownAtRef.current < 600
+      if (isPointerFocus || !(target instanceof HTMLElement) || !target.matches(":focus-visible")) {
         return
       }
 
       clearHoverWidthReleaseTimer()
-      setIsPanelFocusWithin(true)
+      setPanelFocusWithinState(true)
       setIsHoverWidthRetained(true)
     },
-    [clearHoverWidthReleaseTimer],
+    [clearHoverWidthReleaseTimer, setPanelFocusWithinState],
   )
 
   const handlePanelBlur = useCallback(
@@ -808,10 +835,10 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         return
       }
 
-      setIsPanelFocusWithin(false)
+      setPanelFocusWithinState(false)
       scheduleHoverWidthRelease()
     },
-    [scheduleHoverWidthRelease],
+    [scheduleHoverWidthRelease, setPanelFocusWithinState],
   )
 
   const handleResizePointerDown = useCallback(
@@ -837,12 +864,12 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       }
       pendingResizeWidthRef.current = startWidth
       setDraftPanelWidth(startWidth)
-      setIsPanelResizing(true)
+      setPanelResizingState(true)
       setIsHoverWidthRetained(true)
       onInteractionStateChange?.(true)
       event.currentTarget.setPointerCapture(event.pointerId)
     },
-    [onInteractionStateChange, panelRef, panelWidth, resizeHandleSide],
+    [onInteractionStateChange, panelRef, panelWidth, resizeHandleSide, setPanelResizingState],
   )
 
   const handleResizePointerMove = useCallback(
@@ -888,7 +915,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       resizeStateRef.current = null
       pendingResizeWidthRef.current = null
       setDraftPanelWidth(null)
-      setIsPanelResizing(false)
+      setPanelResizingState(false)
       updateNestedSetting("panel", "width", finalWidth)
       onInteractionStateChange?.(false)
 
@@ -898,7 +925,12 @@ export const MainPanel: React.FC<MainPanelProps> = ({
 
       scheduleHoverWidthRelease()
     },
-    [onInteractionStateChange, scheduleHoverWidthRelease, updateNestedSetting],
+    [
+      onInteractionStateChange,
+      scheduleHoverWidthRelease,
+      setPanelResizingState,
+      updateNestedSetting,
+    ],
   )
 
   const isHoverWidthPreviewActive =
@@ -941,6 +973,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         ref={panelRef}
         onMouseEnter={handlePanelPointerEnter}
         onMouseLeave={handlePanelPointerLeave}
+        onPointerDownCapture={handlePanelPointerDownCapture}
         onFocus={handlePanelFocus}
         onBlur={handlePanelBlur}
         className={`gh-main-panel gh-interactive ${!isLauncherPeeking && edgeSnapState ? `edge-snapped-${edgeSnapState}` : ""} ${isLauncherPeeking ? "launcher-peek" : ""} ${isEdgePeeking ? "edge-peek" : ""} ${isScrolling ? "scroll-hidden" : ""} ${isPanelResizing ? "is-resizing" : ""} ${isHoverWidthActive && !isPanelResizing ? "hover-width-active" : ""}`}
