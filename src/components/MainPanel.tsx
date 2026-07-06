@@ -73,6 +73,7 @@ interface MainPanelProps {
   onInteractionStateChange?: (isActive: boolean) => void
   onOpenSettings?: () => void
   isHoverWidthSettingsPreviewActive?: boolean
+  hoverWidthReleaseToken?: number
   onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
@@ -117,6 +118,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   onInteractionStateChange,
   onOpenSettings,
   isHoverWidthSettingsPreviewActive = false,
+  hoverWidthReleaseToken = 0,
   onMouseEnter,
   onMouseLeave,
 }) => {
@@ -231,6 +233,15 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     [clearHoverWidthReleaseTimer, setPanelFocusWithinState, setPanelHoveredState],
   )
 
+  const releaseHoverWidthForExternalLayer = useCallback(() => {
+    clearHoverWidthReleaseTimer()
+    setPanelHoveredState(false)
+    setPanelFocusWithinState(false)
+    setIsHoverWidthRetained(false)
+    setIsHoverWidthModeSwitchSuppressed(false)
+    setIsHoverWidthResizeSuppressed(false)
+  }, [clearHoverWidthReleaseTimer, setPanelFocusWithinState, setPanelHoveredState])
+
   const updatePanelPointerPosition = useCallback(
     (event: Pick<MouseEvent, "clientX" | "clientY">) => {
       lastPanelPointerPositionRef.current = {
@@ -298,6 +309,14 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       }
     }
   }, [clearHoverWidthReleaseTimer, onInteractionStateChange])
+
+  useLayoutEffect(() => {
+    if (hoverWidthReleaseToken <= 0) {
+      return
+    }
+
+    releaseHoverWidthForExternalLayer()
+  }, [hoverWidthReleaseToken, releaseHoverWidthForExternalLayer])
 
   useEffect(() => {
     const handlePointerPosition = (event: PointerEvent) => {
@@ -964,6 +983,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       event.stopPropagation()
 
       const panel = panelRef.current
+      // 直接操控当前可见边缘：hover-width 生效时也从可见宽度开始拖拽，
+      // 结束后把拖拽结果写入基础宽度，避免 pointerdown 时手柄跳离指针。
       const measuredWidth = panel?.getBoundingClientRect().width
       const startWidth = clampPanelWidth(
         measuredWidth && measuredWidth > 0 ? measuredWidth : panelWidth,

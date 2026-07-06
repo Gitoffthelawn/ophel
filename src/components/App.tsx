@@ -1141,6 +1141,7 @@ export const App = () => {
   // 设置模态框状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isHoverWidthSettingsPreviewActive, setIsHoverWidthSettingsPreviewActive] = useState(false)
+  const [hoverWidthReleaseToken, setHoverWidthReleaseToken] = useState(0)
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false)
   const [releaseNotesAutoSignal, setReleaseNotesAutoSignal] = useState(0)
   const [isGlobalSettingsSearchOpen, setIsGlobalSettingsSearchOpen] = useState(false)
@@ -2067,6 +2068,11 @@ export const App = () => {
     scheduleEdgePeekSync()
   }, [findUiElement, scheduleEdgePeekSync])
 
+  const releaseMainPanelHoverWidth = useCallback(() => {
+    setIsHoverWidthSettingsPreviewActive(false)
+    setHoverWidthReleaseToken((value) => value + 1)
+  }, [])
+
   const openGlobalSettingsSearch = useCallback(
     (source: GlobalSearchOpenSource = "ui") => {
       globalSearchOpenSourceRef.current = source
@@ -2077,6 +2083,8 @@ export const App = () => {
       } else {
         searchOpenedFromSettingsRef.current = false
       }
+
+      releaseMainPanelHoverWidth()
 
       if (edgeSnapState && settingsRef.current?.panel?.panelMode === "edge-snap") {
         showEdgePeek()
@@ -2102,7 +2110,13 @@ export const App = () => {
       settingsSearchWheelFreezeUntilRef.current = 0
       setIsGlobalSettingsSearchOpen(true)
     },
-    [clearSettingsSearchInputDebounceTimer, closeSettingsModal, edgeSnapState, showEdgePeek],
+    [
+      clearSettingsSearchInputDebounceTimer,
+      closeSettingsModal,
+      edgeSnapState,
+      releaseMainPanelHoverWidth,
+      showEdgePeek,
+    ],
   )
 
   const closeGlobalSettingsSearch = useCallback(
@@ -2163,6 +2177,7 @@ export const App = () => {
       closeGlobalSettingsSearch({ restoreFocus: false })
     }
 
+    releaseMainPanelHoverWidth()
     searchOpenedFromSettingsRef.current = false
     isSettingsOpenRef.current = true
 
@@ -2171,7 +2186,13 @@ export const App = () => {
     }
 
     setIsSettingsOpen(true)
-  }, [closeGlobalSettingsSearch, edgeSnapState, isGlobalSettingsSearchOpen, showEdgePeek])
+  }, [
+    closeGlobalSettingsSearch,
+    edgeSnapState,
+    isGlobalSettingsSearchOpen,
+    releaseMainPanelHoverWidth,
+    showEdgePeek,
+  ])
 
   const navigateToSearchResult = useCallback(
     async (item: GlobalSearchResultItem) => {
@@ -3576,6 +3597,7 @@ export const App = () => {
         }}
         onInteractionStateChange={handlePanelInteractionChange}
         isHoverWidthSettingsPreviewActive={isHoverWidthSettingsPreviewActive}
+        hoverWidthReleaseToken={hoverWidthReleaseToken}
         onOpenSettings={() => {
           openSettingsModal()
         }}
