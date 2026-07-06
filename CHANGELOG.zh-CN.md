@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.4] - 2026-07-06
+
 ### 🚀 新增功能
 
 - **面板 Tab 排序** — 现在可以直接在面板中拖拽调整大纲、会话和提示词 Tab 的顺序，设置页会同步显示同一顺序，不必先打开选项页。(#764)
@@ -1296,6 +1300,7 @@
 
 ---
 
+[1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
 [1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
 [1.1.1]: https://github.com/urzeye/ophel/releases/tag/v1.1.1
