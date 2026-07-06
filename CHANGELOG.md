@@ -11,7 +11,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🚀 New Features
 
-- **Resizable panel width** — Added a panel edge handle for adjusting width directly, plus an optional hover widening setting for temporarily showing more Outline, Conversations, and Prompts text without changing the saved width. (#763)
+- **Panel width controls** — Floating panels now support edge-drag resizing and an optional Beta hover-widening mode; related settings stay under Panel Width, are searchable in Search Everywhere, and avoid page-avoidance jumps while temporarily widening. (#763)
 
 ### ✨ Improvements
 
