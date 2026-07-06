@@ -149,6 +149,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const [draftPanelWidth, setDraftPanelWidth] = useState<number | null>(null)
   const hoverWidthReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastPanelPointerDownAtRef = useRef(0)
+  const lastPanelPointerPositionRef = useRef<{ clientX: number; clientY: number } | null>(null)
   const resizeFrameRef = useRef<number | null>(null)
   const pendingResizeWidthRef = useRef<number | null>(null)
   const hoverWidthActivityRef = useRef({
@@ -161,6 +162,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     startX: number
     startWidth: number
     handleSide: "left" | "right"
+    hasMoved: boolean
   } | null>(null)
 
   // 拖拽功能（高性能版本：直接 DOM 操作，不触发 React 渲染）
@@ -214,6 +216,36 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     setIsPanelResizing(value)
   }, [])
 
+  const updatePanelPointerPosition = useCallback(
+    (event: Pick<MouseEvent, "clientX" | "clientY">) => {
+      lastPanelPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      }
+    },
+    [],
+  )
+
+  const syncPanelHoveredStateFromPointer = useCallback(() => {
+    const panel = panelRef.current
+    const pointer = lastPanelPointerPositionRef.current
+
+    if (!panel || !pointer) {
+      setPanelHoveredState(false)
+      return false
+    }
+
+    const rect = panel.getBoundingClientRect()
+    const isPointerInsidePanel =
+      pointer.clientX >= rect.left &&
+      pointer.clientX <= rect.right &&
+      pointer.clientY >= rect.top &&
+      pointer.clientY <= rect.bottom
+
+    setPanelHoveredState(isPointerInsidePanel)
+    return isPointerInsidePanel
+  }, [panelRef, setPanelHoveredState])
+
   const releaseHoverWidthIfIdle = useCallback(() => {
     const activity = hoverWidthActivityRef.current
     if (activity.isHovered || activity.isFocused || activity.isResizing) {
@@ -253,15 +285,41 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   }, [clearHoverWidthReleaseTimer, onInteractionStateChange])
 
   useEffect(() => {
-    if (!isHoverWidthRetained || isPanelHovered || isPanelFocusWithin || isPanelResizing) {
+    const handlePointerPosition = (event: PointerEvent) => {
+      updatePanelPointerPosition(event)
+    }
+
+    window.addEventListener("pointermove", handlePointerPosition, true)
+    window.addEventListener("pointerdown", handlePointerPosition, true)
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerPosition, true)
+      window.removeEventListener("pointerdown", handlePointerPosition, true)
+    }
+  }, [updatePanelPointerPosition])
+
+  useEffect(() => {
+    if (!isHoverWidthRetained || isPanelResizing) {
       return
     }
 
     const roots = getPanelInteractionRoots()
+    let hadInteractionLayer = hasOpenPanelInteractionLayer()
     const observer = new MutationObserver(() => {
-      if (!hasOpenPanelInteractionLayer()) {
-        scheduleHoverWidthRelease()
+      const hasInteractionLayer = hasOpenPanelInteractionLayer()
+
+      if (hasInteractionLayer) {
+        hadInteractionLayer = true
+        return
       }
+
+      if (!hadInteractionLayer) {
+        return
+      }
+
+      hadInteractionLayer = false
+      syncPanelHoveredStateFromPointer()
+      scheduleHoverWidthRelease()
     })
 
     roots.forEach((root) => observer.observe(root, { childList: true, subtree: true }))
@@ -271,10 +329,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     getPanelInteractionRoots,
     hasOpenPanelInteractionLayer,
     isHoverWidthRetained,
-    isPanelFocusWithin,
-    isPanelHovered,
     isPanelResizing,
     scheduleHoverWidthRelease,
+    syncPanelHoveredStateFromPointer,
   ])
 
   // 模式切换时重置面板 DOM 位置
@@ -790,27 +847,33 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     setDraftPanelWidth(pendingResizeWidthRef.current)
   }, [])
 
-  const handlePanelPointerDownCapture = useCallback(() => {
-    lastPanelPointerDownAtRef.current = performance.now()
-  }, [])
+  const handlePanelPointerDownCapture = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
+      lastPanelPointerDownAtRef.current = performance.now()
+    },
+    [updatePanelPointerPosition],
+  )
 
   const handlePanelPointerEnter = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
       clearHoverWidthReleaseTimer()
       setPanelHoveredState(true)
       setIsHoverWidthRetained(true)
       onMouseEnter?.(event)
     },
-    [clearHoverWidthReleaseTimer, onMouseEnter, setPanelHoveredState],
+    [clearHoverWidthReleaseTimer, onMouseEnter, setPanelHoveredState, updatePanelPointerPosition],
   )
 
   const handlePanelPointerLeave = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
       setPanelHoveredState(false)
       scheduleHoverWidthRelease()
       onMouseLeave?.(event)
     },
-    [onMouseLeave, scheduleHoverWidthRelease, setPanelHoveredState],
+    [onMouseLeave, scheduleHoverWidthRelease, setPanelHoveredState, updatePanelPointerPosition],
   )
 
   const handlePanelFocus = useCallback(
@@ -861,6 +924,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         startX: event.clientX,
         startWidth,
         handleSide: resizeHandleSide,
+        hasMoved: false,
       }
       pendingResizeWidthRef.current = startWidth
       setDraftPanelWidth(startWidth)
@@ -883,6 +947,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       event.stopPropagation()
 
       const deltaX = event.clientX - state.startX
+      if (Math.abs(deltaX) >= 3) {
+        state.hasMoved = true
+      }
       const nextWidth =
         state.handleSide === "left"
           ? clampPanelWidth(state.startWidth - deltaX)
@@ -916,7 +983,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       pendingResizeWidthRef.current = null
       setDraftPanelWidth(null)
       setPanelResizingState(false)
-      updateNestedSetting("panel", "width", finalWidth)
+      if (state.hasMoved) {
+        updateNestedSetting("panel", "width", finalWidth)
+      }
       onInteractionStateChange?.(false)
 
       if (event.currentTarget.hasPointerCapture(event.pointerId)) {
@@ -1022,7 +1091,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             onPointerDown={handleResizePointerDown}
             onPointerMove={handleResizePointerMove}
             onPointerUp={finishResize}
-            onPointerCancel={finishResize}>
+            onPointerCancel={finishResize}
+            onLostPointerCapture={finishResize}>
             <span className="gh-panel-resize-grip" aria-hidden="true" />
           </button>
         )}

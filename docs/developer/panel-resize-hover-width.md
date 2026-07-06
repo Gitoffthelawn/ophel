@@ -96,6 +96,8 @@ const panelWidth =
 
 需要阻止事件冒泡到面板拖拽逻辑，避免拖宽和拖动面板同时触发。
 
+拖拽结束时只有指针真实移动超过最小阈值才写入 `panel.width`。单击 resize handle、hover 临时加宽期间误触手柄、或 pointer capture 丢失清理，都不能把临时预览宽度持久化为用户设置。
+
 ## 悬停临时加宽
 
 悬停加宽不能只依赖 CSS `:hover`。历史问题表明 Portal、输入法候选栏和高层级覆盖元素可能让 CSS hover 状态突然失效。实现应使用 JS 状态：
@@ -104,6 +106,7 @@ const panelWidth =
 - `focusin` / `focusout` 保持键盘操作时的加宽状态。
 - `mouseleave` 后延迟收回，减少视觉抖动。
 - 打开 Ophel 菜单或对话框时，如果交互层仍在，保持当前宽度直到交互结束。
+- 交互层关闭后必须根据最近一次 pointer 坐标重新同步面板 hover 状态；如果鼠标已经在面板外，即使没有新的 `mouseleave` 事件，也要释放临时加宽。
 
 第一版不新增 hover 加宽快捷键；需要临时隐藏面板仍使用现有幽灵模式和边缘吸附能力。
 
@@ -111,7 +114,7 @@ const panelWidth =
 
 - 样式放在 `src/style.css`，通过现有 `getStyle()` 注入 Plasmo Shadow DOM。
 - 手柄颜色使用 `--gh-border`、`--gh-text-tertiary`、`--gh-primary`、`--gh-hover`。
-- 手柄默认低干扰，只在 hover/focus/dragging 时增强可见性。
+- 手柄默认低干扰，只在 hover/focus/dragging 时增强可见性；视觉应使用侧边握柄，不使用容易被误解为返回、展开或指向操作的箭头/三角形。
 - 支持 `prefers-reduced-motion`，禁用宽度过渡。
 - 不新增主题变量，避免扩展 24 套主题配置。
 
@@ -120,16 +123,26 @@ const panelWidth =
 - `useDraggable`：resize handle 必须阻止冒泡，不进入 header 拖动逻辑。
 - Edge Snap：第一版不启用 hover 临时加宽，避免与边缘 peek 行为竞争。
 - Launcher Peek：第一版不启用 hover 临时加宽，保持启动器预览位置计算稳定。
-- Smart Avoidance：拖拽持久改宽会更新 `panel.width`，由现有布局监听同步；悬停临时加宽不作为避让输入。
+- Smart Avoidance：拖拽持久改宽会更新 `panel.width`，由现有布局监听同步；悬停临时加宽不作为避让输入。进入或退出 hover 临时加宽时，面板自身的宽度变化和相关属性变化都不应触发页面避让动画。
 - 油猴脚本：使用 DOM、Pointer Events、Zustand settings store 和 CSS，油猴构建可复用。
+
+## 已修复问题记录
+
+- resize handle 早期视觉是底部三角形，容易被理解为未知箭头操作。后续样式必须保持低干扰、可识别为拖拽握柄，并兼容浅色/深色主题。
+- hover 临时加宽时，面板 DOM 宽度变化曾触发 Smart Avoidance 的监听，导致页面出现一次避让动画。临时加宽必须通过 `data-panel-hover-width-active` 和基础宽度属性与避让逻辑隔离。
+- 打开新建文件夹、菜单、对话框等 Ophel 交互层后，点击取消关闭时可能没有新的 `mouseleave` 事件，导致面板停留在临时加宽状态。交互层消失后必须重新计算 pointer 是否仍在面板矩形内。
+- 单击 resize handle 但未拖动时，不应把当前 hover 预览宽度写回 `panel.width`；只有超过拖拽阈值的真实 resize 才允许持久化。
 
 ## 验证清单
 
 - 设置页能显示并保存“悬停时加宽”和“悬停宽度”。
 - 拖拽手柄在左右默认位置下方向正确，宽度限制在 `240px` 到 `600px`。
 - 拖拽结束后刷新页面仍保留新宽度。
+- 单击拖拽手柄但不移动，不会改变持久面板宽度。
 - 开启悬停加宽后，普通悬浮面板 mouse enter 加宽、mouse leave 收回。
+- 开启悬停加宽后，打开并取消新建文件夹、菜单、对话框等交互层，鼠标不在面板内时面板会自动恢复基础宽度。
 - 关闭悬停加宽后，mouse enter 不改变宽度。
 - Edge Snap 和 Launcher Peek 不启用临时加宽。
+- Smart Avoidance 开启时，hover 临时加宽和恢复不触发页面避让动画；真实拖拽改宽仍能更新避让。
 - 浅色/深色主题下手柄可见但不抢主操作。
 - `pnpm format:check`、`pnpm lint:check`、`pnpm typecheck`、`pnpm build`、`pnpm build:userscript` 通过。

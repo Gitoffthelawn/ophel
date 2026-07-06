@@ -435,8 +435,8 @@
 
 .gh-panel-resize-handle {
   position: absolute;
-  top: 48px;
-  bottom: 10px;
+  top: 56px;
+  bottom: 64px;
   width: 16px;
   padding: 0;
   border: 0;
@@ -445,9 +445,10 @@
   cursor: ew-resize;
   z-index: 30;
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
-  opacity: 0.38;
+  opacity: 0;
+  touch-action: none;
   transition:
     opacity 0.16s ease,
     color 0.16s ease,
@@ -463,37 +464,51 @@
 }
 
 .gh-panel-resize-grip {
-  width: 14px;
-  height: 28px;
-  margin-bottom: 12px;
-  background: color-mix(in srgb, var(--gh-bg, #ffffff) 72%, var(--gh-primary, #4285f4));
-  border: 1px solid color-mix(in srgb, var(--gh-border, #e5e7eb) 70%, var(--gh-primary, #4285f4));
-  box-shadow: var(--gh-shadow-sm, 0 2px 6px rgba(0, 0, 0, 0.12));
+  position: relative;
+  width: 3px;
+  height: 48px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gh-bg, #ffffff) 70%, transparent);
 }
 
-.gh-panel-resize-handle-left .gh-panel-resize-grip {
-  clip-path: polygon(0 50%, 100% 0, 100% 100%);
+.gh-panel-resize-grip::before,
+.gh-panel-resize-grip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.65;
+  transform: translateX(-50%);
 }
 
-.gh-panel-resize-handle-right .gh-panel-resize-grip {
-  clip-path: polygon(0 0, 100% 50%, 0 100%);
+.gh-panel-resize-grip::before {
+  top: 14px;
 }
 
+.gh-panel-resize-grip::after {
+  bottom: 14px;
+}
+
+.gh-main-panel:hover .gh-panel-resize-handle,
 .gh-panel-resize-handle:hover,
 .gh-panel-resize-handle:focus-visible,
 .gh-main-panel.is-resizing .gh-panel-resize-handle {
   color: var(--gh-primary, #4285f4);
-  opacity: 0.9;
+  opacity: 0.72;
 }
 
 .gh-panel-resize-handle-left:hover,
 .gh-panel-resize-handle-left:focus-visible {
-  transform: translateX(-1px);
+  transform: translateX(-2px);
 }
 
 .gh-panel-resize-handle-right:hover,
 .gh-panel-resize-handle-right:focus-visible {
-  transform: translateX(1px);
+  transform: translateX(2px);
 }
 
 .gh-panel-resize-handle:focus-visible {
