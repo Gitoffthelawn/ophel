@@ -889,6 +889,12 @@ export const it = {
     "Distanza predefinita dal bordo della finestra del browser dopo l'aggiornamento della pagina",
   panelWidthLabel: "Larghezza del pannello",
   panelWidthDesc: "Larghezza del pannello (px)",
+  panelResizeOnHoverLabel: "Allarga al passaggio",
+  panelResizeOnHoverDesc:
+    "Allarga temporaneamente il pannello flottante quando il puntatore ci passa sopra, poi ripristina la larghezza normale",
+  panelHoverWidthLabel: "Larghezza al passaggio",
+  panelHoverWidthDesc: "Larghezza temporanea del pannello durante il passaggio (px)",
+  panelResizeHandleLabel: "Trascina per ridimensionare il pannello",
   panelHeightLabel: "Altezza del pannello",
   panelHeightDesc: "Percentuale dell'altezza dello schermo occupata dal pannello",
   // Manual Anchor

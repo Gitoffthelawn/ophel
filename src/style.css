@@ -419,6 +419,103 @@
     filter 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
+/* ============= 面板宽度调整 ============= */
+.gh-main-panel.hover-width-active {
+  transition: width 0.18s ease;
+}
+
+.gh-main-panel.is-resizing {
+  user-select: none;
+}
+
+.gh-main-panel.is-resizing,
+.gh-main-panel.is-resizing * {
+  cursor: ew-resize !important;
+}
+
+.gh-panel-resize-handle {
+  position: absolute;
+  top: 56px;
+  bottom: 64px;
+  width: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--gh-text-tertiary, rgba(107, 114, 128, 0.72));
+  cursor: ew-resize;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  touch-action: none;
+  transition:
+    opacity 0.16s ease,
+    color 0.16s ease,
+    transform 0.16s ease;
+}
+
+.gh-panel-resize-handle-left {
+  left: 0;
+}
+
+.gh-panel-resize-handle-right {
+  right: 0;
+}
+
+.gh-panel-resize-grip {
+  position: relative;
+  width: 3px;
+  height: 48px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--gh-bg, #ffffff) 70%, transparent);
+}
+
+.gh-panel-resize-grip::before,
+.gh-panel-resize-grip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.65;
+  transform: translateX(-50%);
+}
+
+.gh-panel-resize-grip::before {
+  top: 14px;
+}
+
+.gh-panel-resize-grip::after {
+  bottom: 14px;
+}
+
+.gh-main-panel:hover .gh-panel-resize-handle,
+.gh-panel-resize-handle:hover,
+.gh-panel-resize-handle:focus-visible,
+.gh-main-panel.is-resizing .gh-panel-resize-handle {
+  color: var(--gh-primary, #4285f4);
+  opacity: 0.72;
+}
+
+.gh-panel-resize-handle-left:hover,
+.gh-panel-resize-handle-left:focus-visible {
+  transform: translateX(-2px);
+}
+
+.gh-panel-resize-handle-right:hover,
+.gh-panel-resize-handle-right:focus-visible {
+  transform: translateX(2px);
+}
+
+.gh-panel-resize-handle:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 34%, transparent);
+  outline-offset: 1px;
+}
+
 /* ============= 面板 Header 样式 ============= */
 .gh-panel-header {
   /* 使用 CSS 变量，支持动态主题切换 */
@@ -2384,6 +2481,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gh-panel-icon-btn,
+  .gh-main-panel,
+  .gh-panel-resize-handle,
   .outline-toolbar-btn,
   .gh-panel-search-input,
   .gh-panel-search-action,

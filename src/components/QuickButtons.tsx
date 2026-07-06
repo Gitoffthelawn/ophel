@@ -17,7 +17,7 @@ import type { ThemeTransitionOrigin } from "~core/theme-manager"
 import { anchorStore } from "~stores/anchor-store"
 import { useSettingsStore } from "~stores/settings-store"
 import { loadHistoryUntil } from "~utils/history-loader"
-import { OPHEL_INTERACTION_LAYER_PROPS } from "~utils/dom-toolkit"
+import { OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
 import { t } from "~utils/i18n"
 import {
   getScrollInfo,
@@ -1241,7 +1241,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
         {isToolsMenuOpen && (
           <div
             className={`quick-menu-popover ${toolsMenuSideClass}`}
-            {...OPHEL_INTERACTION_LAYER_PROPS}
+            {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
             onPointerDown={(e) => e.stopPropagation()}
             onMouseDown={(e) => e.stopPropagation()}
             onClick={(e) => e.stopPropagation()}>

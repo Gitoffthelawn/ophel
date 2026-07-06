@@ -4,7 +4,7 @@ import { CheckIcon, ClearIcon, ExternalLinkIcon } from "~components/icons"
 import { SparkleIcon } from "~components/icons/SparkleIcon"
 import { getReleaseNotesMediaAlt, getReleaseNotesMediaCaption } from "~release-notes"
 import type { ReleaseNotesMedia } from "~release-notes/types"
-import { OPHEL_INTERACTION_LAYER_PROPS } from "~utils/dom-toolkit"
+import { OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
 import { t } from "~utils/i18n"
 import { getHighlightStyles, renderMarkdown } from "~utils/markdown"
 import { createSafeHTML } from "~utils/trusted-types"
@@ -173,7 +173,7 @@ export const ReleaseNotesModal: React.FC<ReleaseNotesModalProps> = ({
     <div
       className="gh-release-notes-overlay gh-interactive"
       role="presentation"
-      {...OPHEL_INTERACTION_LAYER_PROPS}
+      {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
       onClick={onClose}>
       <section
         className="gh-release-notes-modal"

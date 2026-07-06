@@ -4,7 +4,13 @@
  */
 import React, { useEffect, useState } from "react"
 
-import { ReorderIcon, FloatingModeIcon, GeneralIcon, SnapToEdgeIcon } from "~components/icons"
+import {
+  ChevronDownIcon,
+  ReorderIcon,
+  FloatingModeIcon,
+  GeneralIcon,
+  SnapToEdgeIcon,
+} from "~components/icons"
 import { Slider, Switch } from "~components/ui"
 import {
   COLLAPSED_BUTTON_DEFS,
@@ -20,7 +26,11 @@ import { PageTitle, SettingCard, SettingRow, TabGroup, ToggleRow } from "../comp
 interface GeneralPageProps {
   siteId: string
   initialTab?: string
+  locateSettingId?: string
+  onPanelHoverWidthPreviewChange?: (isActive: boolean) => void
 }
+
+const PANEL_WIDTH_ADVANCED_SETTING_IDS = new Set(["panel-resize-on-hover", "panel-hover-width"])
 
 // 可排序项目组件
 const SortableItem: React.FC<{
@@ -84,8 +94,14 @@ const SortableItem: React.FC<{
   </div>
 )
 
-const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }) => {
+const GeneralPage: React.FC<GeneralPageProps> = ({
+  siteId: _siteId,
+  initialTab,
+  locateSettingId,
+  onPanelHoverWidthPreviewChange,
+}) => {
   const [activeTab, setActiveTab] = useState(initialTab || "panel")
+  const [isPanelWidthAdvancedOpen, setIsPanelWidthAdvancedOpen] = useState(false)
   const {
     settings,
     setSettings,
@@ -100,6 +116,13 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
       setActiveTab(initialTab)
     }
   }, [initialTab])
+
+  useEffect(
+    () => () => {
+      onPanelHoverWidthPreviewChange?.(false)
+    },
+    [onPanelHoverWidthPreviewChange],
+  )
 
   // 拖拽状态
   const [draggedItem, setDraggedItem] = useState<{ type: "tab" | "button"; index: number } | null>(
@@ -145,6 +168,69 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
   const handleWidthChange = (val: number) => {
     setSettings(buildPanelPreview("width", val))
   }
+
+  const handleHoverWidthPreview = (val: number) => {
+    setPreviewSettings(buildPanelPreview("hoverWidth", val))
+  }
+
+  const handleHoverWidthChange = (val: number) => {
+    setSettings(buildPanelPreview("hoverWidth", val))
+  }
+
+  const activateHoverWidthPreview = () => {
+    if (!isHoverResizeEnabled) {
+      return
+    }
+
+    onPanelHoverWidthPreviewChange?.(true)
+  }
+
+  const deactivateHoverWidthPreview = () => {
+    onPanelHoverWidthPreviewChange?.(false)
+  }
+
+  const handleHoverWidthPreviewBlur: React.FocusEventHandler<HTMLDivElement> = (event) => {
+    const nextTarget = event.relatedTarget
+    if (nextTarget instanceof Node && event.currentTarget.contains(nextTarget)) {
+      return
+    }
+
+    deactivateHoverWidthPreview()
+  }
+
+  const isFloatingPanelMode = (settings?.panel?.panelMode ?? "floating") === "floating"
+  const isHoverResizeEnabled = settings?.panel?.resizeOnHover ?? false
+
+  useEffect(() => {
+    if (!locateSettingId || !PANEL_WIDTH_ADVANCED_SETTING_IDS.has(locateSettingId)) {
+      return
+    }
+
+    setActiveTab("panel")
+
+    if (isFloatingPanelMode) {
+      setIsPanelWidthAdvancedOpen(true)
+    }
+  }, [isFloatingPanelMode, locateSettingId])
+
+  useEffect(() => {
+    if (
+      activeTab === "panel" &&
+      isFloatingPanelMode &&
+      isPanelWidthAdvancedOpen &&
+      isHoverResizeEnabled
+    ) {
+      return
+    }
+
+    onPanelHoverWidthPreviewChange?.(false)
+  }, [
+    activeTab,
+    isFloatingPanelMode,
+    isHoverResizeEnabled,
+    isPanelWidthAdvancedOpen,
+    onPanelHoverWidthPreviewChange,
+  ])
 
   // 处理拖拽开始
   const handleDragStart = (e: React.DragEvent, type: "tab" | "button", index: number) => {
@@ -331,24 +417,121 @@ const GeneralPage: React.FC<GeneralPageProps> = ({ siteId: _siteId, initialTab }
           </SettingRow>
 
           {/* 面板宽度 */}
-          <SettingRow
-            label={t("panelWidthLabel")}
-            description={t("panelWidthDesc")}
-            settingId="panel-width">
-            <Slider
-              value={Math.max(settings.panel?.width ?? 320, 240)}
-              onChange={handleWidthChange}
-              onPreviewChange={handleWidthPreview}
-              onCancelPreview={clearPreviewSettings}
-              min={240}
-              max={600}
-              step={10}
-              unit="px"
-              defaultValue={320}
-              formatValue={(value) => `${value}px`}
-              ariaLabel={t("panelWidthLabel")}
-            />
-          </SettingRow>
+          {isFloatingPanelMode ? (
+            <div
+              className={`settings-panel-width-accordion ${isPanelWidthAdvancedOpen ? "open" : ""}`}
+              data-setting-id="panel-width">
+              <div className="settings-row settings-panel-width-main">
+                <button
+                  type="button"
+                  className="settings-panel-width-trigger"
+                  aria-expanded={isPanelWidthAdvancedOpen}
+                  aria-controls="settings-panel-width-advanced"
+                  onClick={() => setIsPanelWidthAdvancedOpen((value) => !value)}>
+                  <div className="settings-row-info">
+                    <div className="settings-row-label settings-panel-width-label">
+                      <span>{t("panelWidthLabel")}</span>
+                      <ChevronDownIcon size={14} className="settings-panel-width-icon" />
+                    </div>
+                    <div className="settings-row-desc">{t("panelWidthDesc")}</div>
+                  </div>
+                </button>
+                <div className="settings-row-control">
+                  <Slider
+                    value={Math.max(settings.panel?.width ?? 320, 240)}
+                    onChange={handleWidthChange}
+                    onPreviewChange={handleWidthPreview}
+                    onCancelPreview={clearPreviewSettings}
+                    min={240}
+                    max={600}
+                    step={10}
+                    unit="px"
+                    defaultValue={320}
+                    formatValue={(value) => `${value}px`}
+                    ariaLabel={t("panelWidthLabel")}
+                  />
+                </div>
+              </div>
+
+              {isPanelWidthAdvancedOpen && (
+                <div id="settings-panel-width-advanced" className="settings-panel-width-body">
+                  <div
+                    className="settings-panel-width-subrow"
+                    data-setting-id="panel-resize-on-hover">
+                    <div className="settings-row-info">
+                      <div className="settings-row-label settings-row-label-with-badge">
+                        <span>{t("panelResizeOnHoverLabel")}</span>
+                        <span className="settings-beta-badge">{t("betaBadge")}</span>
+                      </div>
+                      <div className="settings-row-desc">{t("panelResizeOnHoverDesc")}</div>
+                    </div>
+                    <Switch
+                      checked={isHoverResizeEnabled}
+                      onChange={() =>
+                        updateNestedSetting("panel", "resizeOnHover", !isHoverResizeEnabled)
+                      }
+                    />
+                  </div>
+
+                  <div
+                    className={`settings-panel-width-subrow ${isHoverResizeEnabled ? "" : "disabled"}`.trim()}
+                    data-setting-id="panel-hover-width"
+                    aria-disabled={!isHoverResizeEnabled}
+                    onMouseEnter={activateHoverWidthPreview}
+                    onMouseLeave={deactivateHoverWidthPreview}
+                    onFocus={activateHoverWidthPreview}
+                    onBlur={handleHoverWidthPreviewBlur}>
+                    <div className="settings-row-info">
+                      <div className="settings-row-label settings-row-label-with-badge">
+                        <span>{t("panelHoverWidthLabel")}</span>
+                        <span className="settings-beta-badge">{t("betaBadge")}</span>
+                      </div>
+                      <div className="settings-row-desc">{t("panelHoverWidthDesc")}</div>
+                    </div>
+                    <div className="settings-row-control">
+                      <Slider
+                        value={Math.max(
+                          settings.panel?.hoverWidth ?? 520,
+                          settings.panel?.width ?? 320,
+                          240,
+                        )}
+                        onChange={handleHoverWidthChange}
+                        onPreviewChange={handleHoverWidthPreview}
+                        onCancelPreview={clearPreviewSettings}
+                        min={240}
+                        max={600}
+                        step={10}
+                        unit="px"
+                        defaultValue={520}
+                        disabled={!isHoverResizeEnabled}
+                        formatValue={(value) => `${value}px`}
+                        ariaLabel={t("panelHoverWidthLabel")}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          ) : (
+            <SettingRow
+              label={t("panelWidthLabel")}
+              description={t("panelWidthDesc")}
+              settingId="panel-width">
+              <Slider
+                value={Math.max(settings.panel?.width ?? 320, 240)}
+                onChange={handleWidthChange}
+                onPreviewChange={handleWidthPreview}
+                onCancelPreview={clearPreviewSettings}
+                min={240}
+                max={600}
+                step={10}
+                unit="px"
+                defaultValue={320}
+                formatValue={(value) => `${value}px`}
+                ariaLabel={t("panelWidthLabel")}
+              />
+            </SettingRow>
+          )}
 
           {/* 面板高度 */}
           <SettingRow

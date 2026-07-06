@@ -10,6 +10,9 @@
     "defaultEdgeDistance": 20,
     "edgeSnapThreshold": 30,
     "height": 80,
+    "width": 320,
+    "resizeOnHover": false,
+    "hoverWidth": 520,
     "preventAutoScroll": false
   },
 

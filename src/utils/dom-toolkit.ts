@@ -99,6 +99,11 @@ export const OPHEL_INTERACTION_LAYER_ATTR = "data-ophel-interaction-layer"
 export const OPHEL_INTERACTION_LAYER_PROPS = {
   [OPHEL_INTERACTION_LAYER_ATTR]: "true",
 } as const
+export const OPHEL_HOVER_WIDTH_RETAIN_LAYER_ATTR = "data-ophel-hover-width-retain-layer"
+export const OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS = {
+  ...OPHEL_INTERACTION_LAYER_PROPS,
+  [OPHEL_HOVER_WIDTH_RETAIN_LAYER_ATTR]: "true",
+} as const
 
 export const OPHEL_INTERACTION_LAYER_SELECTOR = [
   `[${OPHEL_INTERACTION_LAYER_ATTR}="true"]`,
@@ -114,13 +119,33 @@ export const OPHEL_INTERACTION_LAYER_SELECTOR = [
   ".quick-menu-popover",
 ].join(", ")
 
-export const hasOphelInteractionLayer = (roots?: Array<Element | ShadowRoot>): boolean => {
+export const OPHEL_HOVER_WIDTH_RETAIN_LAYER_SELECTOR = [
+  `[${OPHEL_HOVER_WIDTH_RETAIN_LAYER_ATTR}="true"]`,
+  ".gh-dialog-overlay",
+  ".conversations-dialog-overlay",
+  ".conversations-folder-menu",
+  ".conversations-tag-filter-menu",
+  ".prompt-modal",
+  ".gh-prompt-preview-overlay",
+  ".prompt-preview-modal",
+  ".import-dialog",
+  ".quick-menu-popover",
+  ".gh-release-notes-overlay",
+].join(", ")
+
+const hasOphelLayer = (selector: string, roots?: Array<Element | ShadowRoot>): boolean => {
   const queryRoots =
     roots ??
     (typeof document !== "undefined" && document.body ? ([document.body] as Element[]) : [])
 
-  return queryRoots.some((root) => Boolean(root.querySelector(OPHEL_INTERACTION_LAYER_SELECTOR)))
+  return queryRoots.some((root) => Boolean(root.querySelector(selector)))
 }
+
+export const hasOphelInteractionLayer = (roots?: Array<Element | ShadowRoot>): boolean =>
+  hasOphelLayer(OPHEL_INTERACTION_LAYER_SELECTOR, roots)
+
+export const hasOphelHoverWidthRetainLayer = (roots?: Array<Element | ShadowRoot>): boolean =>
+  hasOphelLayer(OPHEL_HOVER_WIDTH_RETAIN_LAYER_SELECTOR, roots)
 
 export const isEditableKeyboardTarget = (target: EventTarget | null): target is HTMLElement => {
   if (!(target instanceof HTMLElement)) {

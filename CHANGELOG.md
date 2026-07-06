@@ -12,6 +12,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 ### 🚀 New Features
 
 - **Panel tab reordering** — Outline, Conversations, and Prompts tabs can now be reordered directly from the panel, keeping the same order in Settings without opening the options page first. (#764)
+- **Panel width controls** — Floating panels now support edge-drag resizing and an optional Beta hover-widening mode; related settings stay under Panel Width, are searchable in Search Everywhere, and avoid page-avoidance jumps while temporarily widening. (#763)
 
 ### ✨ Improvements
 

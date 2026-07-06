@@ -37,7 +37,7 @@ import type { PromptManager } from "~core/prompt-manager"
 import type { ThemeTransitionOrigin } from "~core/theme-manager"
 import { useDraggable } from "~hooks/useDraggable"
 import { useSettingsStore } from "~stores/settings-store"
-import { attachEditableKeyboardFocusGuard } from "~utils/dom-toolkit"
+import { attachEditableKeyboardFocusGuard, hasOphelHoverWidthRetainLayer } from "~utils/dom-toolkit"
 import { loadHistoryUntil } from "~utils/history-loader"
 import { t } from "~utils/i18n"
 import { getScrollInfo, smartScrollTo, smartScrollToBottom } from "~utils/scroll-helper"
@@ -72,6 +72,8 @@ interface MainPanelProps {
   onUnsnap?: () => void
   onInteractionStateChange?: (isActive: boolean) => void
   onOpenSettings?: () => void
+  isHoverWidthSettingsPreviewActive?: boolean
+  hoverWidthReleaseToken?: number
   onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
@@ -120,6 +122,16 @@ const reorderVisiblePanelTabs = (
   return nextOrder.every((tab, index) => tab === currentOrder[index]) ? currentOrder : nextOrder
 }
 
+const PANEL_MIN_WIDTH = 240
+const PANEL_MAX_WIDTH = 600
+const PANEL_DEFAULT_WIDTH = 320
+const PANEL_DEFAULT_HOVER_WIDTH = 520
+const HOVER_WIDTH_POINTER_QUERY = "(hover: hover) and (pointer: fine)"
+const HOVER_WIDTH_RELEASE_DELAY_MS = 160
+
+const clampPanelWidth = (value: number) =>
+  Math.min(PANEL_MAX_WIDTH, Math.max(PANEL_MIN_WIDTH, Math.round(value)))
+
 export const MainPanel: React.FC<MainPanelProps> = ({
   onClose,
   isOpen,
@@ -140,6 +152,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   onUnsnap,
   onInteractionStateChange,
   onOpenSettings,
+  isHoverWidthSettingsPreviewActive = false,
+  hoverWidthReleaseToken = 0,
   onMouseEnter,
   onMouseLeave,
 }) => {
@@ -167,6 +181,30 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const currentCustomStyle = Array.isArray(currentSettings.theme?.customStyles)
     ? currentSettings.theme.customStyles.find((style) => style.id === currentThemeStyleId)
     : null
+  const [isPanelHovered, setIsPanelHovered] = useState(false)
+  const [isPanelFocusWithin, setIsPanelFocusWithin] = useState(false)
+  const [isHoverWidthRetained, setIsHoverWidthRetained] = useState(false)
+  const [isHoverWidthModeSwitchSuppressed, setIsHoverWidthModeSwitchSuppressed] = useState(false)
+  const [isHoverWidthResizeSuppressed, setIsHoverWidthResizeSuppressed] = useState(false)
+  const [isPanelResizing, setIsPanelResizing] = useState(false)
+  const [draftPanelWidth, setDraftPanelWidth] = useState<number | null>(null)
+  const hoverWidthReleaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const lastPanelPointerDownAtRef = useRef(0)
+  const lastPanelPointerPositionRef = useRef<{ clientX: number; clientY: number } | null>(null)
+  const resizeFrameRef = useRef<number | null>(null)
+  const pendingResizeWidthRef = useRef<number | null>(null)
+  const hoverWidthActivityRef = useRef({
+    isFocused: false,
+    isHovered: false,
+    isResizing: false,
+  })
+  const resizeStateRef = useRef<{
+    pointerId: number
+    startX: number
+    startWidth: number
+    handleSide: "left" | "right"
+    hasMoved: boolean
+  } | null>(null)
 
   // 拖拽功能（高性能版本：直接 DOM 操作，不触发 React 渲染）
   const { panelRef, headerRef } = useDraggable({
@@ -177,11 +215,199 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     onUnsnap,
   })
 
+  const getPanelInteractionRoots = useCallback((): Array<Element | ShadowRoot> => {
+    const roots: Array<Element | ShadowRoot> = []
+
+    if (typeof document !== "undefined" && document.body) {
+      roots.push(document.body)
+    }
+
+    const rootNode = panelRef.current?.getRootNode()
+    if (typeof ShadowRoot !== "undefined" && rootNode instanceof ShadowRoot) {
+      roots.push(rootNode)
+    }
+
+    return roots
+  }, [panelRef])
+
+  const hasOpenHoverWidthRetainLayer = useCallback(
+    () => hasOphelHoverWidthRetainLayer(getPanelInteractionRoots()),
+    [getPanelInteractionRoots],
+  )
+
+  const clearHoverWidthReleaseTimer = useCallback(() => {
+    if (hoverWidthReleaseTimerRef.current) {
+      clearTimeout(hoverWidthReleaseTimerRef.current)
+      hoverWidthReleaseTimerRef.current = null
+    }
+  }, [])
+
+  const setPanelHoveredState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isHovered = value
+    setIsPanelHovered(value)
+  }, [])
+
+  const setPanelFocusWithinState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isFocused = value
+    setIsPanelFocusWithin(value)
+  }, [])
+
+  const setPanelResizingState = useCallback((value: boolean) => {
+    hoverWidthActivityRef.current.isResizing = value
+    setIsPanelResizing(value)
+  }, [])
+
+  const prepareEdgeSnapToFloatingSwitch = useCallback(
+    (suppressHoverWidth: boolean = true) => {
+      clearHoverWidthReleaseTimer()
+      setPanelHoveredState(false)
+      setPanelFocusWithinState(false)
+      setIsHoverWidthRetained(false)
+      setIsHoverWidthModeSwitchSuppressed(suppressHoverWidth)
+    },
+    [clearHoverWidthReleaseTimer, setPanelFocusWithinState, setPanelHoveredState],
+  )
+
+  const releaseHoverWidthForExternalLayer = useCallback(() => {
+    clearHoverWidthReleaseTimer()
+    setPanelHoveredState(false)
+    setPanelFocusWithinState(false)
+    setIsHoverWidthRetained(false)
+    setIsHoverWidthModeSwitchSuppressed(false)
+    setIsHoverWidthResizeSuppressed(false)
+  }, [clearHoverWidthReleaseTimer, setPanelFocusWithinState, setPanelHoveredState])
+
+  const updatePanelPointerPosition = useCallback(
+    (event: Pick<MouseEvent, "clientX" | "clientY">) => {
+      lastPanelPointerPositionRef.current = {
+        clientX: event.clientX,
+        clientY: event.clientY,
+      }
+    },
+    [],
+  )
+
+  const syncPanelHoveredStateFromPointer = useCallback(() => {
+    const panel = panelRef.current
+    const pointer = lastPanelPointerPositionRef.current
+
+    if (!panel || !pointer) {
+      setPanelHoveredState(false)
+      return false
+    }
+
+    const rect = panel.getBoundingClientRect()
+    const isPointerInsidePanel =
+      pointer.clientX >= rect.left &&
+      pointer.clientX <= rect.right &&
+      pointer.clientY >= rect.top &&
+      pointer.clientY <= rect.bottom
+
+    setPanelHoveredState(isPointerInsidePanel)
+    return isPointerInsidePanel
+  }, [panelRef, setPanelHoveredState])
+
+  const releaseHoverWidthIfIdle = useCallback(() => {
+    const activity = hoverWidthActivityRef.current
+    if (activity.isHovered || activity.isFocused || activity.isResizing) {
+      return
+    }
+
+    if (hasOpenHoverWidthRetainLayer()) {
+      setIsHoverWidthRetained(true)
+      return
+    }
+
+    setIsHoverWidthRetained(false)
+  }, [hasOpenHoverWidthRetainLayer])
+
+  const scheduleHoverWidthRelease = useCallback(
+    (delayMs: number = HOVER_WIDTH_RELEASE_DELAY_MS) => {
+      clearHoverWidthReleaseTimer()
+      hoverWidthReleaseTimerRef.current = setTimeout(() => {
+        hoverWidthReleaseTimerRef.current = null
+        releaseHoverWidthIfIdle()
+      }, delayMs)
+    },
+    [clearHoverWidthReleaseTimer, releaseHoverWidthIfIdle],
+  )
+
+  useEffect(() => {
+    return () => {
+      clearHoverWidthReleaseTimer()
+      if (resizeFrameRef.current !== null) {
+        cancelAnimationFrame(resizeFrameRef.current)
+        resizeFrameRef.current = null
+      }
+      if (resizeStateRef.current) {
+        onInteractionStateChange?.(false)
+      }
+    }
+  }, [clearHoverWidthReleaseTimer, onInteractionStateChange])
+
+  useLayoutEffect(() => {
+    if (hoverWidthReleaseToken <= 0) {
+      return
+    }
+
+    releaseHoverWidthForExternalLayer()
+  }, [hoverWidthReleaseToken, releaseHoverWidthForExternalLayer])
+
+  useEffect(() => {
+    const handlePointerPosition = (event: PointerEvent) => {
+      updatePanelPointerPosition(event)
+    }
+
+    window.addEventListener("pointermove", handlePointerPosition, true)
+    window.addEventListener("pointerdown", handlePointerPosition, true)
+
+    return () => {
+      window.removeEventListener("pointermove", handlePointerPosition, true)
+      window.removeEventListener("pointerdown", handlePointerPosition, true)
+    }
+  }, [updatePanelPointerPosition])
+
+  useEffect(() => {
+    if (!isHoverWidthRetained || isPanelResizing) {
+      return
+    }
+
+    const roots = getPanelInteractionRoots()
+    let hadRetainLayer = hasOpenHoverWidthRetainLayer()
+    const observer = new MutationObserver(() => {
+      const hasRetainLayer = hasOpenHoverWidthRetainLayer()
+
+      if (hasRetainLayer) {
+        hadRetainLayer = true
+        return
+      }
+
+      if (!hadRetainLayer) {
+        return
+      }
+
+      hadRetainLayer = false
+      syncPanelHoveredStateFromPointer()
+      scheduleHoverWidthRelease()
+    })
+
+    roots.forEach((root) => observer.observe(root, { childList: true, subtree: true }))
+
+    return () => observer.disconnect()
+  }, [
+    getPanelInteractionRoots,
+    hasOpenHoverWidthRetainLayer,
+    isHoverWidthRetained,
+    isPanelResizing,
+    scheduleHoverWidthRelease,
+    syncPanelHoveredStateFromPointer,
+  ])
+
   // 模式切换时重置面板 DOM 位置
   // useDraggable 通过直接 DOM 操作设置了 left/top/right/transform，React 无法感知这些变化，
   // 所以需要在模式切换时手动重置
   const prevPanelModeRef = useRef(currentSettings.panel?.panelMode)
-  // 保存面板当前位置，用于 header 按钮触发的"原地固定"
+  // 保存面板可见位置，用于 edge peek 固定到悬浮时保留垂直位置
   const savedPeekingRectRef = useRef<DOMRect | null>(null)
   // (Generic tips have moved to MagicCodex)
   const pointerEventsTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -205,8 +431,22 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const savedRect = savedPeekingRectRef.current
       savedPeekingRectRef.current = null
 
-      // 优先使用 header 按钮保存的 peeking 位置，否则用面板当前 rect 原地固定
+      // 优先使用 header 按钮保存的 peeking 位置，否则用面板当前 rect 判断可见性
       const fixRect = savedRect ?? panel.getBoundingClientRect()
+      const pointer = lastPanelPointerPositionRef.current
+      const isPointerInsideFixRect = pointer
+        ? pointer.clientX >= fixRect.left &&
+          pointer.clientX <= fixRect.right &&
+          pointer.clientY >= fixRect.top &&
+          pointer.clientY <= fixRect.bottom
+        : false
+      const shouldSuppressHoverWidth =
+        isHoverWidthModeSwitchSuppressed ||
+        hoverWidthActivityRef.current.isHovered ||
+        hoverWidthActivityRef.current.isFocused ||
+        isHoverWidthRetained ||
+        isPointerInsideFixRect
+      prepareEdgeSnapToFloatingSwitch(shouldSuppressHoverWidth)
 
       // 判断面板是否处于 peeking 展开态（至少 50% 宽度在视口内），排除吸附收缩（胶囊条）
       const visibleWidth = fixRect
@@ -215,11 +455,17 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const isVisible = fixRect.width > 0 && visibleWidth >= fixRect.width * 0.5
 
       if (isVisible) {
-        // 面板可见（peeking 展开）：原地固定，无论切换来源
-        panel.style.left = `${fixRect.left}px`
+        // 面板可见（peeking 展开）：按吸附侧贴边固定，避免 hover 宽度回收后留下边缘间距
+        const snappedSide = edgeSnapState ?? currentSettings.panel?.defaultPosition ?? "right"
         panel.style.top = `${fixRect.top}px`
-        panel.style.right = "auto"
         panel.style.transform = "none"
+        if (snappedSide === "left") {
+          panel.style.left = "0px"
+          panel.style.right = "auto"
+        } else {
+          panel.style.right = "0px"
+          panel.style.left = "auto"
+        }
       } else {
         // 面板不可见（吸附收缩态）：使用默认边距贴边展开，保留垂直位置（兜底）
         const pos = currentSettings.panel?.defaultPosition ?? "right"
@@ -272,7 +518,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     currentSettings.panel?.panelMode,
     currentSettings.panel?.defaultEdgeDistance,
     currentSettings.panel?.defaultPosition,
+    edgeSnapState,
+    isHoverWidthModeSwitchSuppressed,
+    isHoverWidthRetained,
     panelRef,
+    prepareEdgeSnapToFloatingSwitch,
   ])
 
   const prevEdgeDistanceRef = useRef(currentSettings.panel?.defaultEdgeDistance)
@@ -321,8 +571,58 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const defaultPosition = currentSettings.panel?.defaultPosition ?? "right"
   const defaultEdgeDistance = currentSettings.panel?.defaultEdgeDistance ?? 40
   const isEdgeSnapMode = (currentSettings.panel?.panelMode ?? "floating") === "edge-snap"
-  const panelWidth = currentSettings.panel?.width ?? 320
+  const supportsHoverResize =
+    typeof window !== "undefined" && window.matchMedia?.(HOVER_WIDTH_POINTER_QUERY).matches
+  const basePanelWidth = clampPanelWidth(
+    draftPanelWidth ?? currentSettings.panel?.width ?? PANEL_DEFAULT_WIDTH,
+  )
+  const hoverPanelWidth = clampPanelWidth(
+    currentSettings.panel?.hoverWidth ?? PANEL_DEFAULT_HOVER_WIDTH,
+  )
+  const canResizeOnHover =
+    (currentSettings.panel?.resizeOnHover ?? false) &&
+    supportsHoverResize &&
+    !isLauncherPeeking &&
+    !isEdgeSnapMode
+  const isHoverWidthActive =
+    canResizeOnHover &&
+    (isHoverWidthSettingsPreviewActive ||
+      (!isHoverWidthModeSwitchSuppressed &&
+        !isHoverWidthResizeSuppressed &&
+        (isPanelHovered || isPanelFocusWithin || isHoverWidthRetained || isPanelResizing)))
+  const panelWidth =
+    isPanelResizing || !isHoverWidthActive
+      ? basePanelWidth
+      : Math.max(basePanelWidth, hoverPanelWidth)
   const panelHeightVh = currentSettings.panel?.height ?? 85
+  const resizeHandleSide: "left" | "right" =
+    (edgeSnapState ?? defaultPosition) === "left" ? "right" : "left"
+  const previousPanelWidthRef = useRef(panelWidth)
+
+  useLayoutEffect(() => {
+    const previousWidth = previousPanelWidthRef.current
+    previousPanelWidthRef.current = panelWidth
+
+    if (previousWidth === panelWidth || resizeHandleSide !== "left") {
+      return
+    }
+
+    const panel = panelRef.current
+    if (!panel) {
+      return
+    }
+
+    const hasPixelLeftPosition =
+      panel.style.left && panel.style.left !== "auto" && panel.style.transform === "none"
+    if (!hasPixelLeftPosition) {
+      return
+    }
+
+    const rect = panel.getBoundingClientRect()
+    const anchoredRight = rect.left + previousWidth
+    panel.style.left = `${anchoredRight - panelWidth}px`
+    panel.style.right = "auto"
+  }, [panelRef, panelWidth, resizeHandleSide])
 
   const launcherPeekPositionStyle = useMemo<React.CSSProperties>(() => {
     if (!isLauncherPeeking || !launcherPeekAnchorRect || typeof window === "undefined") {
@@ -436,10 +736,16 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       const current = currentSettings.panel?.panelMode ?? "floating"
       if (current === "edge-snap" && panelRef.current) {
         savedPeekingRectRef.current = panelRef.current.getBoundingClientRect()
+        prepareEdgeSnapToFloatingSwitch()
       }
       updateNestedSetting("panel", "panelMode", current === "edge-snap" ? "floating" : "edge-snap")
     },
-    [currentSettings.panel?.panelMode, panelRef, updateNestedSetting],
+    [
+      currentSettings.panel?.panelMode,
+      panelRef,
+      prepareEdgeSnapToFloatingSwitch,
+      updateNestedSetting,
+    ],
   )
 
   useEffect(() => {
@@ -637,6 +943,180 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     anchorStore.set(scrollInfo.scrollTop)
   }, [adapter])
 
+  const flushPendingResizeWidth = useCallback(() => {
+    resizeFrameRef.current = null
+    if (pendingResizeWidthRef.current === null) {
+      return
+    }
+
+    setDraftPanelWidth(pendingResizeWidthRef.current)
+  }, [])
+
+  const handlePanelPointerDownCapture = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
+      lastPanelPointerDownAtRef.current = performance.now()
+    },
+    [updatePanelPointerPosition],
+  )
+
+  const handlePanelPointerEnter = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
+      clearHoverWidthReleaseTimer()
+      setPanelHoveredState(true)
+      setIsHoverWidthRetained(true)
+      onMouseEnter?.(event)
+    },
+    [clearHoverWidthReleaseTimer, onMouseEnter, setPanelHoveredState, updatePanelPointerPosition],
+  )
+
+  const handlePanelPointerLeave = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      updatePanelPointerPosition(event)
+      setIsHoverWidthModeSwitchSuppressed(false)
+      setIsHoverWidthResizeSuppressed(false)
+      setPanelHoveredState(false)
+      scheduleHoverWidthRelease()
+      onMouseLeave?.(event)
+    },
+    [onMouseLeave, scheduleHoverWidthRelease, setPanelHoveredState, updatePanelPointerPosition],
+  )
+
+  const handlePanelFocus = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      const target = event.target
+      const isPointerFocus = performance.now() - lastPanelPointerDownAtRef.current < 600
+      if (isPointerFocus || !(target instanceof HTMLElement) || !target.matches(":focus-visible")) {
+        return
+      }
+
+      clearHoverWidthReleaseTimer()
+      setPanelFocusWithinState(true)
+      setIsHoverWidthRetained(true)
+    },
+    [clearHoverWidthReleaseTimer, setPanelFocusWithinState],
+  )
+
+  const handlePanelBlur = useCallback(
+    (event: React.FocusEvent<HTMLDivElement>) => {
+      const relatedTarget = event.relatedTarget
+      if (relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
+        return
+      }
+
+      setPanelFocusWithinState(false)
+      scheduleHoverWidthRelease()
+    },
+    [scheduleHoverWidthRelease, setPanelFocusWithinState],
+  )
+
+  const handleResizePointerDown = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      if (event.button !== 0) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const panel = panelRef.current
+      // 直接操控当前可见边缘：hover-width 生效时也从可见宽度开始拖拽，
+      // 结束后把拖拽结果写入基础宽度，避免 pointerdown 时手柄跳离指针。
+      const measuredWidth = panel?.getBoundingClientRect().width
+      const startWidth = clampPanelWidth(
+        measuredWidth && measuredWidth > 0 ? measuredWidth : panelWidth,
+      )
+
+      resizeStateRef.current = {
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startWidth,
+        handleSide: resizeHandleSide,
+        hasMoved: false,
+      }
+      pendingResizeWidthRef.current = startWidth
+      setDraftPanelWidth(startWidth)
+      setPanelResizingState(true)
+      setIsHoverWidthRetained(true)
+      onInteractionStateChange?.(true)
+      event.currentTarget.setPointerCapture(event.pointerId)
+    },
+    [onInteractionStateChange, panelRef, panelWidth, resizeHandleSide, setPanelResizingState],
+  )
+
+  const handleResizePointerMove = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      const state = resizeStateRef.current
+      if (!state || state.pointerId !== event.pointerId) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      const deltaX = event.clientX - state.startX
+      if (Math.abs(deltaX) >= 3) {
+        state.hasMoved = true
+      }
+      const nextWidth =
+        state.handleSide === "left"
+          ? clampPanelWidth(state.startWidth - deltaX)
+          : clampPanelWidth(state.startWidth + deltaX)
+
+      pendingResizeWidthRef.current = nextWidth
+      if (resizeFrameRef.current === null) {
+        resizeFrameRef.current = requestAnimationFrame(flushPendingResizeWidth)
+      }
+    },
+    [flushPendingResizeWidth],
+  )
+
+  const finishResize = useCallback(
+    (event: React.PointerEvent<HTMLButtonElement>) => {
+      const state = resizeStateRef.current
+      if (!state || state.pointerId !== event.pointerId) {
+        return
+      }
+
+      event.preventDefault()
+      event.stopPropagation()
+
+      if (resizeFrameRef.current !== null) {
+        cancelAnimationFrame(resizeFrameRef.current)
+        resizeFrameRef.current = null
+      }
+
+      const finalWidth = clampPanelWidth(pendingResizeWidthRef.current ?? state.startWidth)
+      resizeStateRef.current = null
+      pendingResizeWidthRef.current = null
+      setDraftPanelWidth(null)
+      setPanelResizingState(false)
+      if (state.hasMoved) {
+        setIsHoverWidthRetained(false)
+        setIsHoverWidthResizeSuppressed(true)
+        updateNestedSetting("panel", "width", finalWidth)
+      }
+      onInteractionStateChange?.(false)
+
+      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+        event.currentTarget.releasePointerCapture(event.pointerId)
+      }
+
+      scheduleHoverWidthRelease()
+    },
+    [
+      onInteractionStateChange,
+      scheduleHoverWidthRelease,
+      setPanelResizingState,
+      updateNestedSetting,
+    ],
+  )
+
+  const isHoverWidthPreviewActive =
+    isHoverWidthActive && !isPanelResizing && panelWidth > basePanelWidth
+  const panelAnchorSide = resizeHandleSide === "left" ? "right" : "left"
+
   if (!isOpen) return null
 
   // 过滤出启用的 Tab（设置页通过 header 按钮进入，不在 tab 栏显示）
@@ -731,38 +1211,62 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       <LoadingOverlay isVisible={isLoadingHistory} text={loadingText} onStop={stopLoading} />
       <div
         ref={panelRef}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        className={`gh-main-panel gh-interactive ${!isLauncherPeeking && edgeSnapState ? `edge-snapped-${edgeSnapState}` : ""} ${isLauncherPeeking ? "launcher-peek" : ""} ${isEdgePeeking ? "edge-peek" : ""} ${isScrolling ? "scroll-hidden" : ""}`}
-        style={{
-          position: "fixed",
-          top: "50%",
-          // 仅在 floating 模式下通过 React style prop 设置位置；
-          // edge-snap 模式下由 useLayoutEffect + CSS class 控制，避免切换首帧
-          // 与后续重渲染写回 inline style 覆盖 CSS transition，导致动画抖动
-          ...panelPositionStyle,
-          transform: isLauncherPeeking ? "none" : "translateY(-50%)",
-          width: `${panelWidth}px`,
-          height: `${panelHeightVh}vh`,
-          // @ts-ignore - 注入 CSS 变量供吸附计算使用
-          "--panel-width": `${panelWidth}px`,
-          minHeight: "500px",
-          backgroundColor: "var(--gh-bg, #ffffff)",
-          backgroundImage: "var(--gh-bg-image, none)",
-          backgroundBlendMode: "overlay",
-          animation: "var(--gh-bg-animation, none)",
-          borderRadius: "12px",
-          boxShadow: "var(--gh-shadow, 0 10px 40px rgba(0,0,0,0.15))",
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-          border: "1px solid var(--gh-border, #e5e7eb)",
-          zIndex: 9999,
-          fontFamily: OPHEL_FONT_FAMILY_CSS_VAR,
-          // 位置现在由 useDraggable 通过直接 DOM 操作控制，不再通过 React state
-        }}>
+        onMouseEnter={handlePanelPointerEnter}
+        onMouseLeave={handlePanelPointerLeave}
+        onPointerDownCapture={handlePanelPointerDownCapture}
+        onFocus={handlePanelFocus}
+        onBlur={handlePanelBlur}
+        className={`gh-main-panel gh-interactive ${!isLauncherPeeking && edgeSnapState ? `edge-snapped-${edgeSnapState}` : ""} ${isLauncherPeeking ? "launcher-peek" : ""} ${isEdgePeeking ? "edge-peek" : ""} ${isScrolling ? "scroll-hidden" : ""} ${isPanelResizing ? "is-resizing" : ""} ${isHoverWidthActive && !isPanelResizing ? "hover-width-active" : ""}`}
+        data-panel-hover-width-active={isHoverWidthPreviewActive ? "true" : undefined}
+        data-panel-base-width={basePanelWidth}
+        data-panel-anchor-side={panelAnchorSide}
+        style={
+          {
+            position: "fixed",
+            top: "50%",
+            // 仅在 floating 模式下通过 React style prop 设置位置；
+            // edge-snap 模式下由 useLayoutEffect + CSS class 控制，避免切换首帧
+            // 与后续重渲染写回 inline style 覆盖 CSS transition，导致动画抖动
+            ...panelPositionStyle,
+            transform: isLauncherPeeking ? "none" : "translateY(-50%)",
+            width: `${panelWidth}px`,
+            height: `${panelHeightVh}vh`,
+            "--panel-width": `${panelWidth}px`,
+            "--panel-base-width": `${basePanelWidth}px`,
+            minHeight: "500px",
+            backgroundColor: "var(--gh-bg, #ffffff)",
+            backgroundImage: "var(--gh-bg-image, none)",
+            backgroundBlendMode: "overlay",
+            animation: "var(--gh-bg-animation, none)",
+            borderRadius: "12px",
+            boxShadow: "var(--gh-shadow, 0 10px 40px rgba(0,0,0,0.15))",
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
+            border: "1px solid var(--gh-border, #e5e7eb)",
+            zIndex: 9999,
+            fontFamily: OPHEL_FONT_FAMILY_CSS_VAR,
+            // 位置现在由 useDraggable 通过直接 DOM 操作控制，不再通过 React state
+          } as React.CSSProperties
+        }>
         {/* 自定义 CSS 注入：根据当前站点的样式 ID 查找自定义样式 */}
         {currentCustomStyle ? <style>{currentCustomStyle.css}</style> : null}
+
+        {!isLauncherPeeking && !isEdgeSnapMode && (
+          <button
+            type="button"
+            className={`gh-panel-resize-handle gh-panel-resize-handle-${resizeHandleSide}`}
+            aria-label={t("panelResizeHandleLabel")}
+            title={t("panelResizeHandleLabel")}
+            data-no-header-press-hint="true"
+            onPointerDown={handleResizePointerDown}
+            onPointerMove={handleResizePointerMove}
+            onPointerUp={finishResize}
+            onPointerCancel={finishResize}
+            onLostPointerCapture={finishResize}>
+            <span className="gh-panel-resize-grip" aria-hidden="true" />
+          </button>
+        )}
 
         {/* Header - 拖拽区域 */}
         <div
@@ -829,9 +1333,10 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                 }
                 onClick={() => {
                   const current = currentSettings.panel?.panelMode ?? "floating"
-                  // 从吸附切换到悬浮时，保存当前面板位置用于"原地固定"
+                  // 从吸附切换到悬浮时，保存当前可见位置用于保留垂直位置
                   if (current === "edge-snap" && panelRef.current) {
                     savedPeekingRectRef.current = panelRef.current.getBoundingClientRect()
+                    prepareEdgeSnapToFloatingSwitch()
                   }
                   updateNestedSetting(
                     "panel",

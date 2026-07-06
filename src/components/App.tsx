@@ -355,7 +355,9 @@ const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
   "panel-edge-distance": "defaultEdgeDistanceLabel",
   "panel-edge-snap-threshold": "edgeSnapThresholdLabel",
   "panel-height": "panelHeightLabel",
+  "panel-hover-width": "panelHoverWidthLabel",
   "panel-mode": "panelModeLabel",
+  "panel-resize-on-hover": "panelResizeOnHoverLabel",
   "panel-width": "panelWidthLabel",
   "prompt-double-click-send": "promptDoubleClickSendLabel",
   "prompt-queue": "queueSettingLabel",
@@ -1138,6 +1140,8 @@ export const App = () => {
 
   // 设置模态框状态
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isHoverWidthSettingsPreviewActive, setIsHoverWidthSettingsPreviewActive] = useState(false)
+  const [hoverWidthReleaseToken, setHoverWidthReleaseToken] = useState(0)
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false)
   const [releaseNotesAutoSignal, setReleaseNotesAutoSignal] = useState(0)
   const [isGlobalSettingsSearchOpen, setIsGlobalSettingsSearchOpen] = useState(false)
@@ -2037,6 +2041,7 @@ export const App = () => {
   const closeSettingsModal = useCallback(() => {
     isSettingsOpenRef.current = false
     setIsSettingsOpen(false)
+    setIsHoverWidthSettingsPreviewActive(false)
 
     const currentSettings = settingsRef.current
     if (currentSettings?.panel?.panelMode !== "edge-snap") return
@@ -2063,6 +2068,11 @@ export const App = () => {
     scheduleEdgePeekSync()
   }, [findUiElement, scheduleEdgePeekSync])
 
+  const releaseMainPanelHoverWidth = useCallback(() => {
+    setIsHoverWidthSettingsPreviewActive(false)
+    setHoverWidthReleaseToken((value) => value + 1)
+  }, [])
+
   const openGlobalSettingsSearch = useCallback(
     (source: GlobalSearchOpenSource = "ui") => {
       globalSearchOpenSourceRef.current = source
@@ -2073,6 +2083,8 @@ export const App = () => {
       } else {
         searchOpenedFromSettingsRef.current = false
       }
+
+      releaseMainPanelHoverWidth()
 
       if (edgeSnapState && settingsRef.current?.panel?.panelMode === "edge-snap") {
         showEdgePeek()
@@ -2098,7 +2110,13 @@ export const App = () => {
       settingsSearchWheelFreezeUntilRef.current = 0
       setIsGlobalSettingsSearchOpen(true)
     },
-    [clearSettingsSearchInputDebounceTimer, closeSettingsModal, edgeSnapState, showEdgePeek],
+    [
+      clearSettingsSearchInputDebounceTimer,
+      closeSettingsModal,
+      edgeSnapState,
+      releaseMainPanelHoverWidth,
+      showEdgePeek,
+    ],
   )
 
   const closeGlobalSettingsSearch = useCallback(
@@ -2159,6 +2177,7 @@ export const App = () => {
       closeGlobalSettingsSearch({ restoreFocus: false })
     }
 
+    releaseMainPanelHoverWidth()
     searchOpenedFromSettingsRef.current = false
     isSettingsOpenRef.current = true
 
@@ -2167,7 +2186,13 @@ export const App = () => {
     }
 
     setIsSettingsOpen(true)
-  }, [closeGlobalSettingsSearch, edgeSnapState, isGlobalSettingsSearchOpen, showEdgePeek])
+  }, [
+    closeGlobalSettingsSearch,
+    edgeSnapState,
+    isGlobalSettingsSearchOpen,
+    releaseMainPanelHoverWidth,
+    showEdgePeek,
+  ])
 
   const navigateToSearchResult = useCallback(
     async (item: GlobalSearchResultItem) => {
@@ -3571,6 +3596,8 @@ export const App = () => {
           hideEdgePeek()
         }}
         onInteractionStateChange={handlePanelInteractionChange}
+        isHoverWidthSettingsPreviewActive={isHoverWidthSettingsPreviewActive}
+        hoverWidthReleaseToken={hoverWidthReleaseToken}
         onOpenSettings={() => {
           openSettingsModal()
         }}
@@ -3630,6 +3657,7 @@ export const App = () => {
         onClose={closeSettingsModal}
         siteId={adapter.getSiteId()}
         onOpenReleaseNotes={canShowCurrentReleaseNotes ? openReleaseNotes : undefined}
+        onPanelHoverWidthPreviewChange={setIsHoverWidthSettingsPreviewActive}
       />
       {isReleaseNotesOpen && canShowCurrentReleaseNotes && releaseNotesMarkdown.trim() ? (
         <ReleaseNotesModal

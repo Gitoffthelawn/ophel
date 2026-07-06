@@ -804,6 +804,12 @@ export const ru = {
     "Расстояние по умолчанию от края окна браузера после обновления страницы",
   panelWidthLabel: "Ширина панели",
   panelWidthDesc: "Ширина панели (px)",
+  panelResizeOnHoverLabel: "Расширять при наведении",
+  panelResizeOnHoverDesc:
+    "Временно расширяет плавающую панель, пока указатель находится над ней, затем возвращает обычную ширину",
+  panelHoverWidthLabel: "Ширина при наведении",
+  panelHoverWidthDesc: "Временная ширина панели при наведении (px)",
+  panelResizeHandleLabel: "Перетащите, чтобы изменить ширину панели",
   panelHeightLabel: "Высота",
   panelHeightDesc: "% экрана",
   // Interface Toggle

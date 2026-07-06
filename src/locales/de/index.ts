@@ -809,6 +809,12 @@ export const de = {
     "Standardabstand zum Browserfensterrand nach dem Aktualisieren der Seite",
   panelWidthLabel: "Panelbreite",
   panelWidthDesc: "Breite des Panels (px)",
+  panelResizeOnHoverLabel: "Beim Hover verbreitern",
+  panelResizeOnHoverDesc:
+    "Verbreitert das schwebende Panel vorübergehend, solange der Zeiger darüber ist, und stellt danach die normale Breite wieder her",
+  panelHoverWidthLabel: "Hover-Breite",
+  panelHoverWidthDesc: "Temporäre Panelbreite beim Hover (px)",
+  panelResizeHandleLabel: "Ziehen, um die Panelbreite zu ändern",
   panelHeightLabel: "Höhe",
   panelHeightDesc: "% des Bildschirms",
   // Interface Toggle
