@@ -26,8 +26,11 @@ import { PageTitle, SettingCard, SettingRow, TabGroup, ToggleRow } from "../comp
 interface GeneralPageProps {
   siteId: string
   initialTab?: string
+  locateSettingId?: string
   onPanelHoverWidthPreviewChange?: (isActive: boolean) => void
 }
+
+const PANEL_WIDTH_ADVANCED_SETTING_IDS = new Set(["panel-resize-on-hover", "panel-hover-width"])
 
 // 可排序项目组件
 const SortableItem: React.FC<{
@@ -94,6 +97,7 @@ const SortableItem: React.FC<{
 const GeneralPage: React.FC<GeneralPageProps> = ({
   siteId: _siteId,
   initialTab,
+  locateSettingId,
   onPanelHoverWidthPreviewChange,
 }) => {
   const [activeTab, setActiveTab] = useState(initialTab || "panel")
@@ -196,6 +200,18 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
 
   const isFloatingPanelMode = (settings?.panel?.panelMode ?? "floating") === "floating"
   const isHoverResizeEnabled = settings?.panel?.resizeOnHover ?? false
+
+  useEffect(() => {
+    if (!locateSettingId || !PANEL_WIDTH_ADVANCED_SETTING_IDS.has(locateSettingId)) {
+      return
+    }
+
+    setActiveTab("panel")
+
+    if (isFloatingPanelMode) {
+      setIsPanelWidthAdvancedOpen(true)
+    }
+  }, [isFloatingPanelMode, locateSettingId])
 
   useEffect(() => {
     if (
@@ -412,9 +428,11 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                   aria-expanded={isPanelWidthAdvancedOpen}
                   aria-controls="settings-panel-width-advanced"
                   onClick={() => setIsPanelWidthAdvancedOpen((value) => !value)}>
-                  <ChevronDownIcon size={14} className="settings-panel-width-icon" />
                   <div className="settings-row-info">
-                    <div className="settings-row-label">{t("panelWidthLabel")}</div>
+                    <div className="settings-row-label settings-panel-width-label">
+                      <span>{t("panelWidthLabel")}</span>
+                      <ChevronDownIcon size={14} className="settings-panel-width-icon" />
+                    </div>
                     <div className="settings-row-desc">{t("panelWidthDesc")}</div>
                   </div>
                 </button>

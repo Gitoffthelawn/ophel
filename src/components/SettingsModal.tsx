@@ -286,6 +286,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           <GeneralPage
             siteId={siteId}
             initialTab={initialSubTab}
+            locateSettingId={locateRequest?.settingId}
             onPanelHoverWidthPreviewChange={onPanelHoverWidthPreviewChange}
           />
         )

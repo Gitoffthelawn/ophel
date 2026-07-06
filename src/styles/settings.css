@@ -763,7 +763,6 @@
   align-items: center;
   flex: 1;
   min-width: 0;
-  gap: 8px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -788,6 +787,12 @@
   outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 34%, transparent);
   outline-offset: 2px;
   border-radius: 8px;
+}
+
+.settings-panel-width-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .settings-panel-width-icon {
