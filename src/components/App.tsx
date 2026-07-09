@@ -63,8 +63,25 @@ import { SegmentedExportDialog } from "./SegmentedExportDialog"
 import { SettingsModal } from "./SettingsModal"
 import { GlobalSearchOverlay } from "./global-search/GlobalSearchOverlay"
 import { GlobalSearchResultItemView } from "./global-search/GlobalSearchResultItemView"
-import { useGlobalSearchKeyboard } from "./global-search/useGlobalSearchKeyboard"
-import { useGlobalSearchPreview } from "./global-search/useGlobalSearchPreview"
+import {
+  GLOBAL_SEARCH_ALL_CATEGORY_ITEM_LIMIT,
+  GLOBAL_SEARCH_CATEGORY_DEFINITIONS,
+  GLOBAL_SEARCH_FILTER_CHIP_MAX_COUNT,
+  GLOBAL_SEARCH_KEYBOARD_SAFE_BOTTOM,
+  GLOBAL_SEARCH_KEYBOARD_SAFE_TOP,
+  GLOBAL_SEARCH_MATCH_REASON_LABEL_DEFINITIONS,
+  GLOBAL_SEARCH_OPTION_ID_PREFIX,
+  GLOBAL_SEARCH_PROMPT_PREVIEW_HIDE_DELAY_MS,
+  GLOBAL_SEARCH_PROMPT_PREVIEW_KEYBOARD_DELAY_MS,
+  GLOBAL_SEARCH_PROMPT_PREVIEW_POINTER_DELAY_MS,
+  GLOBAL_SEARCH_RESULTS_LISTBOX_ID,
+  GLOBAL_SEARCH_RESULT_CATEGORY_LABELS,
+  GLOBAL_SEARCH_SYNTAX_SUGGESTION_LIMIT,
+} from "./global-search/constants"
+import {
+  useGlobalSearchController,
+  useGlobalSearchControllerKeyboard,
+} from "./global-search/useGlobalSearchController"
 import { useGlobalSearchSyntax } from "./global-search/useGlobalSearchSyntax"
 import type {
   GlobalSearchCategoryId,
@@ -75,6 +92,14 @@ import type {
 } from "./global-search/types"
 import { useGlobalSearchData } from "./global-search/useGlobalSearchData"
 import {
+  MODEL_LOCK_SETTINGS_SEARCH_ITEMS,
+  MODEL_LOCK_SITE_LABEL_DEFINITIONS,
+  SETTING_SEARCH_PAGE_LABEL_DEFINITIONS,
+  SETTING_SEARCH_SUB_TAB_LABEL_DEFINITIONS,
+  SETTING_SEARCH_TITLE_KEY_MAP,
+  toSearchTitleFallback,
+} from "./global-search/settingsSearch"
+import {
   getGlobalSearchTrailingTokenInfo,
   parseGlobalSearchQuery,
   stringifyGlobalSearchQuery,
@@ -82,10 +107,6 @@ import {
 } from "./global-search/syntax"
 import { useTagsStore } from "~stores/tags-store"
 import {
-  APPEARANCE_TAB_IDS,
-  FEATURES_TAB_IDS,
-  NAV_IDS,
-  SITE_SETTINGS_TAB_IDS,
   TAB_IDS,
   resolveSettingRoute,
   searchSettingsItems,
@@ -143,62 +164,7 @@ const OUTLINE_COPY_STAGE_TEXT_KEYS: Record<ConversationExportStage, string> = {
   restoring: "outlineCopyOverlayRestoring",
 }
 
-const SETTINGS_PAGE_LABEL_DEFINITIONS: Record<string, LocalizedLabelDefinition> = {
-  [NAV_IDS.GENERAL]: { key: "navGeneral", fallback: "General" },
-  [NAV_IDS.FEATURES]: { key: "navFeatures", fallback: "Features" },
-  [NAV_IDS.SITE_SETTINGS]: { key: "navSiteSettings", fallback: "Site Config" },
-  [NAV_IDS.GLOBAL_SEARCH]: { key: "navGlobalSearch", fallback: "Global Search" },
-  [NAV_IDS.APPEARANCE]: { key: "navAppearance", fallback: "Appearance" },
-  [NAV_IDS.SHORTCUTS]: { key: "navShortcuts", fallback: "Keyboard Shortcuts" },
-  [NAV_IDS.BACKUP]: { key: "navBackup", fallback: "Data Management" },
-  [NAV_IDS.PERMISSIONS]: { key: "navPermissions", fallback: "Permissions" },
-  [NAV_IDS.ABOUT]: { key: "navAbout", fallback: "About" },
-}
-
-const SETTINGS_SUB_TAB_LABEL_DEFINITIONS: Record<string, LocalizedLabelDefinition> = {
-  panel: { key: "panelTab", fallback: "Panel" },
-  tabOrder: { key: "tabOrderTab", fallback: "Tab Order" },
-  shortcuts: { key: "shortcutsTab", fallback: "Quick Buttons" },
-  toolsMenu: { key: "toolboxMenu", fallback: "Toolbox" },
-  [FEATURES_TAB_IDS.TAB_SETTINGS]: { key: "tabSettingsTab", fallback: "Tab Settings" },
-  [FEATURES_TAB_IDS.REMINDER]: { key: "reminderTab", fallback: "Alerts" },
-  [FEATURES_TAB_IDS.OUTLINE]: { key: "outlineSettingsTitle", fallback: "Outline" },
-  [FEATURES_TAB_IDS.CONVERSATIONS]: {
-    key: "conversationsSettingsTitle",
-    fallback: "Conversations",
-  },
-  [FEATURES_TAB_IDS.PROMPTS]: { key: "promptSettingsTitle", fallback: "Prompts" },
-  [FEATURES_TAB_IDS.READING_HISTORY]: {
-    key: "readingHistorySettings",
-    fallback: "Reading History",
-  },
-  [FEATURES_TAB_IDS.CONTENT]: { key: "contentProcessing", fallback: "Content" },
-  [FEATURES_TAB_IDS.TOOLBOX]: { key: "toolboxMenu", fallback: "Toolbox" },
-  [SITE_SETTINGS_TAB_IDS.LAYOUT]: { key: "layoutTab", fallback: "Layout" },
-  [SITE_SETTINGS_TAB_IDS.MODEL_LOCK]: { key: "tabModelLock", fallback: "Model Lock" },
-  gemini: { key: "geminiSettingsTab", fallback: "Gemini" },
-  aistudio: { key: "aistudioSettingsTitle", fallback: "AI Studio" },
-  chatgpt: { key: "chatgptSettingsTitle", fallback: "ChatGPT" },
-  claude: { key: "claudeSettingsTab", fallback: "Claude" },
-  [APPEARANCE_TAB_IDS.PRESETS]: { key: "themePresetsTab", fallback: "Theme Presets" },
-  [APPEARANCE_TAB_IDS.CUSTOM]: { key: "customStylesTab", fallback: "Custom Styles" },
-}
-
-interface GlobalSearchCategoryDefinition {
-  id: GlobalSearchCategoryId
-  label: LocalizedLabelDefinition
-  placeholder: LocalizedLabelDefinition
-  emptyText: LocalizedLabelDefinition
-}
-
 type GlobalSearchOpenSource = "shortcut" | "ui" | "event"
-
-interface GlobalSearchShortcutNudgeState {
-  shownCount: number
-  lastShownAt: number
-  dismissed: boolean
-  shortcutUsedCount: number
-}
 
 const isLikelyMacPlatform = () => {
   if (typeof navigator === "undefined") return false
@@ -209,283 +175,6 @@ const isLikelyMacPlatform = () => {
 
 const PASS_THROUGH_META_KEY_ALIASES = new Set(["Meta", "OS", "Command", "Cmd"])
 const PASS_THROUGH_CONTROL_KEY_ALIASES = new Set(["Control", "Ctrl"])
-
-const GLOBAL_SEARCH_CATEGORY_DEFINITIONS: GlobalSearchCategoryDefinition[] = [
-  {
-    id: "all",
-    label: { key: "globalSearchCategoryAll", fallback: "All" },
-    placeholder: { key: "globalSearchPlaceholderAll", fallback: "Search all" },
-    emptyText: { key: "globalSearchEmptyAll", fallback: "No matching results" },
-  },
-  {
-    id: "outline",
-    label: { key: "globalSearchCategoryOutline", fallback: "Outline" },
-    placeholder: { key: "globalSearchPlaceholderOutline", fallback: "Search outline" },
-    emptyText: { key: "globalSearchEmptyOutline", fallback: "No outline results" },
-  },
-  {
-    id: "conversations",
-    label: { key: "globalSearchCategoryConversations", fallback: "Conversations" },
-    placeholder: {
-      key: "globalSearchPlaceholderConversations",
-      fallback: "Search conversations on current site",
-    },
-    emptyText: {
-      key: "globalSearchEmptyConversations",
-      fallback: "No conversation results",
-    },
-  },
-  {
-    id: "prompts",
-    label: { key: "globalSearchCategoryPrompts", fallback: "Prompts" },
-    placeholder: { key: "globalSearchPlaceholderPrompts", fallback: "Search prompts" },
-    emptyText: { key: "globalSearchEmptyPrompts", fallback: "No prompt results" },
-  },
-  {
-    id: "settings",
-    label: { key: "globalSearchCategorySettings", fallback: "Settings" },
-    placeholder: { key: "globalSearchPlaceholderSettings", fallback: "Search settings" },
-    emptyText: { key: "globalSearchEmptySettings", fallback: "No matching settings" },
-  },
-  {
-    id: "tips",
-    label: { key: "featureTipsCategory", fallback: "Tips" },
-    placeholder: { key: "featureTipSearchPlaceholder", fallback: "Search feature tips…" },
-    emptyText: { key: "globalSearchEmptyTips", fallback: "No matching tips" },
-  },
-]
-
-const GLOBAL_SEARCH_RESULT_CATEGORY_LABELS: Record<
-  GlobalSearchResultCategory,
-  LocalizedLabelDefinition
-> = {
-  outline: { key: "globalSearchCategoryOutline", fallback: "Outline" },
-  settings: { key: "globalSearchCategorySettings", fallback: "Settings" },
-  conversations: { key: "globalSearchCategoryConversations", fallback: "Conversations" },
-  prompts: { key: "globalSearchCategoryPrompts", fallback: "Prompts" },
-  tips: { key: "featureTipsCategory", fallback: "Tips" },
-}
-
-const GLOBAL_SEARCH_MATCH_REASON_LABEL_DEFINITIONS: Record<
-  GlobalSearchMatchReason,
-  LocalizedLabelDefinition
-> = {
-  title: { key: "globalSearchMatchReasonTitle", fallback: "Title match" },
-  folder: { key: "globalSearchMatchReasonFolder", fallback: "Folder match" },
-  tag: { key: "globalSearchMatchReasonTag", fallback: "Tag match" },
-  type: { key: "globalSearchMatchReasonType", fallback: "Type match" },
-  code: { key: "globalSearchMatchReasonCode", fallback: "Code match" },
-  category: { key: "globalSearchMatchReasonCategory", fallback: "Category match" },
-  content: { key: "globalSearchMatchReasonContent", fallback: "Content match" },
-  id: { key: "globalSearchMatchReasonId", fallback: "ID match" },
-  keyword: { key: "globalSearchMatchReasonKeyword", fallback: "Keyword match" },
-  alias: { key: "globalSearchMatchReasonAlias", fallback: "Alias match" },
-  fuzzy: { key: "globalSearchMatchReasonFuzzy", fallback: "Fuzzy match" },
-}
-
-const GLOBAL_SEARCH_ALL_CATEGORY_ITEM_LIMIT = 12
-
-const GLOBAL_SEARCH_RESULTS_LISTBOX_ID = "settings-search-results-listbox"
-const GLOBAL_SEARCH_OPTION_ID_PREFIX = "settings-search-option"
-const GLOBAL_SEARCH_KEYBOARD_SAFE_TOP = 8
-const GLOBAL_SEARCH_KEYBOARD_SAFE_BOTTOM = 12
-const GLOBAL_SEARCH_SHORTCUT_NUDGE_STORAGE_KEY = "ophel:global-search-shortcut-nudge:v1"
-const GLOBAL_SEARCH_SHORTCUT_NUDGE_MAX_SHOWS = 3
-const GLOBAL_SEARCH_SHORTCUT_NUDGE_MIN_INTERVAL = 24 * 60 * 60 * 1000
-const GLOBAL_SEARCH_SHORTCUT_NUDGE_AUTO_HIDE_MS = 6000
-const GLOBAL_SEARCH_SHORTCUT_NUDGE_AUTO_DISMISS_SHORTCUT_COUNT = 2
-const GLOBAL_SEARCH_PROMPT_PREVIEW_POINTER_DELAY_MS = 450
-const GLOBAL_SEARCH_PROMPT_PREVIEW_KEYBOARD_DELAY_MS = 700
-const GLOBAL_SEARCH_PROMPT_PREVIEW_HIDE_DELAY_MS = 220
-const GLOBAL_SEARCH_INPUT_DEBOUNCE_MS = 140
-const GLOBAL_SEARCH_SYNTAX_SUGGESTION_LIMIT = 8
-const GLOBAL_SEARCH_FILTER_CHIP_MAX_COUNT = 4
-
-const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
-  "aistudio-collapse-advanced": "aistudioCollapseAdvanced",
-  "aistudio-collapse-navbar": "aistudioCollapseNavbar",
-  "aistudio-collapse-run-settings": "aistudioCollapseRunSettings",
-  "aistudio-collapse-tools": "aistudioCollapseTools",
-  "aistudio-enable-search": "aistudioEnableSearch",
-  "aistudio-markdown-fix": "aistudioMarkdownFixLabel",
-  "aistudio-remove-watermark": "aistudioRemoveWatermark",
-  "appearance-custom-styles": "customCSS",
-  "appearance-sync-native-page-theme": "syncNativePageThemeLabel",
-  "appearance-preset-dark": "darkModePreset",
-  "appearance-preset-light": "lightModePreset",
-  "chatgpt-markdown-fix": "chatgptMarkdownFixLabel",
-  "conversation-sync-delete": "conversationsSyncDeleteLabel",
-  "global-search-fuzzy-search": "globalSearchEnableFuzzySearchLabel",
-  "global-search-double-shift": "doubleShiftToSearch",
-  "global-search-shortcut-setting-link": "globalSearchShortcutSettingLabel",
-  "global-search-prompt-enter-behavior": "globalSearchPromptEnterBehaviorLabel",
-  "claude-session-keys": "claudeSessionKeyTitle",
-  "content-assistant-mermaid": "assistantMermaidLabel",
-  "content-formula-copy": "formulaCopyLabel",
-  "content-formula-copy-format": "formulaCopyFormatLabel",
-  "content-formula-delimiter": "formulaDelimiterLabel",
-  "content-table-copy": "tableCopyLabel",
-  "content-user-query-markdown": "userQueryMarkdownLabel",
-  "conversation-folder-rainbow": "folderRainbowLabel",
-  "conversation-sync-unpin": "conversationsSyncUnpinLabel",
-  "export-custom-model-name": "exportCustomModelName",
-  "export-custom-user-name": "exportCustomUserName",
-  "export-filename-timestamp": "exportFilenameTimestamp",
-  "export-include-thoughts": "exportIncludeThoughtsLabel",
-  "export-packaging": "exportPackagingLabel",
-  "gemini-markdown-fix": "markdownFixLabel",
-  "gemini-policy-max-retries": "maxRetriesLabel",
-  "gemini-policy-retry": "policyRetryLabel",
-  "gemini-watermark-removal": "watermarkRemovalLabel",
-  "layout-page-width-enabled": "enablePageWidth",
-  "layout-page-width-value": "pageWidthValueLabel",
-  "layout-panel-avoidance-enabled": "panelAvoidanceLabel",
-  "layout-user-query-width-enabled": "enableUserQueryWidth",
-  "layout-user-query-width-value": "userQueryWidthValueLabel",
-  "layout-zen-mode-enabled": "zenModeTitle",
-  "layout-zen-mode-exit-button-visible": "zenModeExitButtonVisibleLabel",
-  "outline-auto-update": "outlineAutoUpdateLabel",
-  "outline-follow-mode": "outlineFollowModeLabel",
-  "outline-inline-bookmark-mode": "inlineBookmarkModeLabel",
-  "outline-panel-bookmark-mode": "panelBookmarkModeLabel",
-  "outline-prevent-auto-scroll": "preventAutoScrollLabel",
-  "outline-show-word-count": "outlineShowWordCountLabel",
-  "outline-update-interval": "outlineUpdateIntervalLabel",
-  "panel-default-position": "defaultPositionLabel",
-  "panel-edge-distance": "defaultEdgeDistanceLabel",
-  "panel-edge-snap-threshold": "edgeSnapThresholdLabel",
-  "panel-edge-trigger-mode": "edgeTriggerModeLabel",
-  "panel-height": "panelHeightLabel",
-  "panel-hover-width": "panelHoverWidthLabel",
-  "panel-mode": "panelModeLabel",
-  "panel-resize-on-hover": "panelResizeOnHoverLabel",
-  "panel-width": "panelWidthLabel",
-  "prompt-double-click-send": "promptDoubleClickSendLabel",
-  "prompt-queue": "queueSettingLabel",
-  "prompt-quick-quote-enabled": "quickQuoteEnabledLabel",
-  "quick-buttons-hide-when-panel-open": "quickButtonsHideWhenPanelOpenLabel",
-  "quick-buttons-opacity": "quickButtonsOpacityLabel",
-  "quick-buttons-proximity-radius": "quickButtonsProximityRadiusLabel",
-  "reading-history-auto-restore": "readingHistoryAutoRestoreLabel",
-  "reading-history-cleanup-days": "readingHistoryCleanup",
-  "reading-history-persistence": "readingHistoryPersistenceLabel",
-  "shortcuts-enabled": "enableShortcuts",
-  "shortcuts-global-url": "globalShortcutUrl",
-  "shortcuts-browser-shortcuts": "globalShortcutsTitle",
-  "shortcuts-prompt-submit-shortcut": "promptSubmitShortcutLabel",
-  "tab-auto-focus": "autoFocusLabel",
-  "tab-auto-rename": "autoRenameTabLabel",
-  "tab-notification-sound": "notificationSoundLabel",
-  "tab-notification-sound-preset": "notificationSoundPresetLabel",
-  "tab-notification-volume": "notificationVolumeLabel",
-  "tab-notification-repeat-count": "notificationRepeatCountLabel",
-  "tab-notification-repeat-interval": "notificationRepeatIntervalLabel",
-  "tab-notify-when-focused": "notifyWhenFocusedLabel",
-  "tab-open-new": "openNewTabLabel",
-  "tab-privacy-mode": "privacyModeLabel",
-  "tab-privacy-title": "privacyTitleLabel",
-  "tab-rename-interval": "renameIntervalLabel",
-  "tab-show-notification": "showNotificationLabel",
-  "tab-show-status": "showStatusLabel",
-  "tab-hide-status-when-read": "hideStatusWhenReadLabel",
-  "tab-title-format": "titleFormatLabel",
-  "tools-menu-export": "export",
-  "tools-menu-copyMarkdown": "exportToClipboard",
-  "tools-menu-move": "conversationsMoveTo",
-  "tools-menu-setTag": "conversationsSetTag",
-  "tools-menu-scrollLock": "shortcutToggleScrollLock",
-  "tools-menu-modelLock": "modelLockTitle",
-  "tools-menu-cleanup": "cleanup",
-  "tools-menu-settings": "tabSettings",
-  "usage-monitor-enabled": "usageMonitorEnabledLabel",
-  "usage-monitor-daily-limit": "usageMonitorDailyLimitLabel",
-  "usage-monitor-auto-reset": "usageMonitorAutoResetLabel",
-}
-
-const MODEL_LOCK_SITE_LABEL_DEFINITIONS: Record<string, LocalizedLabelDefinition> = {
-  gemini: { key: "globalSearchSiteGemini", fallback: "Gemini" },
-  "gemini-enterprise": {
-    key: "globalSearchSiteGeminiEnterprise",
-    fallback: "Gemini Enterprise",
-  },
-  aistudio: { key: "globalSearchSiteAIStudio", fallback: "AI Studio" },
-  chatgpt: { key: "globalSearchSiteChatGPT", fallback: "ChatGPT" },
-  claude: { key: "globalSearchSiteClaude", fallback: "Claude" },
-  grok: { key: "globalSearchSiteGrok", fallback: "Grok" },
-  qwenai: { key: "globalSearchSiteQwenAi", fallback: "Qwen Studio" },
-  ima: { key: "globalSearchSiteIma", fallback: "ima" },
-  zai: { key: "globalSearchSiteZai", fallback: "Z.ai" },
-}
-
-const MODEL_LOCK_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
-  {
-    settingId: "model-lock-gemini",
-    title: "模型锁定：Gemini",
-    keywords: ["model lock", "gemini", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-gemini-enterprise",
-    title: "模型锁定：Gemini Enterprise",
-    keywords: ["model lock", "gemini enterprise", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-aistudio",
-    title: "模型锁定：AI Studio",
-    keywords: ["model lock", "aistudio", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-chatgpt",
-    title: "模型锁定：ChatGPT",
-    keywords: ["model lock", "chatgpt", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-claude",
-    title: "模型锁定：Claude",
-    keywords: ["model lock", "claude", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-grok",
-    title: "模型锁定：Grok",
-    keywords: ["model lock", "grok", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-kimi",
-    title: "模型锁定：Kimi",
-    keywords: ["model lock", "kimi", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-qianwen",
-    title: "模型锁定：Qianwen",
-    keywords: ["model lock", "qianwen", "tongyi", "通义千问", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-qwenai",
-    title: "模型锁定：Qwen Studio",
-    keywords: ["model lock", "qwen studio", "qwenai", "chat.qwen.ai", "国际版千问", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-yuanbao",
-    title: "模型锁定：Yuanbao",
-    keywords: ["model lock", "yuanbao", "腾讯元宝", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-ima",
-    title: "模型锁定：ima",
-    keywords: ["model lock", "ima", "ima.qq.com", "腾讯 ima", "模型锁定"],
-  },
-  {
-    settingId: "model-lock-zai",
-    title: "模型锁定：Z.ai",
-    keywords: ["model lock", "z.ai", "zai", "模型锁定"],
-  },
-]
-
-const toSearchTitleFallback = (settingId: string): string =>
-  settingId
-    .replace(/[-_]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-    .replace(/\b([a-z])/g, (_matched, first) => first.toUpperCase())
 
 const hasPromptVariables = (content: string): boolean => /\{\{([^\s{}]+)\}\}/.test(content)
 
@@ -595,76 +284,6 @@ export const App = () => {
     )
   }, [formatLocalizedText, globalSearchShortcutHintLabel])
 
-  const getGlobalSearchShortcutNudgeState = useCallback((): GlobalSearchShortcutNudgeState => {
-    if (typeof window === "undefined") {
-      return {
-        shownCount: 0,
-        lastShownAt: 0,
-        dismissed: false,
-        shortcutUsedCount: 0,
-      }
-    }
-
-    try {
-      const rawValue = window.localStorage.getItem(GLOBAL_SEARCH_SHORTCUT_NUDGE_STORAGE_KEY)
-      if (!rawValue) {
-        return {
-          shownCount: 0,
-          lastShownAt: 0,
-          dismissed: false,
-          shortcutUsedCount: 0,
-        }
-      }
-
-      const parsedValue = JSON.parse(rawValue) as Partial<GlobalSearchShortcutNudgeState>
-
-      return {
-        shownCount: Number.isFinite(parsedValue.shownCount)
-          ? Math.max(0, Number(parsedValue.shownCount))
-          : 0,
-        lastShownAt: Number.isFinite(parsedValue.lastShownAt)
-          ? Math.max(0, Number(parsedValue.lastShownAt))
-          : 0,
-        dismissed: Boolean(parsedValue.dismissed),
-        shortcutUsedCount: Number.isFinite(parsedValue.shortcutUsedCount)
-          ? Math.max(0, Number(parsedValue.shortcutUsedCount))
-          : 0,
-      }
-    } catch {
-      return {
-        shownCount: 0,
-        lastShownAt: 0,
-        dismissed: false,
-        shortcutUsedCount: 0,
-      }
-    }
-  }, [])
-
-  const saveGlobalSearchShortcutNudgeState = useCallback(
-    (nextState: GlobalSearchShortcutNudgeState) => {
-      if (typeof window === "undefined") {
-        return
-      }
-
-      try {
-        window.localStorage.setItem(
-          GLOBAL_SEARCH_SHORTCUT_NUDGE_STORAGE_KEY,
-          JSON.stringify(nextState),
-        )
-      } catch {
-        // ignore storage errors
-      }
-    },
-    [],
-  )
-
-  const clearGlobalSearchNudgeHideTimer = useCallback(() => {
-    if (globalSearchNudgeHideTimerRef.current) {
-      clearTimeout(globalSearchNudgeHideTimerRef.current)
-      globalSearchNudgeHideTimerRef.current = null
-    }
-  }, [])
-
   const handleGlobalSearchPromptPreviewClick = useCallback(
     (event: React.MouseEvent<HTMLDivElement>) => {
       event.stopPropagation()
@@ -697,41 +316,6 @@ export const App = () => {
     [getLocalizedText],
   )
 
-  const clearSettingsSearchInputDebounceTimer = useCallback(() => {
-    if (!searchInputDebounceTimerRef.current) {
-      return
-    }
-
-    clearTimeout(searchInputDebounceTimerRef.current)
-    searchInputDebounceTimerRef.current = null
-  }, [])
-
-  const syncSettingsSearchInputAndQuery = useCallback(
-    (nextValue: string) => {
-      clearSettingsSearchInputDebounceTimer()
-      setSettingsSearchInputValue(nextValue)
-      setSettingsSearchQuery(nextValue)
-    },
-    [clearSettingsSearchInputDebounceTimer],
-  )
-
-  const syncGlobalSearchValueAndCategory = useCallback(
-    (nextValue: string) => {
-      const normalizedValue = nextValue.trimStart()
-
-      syncSettingsSearchInputAndQuery(nextValue)
-
-      setActiveGlobalSearchCategory((previousCategory) => {
-        if (normalizedValue.startsWith("tip:")) {
-          return previousCategory === "tips" ? previousCategory : "tips"
-        }
-
-        return previousCategory === "tips" ? "all" : previousCategory
-      })
-    },
-    [syncSettingsSearchInputAndQuery],
-  )
-
   const toggleGlobalSearchFuzzySearch = useCallback(() => {
     setSettings({
       globalSearch: {
@@ -742,113 +326,9 @@ export const App = () => {
     })
   }, [isGlobalSearchFuzzySearchEnabled, setSettings, settings?.globalSearch])
 
-  const commitSettingsSearchInputValue = useCallback(
-    (nextValue: string) => {
-      setSettingsSearchInputValue(nextValue)
-      clearSettingsSearchInputDebounceTimer()
-
-      searchInputDebounceTimerRef.current = setTimeout(() => {
-        setSettingsSearchQuery(nextValue)
-        searchInputDebounceTimerRef.current = null
-      }, GLOBAL_SEARCH_INPUT_DEBOUNCE_MS)
-    },
-    [clearSettingsSearchInputDebounceTimer],
-  )
-
-  const hideGlobalSearchShortcutNudge = useCallback(() => {
-    clearGlobalSearchNudgeHideTimer()
-    setShowGlobalSearchShortcutNudge(false)
-    setGlobalSearchShortcutNudgeMessage("")
-  }, [clearGlobalSearchNudgeHideTimer])
-
-  const dismissGlobalSearchShortcutNudgeForever = useCallback(() => {
-    const currentState = getGlobalSearchShortcutNudgeState()
-    saveGlobalSearchShortcutNudgeState({
-      ...currentState,
-      dismissed: true,
-    })
-    hideGlobalSearchShortcutNudge()
-  }, [
-    getGlobalSearchShortcutNudgeState,
-    hideGlobalSearchShortcutNudge,
-    saveGlobalSearchShortcutNudgeState,
-  ])
-
-  const markGlobalSearchShortcutUsed = useCallback(() => {
-    const currentState = getGlobalSearchShortcutNudgeState()
-    const nextShortcutUsedCount = currentState.shortcutUsedCount + 1
-
-    saveGlobalSearchShortcutNudgeState({
-      ...currentState,
-      shortcutUsedCount: nextShortcutUsedCount,
-      dismissed:
-        currentState.dismissed ||
-        nextShortcutUsedCount >= GLOBAL_SEARCH_SHORTCUT_NUDGE_AUTO_DISMISS_SHORTCUT_COUNT,
-    })
-
-    hideGlobalSearchShortcutNudge()
-  }, [
-    getGlobalSearchShortcutNudgeState,
-    hideGlobalSearchShortcutNudge,
-    saveGlobalSearchShortcutNudgeState,
-  ])
-
-  const tryShowGlobalSearchShortcutNudge = useCallback(() => {
-    if (!globalSearchShortcutNudgeText) {
-      return
-    }
-
-    const currentState = getGlobalSearchShortcutNudgeState()
-    if (currentState.dismissed) {
-      return
-    }
-
-    if (
-      currentState.shortcutUsedCount >= GLOBAL_SEARCH_SHORTCUT_NUDGE_AUTO_DISMISS_SHORTCUT_COUNT
-    ) {
-      saveGlobalSearchShortcutNudgeState({
-        ...currentState,
-        dismissed: true,
-      })
-      return
-    }
-
-    if (currentState.shownCount >= GLOBAL_SEARCH_SHORTCUT_NUDGE_MAX_SHOWS) {
-      return
-    }
-
-    const now = Date.now()
-    if (
-      currentState.lastShownAt > 0 &&
-      now - currentState.lastShownAt < GLOBAL_SEARCH_SHORTCUT_NUDGE_MIN_INTERVAL
-    ) {
-      return
-    }
-
-    saveGlobalSearchShortcutNudgeState({
-      ...currentState,
-      shownCount: currentState.shownCount + 1,
-      lastShownAt: now,
-    })
-
-    setGlobalSearchShortcutNudgeMessage(globalSearchShortcutNudgeText)
-    setShowGlobalSearchShortcutNudge(true)
-    clearGlobalSearchNudgeHideTimer()
-    globalSearchNudgeHideTimerRef.current = setTimeout(() => {
-      setShowGlobalSearchShortcutNudge(false)
-      setGlobalSearchShortcutNudgeMessage("")
-      globalSearchNudgeHideTimerRef.current = null
-    }, GLOBAL_SEARCH_SHORTCUT_NUDGE_AUTO_HIDE_MS)
-  }, [
-    clearGlobalSearchNudgeHideTimer,
-    getGlobalSearchShortcutNudgeState,
-    globalSearchShortcutNudgeText,
-    saveGlobalSearchShortcutNudgeState,
-  ])
-
   const getPageLabel = useCallback(
     (page: string) => {
-      const definition = SETTINGS_PAGE_LABEL_DEFINITIONS[page]
+      const definition = SETTING_SEARCH_PAGE_LABEL_DEFINITIONS[page]
       if (!definition) return page
       return getLocalizedText(definition)
     },
@@ -857,7 +337,7 @@ export const App = () => {
 
   const getSubTabLabel = useCallback(
     (subTab: string) => {
-      const definition = SETTINGS_SUB_TAB_LABEL_DEFINITIONS[subTab]
+      const definition = SETTING_SEARCH_SUB_TAB_LABEL_DEFINITIONS[subTab]
       if (!definition) return subTab
       return getLocalizedText(definition)
     },
@@ -1145,23 +625,6 @@ export const App = () => {
   const [hoverWidthReleaseToken, setHoverWidthReleaseToken] = useState(0)
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false)
   const [releaseNotesAutoSignal, setReleaseNotesAutoSignal] = useState(0)
-  const [isGlobalSettingsSearchOpen, setIsGlobalSettingsSearchOpen] = useState(false)
-  const [activeGlobalSearchCategory, setActiveGlobalSearchCategory] =
-    useState<GlobalSearchCategoryId>("all")
-  const [settingsSearchInputValue, setSettingsSearchInputValue] = useState("")
-  const [settingsSearchQuery, setSettingsSearchQuery] = useState("")
-  const [settingsSearchActiveIndex, setSettingsSearchActiveIndex] = useState(0)
-  const [settingsSearchHoverLocked, setSettingsSearchHoverLocked] = useState(false)
-  const [settingsSearchNavigationMode, setSettingsSearchNavigationMode] = useState<
-    "keyboard" | "pointer"
-  >("pointer")
-  const [expandedGlobalSearchCategories, setExpandedGlobalSearchCategories] = useState<
-    Partial<Record<GlobalSearchResultCategory, boolean>>
-  >({})
-  const [showGlobalSearchShortcutNudge, setShowGlobalSearchShortcutNudge] = useState(false)
-  const [globalSearchShortcutNudgeMessage, setGlobalSearchShortcutNudgeMessage] = useState("")
-  const [showGlobalSearchSyntaxHelp, setShowGlobalSearchSyntaxHelp] = useState(false)
-  const [activeSearchSyntaxSuggestionIndex, setActiveSearchSyntaxSuggestionIndex] = useState(-1)
   const [showExtensionUpdateNotice, setShowExtensionUpdateNotice] = useState(
     () => typeof window !== "undefined" && Boolean(window.__OPHEL_EXTENSION_UPDATE_AVAILABLE__),
   )
@@ -1173,9 +636,71 @@ export const App = () => {
   const globalSearchSyntaxHelpPopoverRef = useRef<HTMLDivElement | null>(null)
   const settingsSearchResultsRef = useRef<HTMLDivElement | null>(null)
   const promptPreviewContainerRef = useRef<HTMLDivElement | null>(null)
-  const searchInputDebounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const globalSearchController = useGlobalSearchController({
+    shortcutNudgeText: globalSearchShortcutNudgeText,
+    settingsSearchResultsRef,
+    promptPreviewPointerDelayMs: GLOBAL_SEARCH_PROMPT_PREVIEW_POINTER_DELAY_MS,
+    promptPreviewHideDelayMs: GLOBAL_SEARCH_PROMPT_PREVIEW_HIDE_DELAY_MS,
+  })
+  const {
+    isGlobalSettingsSearchOpen,
+    setIsGlobalSettingsSearchOpen,
+    showGlobalSearchSyntaxHelp,
+    setShowGlobalSearchSyntaxHelp,
+    activeSearchSyntaxSuggestionIndex,
+    setActiveSearchSyntaxSuggestionIndex,
+    showGlobalSearchShortcutNudge,
+    globalSearchShortcutNudgeMessage,
+    hideGlobalSearchShortcutNudge,
+    dismissGlobalSearchShortcutNudgeForever,
+    markGlobalSearchShortcutUsed,
+    tryShowGlobalSearchShortcutNudge,
+    settingsSearchInputValue,
+    setSettingsSearchInputValue,
+    settingsSearchQuery,
+    setSettingsSearchQuery,
+    clearSettingsSearchInputDebounceTimer,
+    syncSettingsSearchInputAndQuery,
+    commitSettingsSearchInputValue,
+    activeGlobalSearchCategory,
+    setActiveGlobalSearchCategory,
+    settingsSearchActiveIndex,
+    setSettingsSearchActiveIndex,
+    settingsSearchHoverLocked,
+    setSettingsSearchHoverLocked,
+    settingsSearchNavigationMode,
+    setSettingsSearchNavigationMode,
+    expandedGlobalSearchCategories,
+    setExpandedGlobalSearchCategories,
+    globalSearchPromptPreview,
+    globalSearchPromptPreviewPosition,
+    clearPromptPreviewTimer,
+    clearPromptPreviewHideTimer,
+    hideGlobalSearchPromptPreview,
+    scheduleHideGlobalSearchPromptPreview,
+    scheduleGlobalSearchPromptPreview,
+    scheduleGlobalSearchPointerPreview,
+    refreshGlobalSearchPromptPreviewAnchorRect,
+  } = globalSearchController
+
+  const syncGlobalSearchValueAndCategory = useCallback(
+    (nextValue: string) => {
+      const normalizedValue = nextValue.trimStart()
+
+      syncSettingsSearchInputAndQuery(nextValue)
+
+      setActiveGlobalSearchCategory((previousCategory) => {
+        if (normalizedValue.startsWith("tip:")) {
+          return previousCategory === "tips" ? previousCategory : "tips"
+        }
+
+        return previousCategory === "tips" ? "all" : previousCategory
+      })
+    },
+    [setActiveGlobalSearchCategory, syncSettingsSearchInputAndQuery],
+  )
+
   const settingsSearchWheelFreezeUntilRef = useRef(0)
-  const globalSearchNudgeHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const globalSearchOpenSourceRef = useRef<GlobalSearchOpenSource>("ui")
   const lastShiftPressedAtRef = useRef(0)
   const [outlineSearchVersion, setOutlineSearchVersion] = useState(0)
@@ -1269,22 +794,6 @@ export const App = () => {
     releaseNotesAutoSignal,
     showExtensionUpdateNotice,
   ])
-
-  const {
-    globalSearchPromptPreview,
-    globalSearchPromptPreviewPosition,
-    clearPromptPreviewTimer,
-    clearPromptPreviewHideTimer,
-    hideGlobalSearchPromptPreview,
-    scheduleHideGlobalSearchPromptPreview,
-    scheduleGlobalSearchPromptPreview,
-    scheduleGlobalSearchPointerPreview,
-    refreshGlobalSearchPromptPreviewAnchorRect,
-  } = useGlobalSearchPreview({
-    settingsSearchResultsRef,
-    pointerDelayMs: GLOBAL_SEARCH_PROMPT_PREVIEW_POINTER_DELAY_MS,
-    hideDelayMs: GLOBAL_SEARCH_PROMPT_PREVIEW_HIDE_DELAY_MS,
-  })
 
   // 浮动工具栏
 
@@ -1732,6 +1241,15 @@ export const App = () => {
     clearSettingsSearchInputDebounceTimer,
     edgeSnapState,
     isGlobalSettingsSearchOpen,
+    setActiveGlobalSearchCategory,
+    setActiveSearchSyntaxSuggestionIndex,
+    setExpandedGlobalSearchCategories,
+    setSettingsSearchActiveIndex,
+    setSettingsSearchHoverLocked,
+    setSettingsSearchInputValue,
+    setSettingsSearchNavigationMode,
+    setSettingsSearchQuery,
+    setIsGlobalSettingsSearchOpen,
     showEdgePeek,
   ])
 
@@ -1958,7 +1476,12 @@ export const App = () => {
         inputElement.setSelectionRange(cursorPosition, cursorPosition)
       })
     },
-    [settingsSearchInputValue, syncGlobalSearchValueAndCategory],
+    [
+      settingsSearchInputValue,
+      setActiveSearchSyntaxSuggestionIndex,
+      setSettingsSearchActiveIndex,
+      syncGlobalSearchValueAndCategory,
+    ],
   )
 
   const applyGlobalSearchSyntaxHelpItem = useCallback(
@@ -1966,7 +1489,7 @@ export const App = () => {
       applyGlobalSearchSyntaxSuggestion(item)
       setShowGlobalSearchSyntaxHelp(false)
     },
-    [applyGlobalSearchSyntaxSuggestion],
+    [applyGlobalSearchSyntaxSuggestion, setShowGlobalSearchSyntaxHelp],
   )
 
   const handleRemoveGlobalSearchFilterChip = useCallback(
@@ -1984,6 +1507,8 @@ export const App = () => {
     [
       activeGlobalSearchPlainQuery,
       activeGlobalSearchSyntaxFilters,
+      setActiveSearchSyntaxSuggestionIndex,
+      setSettingsSearchActiveIndex,
       syncSettingsSearchInputAndQuery,
     ],
   )
@@ -1992,7 +1517,12 @@ export const App = () => {
     syncSettingsSearchInputAndQuery(activeGlobalSearchPlainQuery)
     setActiveSearchSyntaxSuggestionIndex(-1)
     setSettingsSearchActiveIndex(0)
-  }, [activeGlobalSearchPlainQuery, syncSettingsSearchInputAndQuery])
+  }, [
+    activeGlobalSearchPlainQuery,
+    setActiveSearchSyntaxSuggestionIndex,
+    setSettingsSearchActiveIndex,
+    syncSettingsSearchInputAndQuery,
+  ])
 
   const activeGlobalSearchContext = useMemo(() => {
     if (activeVisibleGlobalSearchIndex < 0) {
@@ -2148,6 +1678,16 @@ export const App = () => {
       closeSettingsModal,
       edgeSnapState,
       releaseMainPanelHoverWidth,
+      setActiveGlobalSearchCategory,
+      setActiveSearchSyntaxSuggestionIndex,
+      setExpandedGlobalSearchCategories,
+      setSettingsSearchActiveIndex,
+      setSettingsSearchHoverLocked,
+      setSettingsSearchInputValue,
+      setSettingsSearchNavigationMode,
+      setSettingsSearchQuery,
+      setIsGlobalSettingsSearchOpen,
+      setShowGlobalSearchSyntaxHelp,
       showEdgePeek,
     ],
   )
@@ -2202,7 +1742,22 @@ export const App = () => {
         }
       })
     },
-    [clearSettingsSearchInputDebounceTimer, edgeSnapState, scheduleEdgePeekSync, showEdgePeek],
+    [
+      clearSettingsSearchInputDebounceTimer,
+      edgeSnapState,
+      scheduleEdgePeekSync,
+      setActiveGlobalSearchCategory,
+      setActiveSearchSyntaxSuggestionIndex,
+      setExpandedGlobalSearchCategories,
+      setSettingsSearchActiveIndex,
+      setSettingsSearchHoverLocked,
+      setSettingsSearchInputValue,
+      setSettingsSearchNavigationMode,
+      setSettingsSearchQuery,
+      setIsGlobalSettingsSearchOpen,
+      setShowGlobalSearchSyntaxHelp,
+      showEdgePeek,
+    ],
   )
 
   const openSettingsModal = useCallback(() => {
@@ -2345,10 +1900,7 @@ export const App = () => {
           const pendingDetail = {
             promptId: targetPrompt.id,
           }
-          const ophelWindow = window as Window & {
-            __ophelPendingLocatePrompt?: typeof pendingDetail | null
-          }
-          ophelWindow.__ophelPendingLocatePrompt = pendingDetail
+          window.__ophelPendingLocatePrompt = pendingDetail
 
           window.dispatchEvent(
             new CustomEvent("ophel:locatePrompt", {
@@ -2376,10 +1928,7 @@ export const App = () => {
             promptId: targetPrompt.id,
             submitAfterInsert: false,
           }
-          const ophelWindow = window as Window & {
-            __ophelPendingPromptVariableDialog?: typeof pendingDetail | null
-          }
-          ophelWindow.__ophelPendingPromptVariableDialog = pendingDetail
+          window.__ophelPendingPromptVariableDialog = pendingDetail
 
           window.dispatchEvent(
             new CustomEvent("ophel:openPromptVariableDialog", {
@@ -2441,12 +1990,6 @@ export const App = () => {
 
     tryShowGlobalSearchShortcutNudge()
   }, [isGlobalSettingsSearchOpen, tryShowGlobalSearchShortcutNudge])
-
-  useEffect(() => {
-    return () => {
-      clearGlobalSearchNudgeHideTimer()
-    }
-  }, [clearGlobalSearchNudgeHideTimer])
 
   // Create a ref for isGlobalSettingsSearchOpen to access it in the event listener without re-binding
   const isGlobalSettingsSearchOpenRef = useRef(isGlobalSettingsSearchOpen)
@@ -2515,13 +2058,6 @@ export const App = () => {
     }
   }, [openGlobalSettingsSearch])
 
-  useEffect(
-    () => () => {
-      clearSettingsSearchInputDebounceTimer()
-    },
-    [clearSettingsSearchInputDebounceTimer],
-  )
-
   useEffect(() => {
     if (!isGlobalSettingsSearchOpen || !showGlobalSearchSyntaxHelp) {
       return
@@ -2552,7 +2088,7 @@ export const App = () => {
     return () => {
       document.removeEventListener("mousedown", handleOutsidePress, true)
     }
-  }, [isGlobalSettingsSearchOpen, showGlobalSearchSyntaxHelp])
+  }, [isGlobalSettingsSearchOpen, setShowGlobalSearchSyntaxHelp, showGlobalSearchSyntaxHelp])
 
   useEffect(() => {
     if (!isGlobalSettingsSearchOpen) {
@@ -2605,7 +2141,15 @@ export const App = () => {
     setExpandedGlobalSearchCategories({})
     settingsSearchWheelFreezeUntilRef.current = 0
     hideGlobalSearchPromptPreview()
-  }, [activeGlobalSearchCategory, hideGlobalSearchPromptPreview, settingsSearchQuery])
+  }, [
+    activeGlobalSearchCategory,
+    hideGlobalSearchPromptPreview,
+    setExpandedGlobalSearchCategories,
+    setSettingsSearchActiveIndex,
+    setSettingsSearchHoverLocked,
+    setSettingsSearchNavigationMode,
+    settingsSearchQuery,
+  ])
 
   useEffect(() => {
     if (!isGlobalSettingsSearchOpen) {
@@ -2653,28 +2197,15 @@ export const App = () => {
     }
   }, [clearPromptPreviewHideTimer, clearPromptPreviewTimer])
 
-  useGlobalSearchKeyboard({
-    isGlobalSettingsSearchOpen,
-    showGlobalSearchSyntaxHelp,
-    setShowGlobalSearchSyntaxHelp,
-    activeGlobalSearchCategory,
+  useGlobalSearchControllerKeyboard(globalSearchController, {
     categoryIds: GLOBAL_SEARCH_CATEGORY_DEFINITIONS.map((category) => category.id),
-    setActiveGlobalSearchCategory,
-    settingsSearchActiveIndex,
-    setSettingsSearchActiveIndex,
-    settingsSearchNavigationMode,
-    setSettingsSearchNavigationMode,
-    setSettingsSearchHoverLocked,
     shouldShowGlobalSearchSyntaxSuggestions,
     globalSearchSyntaxSuggestions,
-    activeSearchSyntaxSuggestionIndex,
-    setActiveSearchSyntaxSuggestionIndex,
     applyGlobalSearchSyntaxSuggestion,
     visibleGlobalSearchResults,
     navigateToSearchResult,
     closeGlobalSettingsSearch,
     getShouldReturnToSettingsOnEscape: () => searchOpenedFromSettingsRef.current,
-    settingsSearchResultsRef,
     keyboardSafeTop: GLOBAL_SEARCH_KEYBOARD_SAFE_TOP,
     keyboardSafeBottom: GLOBAL_SEARCH_KEYBOARD_SAFE_BOTTOM,
   })
@@ -3513,13 +3044,16 @@ export const App = () => {
 
   const { tags, addTag, updateTag, deleteTag } = useTagsStore()
 
-  const handleToggleGlobalSearchGroup = useCallback((category: GlobalSearchResultCategory) => {
-    setSettingsSearchNavigationMode("pointer")
-    setExpandedGlobalSearchCategories((prev) => ({
-      ...prev,
-      [category]: !prev[category],
-    }))
-  }, [])
+  const handleToggleGlobalSearchGroup = useCallback(
+    (category: GlobalSearchResultCategory) => {
+      setSettingsSearchNavigationMode("pointer")
+      setExpandedGlobalSearchCategories((prev) => ({
+        ...prev,
+        [category]: !prev[category],
+      }))
+    },
+    [setExpandedGlobalSearchCategories, setSettingsSearchNavigationMode],
+  )
 
   const extensionUpdateKickerText = getLocalizedText({
     key: "extensionUpdateNoticeKicker",

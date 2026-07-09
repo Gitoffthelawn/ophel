@@ -4,6 +4,8 @@ import { createPortal } from "react-dom"
 import type { SiteAdapter } from "~adapters/base"
 import {
   AddToQueueIcon,
+  ArrowDownIcon,
+  ArrowUpIcon,
   CheckIcon,
   ClearIcon,
   CopyIcon,
@@ -28,6 +30,10 @@ import {
   VariableInputDialog,
 } from "~components/VariableInputDialog"
 import { ChainIconPicker } from "~components/ChainIconPicker"
+import { ImportDialog } from "~components/prompts/ImportDialog"
+import { PromptEditorDialog } from "~components/prompts/PromptEditorDialog"
+import { PromptPreviewModal } from "~components/prompts/PromptPreviewModal"
+import { usePromptDragSort } from "~components/prompts/usePromptDragSort"
 import { VIRTUAL_CATEGORY } from "~constants"
 import { CHAIN_ICON_PRESETS } from "~constants/chain-icons"
 import type { PromptChain, PromptChainStep } from "~core/prompt-action-types"
@@ -37,8 +43,8 @@ import { usePromptChainsStore } from "~stores/prompt-chains-store"
 import { useSettingsStore } from "~stores/settings-store"
 import { APP_NAME } from "~utils/config"
 import { t } from "~utils/i18n"
-import { initCopyButtons, showCopySuccess } from "~utils/icons"
-import { getHighlightStyles, renderMarkdown } from "~utils/markdown"
+import { initCopyButtons } from "~utils/icons"
+import { renderMarkdown } from "~utils/markdown"
 import { OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
 import type { Prompt } from "~utils/storage"
 import { showToast } from "~utils/toast"
@@ -65,15 +71,6 @@ interface PromptInputState {
   title: string
   defaultValue: string
   onConfirm: (value: string) => void
-}
-
-interface OpenPromptVariableDialogDetail {
-  promptId?: string
-  submitAfterInsert?: boolean
-}
-
-interface LocatePromptDetail {
-  promptId?: string
 }
 
 type PromptLibraryView = "prompts" | "chains"
@@ -905,249 +902,6 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 `
 
-const PROMPT_PREVIEW_MODAL_STYLES = `
-@keyframes ghPromptPreviewFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@keyframes ghPromptPreviewSlideUp {
-  from {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.gh-prompt-preview-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 10001;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-  background: var(--gh-overlay-bg, rgba(0, 0, 0, 0.5));
-  animation: ghPromptPreviewFadeIn 0.2s ease-out;
-}
-
-.gh-prompt-preview-dialog {
-  width: min(640px, 100%);
-  max-height: min(82vh, 760px);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-border, #e5e7eb));
-  border-radius: 14px;
-  background: var(--gh-bg, #ffffff);
-  color: var(--gh-text, #1f2937);
-  box-shadow: var(--gh-shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.3));
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
-  animation: ghPromptPreviewSlideUp 0.24s ease-out;
-}
-
-.gh-prompt-preview-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 17px 20px 15px;
-  border-bottom: 1px solid var(--gh-border, #e5e7eb);
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--gh-primary, #4285f4) 5%, var(--gh-bg, #ffffff)) 0%,
-    var(--gh-bg, #ffffff) 100%
-  );
-}
-
-.gh-prompt-preview-title-block {
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.gh-prompt-preview-title-row {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  max-width: 100%;
-}
-
-.gh-prompt-preview-title {
-  min-width: 0;
-  flex: 0 1 auto;
-  overflow: hidden;
-  color: var(--gh-text, #1f2937);
-  font-size: 17px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1.35;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gh-prompt-preview-category {
-  max-width: min(260px, 100%);
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  min-height: 22px;
-  padding: 2px 8px;
-  box-sizing: border-box;
-  border: 1px solid
-    color-mix(
-      in srgb,
-      var(--gh-prompt-preview-category-bg, var(--gh-hover, #f3f4f6)) 72%,
-      var(--gh-border, #e5e7eb)
-    );
-  border-radius: 999px;
-  background: var(--gh-prompt-preview-category-bg, var(--gh-hover, #f3f4f6));
-  color: var(--gh-prompt-preview-category-text, #1f2937);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, #ffffff 18%, transparent);
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.15;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gh-prompt-preview-close {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--gh-hover, #f3f4f6);
-  color: var(--gh-text-secondary, #6b7280);
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    border-color 0.15s ease,
-    color 0.15s ease,
-    transform 0.15s ease;
-}
-
-.gh-prompt-preview-close:hover {
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 18%, var(--gh-border, #e5e7eb));
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-hover, #f3f4f6));
-  color: var(--gh-text, #1f2937);
-}
-
-.gh-prompt-preview-close:active {
-  transform: translateY(1px);
-}
-
-.gh-prompt-preview-close:focus-visible {
-  outline: 2px solid var(--gh-primary, #4285f4);
-  outline-offset: 2px;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview {
-  flex: 1;
-  min-height: 0;
-  padding: 20px 22px 22px;
-  overflow-y: auto;
-  background: color-mix(in srgb, var(--gh-bg-secondary, #f9fafb) 34%, var(--gh-bg, #ffffff));
-  color: var(--gh-text, #1f2937);
-  font-size: 13px;
-  line-height: 1.65;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 62%, transparent)
-    transparent;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar {
-  width: 10px;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-thumb {
-  min-height: 44px;
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 56%, transparent);
-  background-clip: content-box;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--gh-text-secondary, #6b7280) 72%, transparent);
-  background-clip: content-box;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview > :first-child {
-  margin-top: 0;
-}
-
-.gh-prompt-preview-body.gh-markdown-preview > :last-child {
-  margin-bottom: 0;
-}
-
-@media (max-width: 520px) {
-  .gh-prompt-preview-overlay {
-    padding: 12px;
-  }
-
-  .gh-prompt-preview-dialog {
-    max-height: 86vh;
-    border-radius: 12px;
-  }
-
-  .gh-prompt-preview-header {
-    padding: 14px 15px 13px;
-  }
-
-  .gh-prompt-preview-title {
-    white-space: normal;
-  }
-
-  .gh-prompt-preview-title-row {
-    align-items: flex-start;
-    flex-wrap: wrap;
-    gap: 7px;
-  }
-
-  .gh-prompt-preview-body.gh-markdown-preview {
-    padding: 16px;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .gh-prompt-preview-overlay,
-  .gh-prompt-preview-dialog {
-    animation: none;
-  }
-
-  .gh-prompt-preview-close {
-    transition: none;
-  }
-}
-`
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null
 
@@ -1300,14 +1054,6 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     defaultValue: "",
     onConfirm: () => {},
   })
-  // 拖拽状态
-  const [draggedId, setDraggedId] = useState<string | null>(null)
-  const dragNodeRef = useRef<HTMLDivElement | null>(null)
-  const dropIndicatorRootRef = useRef<ParentNode | null>(null)
-  const [draggedChainId, setDraggedChainId] = useState<string | null>(null)
-  const chainDragNodeRef = useRef<HTMLDivElement | null>(null)
-  const chainDropIndicatorRootRef = useRef<ParentNode | null>(null)
-
   // 变量输入弹窗状态
   const [variableDialogState, setVariableDialogState] = useState<{
     show: boolean
@@ -1375,6 +1121,25 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     })
   }, [manager])
 
+  const {
+    draggedId,
+    draggedChainId,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd,
+    handleDrop,
+    handleChainDragStart,
+    handleChainDragOver,
+    handleChainDragEnd,
+    handleChainDrop,
+  } = usePromptDragSort({
+    manager,
+    loadData,
+    chains,
+    updateChainOrder,
+    onOrderUpdated: () => showToast(t("orderUpdated")),
+  })
+
   const openVariableDialogByPromptId = useCallback(
     (promptId: string, submitAfterInsert = false) => {
       const targetPrompt = manager.getPrompts().find((prompt) => prompt.id === promptId)
@@ -1418,12 +1183,8 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   )
 
   useEffect(() => {
-    const ophelWindow = window as Window & {
-      __ophelPendingPromptVariableDialog?: OpenPromptVariableDialogDetail | null
-    }
-
     const handleOpenPromptVariableDialog = (event: Event) => {
-      const detail = (event as CustomEvent<OpenPromptVariableDialogDetail>).detail
+      const detail = (event as CustomEvent<OphelPendingPromptVariableDialogDetail>).detail
       const promptId = detail?.promptId
       if (!promptId) {
         return
@@ -1432,13 +1193,13 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
       const opened = openVariableDialogByPromptId(promptId, Boolean(detail?.submitAfterInsert))
       if (opened) {
         onPromptSelect?.(null)
-        ophelWindow.__ophelPendingPromptVariableDialog = null
+        window.__ophelPendingPromptVariableDialog = null
       }
     }
 
     window.addEventListener("ophel:openPromptVariableDialog", handleOpenPromptVariableDialog)
 
-    const pending = ophelWindow.__ophelPendingPromptVariableDialog
+    const pending = window.__ophelPendingPromptVariableDialog
     if (pending?.promptId) {
       const opened = openVariableDialogByPromptId(
         pending.promptId,
@@ -1446,7 +1207,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
       )
       if (opened) {
         onPromptSelect?.(null)
-        ophelWindow.__ophelPendingPromptVariableDialog = null
+        window.__ophelPendingPromptVariableDialog = null
       }
     }
 
@@ -1456,12 +1217,8 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   }, [onPromptSelect, openVariableDialogByPromptId])
 
   useEffect(() => {
-    const ophelWindow = window as Window & {
-      __ophelPendingLocatePrompt?: LocatePromptDetail | null
-    }
-
     const handleLocatePrompt = (event: Event) => {
-      const detail = (event as CustomEvent<LocatePromptDetail>).detail
+      const detail = (event as CustomEvent<OphelPendingLocatePromptDetail>).detail
       const promptId = detail?.promptId
       if (!promptId) {
         return
@@ -1469,17 +1226,17 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
 
       const located = locatePromptById(promptId)
       if (located) {
-        ophelWindow.__ophelPendingLocatePrompt = null
+        window.__ophelPendingLocatePrompt = null
       }
     }
 
     window.addEventListener("ophel:locatePrompt", handleLocatePrompt)
 
-    const pending = ophelWindow.__ophelPendingLocatePrompt
+    const pending = window.__ophelPendingLocatePrompt
     if (pending?.promptId) {
       const located = locatePromptById(pending.promptId)
       if (located) {
-        ophelWindow.__ophelPendingLocatePrompt = null
+        window.__ophelPendingLocatePrompt = null
       }
     }
 
@@ -1968,6 +1725,37 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     loadData()
   }
 
+  const movePromptRelativeToVisibleNeighbor = (
+    promptId: string,
+    neighborId: string,
+    placement: "before" | "after",
+  ) => {
+    const allPrompts = manager.getPrompts()
+    const fromIndex = allPrompts.findIndex((prompt) => prompt.id === promptId)
+    const neighborIndex = allPrompts.findIndex((prompt) => prompt.id === neighborId)
+
+    if (fromIndex === -1 || neighborIndex === -1) {
+      return
+    }
+
+    const nextOrder = [...allPrompts]
+    const [movedPrompt] = nextOrder.splice(fromIndex, 1)
+    let insertIndex = nextOrder.findIndex((prompt) => prompt.id === neighborId)
+
+    if (insertIndex === -1) {
+      return
+    }
+
+    if (placement === "after") {
+      insertIndex += 1
+    }
+
+    nextOrder.splice(insertIndex, 0, movedPrompt)
+    manager.updateOrder(nextOrder.map((prompt) => prompt.id))
+    showToast(t("orderUpdated"))
+    loadData()
+  }
+
   // 导出提示词为 JSON 文件
   const handleExport = () => {
     const allPrompts = manager.getPrompts()
@@ -2230,220 +2018,36 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     )
   }
 
-  // === 拖拽排序 ===
-  const clearPromptDropIndicators = useCallback(() => {
-    const roots = [
-      dropIndicatorRootRef.current,
-      dragNodeRef.current?.getRootNode() as ParentNode | undefined,
-      document,
-    ]
-    const seenRoots = new Set<ParentNode>()
-
-    roots.forEach((root) => {
-      if (!root || seenRoots.has(root)) return
-      seenRoots.add(root)
-      root.querySelectorAll(".drop-above, .drop-below").forEach((el) => {
-        el.classList.remove("drop-above", "drop-below")
-      })
-    })
-
-    dropIndicatorRootRef.current = null
-  }, [])
-
-  const handleDragStart = (e: React.DragEvent, id: string, node: HTMLDivElement) => {
-    const target = e.target as HTMLElement
-    if (
-      target.closest('button, input, textarea, select, [role="button"], [data-no-row-drag="true"]')
-    ) {
-      e.preventDefault()
-      return
-    }
-
-    setDraggedId(id)
-    dragNodeRef.current = node
-    dropIndicatorRootRef.current = node.getRootNode() as ParentNode
-    e.dataTransfer.effectAllowed = "move"
-    // 必须调用 setData，部分站点在拖拽冒泡（bubbling）阶段会检测 dataTransfer 为空并取消拖拽
-    e.dataTransfer.setData("text/plain", id)
-    node.classList.add("dragging")
-  }
-
-  const handleDragOver = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-
-    if (!draggedId || draggedId === targetId) return
-
-    const target = e.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
-    const midpoint = rect.top + rect.height / 2
-    const targetRoot = target.getRootNode() as ParentNode
-
-    dropIndicatorRootRef.current = targetRoot
-    clearPromptDropIndicators()
-
-    if (e.clientY < midpoint) {
-      target.classList.add("drop-above")
-    } else {
-      target.classList.add("drop-below")
-    }
-    dropIndicatorRootRef.current = targetRoot
-  }
-
-  const handleDragEnd = () => {
-    if (dragNodeRef.current) {
-      dragNodeRef.current.classList.remove("dragging")
-    }
-    clearPromptDropIndicators()
-    setDraggedId(null)
-    dragNodeRef.current = null
-  }
-
-  const handleDrop = async (e: React.DragEvent, targetId: string) => {
-    e.preventDefault()
-
-    if (!draggedId || draggedId === targetId) {
-      handleDragEnd()
-      return
-    }
-
-    const allPrompts = manager.getPrompts()
-    const draggedIndex = allPrompts.findIndex((p) => p.id === draggedId)
-    const targetIndex = allPrompts.findIndex((p) => p.id === targetId)
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      handleDragEnd()
-      return
-    }
-
-    const newOrder = [...allPrompts]
-    const [removed] = newOrder.splice(draggedIndex, 1)
-
-    const target = e.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
-    const insertBefore = e.clientY < rect.top + rect.height / 2
-
-    let insertIndex = allPrompts.findIndex((p) => p.id === targetId)
-    if (draggedIndex < insertIndex) {
-      insertIndex--
-    }
-    if (!insertBefore) {
-      insertIndex++
-    }
-
-    newOrder.splice(insertIndex, 0, removed)
-
-    await manager.updateOrder(newOrder.map((p) => p.id))
-    showToast(t("orderUpdated"))
-    loadData()
-    handleDragEnd()
-  }
-
-  const clearChainDropIndicators = useCallback(() => {
-    const roots = [
-      chainDropIndicatorRootRef.current,
-      chainDragNodeRef.current?.getRootNode() as ParentNode | undefined,
-      document,
-    ]
-    const seenRoots = new Set<ParentNode>()
-
-    roots.forEach((root) => {
-      if (!root || seenRoots.has(root)) return
-      seenRoots.add(root)
-      root.querySelectorAll(".drop-above, .drop-below").forEach((el) => {
-        el.classList.remove("drop-above", "drop-below")
-      })
-    })
-
-    chainDropIndicatorRootRef.current = null
-  }, [])
-
-  const handleChainDragStart = (e: React.DragEvent, id: string, node: HTMLDivElement) => {
-    const target = e.target as HTMLElement
-    if (
-      target.closest('button, input, textarea, select, [role="button"], [data-no-row-drag="true"]')
-    ) {
-      e.preventDefault()
-      return
-    }
-
-    setDraggedChainId(id)
-    chainDragNodeRef.current = node
-    chainDropIndicatorRootRef.current = node.getRootNode() as ParentNode
-    e.dataTransfer.effectAllowed = "move"
-    e.dataTransfer.setData("text/plain", id)
-    node.classList.add("dragging")
-  }
-
-  const handleChainDragOver = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault()
-    e.dataTransfer.dropEffect = "move"
-
-    if (!draggedChainId || draggedChainId === targetId) return
-
-    const target = e.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
-    const midpoint = rect.top + rect.height / 2
-    const targetRoot = target.getRootNode() as ParentNode
-
-    chainDropIndicatorRootRef.current = targetRoot
-    clearChainDropIndicators()
-
-    if (e.clientY < midpoint) {
-      target.classList.add("drop-above")
-    } else {
-      target.classList.add("drop-below")
-    }
-    chainDropIndicatorRootRef.current = targetRoot
-  }
-
-  const handleChainDragEnd = () => {
-    if (chainDragNodeRef.current) {
-      chainDragNodeRef.current.classList.remove("dragging")
-    }
-    clearChainDropIndicators()
-    setDraggedChainId(null)
-    chainDragNodeRef.current = null
-  }
-
-  const handleChainDrop = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault()
-
-    if (!draggedChainId || draggedChainId === targetId) {
-      handleChainDragEnd()
-      return
-    }
-
-    const draggedIndex = chains.findIndex((chain) => chain.id === draggedChainId)
-    const targetIndex = chains.findIndex((chain) => chain.id === targetId)
-
-    if (draggedIndex === -1 || targetIndex === -1) {
-      handleChainDragEnd()
-      return
-    }
-
-    const newOrder = [...chains]
-    const [removed] = newOrder.splice(draggedIndex, 1)
-
-    const target = e.currentTarget as HTMLElement
-    const rect = target.getBoundingClientRect()
-    const insertBefore = e.clientY < rect.top + rect.height / 2
-
-    let insertIndex = chains.findIndex((chain) => chain.id === targetId)
-    if (draggedIndex < insertIndex) {
-      insertIndex--
-    }
-    if (!insertBefore) {
-      insertIndex++
-    }
-
-    newOrder.splice(insertIndex, 0, removed)
-    updateChainOrder(newOrder.map((chain) => chain.id))
-    showToast(t("orderUpdated"))
-    handleChainDragEnd()
-  }
-
   const filtered = getFilteredPrompts()
+
+  const getPromptMoveTargets = (promptId: string) => {
+    if (
+      activeLibraryView !== "prompts" ||
+      selectedCategory === VIRTUAL_CATEGORY.RECENT ||
+      searchQuery.trim()
+    ) {
+      return { previous: null, next: null }
+    }
+
+    const currentIndex = filtered.findIndex((prompt) => prompt.id === promptId)
+    const currentPrompt = currentIndex >= 0 ? filtered[currentIndex] : null
+
+    if (!currentPrompt) {
+      return { previous: null, next: null }
+    }
+
+    const previous = filtered[currentIndex - 1]
+    const next = filtered[currentIndex + 1]
+
+    return {
+      previous: previous?.pinned === currentPrompt.pinned ? previous : null,
+      next: next?.pinned === currentPrompt.pinned ? next : null,
+    }
+  }
+
+  const promptMoveTargets = promptActionMenu
+    ? getPromptMoveTargets(promptActionMenu.prompt.id)
+    : { previous: null, next: null }
 
   useEffect(() => {
     const hasPromptDialogs =
@@ -3125,252 +2729,19 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   }
 
   // 编辑/新增弹窗
-  const renderEditModal = () => {
-    if (!isModalOpen) return null
-
-    return createPortal(
-      <div
-        className="prompt-modal gh-interactive"
-        {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "var(--gh-overlay-bg)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 2147483646,
-          animation: "fadeIn 0.2s",
-        }}>
-        <div
-          className="prompt-modal-content"
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            background: "var(--gh-bg, white)",
-            borderRadius: "12px",
-            width: "90%",
-            maxWidth: "500px",
-            padding: "24px",
-            animation: "slideUp 0.3s",
-            boxShadow: "var(--gh-shadow, 0 20px 50px rgba(0,0,0,0.3))",
-          }}>
-          <div
-            style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              marginBottom: "20px",
-              color: "var(--gh-text, #1f2937)",
-            }}>
-            {editingPrompt?.id ? t("editPrompt") : t("addNewPrompt")}
-          </div>
-
-          {/* 标题 */}
-          <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "var(--gh-text, #374151)",
-                marginBottom: "6px",
-              }}>
-              {t("title")}
-            </label>
-            <input
-              type="text"
-              value={editingPrompt?.title || ""}
-              onChange={(e) => setEditingPrompt({ ...editingPrompt, title: e.target.value })}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                border: "1px solid var(--gh-border, #d1d5db)",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
-                background: "var(--gh-bg, #ffffff)",
-                color: "var(--gh-text, #1f2937)",
-              }}
-            />
-          </div>
-
-          {/* 分类 */}
-          <div style={{ marginBottom: "16px" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "14px",
-                fontWeight: 500,
-                color: "var(--gh-text, #374151)",
-                marginBottom: "6px",
-              }}>
-              {t("category")}
-            </label>
-            <input
-              type="text"
-              value={editingPrompt?.category || ""}
-              onChange={(e) => setEditingPrompt({ ...editingPrompt, category: e.target.value })}
-              placeholder={t("categoryPlaceholder")}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                border: "1px solid var(--gh-border, #d1d5db)",
-                borderRadius: "6px",
-                fontSize: "14px",
-                boxSizing: "border-box",
-                background: "var(--gh-bg, #ffffff)",
-                color: "var(--gh-text, #1f2937)",
-              }}
-            />
-            {categories.length > 0 && (
-              <div
-                style={{
-                  marginTop: "6px",
-                  display: "flex",
-                  gap: "4px",
-                  flexWrap: "wrap",
-                  userSelect: "none",
-                }}>
-                {categories.map((cat) => (
-                  <span
-                    key={cat}
-                    onClick={() => setEditingPrompt({ ...editingPrompt, category: cat })}
-                    style={{
-                      padding: "2px 8px",
-                      fontSize: "11px",
-                      background:
-                        editingPrompt?.category === cat
-                          ? "var(--gh-primary, #4285f4)"
-                          : "var(--gh-hover, #f3f4f6)",
-                      color:
-                        editingPrompt?.category === cat
-                          ? "var(--gh-text-on-primary, white)"
-                          : "var(--gh-text-secondary, #6b7280)",
-                      borderRadius: "10px",
-                      cursor: "pointer",
-                      transition: "all 0.15s",
-                    }}>
-                    {cat}
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* 内容 */}
-          <div style={{ marginBottom: "16px" }}>
-            <div>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "6px",
-                }}>
-                <label
-                  style={{
-                    fontSize: "14px",
-                    fontWeight: 500,
-                    color: "var(--gh-text, #374151)",
-                  }}>
-                  {t("content")}
-                </label>
-                {/* ⭐ 预览开关 */}
-                <button
-                  onClick={() => setShowPreview(!showPreview)}
-                  style={{
-                    padding: "2px 8px",
-                    fontSize: "12px",
-                    background: showPreview
-                      ? "var(--gh-primary, #4285f4)"
-                      : "var(--gh-hover, #f3f4f6)",
-                    color: showPreview ? "white" : "var(--gh-text-secondary, #6b7280)",
-                    border: "1px solid var(--gh-border, #d1d5db)",
-                    borderRadius: "4px",
-                    cursor: "pointer",
-                  }}>
-                  {t("promptMarkdownPreview")}
-                </button>
-              </div>
-              <textarea
-                value={editingPrompt?.content || ""}
-                onChange={(e) => setEditingPrompt({ ...editingPrompt, content: e.target.value })}
-                style={{
-                  width: "100%",
-                  minHeight: "120px",
-                  padding: "8px 12px",
-                  border: "1px solid var(--gh-border, #d1d5db)",
-                  borderRadius: "6px",
-                  fontSize: "14px",
-                  resize: "vertical",
-                  boxSizing: "border-box",
-                  fontFamily: "inherit",
-                  background: "var(--gh-bg, #ffffff)",
-                  color: "var(--gh-text, #1f2937)",
-                  display: showPreview ? "none" : "block",
-                }}
-              />
-              {/* ⭐ Markdown 预览区域 */}
-              {showPreview && (
-                <>
-                  <div
-                    className="gh-markdown-preview"
-                    style={{
-                      width: "100%",
-                      minHeight: "120px",
-                      maxHeight: "200px",
-                      padding: "8px 12px",
-                      border: "1px solid var(--gh-border, #d1d5db)",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      boxSizing: "border-box",
-                      background: "var(--gh-bg-secondary, #f9fafb)",
-                      color: "var(--gh-text, #1f2937)",
-                      overflowY: "auto",
-                      lineHeight: 1.6,
-                    }}
-                    ref={editPreviewRef}
-                    onClick={(e) => {
-                      // 事件委托处理复制按钮（支持点击 SVG 内部）
-                      const target = e.target as HTMLElement
-                      const btn = target.closest(".gh-code-copy-btn") as HTMLElement
-                      if (btn) {
-                        const code = btn.nextElementSibling?.textContent || ""
-                        navigator.clipboard.writeText(code).then(() => {
-                          showCopySuccess(btn, { size: 14 })
-                        })
-                      }
-                    }}
-                    dangerouslySetInnerHTML={{
-                      __html: createSafeHTML(renderMarkdown(editingPrompt?.content || "")),
-                    }}
-                  />
-                  <style>{getHighlightStyles()}</style>
-                </>
-              )}
-            </div>
-          </div>
-
-          {/* 按钮 */}
-          <div
-            style={{ display: "flex", gap: "12px", justifyContent: "flex-end", marginTop: "24px" }}>
-            <Button
-              variant="ghost"
-              onClick={closeEditModal}
-              style={{ background: "var(--gh-hover, #f3f4f6)" }}>
-              {t("cancel")}
-            </Button>
-            <Button variant="primary" onClick={handleSave}>
-              {editingPrompt?.id ? t("save") : t("add")}
-            </Button>
-          </div>
-        </div>
-      </div>,
-      document.body,
-    )
-  }
+  const renderEditModal = () => (
+    <PromptEditorDialog
+      isOpen={isModalOpen}
+      editingPrompt={editingPrompt}
+      setEditingPrompt={setEditingPrompt}
+      categories={categories}
+      showPreview={showPreview}
+      setShowPreview={setShowPreview}
+      editPreviewRef={editPreviewRef}
+      onClose={closeEditModal}
+      onSave={handleSave}
+    />
+  )
 
   // 分类管理弹窗
   const renderCategoryModal = () => {
@@ -3486,164 +2857,27 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   }
 
   // 预览弹窗渲染
-  const renderPreviewModal = () => {
-    if (!previewModal.show || !previewModal.prompt) return null
-
-    const prompt = previewModal.prompt
-    const categoryLabel = prompt.category || t("uncategorized")
-    const categoryColorIndex = getCategoryColorIndex(categoryLabel)
-    const categoryStyle = {
-      "--gh-prompt-preview-category-bg": getResolvedCategoryColor(categoryColorIndex),
-      "--gh-prompt-preview-category-text": "#1f2937",
-    } as React.CSSProperties
-
-    return createPortal(
-      <>
-        <style>{PROMPT_PREVIEW_MODAL_STYLES}</style>
-        <div
-          className="gh-prompt-preview-overlay gh-interactive"
-          {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
-          onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              closePreviewModal()
-            }
-          }}>
-          <div
-            className="gh-prompt-preview-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-label={prompt.title}
-            onClick={(e) => e.stopPropagation()}>
-            {/* 标题栏 */}
-            <div className="gh-prompt-preview-header">
-              <div className="gh-prompt-preview-title-block">
-                <div className="gh-prompt-preview-title-row">
-                  <div className="gh-prompt-preview-title">{prompt.title}</div>
-                  <span className="gh-prompt-preview-category" style={categoryStyle}>
-                    {categoryLabel}
-                  </span>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="gh-prompt-preview-close"
-                aria-label={t("close")}
-                onClick={closePreviewModal}>
-                <ClearIcon size={16} />
-              </button>
-            </div>
-            {/* 内容区域 */}
-            <div
-              className="gh-prompt-preview-body gh-markdown-preview"
-              ref={modalPreviewRef}
-              onClick={(e) => {
-                // 事件委托处理复制按钮（支持点击 SVG 内部）
-                const target = e.target as HTMLElement
-                const btn = target.closest(".gh-code-copy-btn") as HTMLElement
-                if (btn) {
-                  const code = btn.nextElementSibling?.textContent || ""
-                  navigator.clipboard.writeText(code).then(() => {
-                    showCopySuccess(btn, { size: 14 })
-                  })
-                }
-              }}
-              dangerouslySetInnerHTML={{
-                __html: createSafeHTML(renderMarkdown(prompt.content)),
-              }}
-            />
-            {/* highlight.js 样式 */}
-            <style>{getHighlightStyles()}</style>
-          </div>
-        </div>
-      </>,
-      document.body,
-    )
-  }
+  const renderPreviewModal = () => (
+    <PromptPreviewModal
+      isOpen={previewModal.show}
+      prompt={previewModal.prompt}
+      previewRef={modalPreviewRef}
+      onClose={closePreviewModal}
+      getCategoryColorIndex={getCategoryColorIndex}
+      getResolvedCategoryColor={getResolvedCategoryColor}
+    />
+  )
 
   // 导入确认弹窗渲染
-  const renderImportDialog = () => {
-    if (!importDialogState.show) return null
-
-    return createPortal(
-      <div
-        className="import-dialog gh-interactive"
-        {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
-        onClick={(e) => {
-          if (e.target === e.currentTarget) {
-            closeImportDialog()
-          }
-        }}
-        style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: "var(--gh-overlay-bg, rgba(0, 0, 0, 0.5))",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 10001,
-        }}>
-        <div
-          style={{
-            width: "90%",
-            maxWidth: "400px",
-            background: "var(--gh-bg, white)",
-            borderRadius: "12px",
-            boxShadow: "var(--gh-shadow-lg)",
-            padding: "24px",
-          }}>
-          <div
-            style={{
-              fontSize: "16px",
-              fontWeight: 600,
-              marginBottom: "12px",
-              color: "var(--gh-text)",
-            }}>
-            {t("promptImportTitle")}
-          </div>
-          <div
-            style={{
-              fontSize: "14px",
-              color: "var(--gh-text-secondary)",
-              marginBottom: "20px",
-              lineHeight: 1.6,
-            }}>
-            {t("promptImportMessage2").replace(
-              "{count}",
-              importDialogState.prompts.length.toString(),
-            )}
-            <ul style={{ margin: "8px 0 0 0", paddingLeft: "20px" }}>
-              <li>{t("promptImportOverwriteDesc")}</li>
-              <li>{t("promptImportMergeDesc")}</li>
-            </ul>
-          </div>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-            <Button
-              variant="ghost"
-              onClick={closeImportDialog}
-              style={{ background: "var(--gh-hover, #f3f4f6)" }}>
-              {t("cancel")}
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleImportMerge}
-              style={{
-                background: "var(--gh-primary-light, #e3f2fd)",
-                color: "var(--gh-primary, #4285f4)",
-              }}>
-              {t("promptMerge")}
-            </Button>
-            <Button variant="primary" onClick={handleImportOverwrite}>
-              {t("promptOverwrite")}
-            </Button>
-          </div>
-        </div>
-      </div>,
-      document.body,
-    )
-  }
+  const renderImportDialog = () => (
+    <ImportDialog
+      isOpen={importDialogState.show}
+      promptCount={importDialogState.prompts.length}
+      onClose={closeImportDialog}
+      onMerge={handleImportMerge}
+      onOverwrite={handleImportOverwrite}
+    />
+  )
 
   return (
     <div
@@ -4014,7 +3248,9 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                         e.preventDefault()
                         setPromptActionMenu({ prompt: p, anchorEl: e.currentTarget })
                       }}
-                      className="prompt-action-btn">
+                      className="prompt-action-btn"
+                      aria-label={t("more")}
+                      title={t("more")}>
                       <MoreHorizontalIcon size={16} />
                     </button>
                   </Tooltip>
@@ -4147,6 +3383,38 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
               <span>{t("promptSplitLinesToQueue")}</span>
             </span>
           </MenuButton>
+          {promptMoveTargets.previous && (
+            <MenuButton
+              onClick={() => {
+                movePromptRelativeToVisibleNeighbor(
+                  promptActionMenu.prompt.id,
+                  promptMoveTargets.previous.id,
+                  "before",
+                )
+                closePromptActionMenu()
+              }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <ArrowUpIcon size={14} />
+                <span>{t("promptMoveUp")}</span>
+              </span>
+            </MenuButton>
+          )}
+          {promptMoveTargets.next && (
+            <MenuButton
+              onClick={() => {
+                movePromptRelativeToVisibleNeighbor(
+                  promptActionMenu.prompt.id,
+                  promptMoveTargets.next.id,
+                  "after",
+                )
+                closePromptActionMenu()
+              }}>
+              <span style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <ArrowDownIcon size={14} />
+                <span>{t("promptMoveDown")}</span>
+              </span>
+            </MenuButton>
+          )}
         </ContextMenu>
       )}
 

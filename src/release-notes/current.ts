@@ -2,11 +2,11 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.4",
-  date: "2026-07-06",
+  version: "1.1.5",
+  date: "2026-07-09",
   notes: {
-    en: "### 🚀 New Features\n\n- **Panel tab reordering** — Outline, Conversations, and Prompts tabs can now be reordered directly from the panel, keeping the same order in Settings without opening the options page first. (#764)\n- **Panel width controls** — Floating panels now support edge-drag resizing and an optional Beta hover-widening mode; related settings stay under Panel Width, are searchable in Search Everywhere, and avoid page-avoidance jumps while temporarily widening. (#763)\n\n### ✨ Improvements\n\n- **Smart panel-aware layout** — Smart Avoidance now covers more new chat, Canvas, side-panel, and file-view layouts, keeping page content, input boxes, and native panels aligned with the available safe area while the Ophel floating panel is open. (#761)\n\n### 🐛 Bug Fixes\n\n- **Kimi conversation sync** — Fixed issue where Kimi's updated sidebar layout could prevent new or recent chats from appearing in Conversations sync. (#759)",
-    zh: "### 🚀 新增功能\n\n- **面板 Tab 排序** — 现在可以直接在面板中拖拽调整大纲、会话和提示词 Tab 的顺序，设置页会同步显示同一顺序，不必先打开选项页。(#764)\n- **面板宽度控制** — 悬浮面板现在支持拖拽边缘调整宽度，并可开启 Beta 版悬停临时加宽；相关设置收在“面板宽度”下，可通过全局搜索定位，临时加宽时也不会触发页面避让跳动。(#763)\n\n### ✨ 功能优化\n\n- **智能避让布局** — 智能避让现在覆盖更多新对话、Canvas、侧边面板和文件查看场景，Ophel 悬浮面板打开时会让页面内容、输入框和站点原生面板更稳定地进入可见安全区。(#761)\n\n### 🐛 问题修复\n\n- **Kimi 会话同步** — 修复 Kimi 更新侧边栏布局后，新建或近期对话可能无法同步到会话面板的问题。(#759)",
+    en: "### 🚀 New Features\n\n- **Edge-snap trigger style** — Automatic edge-snap mode now lets you choose between the visible edge handle and a hidden edge hot zone, keeping the collapsed panel cleaner while still opening it from the screen edge. (#770)\n- **Prompt order shortcuts** — Prompt menus now include Move up and Move down, making it easier to organize prompts when drag-and-drop is inconvenient. (#774)\n### 🐛 Bug Fixes\n\n- **Doubao user questions** — Fixed issue where Doubao's updated chat bubble markup could prevent newer user questions from being recognized in the outline, Markdown rendering, export, and related features while keeping older conversations compatible. (#771)",
+    zh: "### 🚀 新增功能\n\n- **自动吸附触发方式** — 自动吸附模式现在可选择显示边缘把手或隐藏边缘热区，收起后界面更干净，同时仍可从屏幕边缘唤出面板。(#770)\n- **提示词排序快捷操作** — 提示词菜单现在新增“上移”和“下移”，不方便拖拽时也能整理提示词顺序。(#774)\n### 🐛 问题修复\n\n- **豆包用户问题抽取** — 修复豆包新版聊天气泡结构下，新对话的用户问题可能无法被大纲、Markdown 渲染、导出等功能正确识别的问题，同时保留旧对话结构兼容。(#771)",
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",

@@ -31,8 +31,8 @@ export const config: PlasmoCSConfig = {
 }
 
 // 防止重复初始化
-if (!(window as any).__ophelScrollLockInitialized) {
-  ;(window as any).__ophelScrollLockInitialized = true
+if (!window.__ophelScrollLockInitialized) {
+  window.__ophelScrollLockInitialized = true
 
   // 保存原始 API
   const originalApis = {
@@ -44,10 +44,10 @@ if (!(window as any).__ophelScrollLockInitialized) {
   }
 
   // 保存原始 API 供恢复使用
-  ;(window as any).__ophelOriginalApis = originalApis
+  window.__ophelOriginalApis = originalApis
 
   // 默认禁用，等待 Content Script 通过消息启用
-  ;(window as any).__ophelScrollLockEnabled = false
+  window.__ophelScrollLockEnabled = false
 
   // 精确位置锁：通过 DOM 属性实现同步跨世界通信（postMessage 是异步的，存在竞态）
   // Content Script 设置 document.documentElement.dataset.ophelPositionLock = "scrollTop值"
@@ -88,7 +88,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
     }
 
     // 快速路径：锁未激活则直接调用原始 API
-    if (!(window as any).__ophelScrollLockEnabled) {
+    if (!window.__ophelScrollLockEnabled) {
       return originalApis.scrollIntoView.call(this, options as any)
     }
 
@@ -108,15 +108,19 @@ if (!(window as any).__ophelScrollLockInitialized) {
     return originalApis.scrollIntoView.call(this, options as any)
   }
 
+  const callOriginalScrollTo = (args: IArguments) => {
+    return Reflect.apply(originalApis.scrollTo, window, args)
+  }
+
   // 2. 劫持 window.scrollTo
-  ;(window as any).scrollTo = function (x?: ScrollToOptions | number, y?: number) {
+  window.scrollTo = function (x?: ScrollToOptions | number, y?: number) {
     if (getPositionLockTarget() !== null) {
       recordPositionLockBlock()
       return
     }
     // 如果劫持未启用，直接调用原始 API
-    if (!(window as any).__ophelScrollLockEnabled) {
-      return originalApis.scrollTo.apply(window, arguments as any)
+    if (!window.__ophelScrollLockEnabled) {
+      return callOriginalScrollTo(arguments)
     }
 
     // 解析目标 Y 位置
@@ -132,7 +136,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
       return
     }
 
-    return originalApis.scrollTo.apply(window, arguments as any)
+    return callOriginalScrollTo(arguments)
   }
 
   // 3. 劫持 scrollTop setter
@@ -161,7 +165,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
           return
         }
         // 如果劫持未启用，直接设置
-        if (!(window as any).__ophelScrollLockEnabled) {
+        if (!window.__ophelScrollLockEnabled) {
           if (descriptor.set) {
             descriptor.set.call(this, value)
           }
@@ -205,7 +209,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
       recordPositionLockBlock()
       return
     }
-    if (!(window as any).__ophelScrollLockEnabled) {
+    if (!window.__ophelScrollLockEnabled) {
       return originalElementScrollTo.apply(this, arguments as any)
     }
 
@@ -250,7 +254,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
       recordPositionLockBlock()
       return
     }
-    if (!(window as any).__ophelScrollLockEnabled) {
+    if (!window.__ophelScrollLockEnabled) {
       return originalElementScroll.apply(this, arguments as any)
     }
 
@@ -295,7 +299,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
       recordPositionLockBlock()
       return
     }
-    if (!(window as any).__ophelScrollLockEnabled) {
+    if (!window.__ophelScrollLockEnabled) {
       return originalElementScrollBy.apply(this, arguments as any)
     }
 
@@ -319,7 +323,7 @@ if (!(window as any).__ophelScrollLockInitialized) {
   window.addEventListener("message", (event) => {
     if (event.source !== window) return
     if (event.data?.type === "OPHEL_SCROLL_LOCK_TOGGLE") {
-      ;(window as any).__ophelScrollLockEnabled = event.data.enabled
+      window.__ophelScrollLockEnabled = event.data.enabled
     }
   })
 

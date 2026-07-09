@@ -9,6 +9,15 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.5] - 2026-07-09
+
+### 🚀 New Features
+
+- **Edge-snap trigger style** — Automatic edge-snap mode now lets you choose between the visible edge handle and a hidden edge hot zone, keeping the collapsed panel cleaner while still opening it from the screen edge. (#770)
+- **Prompt order shortcuts** — Prompt menus now include Move up and Move down, making it easier to organize prompts when drag-and-drop is inconvenient. (#774)
+
 ### 🐛 Bug Fixes
 
 - **Doubao user questions** — Fixed issue where Doubao's updated chat bubble markup could prevent newer user questions from being recognized in the outline, Markdown rendering, export, and related features while keeping older conversations compatible. (#771)
@@ -1305,6 +1314,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
 [1.1.2]: https://github.com/urzeye/ophel/releases/tag/v1.1.2
