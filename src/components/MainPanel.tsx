@@ -1189,12 +1189,54 @@ export const MainPanel: React.FC<MainPanelProps> = ({
     resetPanelTabDragState()
   }
 
+  const focusPanelTab = (tabListElement: HTMLElement | null, tab: string) => {
+    window.requestAnimationFrame(() => {
+      const nextTabId = `gh-panel-tab-${tab}`
+      const nextTabButton = Array.from(
+        tabListElement?.querySelectorAll<HTMLButtonElement>('[role="tab"]') ?? [],
+      ).find((button) => button.id === nextTabId)
+
+      nextTabButton?.focus()
+    })
+  }
+
   const handlePanelTabClick = (tab: string) => {
     if (suppressPanelTabClickRef.current) {
       return
     }
 
     setActiveTab(tab)
+  }
+
+  const handlePanelTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, tab: string) => {
+    if (suppressPanelTabClickRef.current || visibleTabs.length === 0) {
+      return
+    }
+
+    const currentIndex = visibleTabs.indexOf(tab)
+    if (currentIndex < 0) {
+      return
+    }
+
+    let nextTab: string | null = null
+    if (event.key === "ArrowLeft") {
+      nextTab = visibleTabs[(currentIndex - 1 + visibleTabs.length) % visibleTabs.length]
+    } else if (event.key === "ArrowRight") {
+      nextTab = visibleTabs[(currentIndex + 1) % visibleTabs.length]
+    } else if (event.key === "Home") {
+      nextTab = visibleTabs[0]
+    } else if (event.key === "End") {
+      nextTab = visibleTabs[visibleTabs.length - 1]
+    }
+
+    if (!nextTab) {
+      return
+    }
+
+    event.preventDefault()
+    event.stopPropagation()
+    setActiveTab(nextTab)
+    focusPanelTab(event.currentTarget.parentElement, nextTab)
   }
 
   // 获取主题图标
@@ -1441,7 +1483,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             {t("tip1", { modifier: isMacOS() ? "⌘ Cmd" : "Ctrl" })}
           </span>
         </div>
-        <div className="gh-panel-tabs">
+        <div className="gh-panel-tabs" role="tablist" aria-label={t("panelTitle")}>
           {visibleTabs.map((tab) => {
             let IconComp: React.FC<{ size?: number }> | null = null
             if (tab === TAB_IDS.OUTLINE) IconComp = OutlineIcon
@@ -1452,7 +1494,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
               <button
                 type="button"
                 key={tab}
+                id={`gh-panel-tab-${tab}`}
+                role="tab"
                 draggable={canDragPanelTabs}
+                aria-selected={activeTab === tab}
+                aria-controls={`gh-panel-tabpanel-${tab}`}
                 aria-grabbed={draggedPanelTab === tab}
                 className={`gh-panel-tab-btn ${activeTab === tab ? "active" : ""} ${canDragPanelTabs ? "is-draggable" : ""} ${draggedPanelTab === tab ? "is-dragging" : ""} ${dragOverPanelTab === tab ? "is-drag-over" : ""}`}
                 data-tip-target={
@@ -1465,6 +1511,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
                         : undefined
                 }
                 onClick={() => handlePanelTabClick(tab)}
+                onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}
                 onDragStart={(event) => handlePanelTabDragStart(event, tab)}
                 onDragOver={(event) => handlePanelTabDragOver(event, tab)}
                 onDragEnter={(event) => handlePanelTabDragOver(event, tab)}
@@ -1485,7 +1532,11 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         </div>
 
         {/* Content - 内容区 */}
-        <div className="gh-panel-content">
+        <div
+          id={`gh-panel-tabpanel-${activeTab}`}
+          className="gh-panel-content"
+          role="tabpanel"
+          aria-labelledby={`gh-panel-tab-${activeTab}`}>
           {activeTab === TAB_IDS.PROMPTS && (
             <PromptsTab
               manager={promptManager}

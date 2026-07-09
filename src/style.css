@@ -575,7 +575,9 @@
   transform: translate(-50%, -4px);
   opacity: 0;
   pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    opacity 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
   background: color-mix(
     in srgb,
     var(--gh-bg-secondary, rgba(255, 255, 255, 0.85)) 88%,
@@ -1212,7 +1214,12 @@
   border: 1px solid transparent;
   font-size: 13px;
   color: var(--gh-text, #374151);
-  transition: all 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    color 0.15s,
+    transform 0.15s;
   display: flex;
   align-items: center;
   position: relative;
@@ -1324,7 +1331,11 @@
   justify-content: center;
   color: #9ca3af;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
   font-size: 16px;
   flex-shrink: 0;
   margin-right: 2px;
@@ -1412,7 +1423,11 @@
 
   position: relative;
   overflow: visible;
-  transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition:
+    background 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+    border-color 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+    box-shadow 0.2s cubic-bezier(0.25, 0.8, 0.25, 1),
+    transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .outline-list-virtual .outline-item.user-query-node {
@@ -1433,7 +1448,10 @@
   background-color: var(--gh-primary, #4285f4);
   /* 使用透明度阴影，适应深色背景 */
   box-shadow: 0 1px 4px color-mix(in srgb, var(--gh-primary, #4285f4) 40%, transparent);
-  transition: all 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    box-shadow 0.2s ease,
+    height 0.2s ease;
 }
 
 .outline-item.user-query-node:first-child {
@@ -1579,7 +1597,11 @@
   cursor: pointer;
   border-radius: 4px;
   opacity: 0;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    opacity 0.2s ease,
+    transform 0.2s ease;
   z-index: 5;
 }
 
@@ -2002,7 +2024,16 @@
   border-color: color-mix(in srgb, var(--gh-primary) 20%, transparent);
   box-shadow: 0 4px 16px color-mix(in srgb, var(--gh-primary) 15%, transparent);
   box-sizing: border-box;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    background 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-color 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    border-radius 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    gap 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    height 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    padding 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .quick-btn-group.liquid-collapsed:hover {
@@ -2174,7 +2205,11 @@
 
 /* 工具箱悬浮菜单按钮：打开时保留旋转反馈，表示工具箱处于展开状态 */
 .quick-prompt-btn.tools-trigger-btn {
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition:
+    background 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    color 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .quick-prompt-btn.tools-trigger-btn.active {
@@ -2296,7 +2331,10 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
   position: relative;
 }
 
@@ -2493,11 +2531,46 @@
   .gh-panel-search-input,
   .gh-panel-search-action,
   .gh-panel-menu-item,
-  .quick-prompt-btn {
+  .quick-prompt-btn,
+  .quick-btn-group,
+  .quick-btn-group .quick-btn-drag-handle,
+  .quick-menu-btn,
+  .quick-menu-popover,
+  .outline-item,
+  .outline-item-toggle,
+  .outline-item-copy-btn,
+  .gh-chain-editor,
+  .gh-chain-step-row,
+  .gh-chain-step-delete-btn,
+  .gh-chain-step-inline-input,
+  .gh-chain-step-prompt-select,
+  .gh-chain-step-mode-btn,
+  .gh-chain-preview-toggle,
+  .gh-chain-preview-nav-btn,
+  .gh-theme-card,
+  .gh-theme-check,
+  .gh-update-notice,
+  .gh-update-notice-button,
+  .gh-update-notice-close,
+  .selected-prompt-bar,
+  .ophel-tooltip {
     transition: none !important;
   }
 
-  .quick-prompt-btn.tools-trigger-btn.active {
+  .quick-prompt-btn.tools-trigger-btn.active,
+  .quick-btn-group.pressing .quick-btn-drag-handle::after,
+  .quick-menu-popover,
+  .outline-item.highlight,
+  .outline-item.user-query-node.highlight,
+  .feature-highlight,
+  .outline-highlight,
+  .gh-chain-editor,
+  .gh-loading-spinner,
+  .gh-update-notice,
+  .gh-update-notice-icon,
+  .gh-panel-brand-unread,
+  .selected-prompt-bar,
+  .ophel-tooltip {
     animation: none !important;
   }
 
@@ -3413,7 +3486,10 @@
   border-radius: 10px;
   background: var(--gh-bg, #ffffff);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: all 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .gh-chain-step-row.dragging {
@@ -3479,7 +3555,11 @@
   background: transparent;
   color: var(--gh-text-tertiary, #d1d5db);
   opacity: 0 !important;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3526,7 +3606,11 @@
   line-height: 1.55;
   resize: vertical;
   outline: none;
-  transition: all 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    color 0.15s;
 }
 
 .gh-chain-step-inline-input:focus {
@@ -3549,7 +3633,11 @@
   color: var(--gh-text, #1f2937);
   font-size: 13px;
   outline: none;
-  transition: all 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s,
+    color 0.15s;
   cursor: pointer;
 }
 
@@ -3578,7 +3666,10 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition:
+    background 0.15s ease,
+    box-shadow 0.15s ease,
+    color 0.15s ease;
   white-space: nowrap;
   line-height: 1.4;
 }
@@ -3657,7 +3748,9 @@
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
 }
 
 .gh-chain-preview-toggle:hover {
@@ -3706,7 +3799,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
   gap: 4px;
   max-width: 140px;
   overflow: hidden;
@@ -4013,7 +4109,10 @@
   border: 2px solid transparent;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition:
+    border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   position: relative;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
@@ -4107,7 +4206,11 @@
   font-size: 12px;
   opacity: 0;
   transform: scale(0.5);
-  transition: all 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    opacity 0.2s,
+    transform 0.2s;
 }
 
 /* ============= 动态背景动画 ============= */
@@ -4222,7 +4325,11 @@
   font-size: 13px;
   font-weight: 600;
   padding: 10px 18px;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
 }
@@ -4276,7 +4383,10 @@
   font-size: 18px;
   line-height: 1;
   padding: 0;
-  transition: all 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    transform 0.2s;
 }
 
 .gh-update-notice-close:hover {
@@ -4308,7 +4418,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition:
+    background 0.2s cubic-bezier(0.2, 0.8, 0.2, 1),
+    transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
   padding: 0;
 }
 

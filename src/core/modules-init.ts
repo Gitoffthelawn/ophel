@@ -8,6 +8,7 @@
 import type { SiteAdapter } from "~adapters/base"
 import { SITE_IDS } from "~constants"
 import { AssistantMermaidRenderer } from "~core/assistant-mermaid-renderer"
+import type { CoreModule } from "~core/core-module"
 import { CopyManager } from "~core/copy-manager"
 import { LayoutManager } from "~core/layout-manager"
 import { MarkdownFixer } from "~core/markdown-fixer"
@@ -84,6 +85,18 @@ let modules: ModuleInstances = {
 
 let readingHistoryAutoStartTimer: ReturnType<typeof setTimeout> | null = null
 let assistantMermaidInitPromise: Promise<void> | null = null
+
+const startCoreModule = (module: Pick<CoreModule, "start">): void => {
+  module.start()
+}
+
+const updateCoreModule = <TUpdate>(module: CoreModule<TUpdate>, payload: TUpdate): void => {
+  module.update(payload)
+}
+
+const stopCoreModule = (module: Pick<CoreModule, "stop">): void => {
+  module.stop()
+}
 
 function isAssistantMermaidEnabled(settings: Settings): boolean {
   return settings.content?.assistantMermaid ?? true
@@ -391,7 +404,11 @@ export function initModelLocker(ctx: ModulesContext): void {
  */
 export function initScrollLockManager(ctx: ModulesContext): void {
   const { adapter, settings } = ctx
+  if (modules.scrollLockManager) {
+    stopCoreModule(modules.scrollLockManager)
+  }
   modules.scrollLockManager = new ScrollLockManager(adapter, settings)
+  startCoreModule(modules.scrollLockManager)
 }
 
 /**
@@ -470,11 +487,11 @@ export function initPolicyRetryManager(ctx: ModulesContext): void {
 /**
  * 订阅设置变化，动态更新模块
  */
-export function subscribeModuleUpdates(ctx: ModulesContext): void {
+export function subscribeModuleUpdates(ctx: ModulesContext): () => void {
   const { adapter, siteId } = ctx
   let lastLanguage = getSettingsState().language
 
-  subscribeSettings((newSettings: Settings) => {
+  return subscribeSettings((newSettings: Settings) => {
     if (newSettings.language && newSettings.language !== lastLanguage) {
       lastLanguage = newSettings.language
       setLanguage(newSettings.language)
@@ -502,7 +519,7 @@ export function subscribeModuleUpdates(ctx: ModulesContext): void {
 
     // 3. Scroll Lock update
     if (newSettings && modules.scrollLockManager) {
-      modules.scrollLockManager.updateSettings(newSettings)
+      updateCoreModule(modules.scrollLockManager, newSettings)
     }
 
     // 4. Markdown Fix update
@@ -651,7 +668,7 @@ export function subscribeModuleUpdates(ctx: ModulesContext): void {
 /**
  * 初始化 URL 变化监听 (SPA 导航)
  */
-export function initUrlChangeObserver(ctx: ModulesContext): void {
+export function initUrlChangeObserver(ctx: ModulesContext): () => void {
   const { adapter } = ctx
 
   let lastHref = window.location.href
@@ -732,17 +749,40 @@ export function initUrlChangeObserver(ctx: ModulesContext): void {
   // Monkey-patch pushState / replaceState
   const originalPushState = history.pushState
   const originalReplaceState = history.replaceState
-  history.pushState = function (...args: Parameters<History["pushState"]>) {
+  const patchedPushState = function (this: History, ...args: Parameters<History["pushState"]>) {
     originalPushState.apply(this, args)
-    handleUrlChange()
+    void handleUrlChange()
   }
-  history.replaceState = function (...args: Parameters<History["replaceState"]>) {
+  const patchedReplaceState = function (
+    this: History,
+    ...args: Parameters<History["replaceState"]>
+  ) {
     originalReplaceState.apply(this, args)
-    handleUrlChange()
+    void handleUrlChange()
   }
+  history.pushState = patchedPushState
+  history.replaceState = patchedReplaceState
 
   // 兜底定时器
-  setInterval(handleUrlChange, 1000)
+  const fallbackIntervalId = window.setInterval(handleUrlChange, 1000)
+
+  return () => {
+    window.removeEventListener("popstate", handleUrlChange)
+    window.removeEventListener("hashchange", handleUrlChange)
+    window.clearInterval(fallbackIntervalId)
+
+    if (readingHistoryRestoreTimeoutId) {
+      clearTimeout(readingHistoryRestoreTimeoutId)
+      readingHistoryRestoreTimeoutId = null
+    }
+
+    if (history.pushState === patchedPushState) {
+      history.pushState = originalPushState
+    }
+    if (history.replaceState === patchedReplaceState) {
+      history.replaceState = originalReplaceState
+    }
+  }
 }
 
 declare const __PLATFORM__: "extension" | "userscript" | undefined
