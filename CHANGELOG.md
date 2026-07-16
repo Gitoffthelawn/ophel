@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Claude page structure adaptation** — Adapted to Claude's updated conversation page DOM, ensuring the outline can read all messages and conversation exports remain complete. (#781)
+
 ### 🐛 Bug Fixes
 
 - **Global shortcut URL** — Fixed issue where the global shortcut continued to open Gemini after setting a custom URL. (#778)
