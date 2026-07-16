@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.6] - 2026-07-16
+
 ### ✨ 功能优化
 
 - **Claude 页面结构适配** — 适配 Claude 更新后的对话页面 DOM 结构，确保大纲能够读取全部消息，并完整导出会话内容。(#781)
@@ -1323,6 +1327,7 @@
 
 ---
 
+[1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6
 [1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3

@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.6] - 2026-07-16
+
 ### ✨ Improvements
 
 - **Claude page structure adaptation** — Adapted to Claude's updated conversation page DOM, ensuring the outline can read all messages and conversation exports remain complete. (#781)
@@ -1324,6 +1328,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6
 [1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3

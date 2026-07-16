@@ -2,11 +2,11 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.5",
-  date: "2026-07-09",
+  version: "1.1.6",
+  date: "2026-07-16",
   notes: {
-    en: "### 🚀 New Features\n\n- **Edge-snap trigger style** — Automatic edge-snap mode now lets you choose between the visible edge handle and a hidden edge hot zone, keeping the collapsed panel cleaner while still opening it from the screen edge. (#770)\n- **Prompt order shortcuts** — Prompt menus now include Move up and Move down, making it easier to organize prompts when drag-and-drop is inconvenient. (#774)\n### 🐛 Bug Fixes\n\n- **Doubao user questions** — Fixed issue where Doubao's updated chat bubble markup could prevent newer user questions from being recognized in the outline, Markdown rendering, export, and related features while keeping older conversations compatible. (#771)",
-    zh: "### 🚀 新增功能\n\n- **自动吸附触发方式** — 自动吸附模式现在可选择显示边缘把手或隐藏边缘热区，收起后界面更干净，同时仍可从屏幕边缘唤出面板。(#770)\n- **提示词排序快捷操作** — 提示词菜单现在新增“上移”和“下移”，不方便拖拽时也能整理提示词顺序。(#774)\n### 🐛 问题修复\n\n- **豆包用户问题抽取** — 修复豆包新版聊天气泡结构下，新对话的用户问题可能无法被大纲、Markdown 渲染、导出等功能正确识别的问题，同时保留旧对话结构兼容。(#771)",
+    en: "### ✨ Improvements\n\n- **Claude page structure adaptation** — Adapted to Claude's updated conversation page DOM, ensuring the outline can read all messages and conversation exports remain complete. (#781)\n\n### 🐛 Bug Fixes\n\n- **Claude Canvas document export** — Fixed issue where Markdown and clipboard exports could omit Claude Canvas document content; exports now collect Canvas documents from the conversation, including virtualized messages, and restore the previously open Canvas afterward.\n- **Claude Canvas Smart Avoidance** — Fixed issue where opening a Claude Canvas document could stop Smart Avoidance from reserving space for the Ophel panel, causing the document content to be covered.\n- **Global shortcut URL** — Fixed issue where the global shortcut continued to open Gemini after setting a custom URL. (#778)",
+    zh: "### ✨ 功能优化\n\n- **Claude 页面结构适配** — 适配 Claude 更新后的对话页面 DOM 结构，确保大纲能够读取全部消息，并完整导出会话内容。(#781)\n\n### 🐛 问题修复\n\n- **Claude Canvas 文档导出** — 修复 Markdown 和剪贴板导出可能遗漏 Claude Canvas 文档正文的问题；现在会收集会话中的 Canvas 文档（包括虚拟列表中的文档），并在导出后恢复原先打开的 Canvas。\n- **Claude Canvas 智能避让** — 修复打开 Claude Canvas 文档后，智能避让可能无法继续为 Ophel 面板预留空间，导致文档内容被遮挡的问题。\n- **全局快捷键打开网址** — 修复自定义全局快捷键打开 URL 后，快捷键仍会打开 Gemini 默认地址的问题。(#778)",
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
