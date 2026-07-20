@@ -12,7 +12,9 @@ jobs:
   track:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - name: 从 star-data 分支恢复历史数据
+        run: |
+          git clone --branch star-data --depth 1 https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git /tmp/star-data
 
       - name: 获取当前 star 数量
         id: stars
@@ -21,7 +23,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
 
       - name: 生成 star 图表
-        run: node scripts/generate-star-chart.mjs
+        run: |
+          cp /tmp/star-data/data/stars.json data/stars.json 2>/dev/null || echo '[]' > data/stars.json
+          node scripts/generate-star-chart.mjs
         env:
           STAR_COUNT: ${{ steps.stars.outputs.count }}
 
