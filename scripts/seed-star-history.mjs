@@ -5,9 +5,9 @@ import { fileURLToPath } from "url"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, "..")
-const DATA_FILE = join(ROOT, "data", "stars.json")
-const SVG_LIGHT = join(ROOT, "assets", "stars.svg")
-const SVG_DARK = join(ROOT, "assets", "stars-dark.svg")
+const DATA_FILE = join(ROOT, "docs", "data", "stars.json")
+const SVG_LIGHT = join(ROOT, "docs", "media", "star-chart", "stars.svg")
+const SVG_DARK = join(ROOT, "docs", "media", "star-chart", "stars-dark.svg")
 
 const OWNER = "urzeye"
 const REPO = "ophel"

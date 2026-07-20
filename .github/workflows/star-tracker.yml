@@ -29,7 +29,8 @@ jobs:
       - name: 生成 star 图表
         run: |
           mkdir -p data
-          cp /tmp/star-data/data/stars.json data/stars.json 2>/dev/null || echo '[]' > data/stars.json
+          cp /tmp/star-data/data/stars.json docs/data/stars.json 2>/dev/null || echo '[]' > docs/data/stars.json
+          mkdir -p docs/media/star-chart
           node repo/scripts/generate-star-chart.mjs
         env:
           STAR_COUNT: ${{ steps.stars.outputs.count }}
@@ -40,9 +41,9 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           cp /tmp/star-data/data/stars.json /tmp/stars.json
-          cp data/stars.json /tmp/new-stars.json
-          cp assets/stars.svg /tmp/stars.svg
-          cp assets/stars-dark.svg /tmp/stars-dark.svg
+          cp docs/data/stars.json /tmp/new-stars.json
+          cp docs/media/star-chart/stars.svg /tmp/stars.svg
+          cp docs/media/star-chart/stars-dark.svg /tmp/stars-dark.svg
           git branch -D star-data 2>/dev/null || true
           git checkout --orphan star-data
           git rm -rf --quiet . 2>/dev/null || true
