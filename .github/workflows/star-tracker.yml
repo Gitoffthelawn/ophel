@@ -28,10 +28,10 @@ jobs:
 
       - name: 生成 star 图表
         run: |
-          mkdir -p data
+          cd repo
+          mkdir -p docs/data docs/media/star-chart
           cp /tmp/star-data/data/stars.json docs/data/stars.json 2>/dev/null || echo '[]' > docs/data/stars.json
-          mkdir -p docs/media/star-chart
-          node repo/scripts/generate-star-chart.mjs
+          node scripts/generate-star-chart.mjs
         env:
           STAR_COUNT: ${{ steps.stars.outputs.count }}
 
