@@ -25,14 +25,23 @@ jobs:
         env:
           STAR_COUNT: ${{ steps.stars.outputs.count }}
 
-      - name: 提交更新
+      - name: 推送到 star-data 分支
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp data/stars.json /tmp/stars.json
+          cp assets/stars.svg /tmp/stars.svg
+          cp assets/stars-dark.svg /tmp/stars-dark.svg
+          git checkout --orphan star-data 2>/dev/null || git checkout star-data
+          git rm -rf --quiet . 2>/dev/null || true
+          mkdir -p data assets
+          cp /tmp/stars.json data/stars.json
+          cp /tmp/stars.svg assets/stars.svg
+          cp /tmp/stars-dark.svg assets/stars-dark.svg
           git add data/stars.json assets/stars.svg assets/stars-dark.svg
-          if git diff --staged --quiet; then
+          if git diff --staged --quiet 2>/dev/null && git rev-parse --verify HEAD >/dev/null 2>&1; then
             echo "数据未变化，跳过提交。"
           else
-            git commit -m "chore: update star chart [skip ci]"
-            git push
+            git commit --allow-empty -m "chore: update star chart [skip ci]"
+            git push --force origin star-data
           fi

@@ -375,7 +375,7 @@ Tiefer Dank gilt den folgenden großartigen Personen. Eure Beiträge lassen dies
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="12.5%"><a href="https://github.com/urzeye"><img src="https://raw.githubusercontent.com/urzeye/ophel/main/docs/media/github/avatar.gif" width="80" height="80" alt="小 i 同学"/></a><br /><a href="https://github.com/urzeye"><sub><b>小 i 同学</b></sub></a><br /><span title="Code">💻</span> <span title="Ideas, Planning, & Feedback">🤔</span> <span title="Infrastructure (Hosting, Build-Tools, etc)">🚇</span></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/urzeye"><img src="https://raw.githubusercontent.com/urzeye/ophel/star-data/docs/media/github/avatar.gif" width="80" height="80" alt="小 i 同学"/></a><br /><a href="https://github.com/urzeye"><sub><b>小 i 同学</b></sub></a><br /><span title="Code">💻</span> <span title="Ideas, Planning, & Feedback">🤔</span> <span title="Infrastructure (Hosting, Build-Tools, etc)">🚇</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/treasuresure"><img src="https://avatars.githubusercontent.com/u/50103468?v=4&s=80" width="80" height="80" alt="treasuresure"/></a><br /><a href="https://github.com/treasuresure"><sub><b>treasuresure</b></sub></a><br /><span title="Design">🎨</span> <span title="Financial">💵</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://www.tjsky.net/"><img src="https://avatars.githubusercontent.com/u/7272911?v=4&s=80" width="80" height="80" alt="去年夏天"/></a><br /><a href="https://www.tjsky.net/"><sub><b>去年夏天</b></sub></a><br /><span title="Code">💻</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/lanvent"><img src="https://avatars.githubusercontent.com/u/26515464?v=4&s=80" width="80" height="80" alt="Jianglang"/></a><br /><a href="https://github.com/lanvent"><sub><b>Jianglang</b></sub></a><br /><span title="Code">💻</span> <span title="Bug reports">🐛</span></td>
@@ -408,9 +408,9 @@ Tiefer Dank gilt den folgenden großartigen Personen. Eure Beiträge lassen dies
 <div align="center">
 <a href="https://github.com/urzeye/ophel/stargazers">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/urzeye/ophel/main/assets/stars-dark.svg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/urzeye/ophel/main/assets/stars.svg" />
-   <img alt="Star History Chart" src="https://raw.githubusercontent.com/urzeye/ophel/main/assets/stars.svg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars-dark.svg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
  </picture>
 </a>
 <p>
