@@ -12,6 +12,10 @@ jobs:
   track:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v6
+        with:
+          path: repo
+
       - name: 从 star-data 分支恢复历史数据
         run: |
           git clone --branch star-data --depth 1 https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git /tmp/star-data
@@ -26,22 +30,25 @@ jobs:
         run: |
           mkdir -p data
           cp /tmp/star-data/data/stars.json data/stars.json 2>/dev/null || echo '[]' > data/stars.json
-          node scripts/generate-star-chart.mjs
+          node repo/scripts/generate-star-chart.mjs
         env:
           STAR_COUNT: ${{ steps.stars.outputs.count }}
 
       - name: 推送到 star-data 分支
         run: |
+          cd repo
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          cp data/stars.json /tmp/stars.json
+          cp /tmp/star-data/data/stars.json /tmp/stars.json
+          cp data/stars.json /tmp/new-stars.json
           cp assets/stars.svg /tmp/stars.svg
           cp assets/stars-dark.svg /tmp/stars-dark.svg
           git branch -D star-data 2>/dev/null || true
           git checkout --orphan star-data
           git rm -rf --quiet . 2>/dev/null || true
           mkdir -p data assets
-          cp /tmp/stars.json data/stars.json
+          cp /tmp/new-stars.json data/stars.json
+          cp /tmp/stars.json data/stars.json.old || true
           cp /tmp/stars.svg assets/stars.svg
           cp /tmp/stars-dark.svg assets/stars-dark.svg
           git add data/stars.json assets/stars.svg assets/stars-dark.svg
