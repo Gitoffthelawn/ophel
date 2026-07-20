@@ -24,6 +24,7 @@ jobs:
 
       - name: 生成 star 图表
         run: |
+          mkdir -p data
           cp /tmp/star-data/data/stars.json data/stars.json 2>/dev/null || echo '[]' > data/stars.json
           node scripts/generate-star-chart.mjs
         env:
