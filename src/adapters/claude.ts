@@ -210,7 +210,10 @@ export class ClaudeAdapter extends SiteAdapter {
   private exportSnapshotRoot: HTMLElement | null = null
   private outlineCacheSessionKey = ""
   private outlineItemCache = new Map<string, ClaudeOutlineCacheEntry>()
+  private sortedCachedUserQueries: ClaudeOutlineCacheEntry[] | null = null
   private outlineScannedMessageIndexes = new Set<number>()
+  // 全量滚动只用于当前会话的首次缓存回填；后续新增消息由已挂载行增量更新。
+  private hasCompletedInitialVirtualOutlineScan = false
   private outlineScanPromise: Promise<void> | null = null
   private isCollectingVirtualOutline = false
   private outlineWordCountCache = new WeakMap<Element, ClaudeOutlineWordCountCacheEntry>()
@@ -1471,7 +1474,9 @@ export class ClaudeAdapter extends SiteAdapter {
 
     this.outlineCacheSessionKey = sessionKey
     this.outlineItemCache.clear()
+    this.sortedCachedUserQueries = null
     this.outlineScannedMessageIndexes.clear()
+    this.hasCompletedInitialVirtualOutlineScan = false
   }
 
   private createClaudeOutlineItemId(
@@ -1489,13 +1494,13 @@ export class ClaudeAdapter extends SiteAdapter {
 
   private updateClaudeOutlineCache(items: OutlineItem[]): void {
     this.ensureClaudeOutlineCacheSession()
+    this.sortedCachedUserQueries = null
     const headingOrderByMessage = new Map<number, number>()
 
     for (const item of items) {
       const messageIndex = this.getClaudeVirtualMessageIndex(item.element)
       if (messageIndex === null || !item.text.trim()) continue
 
-      this.outlineScannedMessageIndexes.add(messageIndex)
       const isUserQuery = Boolean(item.isUserQuery)
       const headingOrder = headingOrderByMessage.get(messageIndex) || 0
       const orderInMessage = isUserQuery ? 0 : headingOrder + 1
@@ -1565,6 +1570,7 @@ export class ClaudeAdapter extends SiteAdapter {
 
   private scheduleClaudeVirtualOutlineScan(): void {
     if (
+      this.hasCompletedInitialVirtualOutlineScan ||
       this.isCollectingVirtualOutline ||
       this.outlineScanPromise ||
       this.isGenerating() ||
@@ -1573,10 +1579,7 @@ export class ClaudeAdapter extends SiteAdapter {
       return
     }
 
-    const totalMessages = this.getClaudeVirtualMessageCount()
-    if (totalMessages !== null && this.outlineScannedMessageIndexes.size >= totalMessages) {
-      return
-    }
+    if (this.completeInitialClaudeVirtualOutlineScanIfCovered()) return
 
     this.outlineScanPromise = this.collectClaudeVirtualOutline(this.outlineCacheSessionKey)
       .catch((error) => {
@@ -1585,6 +1588,24 @@ export class ClaudeAdapter extends SiteAdapter {
       .finally(() => {
         this.outlineScanPromise = null
       })
+  }
+
+  private hasScannedAllClaudeVirtualMessages(totalMessages: number): boolean {
+    for (let index = 0; index < totalMessages; index += 1) {
+      if (!this.outlineScannedMessageIndexes.has(index)) return false
+    }
+
+    return true
+  }
+
+  private completeInitialClaudeVirtualOutlineScanIfCovered(): boolean {
+    const totalMessages = this.getClaudeVirtualMessageCount()
+    if (totalMessages === null || !this.hasScannedAllClaudeVirtualMessages(totalMessages)) {
+      return false
+    }
+
+    this.hasCompletedInitialVirtualOutlineScan = true
+    return true
   }
 
   private async collectClaudeVirtualOutline(expectedSessionKey: string): Promise<void> {
@@ -1606,6 +1627,7 @@ export class ClaudeAdapter extends SiteAdapter {
     } finally {
       if (this.outlineCacheSessionKey === expectedSessionKey) {
         await this.scrollClaudeVirtualContainer(scrollContainer, originalScrollTop)
+        this.completeInitialClaudeVirtualOutlineScanIfCovered()
       }
       this.isCollectingVirtualOutline = false
     }
@@ -1772,6 +1794,10 @@ export class ClaudeAdapter extends SiteAdapter {
     this.ensureClaudeOutlineCacheSession()
     const outline: OutlineItem[] = []
     const outlineRoot = this.getOutlineRoot()
+
+    // 扫描覆盖与是否生成大纲项无关：用户消息被隐藏、助手回复没有标题时，
+    // 这些已挂载行也必须记为已检查，避免消息总数增长后误触发全量回扫。
+    this.recordMountedClaudeVirtualMessageIndexes(outlineRoot)
 
     // 辅助函数：从文本中移除思维链内容
     const removeThinkingContent = (text: string): string => {
@@ -1998,6 +2024,23 @@ export class ClaudeAdapter extends SiteAdapter {
     }
 
     return this.getScrollContainer()
+  }
+
+  findUserQueryElement(queryIndex: number, text: string): Element | null {
+    this.ensureClaudeOutlineCacheSession()
+    const cachedUserQueries =
+      this.sortedCachedUserQueries ??
+      Array.from(this.outlineItemCache.values())
+        .filter((entry) => entry.isUserQuery)
+        .sort((a, b) => a.messageIndex - b.messageIndex)
+    this.sortedCachedUserQueries = cachedUserQueries
+    const entry = cachedUserQueries[queryIndex - 1]
+
+    if (entry) {
+      return this.findClaudeOutlineTargetInMountedRow(entry)
+    }
+
+    return super.findUserQueryElement(queryIndex, text)
   }
 
   async resolveOutlineTarget(
