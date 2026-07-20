@@ -32,16 +32,13 @@ jobs:
           cp data/stars.json /tmp/stars.json
           cp assets/stars.svg /tmp/stars.svg
           cp assets/stars-dark.svg /tmp/stars-dark.svg
-          git checkout --orphan star-data 2>/dev/null || git checkout star-data
+          git branch -D star-data 2>/dev/null || true
+          git checkout --orphan star-data
           git rm -rf --quiet . 2>/dev/null || true
           mkdir -p data assets
           cp /tmp/stars.json data/stars.json
           cp /tmp/stars.svg assets/stars.svg
           cp /tmp/stars-dark.svg assets/stars-dark.svg
           git add data/stars.json assets/stars.svg assets/stars-dark.svg
-          if git diff --staged --quiet 2>/dev/null && git rev-parse --verify HEAD >/dev/null 2>&1; then
-            echo "数据未变化，跳过提交。"
-          else
-            git commit --allow-empty -m "chore: update star chart [skip ci]"
-            git push --force origin star-data
-          fi
+          git commit -m "chore: update star chart [skip ci]"
+          git push --force origin star-data
