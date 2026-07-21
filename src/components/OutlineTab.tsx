@@ -21,6 +21,7 @@ import {
 } from "~components/icons"
 import { Tooltip } from "~components/ui/Tooltip"
 import type { ConversationManager } from "~core/conversation-manager"
+import { signalReadingHistoryUserNavigation } from "~utils/reading-history-navigation"
 import type { OutlineManager, OutlineNode } from "~core/outline-manager"
 import type { OutlineSource } from "~adapters/base"
 import { useSettingsStore } from "~stores/settings-store"
@@ -1429,6 +1430,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
 
   const handleClick = useCallback(
     async (node: OutlineNode) => {
+      signalReadingHistoryUserNavigation()
       const jumpRequestId = ++jumpRequestIdRef.current
       clearLocateHighlight({ clearForceVisible: true })
       updateVisibleHighlightIndex(getVisibleHighlightIndex(activeIndexRef.current))
@@ -1469,27 +1471,18 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
         updateActiveIndex(node.index, node)
         updateVisibleHighlightIndex(getVisibleHighlightIndex(node.index))
 
-        // 若阅读历史 Position Keeper 正在锁定位置，同步更新锁目标到新位置
-        // 这样 Position Keeper 继续保护新位置，不会跳回旧位置或被平台自动滚动覆盖
-        if (document.documentElement.dataset.ophelPositionLock !== undefined) {
-          const scrollContainer = manager.getScrollContainer()
-          if (scrollContainer) {
-            document.documentElement.dataset.ophelPositionLock = String(scrollContainer.scrollTop)
-          }
-        }
-
         // 高亮效果
         targetElement.classList.add("outline-highlight")
         setTimeout(() => targetElement?.classList.remove("outline-highlight"), 2000)
-      } else if (node.isGhost && node.scrollTop !== undefined) {
+      } else if (
+        node.isGhost &&
+        node.scrollTop !== undefined &&
+        manager.scrollToOutlinePosition(node.scrollTop)
+      ) {
         // Ghost 节点（收藏对应内容不存在）：使用保存的 scrollTop 回退
-        const scrollContainer = manager.getScrollContainer()
-        if (scrollContainer) {
-          scrollContainer.scrollTo({ top: node.scrollTop, behavior: "smooth" })
-          updateActiveIndex(node.index, node)
-          updateVisibleHighlightIndex(getVisibleHighlightIndex(node.index))
-          showToast(t("bookmarkContentMissing"), 3000)
-        }
+        updateActiveIndex(node.index, node)
+        updateVisibleHighlightIndex(getVisibleHighlightIndex(node.index))
+        showToast(t("bookmarkContentMissing"), 3000)
       }
     },
     [

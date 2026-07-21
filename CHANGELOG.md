@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Reading history restoration controls** — Automatic reading-position restoration now yields immediately when scrolling or selecting an outline item, so user navigation always takes priority and the selected position is preserved. (#797)
+
 ### 🐛 Bug Fixes
 
 - **Claude outline refresh after replies** — Fixed issue where sending a new message in a previously indexed long Claude conversation could restart the full outline scan and scroll through the conversation again; new replies now update the cached outline incrementally. (#785)
