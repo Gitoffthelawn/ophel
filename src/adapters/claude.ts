@@ -85,8 +85,6 @@ const CLAUDE_INLINE_MATH_PATTERNS = [
 
 const CLAUDE_DOCUMENT_OUTLINE_SOURCE_ID = "document"
 const CLAUDE_DOCUMENT_ROOT_SELECTOR = "#wiggle-file-content"
-const CLAUDE_DOCUMENT_MARKDOWN_SELECTOR =
-  "#wiggle-file-content .standard-markdown, #wiggle-file-content .progressive-markdown"
 const CLAUDE_RESPONSE_MARKDOWN_SELECTOR = ".standard-markdown, .progressive-markdown"
 const CLAUDE_ARTIFACT_CELL_SELECTOR = ".artifact-block-cell"
 const CLAUDE_USER_FILE_THUMBNAIL_SELECTOR = '[data-testid="file-thumbnail"]'
@@ -108,6 +106,9 @@ const CLAUDE_PANEL_OBSTACLE_SELECTOR = [
   '[data-testid="artifact-panel"]',
   '[data-testid="artifact-sidebar"]',
 ].join(", ")
+const CLAUDE_VIRTUAL_SIZER_SELECTOR = "[data-rocksteady-sizer]"
+const CLAUDE_VIRTUAL_ROW_SELECTOR = "[data-rs-index][data-index]"
+const CLAUDE_EXPORT_ROOT_ATTR = "data-gh-claude-export-root"
 
 interface ClaudeExportLifecycleState {
   documentPanelWasOpen: boolean
@@ -187,13 +188,34 @@ interface ClaudeOutlineWordCountCacheEntry {
   count: number
 }
 
+interface ClaudeOutlineCacheEntry {
+  id: string
+  messageIndex: number
+  orderInMessage: number
+  level: number
+  text: string
+  isUserQuery: boolean
+  isTruncated?: boolean
+  wordCount?: number
+}
+
 export class ClaudeAdapter extends SiteAdapter {
   private activeOrganizationId: string | null = null
   private activeOrganizationIdExpiresAt = 0
   private exportDocumentCache: ClaudeDocumentExportCacheEntry[] = []
+  private exportDocumentCollectionRequired = false
   private exportIncludeThoughtsOverride: boolean | null = null
   private exportThoughtBlocks = new WeakMap<Element, string[]>()
   private exportThoughtBlocksByAssistantIndex = new Map<number, string[]>()
+  private exportSnapshotRoot: HTMLElement | null = null
+  private outlineCacheSessionKey = ""
+  private outlineItemCache = new Map<string, ClaudeOutlineCacheEntry>()
+  private sortedCachedUserQueries: ClaudeOutlineCacheEntry[] | null = null
+  private outlineScannedMessageIndexes = new Set<number>()
+  // 全量滚动只用于当前会话的首次缓存回填；后续新增消息由已挂载行增量更新。
+  private hasCompletedInitialVirtualOutlineScan = false
+  private outlineScanPromise: Promise<void> | null = null
+  private isCollectingVirtualOutline = false
   private outlineWordCountCache = new WeakMap<Element, ClaudeOutlineWordCountCacheEntry>()
 
   match(): boolean {
@@ -1078,16 +1100,43 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   private getClaudeDocumentRoot(): HTMLElement | null {
-    return document.querySelector(CLAUDE_DOCUMENT_ROOT_SELECTOR) as HTMLElement | null
+    return (Array.from(document.querySelectorAll(CLAUDE_DOCUMENT_ROOT_SELECTOR)).find(
+      (root) => !root.closest('[aria-hidden="true"]'),
+    ) || null) as HTMLElement | null
   }
 
   private getClaudeDocumentMarkdownElement(): Element | null {
-    return document.querySelector(CLAUDE_DOCUMENT_MARKDOWN_SELECTOR)
+    return (
+      this.getClaudeDocumentRoot()?.querySelector(".standard-markdown, .progressive-markdown") ||
+      null
+    )
+  }
+
+  private getClaudeDocumentPanelTitle(): string | null {
+    const root = this.getClaudeDocumentRoot()
+    const viewer = root?.closest('[data-skill-file-viewer="true"]')
+    let current = viewer?.parentElement || null
+
+    while (current && current !== document.body) {
+      const panelTitle = current.querySelector("h2[title]")
+      const title =
+        panelTitle?.getAttribute("title")?.trim() || panelTitle?.textContent?.trim() || ""
+      if (title) return title
+
+      if (current.querySelector('button[aria-label="Go back"]')) break
+      current = current.parentElement
+    }
+
+    return null
   }
 
   private getClaudeDocumentTitle(): string | null {
-    const title = this.getClaudeDocumentRoot()?.querySelector("h1")?.textContent?.trim() || ""
-    return title || null
+    const panelTitle = this.getClaudeDocumentPanelTitle()
+    if (panelTitle) return panelTitle
+
+    const contentTitle =
+      this.getClaudeDocumentRoot()?.querySelector("h1")?.textContent?.trim() || ""
+    return contentTitle || null
   }
 
   private getClaudeArtifactCells(root: ParentNode = document): Element[] {
@@ -1112,11 +1161,69 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   private getClaudeArtifactButton(artifact: Element): HTMLElement | null {
-    const container = artifact.closest(".group\\/artifact-block, [class*='group/artifact-block']")
+    const container =
+      artifact.closest(".group\\/artifact-block, [class*='group/artifact-block']") ||
+      artifact.parentElement
+    if (!container) return null
+
     const button =
-      container?.querySelector('button[aria-label="View Document"]') ||
+      Array.from(container.children).find((child) => child.matches("button")) ||
+      container.querySelector('button[aria-label="View Document"]') ||
       artifact.querySelector('button[aria-label="View Document"]')
     return button instanceof HTMLElement ? button : null
+  }
+
+  private async resolveClaudeArtifactInteractionTarget(artifact: Element): Promise<Element | null> {
+    if (artifact.isConnected && !artifact.closest(`[${CLAUDE_EXPORT_ROOT_ATTR}]`)) {
+      return artifact
+    }
+
+    const snapshotRow = artifact.closest(CLAUDE_VIRTUAL_ROW_SELECTOR)
+    const messageIndex = snapshotRow ? this.parseClaudeVirtualMessageIndex(snapshotRow) : null
+    if (!snapshotRow || messageIndex === null) return null
+
+    const artifactIndex = this.getClaudeDocumentArtifactCells(snapshotRow).indexOf(artifact)
+    if (artifactIndex < 0) return null
+
+    const artifactTitle = this.getClaudeArtifactTitle(artifact)
+    const findMountedArtifact = (): Element | null => {
+      const mountedRow = this.getClaudeVirtualRows().find(
+        (row) => this.getClaudeVirtualMessageIndex(row) === messageIndex,
+      )
+      if (!mountedRow) return null
+
+      const mountedArtifacts = this.getClaudeDocumentArtifactCells(mountedRow)
+      const byIndex = mountedArtifacts[artifactIndex]
+      if (byIndex && this.getClaudeArtifactTitle(byIndex) === artifactTitle) return byIndex
+
+      const titleMatches = mountedArtifacts.filter(
+        (candidate) => this.getClaudeArtifactTitle(candidate) === artifactTitle,
+      )
+      return titleMatches.length === 1 ? titleMatches[0] : null
+    }
+
+    const mountedArtifact = findMountedArtifact()
+    if (mountedArtifact) return mountedArtifact
+
+    const scrollContainer = this.getScrollContainer()
+    if (!scrollContainer) return null
+
+    const totalMessages = this.getClaudeVirtualMessageCount()
+    const maxScroll = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight)
+    const estimatedTop =
+      totalMessages && totalMessages > 1
+        ? (maxScroll * messageIndex) / (totalMessages - 1)
+        : scrollContainer.scrollTop
+    const positions = this.buildClaudeVirtualScrollPositions(scrollContainer)
+    positions.sort((a, b) => Math.abs(a - estimatedTop) - Math.abs(b - estimatedTop))
+
+    for (const top of new Set([estimatedTop, ...positions])) {
+      await this.scrollClaudeVirtualContainer(scrollContainer, top)
+      const target = findMountedArtifact()
+      if (target) return target
+    }
+
+    return null
   }
 
   private async openClaudeArtifactDocument(artifact: Element): Promise<Element | null> {
@@ -1124,39 +1231,72 @@ export class ClaudeAdapter extends SiteAdapter {
     if (!button) return null
 
     const previousSignature = this.getClaudeDocumentSignature()
+    const expectedTitle = this.getClaudeArtifactTitle(artifact)
     button.scrollIntoView({ block: "center", inline: "nearest", behavior: "auto" })
     await new Promise((resolve) => setTimeout(resolve, 50))
     this.simulateClick(button)
 
-    return this.waitForClaudeDocumentMarkdown(previousSignature)
+    return this.waitForClaudeDocumentMarkdown(previousSignature, expectedTitle)
   }
 
   private getClaudeDocumentSignature(markdown = this.getClaudeDocumentMarkdownElement()): string {
     const text = markdown?.textContent?.trim() || ""
-    return text ? `${text.length}:${text.slice(0, 160)}:${text.slice(-160)}` : ""
+    if (!text) return ""
+
+    const title = this.getClaudeDocumentTitle()?.replace(/\s+/g, " ").trim() || ""
+    return `${title.length}:${title}:${text.length}:${text.slice(0, 160)}:${text.slice(-160)}`
   }
 
   private async waitForClaudeDocumentMarkdown(
     previousSignature = "",
+    expectedTitle = "",
     timeoutMs = 3000,
   ): Promise<Element | null> {
     const startedAt = Date.now()
+    let candidateSignature = ""
+    let candidateSince = 0
+
     while (Date.now() - startedAt < timeoutMs) {
       const markdown = this.getClaudeDocumentMarkdownElement()
       const signature = this.getClaudeDocumentSignature()
-      if (markdown && signature && signature !== previousSignature) return markdown
-      if (markdown && !previousSignature) return markdown
-      await new Promise((resolve) => setTimeout(resolve, 100))
+      const panelTitle = this.getClaudeDocumentPanelTitle()
+      const titleMatches = !panelTitle || !expectedTitle || panelTitle === expectedTitle
+      const documentChanged = !previousSignature || signature !== previousSignature
+
+      if (markdown && signature && titleMatches && documentChanged) {
+        if (signature !== candidateSignature) {
+          candidateSignature = signature
+          candidateSince = Date.now()
+        } else if (Date.now() - candidateSince >= 200) {
+          return markdown
+        }
+      } else {
+        candidateSignature = ""
+        candidateSince = 0
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 50))
     }
 
-    return this.getClaudeDocumentMarkdownElement()
+    return null
   }
 
-  private closeClaudeDocumentPanel(): void {
+  private async closeClaudeDocumentPanel(): Promise<void> {
+    if (!this.isClaudeDocumentPanelOpen()) return
+
     const backButton = this.findClaudeDocumentPanelButton('button[aria-label="Go back"]')
-    if (backButton instanceof HTMLElement) {
-      this.simulateClick(backButton)
+    if (!(backButton instanceof HTMLElement)) {
+      throw new Error("Claude document panel could not be closed: back button not found")
     }
+
+    this.simulateClick(backButton)
+    const startedAt = Date.now()
+    while (Date.now() - startedAt < 1500) {
+      if (!this.isClaudeDocumentPanelOpen()) return
+      await this.sleep(50)
+    }
+
+    throw new Error("Claude document panel did not close")
   }
 
   private findClaudeDocumentPanelButton(selector: string): HTMLElement | null {
@@ -1282,6 +1422,246 @@ export class ClaudeAdapter extends SiteAdapter {
 
   private getOutlineRoot(): HTMLElement | Document {
     return this.getScrollContainer() || this.findClaudeScrollContainer() || document
+  }
+
+  private getClaudeVirtualRows(root: ParentNode = document): HTMLElement[] {
+    return Array.from(root.querySelectorAll(CLAUDE_VIRTUAL_ROW_SELECTOR)).filter(
+      (element): element is HTMLElement =>
+        element instanceof HTMLElement &&
+        element.closest(`[${CLAUDE_EXPORT_ROOT_ATTR}]`) === null &&
+        element.closest(CLAUDE_VIRTUAL_SIZER_SELECTOR) !== null,
+    )
+  }
+
+  private getClaudeVirtualMessageIndex(element: Element | null): number | null {
+    const row = element?.closest(CLAUDE_VIRTUAL_ROW_SELECTOR)
+    if (!row || row.closest(`[${CLAUDE_EXPORT_ROOT_ATTR}]`)) return null
+
+    return this.parseClaudeVirtualMessageIndex(row)
+  }
+
+  private parseClaudeVirtualMessageIndex(row: Element): number | null {
+    const rawIndex = row.getAttribute("data-rs-index") || row.getAttribute("data-index")
+    if (!rawIndex || !/^\d+$/.test(rawIndex)) return null
+
+    const index = Number.parseInt(rawIndex, 10)
+    return Number.isSafeInteger(index) ? index : null
+  }
+
+  private getClaudeVirtualMessageCount(): number | null {
+    for (const row of this.getClaudeVirtualRows()) {
+      const article = row.querySelector('[role="article"][aria-setsize]')
+      const rawSize = article?.getAttribute("aria-setsize")
+      if (!rawSize || !/^\d+$/.test(rawSize)) continue
+
+      const size = Number.parseInt(rawSize, 10)
+      if (Number.isSafeInteger(size) && size > 0) return size
+    }
+
+    return null
+  }
+
+  private isClaudeVirtualConversation(): boolean {
+    return (
+      document.querySelector(CLAUDE_VIRTUAL_SIZER_SELECTOR) !== null &&
+      this.getClaudeVirtualRows().length > 0
+    )
+  }
+
+  private ensureClaudeOutlineCacheSession(): void {
+    const sessionKey = `${this.getSessionId()}:${window.location.pathname}`
+    if (sessionKey === this.outlineCacheSessionKey) return
+
+    this.outlineCacheSessionKey = sessionKey
+    this.outlineItemCache.clear()
+    this.sortedCachedUserQueries = null
+    this.outlineScannedMessageIndexes.clear()
+    this.hasCompletedInitialVirtualOutlineScan = false
+  }
+
+  private createClaudeOutlineItemId(
+    element: Element,
+    isUserQuery: boolean,
+    orderInMessage: number,
+  ): string | null {
+    const messageIndex = this.getClaudeVirtualMessageIndex(element)
+    if (messageIndex === null) return null
+
+    return isUserQuery
+      ? `claude-message:${messageIndex}:user`
+      : `claude-message:${messageIndex}:heading:${orderInMessage}`
+  }
+
+  private updateClaudeOutlineCache(items: OutlineItem[]): void {
+    this.ensureClaudeOutlineCacheSession()
+    this.sortedCachedUserQueries = null
+    const headingOrderByMessage = new Map<number, number>()
+
+    for (const item of items) {
+      const messageIndex = this.getClaudeVirtualMessageIndex(item.element)
+      if (messageIndex === null || !item.text.trim()) continue
+
+      const isUserQuery = Boolean(item.isUserQuery)
+      const headingOrder = headingOrderByMessage.get(messageIndex) || 0
+      const orderInMessage = isUserQuery ? 0 : headingOrder + 1
+      if (!isUserQuery) {
+        headingOrderByMessage.set(messageIndex, headingOrder + 1)
+      }
+      const id =
+        item.id ||
+        this.createClaudeOutlineItemId(item.element as Element, isUserQuery, headingOrder)
+      if (!id) continue
+
+      item.id = id
+      item.navigationId = id
+      this.outlineItemCache.set(id, {
+        id,
+        messageIndex,
+        orderInMessage,
+        level: item.level,
+        text: item.text,
+        isUserQuery,
+        isTruncated: item.isTruncated,
+        wordCount: item.wordCount,
+      })
+    }
+  }
+
+  private mergeCachedClaudeOutlineItems(
+    currentItems: OutlineItem[],
+    maxLevel: number,
+    includeUserQueries: boolean,
+    showWordCount: boolean,
+  ): OutlineItem[] {
+    if (this.outlineItemCache.size === 0) return currentItems
+
+    const currentIds = new Set(
+      currentItems.map((item) => item.id).filter((id): id is string => Boolean(id)),
+    )
+    const merged = [...currentItems]
+
+    for (const entry of this.outlineItemCache.values()) {
+      if (currentIds.has(entry.id)) continue
+      if (entry.isUserQuery && !includeUserQueries) continue
+      if (!entry.isUserQuery && entry.level > maxLevel) continue
+
+      merged.push({
+        id: entry.id,
+        navigationId: entry.id,
+        level: entry.level,
+        text: entry.text,
+        element: null,
+        isUserQuery: entry.isUserQuery,
+        isTruncated: entry.isTruncated,
+        wordCount: showWordCount ? entry.wordCount : undefined,
+      })
+    }
+
+    return merged.sort((a, b) => {
+      const aEntry = a.id ? this.outlineItemCache.get(a.id) : undefined
+      const bEntry = b.id ? this.outlineItemCache.get(b.id) : undefined
+      if (!aEntry || !bEntry) return 0
+      if (aEntry.messageIndex !== bEntry.messageIndex) {
+        return aEntry.messageIndex - bEntry.messageIndex
+      }
+      return aEntry.orderInMessage - bEntry.orderInMessage
+    })
+  }
+
+  private scheduleClaudeVirtualOutlineScan(): void {
+    if (
+      this.hasCompletedInitialVirtualOutlineScan ||
+      this.isCollectingVirtualOutline ||
+      this.outlineScanPromise ||
+      this.isGenerating() ||
+      !this.isClaudeVirtualConversation()
+    ) {
+      return
+    }
+
+    if (this.completeInitialClaudeVirtualOutlineScanIfCovered()) return
+
+    this.outlineScanPromise = this.collectClaudeVirtualOutline(this.outlineCacheSessionKey)
+      .catch((error) => {
+        console.warn("[ClaudeAdapter] Failed to collect virtual outline:", error)
+      })
+      .finally(() => {
+        this.outlineScanPromise = null
+      })
+  }
+
+  private hasScannedAllClaudeVirtualMessages(totalMessages: number): boolean {
+    for (let index = 0; index < totalMessages; index += 1) {
+      if (!this.outlineScannedMessageIndexes.has(index)) return false
+    }
+
+    return true
+  }
+
+  private completeInitialClaudeVirtualOutlineScanIfCovered(): boolean {
+    const totalMessages = this.getClaudeVirtualMessageCount()
+    if (totalMessages === null || !this.hasScannedAllClaudeVirtualMessages(totalMessages)) {
+      return false
+    }
+
+    this.hasCompletedInitialVirtualOutlineScan = true
+    return true
+  }
+
+  private async collectClaudeVirtualOutline(expectedSessionKey: string): Promise<void> {
+    const scrollContainer = this.getScrollContainer()
+    if (!scrollContainer) return
+
+    const originalScrollTop = scrollContainer.scrollTop
+    const positions = this.buildClaudeVirtualScrollPositions(scrollContainer)
+    this.isCollectingVirtualOutline = true
+
+    try {
+      for (const top of positions) {
+        if (this.outlineCacheSessionKey !== expectedSessionKey) return
+        await this.scrollClaudeVirtualContainer(scrollContainer, top)
+        if (this.outlineCacheSessionKey !== expectedSessionKey) return
+        this.recordMountedClaudeVirtualMessageIndexes(scrollContainer)
+        this.extractOutline(6, true, false)
+      }
+    } finally {
+      if (this.outlineCacheSessionKey === expectedSessionKey) {
+        await this.scrollClaudeVirtualContainer(scrollContainer, originalScrollTop)
+        this.completeInitialClaudeVirtualOutlineScanIfCovered()
+      }
+      this.isCollectingVirtualOutline = false
+    }
+  }
+
+  private recordMountedClaudeVirtualMessageIndexes(root: ParentNode): void {
+    for (const row of this.getClaudeVirtualRows(root)) {
+      const messageIndex = this.getClaudeVirtualMessageIndex(row)
+      if (messageIndex !== null) {
+        this.outlineScannedMessageIndexes.add(messageIndex)
+      }
+    }
+  }
+
+  private buildClaudeVirtualScrollPositions(scrollContainer: HTMLElement): number[] {
+    const maxScroll = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight)
+    if (maxScroll === 0) return [scrollContainer.scrollTop]
+
+    const step = Math.max(160, Math.floor(scrollContainer.clientHeight * 0.65))
+    const positions = new Set<number>([0, scrollContainer.scrollTop, maxScroll])
+    for (let top = 0; top < maxScroll; top += step) {
+      positions.add(top)
+    }
+
+    return Array.from(positions).sort((a, b) => a - b)
+  }
+
+  private async scrollClaudeVirtualContainer(
+    scrollContainer: HTMLElement,
+    top: number,
+  ): Promise<void> {
+    scrollContainer.scrollTop = top
+    scrollContainer.dispatchEvent(new Event("scroll", { bubbles: true }))
+    await this.sleep(100)
   }
 
   getVisibleAnchorElement(): AnchorData | null {
@@ -1411,8 +1791,13 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   extractOutline(maxLevel = 6, includeUserQueries = false, showWordCount = false): OutlineItem[] {
+    this.ensureClaudeOutlineCacheSession()
     const outline: OutlineItem[] = []
     const outlineRoot = this.getOutlineRoot()
+
+    // 扫描覆盖与是否生成大纲项无关：用户消息被隐藏、助手回复没有标题时，
+    // 这些已挂载行也必须记为已检查，避免消息总数增长后误触发全量回扫。
+    this.recordMountedClaudeVirtualMessageIndexes(outlineRoot)
 
     // 辅助函数：从文本中移除思维链内容
     const removeThinkingContent = (text: string): string => {
@@ -1591,7 +1976,18 @@ export class ClaudeAdapter extends SiteAdapter {
       })
     }
 
-    return outline
+    this.updateClaudeOutlineCache(outline)
+    const merged = this.mergeCachedClaudeOutlineItems(
+      outline,
+      maxLevel,
+      includeUserQueries,
+      showWordCount,
+    )
+    if (!this.isCollectingVirtualOutline) {
+      this.scheduleClaudeVirtualOutlineScan()
+    }
+
+    return merged
   }
 
   private extractClaudeDocumentOutline(maxLevel = 6, showWordCount = false): OutlineItem[] {
@@ -1630,8 +2026,25 @@ export class ClaudeAdapter extends SiteAdapter {
     return this.getScrollContainer()
   }
 
+  findUserQueryElement(queryIndex: number, text: string): Element | null {
+    this.ensureClaudeOutlineCacheSession()
+    const cachedUserQueries =
+      this.sortedCachedUserQueries ??
+      Array.from(this.outlineItemCache.values())
+        .filter((entry) => entry.isUserQuery)
+        .sort((a, b) => a.messageIndex - b.messageIndex)
+    this.sortedCachedUserQueries = cachedUserQueries
+    const entry = cachedUserQueries[queryIndex - 1]
+
+    if (entry) {
+      return this.findClaudeOutlineTargetInMountedRow(entry)
+    }
+
+    return super.findUserQueryElement(queryIndex, text)
+  }
+
   async resolveOutlineTarget(
-    item: Pick<OutlineItem, "level" | "text" | "isUserQuery">,
+    item: Pick<OutlineItem, "level" | "text" | "isUserQuery" | "id" | "navigationId">,
     queryIndex?: number,
     sourceId = "conversation",
   ): Promise<Element | null> {
@@ -1639,7 +2052,66 @@ export class ClaudeAdapter extends SiteAdapter {
       return this.findClaudeDocumentHeading(item.level, item.text)
     }
 
+    const cachedId = item.navigationId || item.id
+    if (cachedId && this.outlineItemCache.has(cachedId)) {
+      const target = await this.resolveCachedClaudeOutlineTarget(cachedId)
+      if (target) return target
+    }
+
     return super.resolveOutlineTarget(item, queryIndex, sourceId)
+  }
+
+  private async resolveCachedClaudeOutlineTarget(id: string): Promise<Element | null> {
+    this.ensureClaudeOutlineCacheSession()
+    const entry = this.outlineItemCache.get(id)
+    if (!entry) return null
+
+    const mountedTarget = this.findClaudeOutlineTargetInMountedRow(entry)
+    if (mountedTarget) return mountedTarget
+
+    const scrollContainer = this.getScrollContainer()
+    if (!scrollContainer) return null
+
+    const totalMessages = this.getClaudeVirtualMessageCount()
+    const maxScroll = Math.max(0, scrollContainer.scrollHeight - scrollContainer.clientHeight)
+    const estimatedTop =
+      totalMessages && totalMessages > 1
+        ? (maxScroll * entry.messageIndex) / (totalMessages - 1)
+        : scrollContainer.scrollTop
+    const positions = this.buildClaudeVirtualScrollPositions(scrollContainer)
+    positions.sort((a, b) => Math.abs(a - estimatedTop) - Math.abs(b - estimatedTop))
+
+    for (const top of [estimatedTop, ...positions]) {
+      await this.scrollClaudeVirtualContainer(scrollContainer, top)
+      this.extractOutline(6, true, false)
+      const target = this.findClaudeOutlineTargetInMountedRow(entry)
+      if (target) return target
+    }
+
+    return null
+  }
+
+  private findClaudeOutlineTargetInMountedRow(entry: ClaudeOutlineCacheEntry): Element | null {
+    const row = this.getClaudeVirtualRows().find(
+      (candidate) => this.getClaudeVirtualMessageIndex(candidate) === entry.messageIndex,
+    )
+    if (!row) return null
+
+    if (entry.isUserQuery) {
+      return row.querySelector(this.getUserQuerySelector())
+    }
+
+    const headings = Array.from(row.querySelectorAll("h1, h2, h3, h4, h5, h6")).filter(
+      (heading) =>
+        !heading.classList.contains("sr-only") &&
+        !heading.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR) &&
+        heading.closest(".font-claude-response") !== null,
+    )
+    return headings[entry.orderInMessage - 1] || null
+  }
+
+  usesPeriodicOutlineRefreshFallback(): boolean {
+    return this.isClaudeVirtualConversation()
   }
 
   scrollToOutlineSourceTarget(element: HTMLElement, sourceId = "conversation"): void {
@@ -1722,37 +2194,57 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   async prepareConversationExport(context: ExportLifecycleContext): Promise<unknown> {
+    this.ensureClaudeOutlineCacheSession()
     this.exportIncludeThoughtsOverride = context.includeThoughts
     this.exportDocumentCache = []
+    this.exportDocumentCollectionRequired = this.shouldCollectClaudeDocumentsForExport(context)
     this.exportThoughtBlocks = new WeakMap<Element, string[]>()
     this.exportThoughtBlocksByAssistantIndex = new Map<number, string[]>()
-
-    const thoughtContainersExpandedForExport = context.includeThoughts
-      ? await this.expandClaudeThoughtBlocksForExport()
-      : []
-    if (context.includeThoughts) {
-      this.captureClaudeThoughtBlocksForExport()
-    }
+    this.removeClaudeExportSnapshot()
 
     const state: ClaudeExportLifecycleState = {
       documentPanelWasOpen: this.isClaudeDocumentPanelOpen(),
       documentSignature: this.getClaudeDocumentSignature(),
       documentTitle: this.getClaudeDocumentTitle(),
       documentArtifactIndex: null,
-      thoughtContainersExpandedForExport,
+      thoughtContainersExpandedForExport: [],
     }
 
+    let pendingSnapshotRoot: HTMLElement | null = null
+    let thoughtContainersExpandedForExport: HTMLElement[] = []
+    if (this.isClaudeVirtualConversation()) {
+      if (this.outlineScanPromise) {
+        await this.outlineScanPromise
+      }
+      const snapshot = await this.collectClaudeVirtualExportSnapshot(context.includeThoughts)
+      pendingSnapshotRoot = snapshot.root
+      thoughtContainersExpandedForExport = snapshot.expandedThoughtContainers
+    } else if (context.includeThoughts) {
+      thoughtContainersExpandedForExport = await this.expandClaudeThoughtBlocksForExport()
+      this.captureClaudeThoughtBlocksForExport()
+    }
+    state.thoughtContainersExpandedForExport = thoughtContainersExpandedForExport
+
     if (!this.shouldCollectClaudeDocumentsForExport(context)) {
+      this.mountClaudeExportSnapshot(pendingSnapshotRoot)
       return state
     }
 
-    this.exportDocumentCache = await this.collectClaudeDocumentArtifacts()
+    try {
+      this.exportDocumentCache = await this.collectClaudeDocumentArtifacts(
+        pendingSnapshotRoot || document,
+      )
+    } catch (error) {
+      await this.restoreConversationAfterExport(context, state)
+      throw error
+    }
 
     if (state.documentPanelWasOpen && state.documentSignature) {
       const originalDocument = this.findCachedClaudeDocumentByState(state)
       state.documentArtifactIndex = originalDocument?.index ?? null
     }
 
+    this.mountClaudeExportSnapshot(pendingSnapshotRoot)
     return state
   }
 
@@ -1768,15 +2260,17 @@ export class ClaudeAdapter extends SiteAdapter {
         return
       }
 
-      this.closeClaudeDocumentPanel()
+      await this.closeClaudeDocumentPanel()
     } finally {
       if (this.isClaudeExportLifecycleState(state)) {
         this.restoreClaudeThoughtBlocksAfterExport(state)
       }
       this.exportDocumentCache = []
+      this.exportDocumentCollectionRequired = false
       this.exportIncludeThoughtsOverride = null
       this.exportThoughtBlocks = new WeakMap<Element, string[]>()
       this.exportThoughtBlocksByAssistantIndex = new Map<number, string[]>()
+      this.removeClaudeExportSnapshot()
     }
   }
 
@@ -1799,13 +2293,27 @@ export class ClaudeAdapter extends SiteAdapter {
     }
 
     const originalDocument = this.findCachedClaudeDocumentByState(state)
-    const artifact =
-      originalDocument?.element.isConnected === true
-        ? originalDocument.element
-        : this.getClaudeDocumentArtifactCells()[originalDocument?.index ?? -1]
+    if (!originalDocument) {
+      throw new Error("Claude original document could not be matched for restore")
+    }
 
-    if (artifact) {
-      await this.openClaudeArtifactDocument(artifact)
+    const artifactSource =
+      originalDocument.element ||
+      this.getClaudeDocumentArtifactCells()[originalDocument.index] ||
+      null
+    const artifact = artifactSource
+      ? await this.resolveClaudeArtifactInteractionTarget(artifactSource)
+      : null
+    if (!artifact) {
+      throw new Error(`Claude original document could not be mounted: ${originalDocument.title}`)
+    }
+
+    const markdownRoot = await this.openClaudeArtifactDocument(artifact)
+    if (
+      !markdownRoot ||
+      this.getClaudeDocumentSignature(markdownRoot) !== state.documentSignature
+    ) {
+      throw new Error(`Claude original document could not be restored: ${originalDocument.title}`)
     }
   }
 
@@ -1848,6 +2356,7 @@ export class ClaudeAdapter extends SiteAdapter {
 
   async extractExportMessages(_context: ExportLifecycleContext): Promise<ExportMessage[] | null> {
     if (
+      !this.exportSnapshotRoot &&
       this.exportDocumentCache.length === 0 &&
       !this.isClaudeDocumentPanelOpen() &&
       !this.hasClaudeUserAttachments() &&
@@ -1886,7 +2395,7 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   private hasClaudeUserAttachments(): boolean {
-    const root = this.getOutlineRoot()
+    const root = this.exportSnapshotRoot || this.getOutlineRoot()
     const userMessages = Array.from(root.querySelectorAll(this.getUserQuerySelector()))
     return userMessages.some((message) => this.extractClaudeUserAttachments(message).length > 0)
   }
@@ -2165,18 +2674,37 @@ export class ClaudeAdapter extends SiteAdapter {
     return normalizedType ? normalizedName.endsWith(`.${normalizedType}`) : false
   }
 
-  private async collectClaudeDocumentArtifacts(): Promise<ClaudeDocumentExportCacheEntry[]> {
+  private async collectClaudeDocumentArtifacts(
+    root: ParentNode,
+  ): Promise<ClaudeDocumentExportCacheEntry[]> {
     const results: ClaudeDocumentExportCacheEntry[] = []
-    const artifacts = this.getClaudeDocumentArtifactCells()
+    this.exportDocumentCache = results
+    const artifacts = this.getClaudeDocumentArtifactCells(root)
+
+    const openDocument = this.captureOpenClaudeDocument(artifacts)
+    if (openDocument) {
+      results.push(openDocument)
+    }
 
     for (let index = 0; index < artifacts.length; index += 1) {
       const artifact = artifacts[index]
+      if (results.some((item) => item.element === artifact)) continue
+
       const artifactTitle = this.getClaudeArtifactTitle(artifact)
-      const markdownRoot = await this.openClaudeArtifactDocument(artifact)
-      if (!markdownRoot) continue
+      const interactionTarget = await this.resolveClaudeArtifactInteractionTarget(artifact)
+      if (!interactionTarget) {
+        throw new Error(`Claude document artifact could not be mounted: ${artifactTitle}`)
+      }
+
+      const markdownRoot = await this.openClaudeArtifactDocument(interactionTarget)
+      if (!markdownRoot) {
+        throw new Error(`Claude document artifact could not be opened: ${artifactTitle}`)
+      }
 
       const content = this.extractClaudeDocumentMarkdown(markdownRoot)
-      if (!content) continue
+      if (!content) {
+        throw new Error(`Claude document artifact was empty: ${artifactTitle}`)
+      }
 
       results.push({
         element: artifact,
@@ -2189,6 +2717,31 @@ export class ClaudeAdapter extends SiteAdapter {
     }
 
     return results
+  }
+
+  private captureOpenClaudeDocument(artifacts: Element[]): ClaudeDocumentExportCacheEntry | null {
+    const markdownRoot = this.getClaudeDocumentMarkdownElement()
+    if (!markdownRoot) return null
+
+    const content = this.extractClaudeDocumentMarkdown(markdownRoot)
+    const signature = this.getClaudeDocumentSignature(markdownRoot)
+    if (!content || !signature) return null
+
+    const title = this.getClaudeDocumentTitle() || "Document"
+    const titleMatches = artifacts
+      .map((artifact, index) => ({ artifact, index }))
+      .filter(({ artifact }) => this.getClaudeArtifactTitle(artifact) === title)
+    const match = titleMatches.length === 1 ? titleMatches[0] : null
+    if (!match) return null
+
+    return {
+      element: match.artifact,
+      index: match.index,
+      content,
+      title,
+      artifactTitle: this.getClaudeArtifactTitle(match.artifact),
+      signature,
+    }
   }
 
   private extractClaudeDocumentMarkdown(markdownRoot: Element): string {
@@ -2213,12 +2766,86 @@ export class ClaudeAdapter extends SiteAdapter {
     const titleMatches = this.exportDocumentCache.filter(
       (item) => item.artifactTitle === artifactTitle || item.title === artifactTitle,
     )
-    if (titleMatches.length === 1) return titleMatches[0]
+    return titleMatches.length === 1 ? titleMatches[0] : null
+  }
 
-    return this.exportDocumentCache.length === 1 ? this.exportDocumentCache[0] : null
+  private async collectClaudeVirtualExportSnapshot(
+    includeThoughts: boolean,
+  ): Promise<{ root: HTMLElement; expandedThoughtContainers: HTMLElement[] }> {
+    const root = document.createElement("div")
+    root.setAttribute(CLAUDE_EXPORT_ROOT_ATTR, "1")
+    const rows = new Map<number, HTMLElement>()
+    const expandedThoughtContainers: HTMLElement[] = []
+    const scrollContainer = this.getScrollContainer()
+    if (!scrollContainer) return { root, expandedThoughtContainers }
+
+    const originalScrollTop = scrollContainer.scrollTop
+    const totalMessages = this.getClaudeVirtualMessageCount()
+    this.isCollectingVirtualOutline = true
+
+    try {
+      for (let pass = 0; pass < 2; pass += 1) {
+        const positions = this.buildClaudeVirtualScrollPositions(scrollContainer)
+        for (const top of positions) {
+          await this.scrollClaudeVirtualContainer(scrollContainer, top)
+
+          for (const row of this.getClaudeVirtualRows(scrollContainer)) {
+            const messageIndex = this.getClaudeVirtualMessageIndex(row)
+            if (messageIndex === null) continue
+
+            if (includeThoughts) {
+              const expanded = await this.expandClaudeThoughtBlocksForExport(row)
+              expandedThoughtContainers.push(...expanded)
+            }
+
+            rows.set(messageIndex, row.cloneNode(true) as HTMLElement)
+          }
+
+          this.recordMountedClaudeVirtualMessageIndexes(scrollContainer)
+          this.extractOutline(6, true, false)
+        }
+
+        if (totalMessages === null || rows.size >= totalMessages) break
+      }
+    } finally {
+      await this.scrollClaudeVirtualContainer(scrollContainer, originalScrollTop)
+      this.isCollectingVirtualOutline = false
+    }
+
+    if (totalMessages !== null && rows.size < totalMessages) {
+      this.restoreClaudeThoughtBlocksAfterExport({
+        documentPanelWasOpen: false,
+        thoughtContainersExpandedForExport: expandedThoughtContainers,
+      })
+      throw new Error(`Claude virtual export collected ${rows.size} of ${totalMessages} messages`)
+    }
+
+    Array.from(rows.entries())
+      .sort(([a], [b]) => a - b)
+      .forEach(([, row]) => root.appendChild(row))
+
+    return { root, expandedThoughtContainers }
+  }
+
+  private mountClaudeExportSnapshot(root: HTMLElement | null): void {
+    if (!root || root.childElementCount === 0) return
+
+    root.style.display = "none"
+    document.body.appendChild(root)
+    this.exportSnapshotRoot = root
+  }
+
+  private removeClaudeExportSnapshot(): void {
+    this.exportSnapshotRoot?.remove()
+    this.exportSnapshotRoot = null
+    document.querySelectorAll(`[${CLAUDE_EXPORT_ROOT_ATTR}]`).forEach((node) => node.remove())
   }
 
   private extractClaudeExportMessages(collector?: ExportAssetCollector): ExportMessage[] {
+    if (this.exportSnapshotRoot) {
+      return this.extractClaudeVirtualExportMessages(this.exportSnapshotRoot, collector)
+    }
+
     const messages: ExportMessage[] = []
     const root = this.getOutlineRoot()
     const userMessages = Array.from(root.querySelectorAll(this.getUserQuerySelector()))
@@ -2245,6 +2872,38 @@ export class ClaudeAdapter extends SiteAdapter {
         if (content) messages.push({ role: "assistant", content })
       }
     }
+
+    return messages
+  }
+
+  private extractClaudeVirtualExportMessages(
+    root: ParentNode,
+    collector?: ExportAssetCollector,
+  ): ExportMessage[] {
+    const messages: ExportMessage[] = []
+    const rows = Array.from(root.children).filter(
+      (element): element is HTMLElement => element instanceof HTMLElement,
+    )
+    let assistantIndex = 0
+
+    rows.forEach((row) => {
+      const userMessage = row.querySelector(this.getUserQuerySelector())
+      if (userMessage) {
+        const content = this.extractClaudeUserQueryExportContent(userMessage, collector).trim()
+        if (content) messages.push({ role: "user", content })
+      }
+
+      const assistantMessage = row.querySelector(".font-claude-response")
+      if (assistantMessage && !assistantMessage.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR)) {
+        const content = this.extractClaudeAssistantResponseTextWithDocuments(
+          assistantMessage,
+          collector,
+          assistantIndex,
+        ).trim()
+        assistantIndex += 1
+        if (content) messages.push({ role: "assistant", content })
+      }
+    })
 
     return messages
   }
@@ -2292,7 +2951,8 @@ export class ClaudeAdapter extends SiteAdapter {
       ),
     ).filter(
       (block) =>
-        !block.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR) && !this.isInsideClaudeThoughtBlock(block),
+        !block.closest(CLAUDE_DOCUMENT_ROOT_SELECTOR) &&
+        (block.matches(CLAUDE_ARTIFACT_CELL_SELECTOR) || !this.isInsideClaudeThoughtBlock(block)),
     )
 
     return candidates.filter((block) => {
@@ -2328,8 +2988,10 @@ export class ClaudeAdapter extends SiteAdapter {
     return false
   }
 
-  private async expandClaudeThoughtBlocksForExport(): Promise<HTMLElement[]> {
-    const buttons = this.getClaudeThoughtToggleButtons(document)
+  private async expandClaudeThoughtBlocksForExport(
+    root: ParentNode = document,
+  ): Promise<HTMLElement[]> {
+    const buttons = this.getClaudeThoughtToggleButtons(root)
     const expandedContainers: HTMLElement[] = []
 
     for (const button of buttons) {
@@ -2417,27 +3079,20 @@ export class ClaudeAdapter extends SiteAdapter {
 
   private getClaudeThoughtBlockContainer(element: Element): HTMLElement | null {
     const response = element.closest(".font-claude-response")
-    let fallback: HTMLElement | null = null
     let current = element.parentElement
 
     while (current && current !== response && current !== document.body) {
-      const hasStatus = current.querySelector(CLAUDE_THOUGHT_STATUS_SELECTOR) !== null
+      const hasStatus = Array.from(current.children).some((child) =>
+        child.matches(CLAUDE_THOUGHT_STATUS_SELECTOR),
+      )
       const hasToggle = current.querySelector(CLAUDE_THOUGHT_TOGGLE_SELECTOR) !== null
       if (hasStatus && hasToggle) {
-        fallback = current
-        if (this.isClaudeThoughtRootCandidate(current)) {
-          return current
-        }
+        return current
       }
       current = current.parentElement
     }
 
-    return fallback
-  }
-
-  private isClaudeThoughtRootCandidate(element: HTMLElement): boolean {
-    const className = typeof element.className === "string" ? element.className : ""
-    return className.includes("grid-rows") || element.querySelector(".row-start-2") !== null
+    return null
   }
 
   private isInsideClaudeThoughtBlock(element: Element): boolean {
@@ -2463,6 +3118,10 @@ export class ClaudeAdapter extends SiteAdapter {
   }
 
   private getClaudeThoughtBlocksForElement(element: Element, assistantIndex?: number): string[] {
+    if (element.closest(`[${CLAUDE_EXPORT_ROOT_ATTR}]`)) {
+      return this.extractClaudeThoughtBlockquotes(element)
+    }
+
     if (assistantIndex !== undefined) {
       const byIndex = this.exportThoughtBlocksByAssistantIndex.get(assistantIndex)
       if (byIndex) return byIndex
@@ -2543,6 +3202,9 @@ export class ClaudeAdapter extends SiteAdapter {
     const cached = this.findCachedClaudeDocumentForArtifact(artifact)
 
     if (!cached?.content) {
+      if (this.exportDocumentCollectionRequired && this.isMarkdownDocumentArtifact(artifact)) {
+        throw new Error(`Claude document artifact was not cached: ${title}`)
+      }
       return this.formatClaudeArtifactPlaceholder(artifact)
     }
 
@@ -2679,6 +3341,7 @@ export class ClaudeAdapter extends SiteAdapter {
         {
           selector: CLAUDE_CANVAS_PANEL_SCOPE_SELECTOR,
           scopeSelector: CLAUDE_CANVAS_PANEL_SCOPE_SELECTOR,
+          obstacleSelectors: [],
           applySide: "right",
           insetMode: "edge",
           extraCss:

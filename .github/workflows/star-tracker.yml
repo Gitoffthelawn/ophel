@@ -1,0 +1,91 @@
+name: "⭐ Star History Tracker"
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: 从 star-data 分支恢复历史数据
+        run: |
+          git clone --branch star-data --depth 1 https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git /tmp/star-data
+
+      - name: 获取当前 star 数量并生成图表
+        id: stars
+        run: |
+          echo "count=$(gh api repos/${{ github.repository }} --jq '.stargazers_count')" >> $GITHUB_OUTPUT
+
+          # 恢复历史数据
+          mkdir -p docs/data docs/media/star-chart
+          cp /tmp/star-data/data/stars.json docs/data/stars.json 2>/dev/null || echo '[]' > docs/data/stars.json
+
+          # 生成 SVG 图表
+          node scripts/generate-star-chart.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+          STAR_COUNT: ${{ steps.stars.outputs.count }}
+```
+
+等等，这两个 step 需要拆开，因为 `STAR_COUNT` 不能在自己 step 里引用。让我重新整理。
+
+<｜｜DSML｜｜tool_calls>
+<｜｜DSML｜｜invoke name="Write">
+<｜｜DSML｜｜parameter name="content" string="true">name: "⭐ Star History Tracker"
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: 从 star-data 分支恢复历史数据
+        run: |
+          git clone --branch star-data --depth 1 https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git /tmp/star-data
+
+      - name: 获取当前 star 数量
+        id: stars-run
+        run: echo "count=$(gh api repos/${{ github.repository }} --jq '.stargazers_count')" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: 生成 SVG 图表
+        run: |
+          mkdir -p docs/data docs/media/star-chart
+          cp /tmp/star-data/data/stars.json docs/data/stars.json 2>/dev/null || echo '[]' > docs/data/stars.json
+          node scripts/generate-star-chart.mjs
+        env:
+          STAR_COUNT: ${{ steps.stars-run.outputs.count }}
+
+      - name: 推送到 star-data 分支
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          cp docs/data/stars.json /tmp/new-stars.json
+          cp docs/media/star-chart/stars.svg /tmp/stars.svg
+          cp docs/media/star-chart/stars-dark.svg /tmp/stars-dark.svg
+          git branch -D star-data 2>/dev/null || true
+          git checkout --orphan star-data
+          git rm -rf --quiet . 2>/dev/null || true
+          mkdir -p data assets
+          cp /tmp/new-stars.json data/stars.json
+          cp /tmp/stars.svg assets/stars.svg
+          cp /tmp/stars-dark.svg assets/stars-dark.svg
+          git add data/stars.json assets/stars.svg assets/stars-dark.svg
+          git commit -m "chore: update star chart [skip ci]"
+          git push --force origin star-data

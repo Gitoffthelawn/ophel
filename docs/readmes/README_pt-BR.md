@@ -1,4 +1,4 @@
-﻿# Ophel Atlas 🚀
+# Ophel Atlas 🚀
 
 > Transforme chats de IA em documentos legíveis, navegáveis e reutilizáveis
 
@@ -389,11 +389,11 @@ Nossa mais profunda gratidão às incríveis pessoas abaixo. Suas contribuiçõe
 ## ⭐ Star History
 
 <div align="center">
-<a href="https://star-history.com/#urzeye/ophel&Date">
+<a href="https://github.com/urzeye/ophel/stargazers">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=urzeye/ophel&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=urzeye/ophel&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=urzeye/ophel&type=Date" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars-dark.svg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
+   <img alt="Star History Chart" src="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
  </picture>
 </a>
 <p>

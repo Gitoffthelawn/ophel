@@ -9,8 +9,27 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Reading history restoration controls** — Automatic reading-position restoration now yields immediately when scrolling or selecting an outline item, so user navigation always takes priority and the selected position is preserved. (#797)
+
 ### 🐛 Bug Fixes
 
+- **Claude outline refresh after replies** — Fixed issue where sending a new message in a previously indexed long Claude conversation could restart the full outline scan and scroll through the conversation again; new replies now update the cached outline incrementally. (#785)
+- **Claude outline current-position highlight** — Fixed issue where the outline could highlight an earlier question when the visible Claude question began with the same text; current-position tracking now follows the exact question at that conversation position.
+
+---
+
+## [1.1.6] - 2026-07-16
+
+### ✨ Improvements
+
+- **Claude page structure adaptation** — Adapted to Claude's updated conversation page DOM, ensuring the outline can read all messages and conversation exports remain complete. (#781)
+
+### 🐛 Bug Fixes
+
+- **Claude Canvas document export** — Fixed issue where Markdown and clipboard exports could omit Claude Canvas document content; exports now collect Canvas documents from the conversation, including virtualized messages, and restore the previously open Canvas afterward.
+- **Claude Canvas Smart Avoidance** — Fixed issue where opening a Claude Canvas document could stop Smart Avoidance from reserving space for the Ophel panel, causing the document content to be covered.
 - **Global shortcut URL** — Fixed issue where the global shortcut continued to open Gemini after setting a custom URL. (#778)
 
 ---
@@ -1318,6 +1337,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6
 [1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
 [1.1.3]: https://github.com/urzeye/ophel/releases/tag/v1.1.3
