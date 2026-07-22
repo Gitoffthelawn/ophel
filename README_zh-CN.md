@@ -215,7 +215,7 @@
       <sub><b>**南</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Lucky&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Calipay%7C2026-04-09%7C%EF%BF%A510&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -259,6 +259,10 @@
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=Count%20Basil%7Cko-fi%7C2026-06-29%7C%2420&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="Count Basil" /><br />
       <sub><b>Count Basil</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
+      <sub><b>anonymous</b></sub>
     </td>
   </tr>
   </tbody>
@@ -415,11 +419,11 @@ _🌌 开源的璀璨，源于社区中每一颗闪耀的星。_
 ## ⭐ Star History
 
 <div align="center">
-<a href="https://github.com/urzeye/ophel/stargazers">
+<a href="https://www.star-history.com/?repos=urzeye%2Fophel&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars-dark.svg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
-   <img alt="Star History Chart" src="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
  </picture>
 </a>
 <p>

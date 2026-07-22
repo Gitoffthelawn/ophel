@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.1.7] - 2026-07-22
+
 ### ✨ 功能优化
 
 - **阅读历史恢复控制** — 自动恢复阅读位置时，现在滚动正文或选择大纲条目会立即停止恢复，让用户导航始终优先，并保存用户选择的新位置。(#797)
@@ -1336,6 +1340,7 @@
 
 ---
 
+[1.1.7]: https://github.com/urzeye/ophel/releases/tag/v1.1.7
 [1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6
 [1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4

@@ -2,11 +2,11 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.6",
-  date: "2026-07-16",
+  version: "1.1.7",
+  date: "2026-07-22",
   notes: {
-    en: "### ✨ Improvements\n\n- **Claude page structure adaptation** — Adapted to Claude's updated conversation page DOM, ensuring the outline can read all messages and conversation exports remain complete. (#781)\n\n### 🐛 Bug Fixes\n\n- **Claude Canvas document export** — Fixed issue where Markdown and clipboard exports could omit Claude Canvas document content; exports now collect Canvas documents from the conversation, including virtualized messages, and restore the previously open Canvas afterward.\n- **Claude Canvas Smart Avoidance** — Fixed issue where opening a Claude Canvas document could stop Smart Avoidance from reserving space for the Ophel panel, causing the document content to be covered.\n- **Global shortcut URL** — Fixed issue where the global shortcut continued to open Gemini after setting a custom URL. (#778)",
-    zh: "### ✨ 功能优化\n\n- **Claude 页面结构适配** — 适配 Claude 更新后的对话页面 DOM 结构，确保大纲能够读取全部消息，并完整导出会话内容。(#781)\n\n### 🐛 问题修复\n\n- **Claude Canvas 文档导出** — 修复 Markdown 和剪贴板导出可能遗漏 Claude Canvas 文档正文的问题；现在会收集会话中的 Canvas 文档（包括虚拟列表中的文档），并在导出后恢复原先打开的 Canvas。\n- **Claude Canvas 智能避让** — 修复打开 Claude Canvas 文档后，智能避让可能无法继续为 Ophel 面板预留空间，导致文档内容被遮挡的问题。\n- **全局快捷键打开网址** — 修复自定义全局快捷键打开 URL 后，快捷键仍会打开 Gemini 默认地址的问题。(#778)",
+    en: "### ✨ Improvements\n\n- **Reading history restoration controls** — Automatic reading-position restoration now yields immediately when scrolling or selecting an outline item, so user navigation always takes priority and the selected position is preserved. (#797)\n\n### 🐛 Bug Fixes\n\n- **Claude outline refresh after replies** — Fixed issue where sending a new message in a previously indexed long Claude conversation could restart the full outline scan and scroll through the conversation again; new replies now update the cached outline incrementally. (#785)\n- **Claude outline current-position highlight** — Fixed issue where the outline could highlight an earlier question when the visible Claude question began with the same text; current-position tracking now follows the exact question at that conversation position.",
+    zh: "### ✨ 功能优化\n\n- **阅读历史恢复控制** — 自动恢复阅读位置时，现在滚动正文或选择大纲条目会立即停止恢复，让用户导航始终优先，并保存用户选择的新位置。(#797)\n\n### 🐛 问题修复\n\n- **Claude 回复后的大纲刷新** — 修复已完成索引的 Claude 长对话在发送新问题后会重新全量扫描并滚动整段会话的问题；新回复现在只会增量更新已有大纲缓存。(#785)\n- **Claude 大纲当前位置高亮** — 修复当前可见问题与前文问题使用相同开头时，大纲可能高亮到前一个问题的问题；当前位置跟随现在会准确对应当前问题。",
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
