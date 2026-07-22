@@ -389,11 +389,11 @@ Nossa mais profunda gratidão às incríveis pessoas abaixo. Suas contribuiçõe
 ## ⭐ Star History
 
 <div align="center">
-<a href="https://github.com/urzeye/ophel/stargazers">
+<a href="https://www.star-history.com/?repos=urzeye%2Fophel&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars-dark.svg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
-   <img alt="Star History Chart" src="https://raw.githubusercontent.com/urzeye/ophel/star-data/assets/stars.svg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=OmHYuLiRXx5_x_KvnLJ5mXi161fp3Ecf86V5HVM3VzH9aZj1BZ_TNyesCjRqsjZJxHH0Eo3Q__WyR5XXv8Rd2Fq8KNC2Hm0U95kxfV8Tjfz4Vpo0uZrZa71HwUelHhxsLjm6Uw8jcaP0Yw6QRGWk9AnXRfCrXJMYV0HDArSKtkNc8RD7qOvDoF2VfPer" />
  </picture>
 </a>
 <p>
