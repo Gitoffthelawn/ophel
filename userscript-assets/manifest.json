@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-07-16T15:44:17.284Z",
-  "version": "1.1.6",
+  "generatedAt": "2026-07-22T05:28:41.489Z",
+  "version": "1.1.7",
   "resources": {
     "ophelStyles": {
       "fileName": "ophel.user.4a84891523f2.css",
@@ -93,17 +93,17 @@
   },
   "requires": {
     "geminiWatermarkRemover": {
-      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.1.6.js",
-      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.6.js",
+      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.1.7.js",
+      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.7.js",
       "version": "1.0.17"
     },
     "markdownVendor": {
-      "fileName": "ophel-markdown-vendor-ophel-1.1.6.js",
-      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.1.6.js"
+      "fileName": "ophel-markdown-vendor-ophel-1.1.7.js",
+      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.1.7.js"
     }
   },
   "requireUrls": {
-    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.6.js",
-    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.1.6.js"
+    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.1.7.js",
+    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.1.7.js"
   }
 }
