@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.1.7] - 2026-07-22
+
 ### ✨ Improvements
 
 - **Reading history restoration controls** — Automatic reading-position restoration now yields immediately when scrolling or selecting an outline item, so user navigation always takes priority and the selected position is preserved. (#797)
@@ -1337,6 +1341,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.1.7]: https://github.com/urzeye/ophel/releases/tag/v1.1.7
 [1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6
 [1.1.5]: https://github.com/urzeye/ophel/releases/tag/v1.1.5
 [1.1.4]: https://github.com/urzeye/ophel/releases/tag/v1.1.4
