@@ -7,7 +7,13 @@
 
 import type { PlasmoCSConfig } from "plasmo"
 
-import { getAdapter } from "~adapters"
+import {
+  getAdapter,
+  getBrokenOriginBinding,
+  initAdapterRegistry,
+  reapplyBuiltinSiteConfig,
+  resetBuiltinSiteConfig,
+} from "~adapters"
 import { DEFAULT_FOLDERS, SITE_IDS, getDefaultPromptChains, getDefaultPrompts } from "~constants"
 import {
   initCoreModules,
@@ -18,20 +24,26 @@ import {
 } from "~core/modules-init"
 import { APP_DISPLAY_NAME } from "~utils/config"
 import { INTER_LOCAL_FONT_FACE, getPlatformFontFamily } from "~utils/font"
+import { useBookmarkStore } from "~stores/bookmarks-store"
+import { useClaudeSessionKeysStore } from "~stores/claude-sessionkeys-store"
 import { useConversationsStore } from "~stores/conversations-store"
 import { useFoldersStore } from "~stores/folders-store"
 import { usePromptChainsStore } from "~stores/prompt-chains-store"
 import { usePromptsStore } from "~stores/prompts-store"
 import { useReadingHistoryStore } from "~stores/reading-history-store"
-import { getSettingsState, useSettingsStore } from "~stores/settings-store"
+import { claimLegacySiteSettings, getSettingsState, useSettingsStore } from "~stores/settings-store"
 import { useTagsStore } from "~stores/tags-store"
 import {
   EVENT_EXTENSION_UPDATE_AVAILABLE,
   MSG_CLEAR_ALL_DATA,
   MSG_EXTENSION_UPDATE_AVAILABLE,
+  MSG_OPEN_URL,
   MSG_RESTORE_DATA,
+  MSG_RESET_REMOTE_CONFIG_SITE,
+  MSG_REAPPLY_REMOTE_CONFIG_SITE,
   MSG_START_NEW_CONVERSATION,
 } from "~utils/messaging"
+import { showSitePackBindingIssueNotice } from "~utils/binding-issue-notice"
 
 const resetAllStores = () => {
   useSettingsStore.getState().resetSettings()
@@ -41,6 +53,8 @@ const resetAllStores = () => {
   useTagsStore.setState({ tags: [] })
   useConversationsStore.setState({ conversations: {}, lastUsedFolderId: "inbox" })
   useReadingHistoryStore.setState({ history: {}, lastCleanupRun: 0 })
+  useBookmarkStore.getState().clearAllBookmarks()
+  useClaudeSessionKeysStore.setState({ keys: [], currentKeyId: "" })
 }
 
 const OPHEL_EXTENSION_UPDATE_FALLBACK_ID = "ophel-extension-update-fallback"
@@ -448,8 +462,7 @@ export const config: PlasmoCSConfig = {
   run_at: "document_idle",
 }
 
-// 防止重复初始化
-if (!window.ophelInitialized) {
+function initializeOphel() {
   window.ophelInitialized = true
 
   const adapter = getAdapter()
@@ -476,12 +489,15 @@ if (!window.ophelInitialized) {
         })
       })
 
-      // 获取用户设置
-      const settings = getSettingsState()
       const siteId = adapter.getSiteId()
+      const siteInstanceKey = adapter.getSiteInstanceKey()
+      if (adapter.canClaimLegacySiteData()) {
+        claimLegacySiteSettings(siteId, siteInstanceKey)
+      }
+      const settings = getSettingsState()
 
       // 创建模块上下文
-      const ctx: ModulesContext = { adapter, settings, siteId }
+      const ctx: ModulesContext = { adapter, settings, siteId, siteInstanceKey }
 
       // 初始化所有核心模块
       await initCoreModules(ctx)
@@ -507,6 +523,28 @@ if (!window.ophelInitialized) {
           // 收到恢复数据的广播时，刷新页面使得数据从 Storage 重新读取并保证 Zustand hydration 最新的内容
           window.location.reload()
           sendResponse({ success: true })
+          return true
+        }
+
+        if (message.type === MSG_RESET_REMOTE_CONFIG_SITE) {
+          const reset = resetBuiltinSiteConfig(message.siteId)
+          sendResponse({
+            success: reset,
+            ...(reset ? {} : { error: `No configurable built-in adapter for ${message.siteId}` }),
+          })
+          return true
+        }
+
+        if (message.type === MSG_REAPPLY_REMOTE_CONFIG_SITE) {
+          ;(async () => {
+            const reapplied = await reapplyBuiltinSiteConfig(message.siteId)
+            sendResponse({
+              success: reapplied,
+              ...(reapplied
+                ? {}
+                : { error: `No configurable built-in adapter for ${message.siteId}` }),
+            })
+          })()
           return true
         }
 
@@ -551,6 +589,28 @@ if (!window.ophelInitialized) {
       })
     })()
   } else {
+    const brokenBinding = getBrokenOriginBinding()
+    if (brokenBinding) {
+      showSitePackBindingIssueNotice({
+        packId: brokenBinding.packId,
+        onOpenSettings: () => {
+          const url = chrome.runtime.getURL("tabs/options.html?page=sitePacks")
+          void chrome.runtime.sendMessage({ type: MSG_OPEN_URL, url }).catch((error: unknown) => {
+            console.warn("[Ophel] Failed to open Site Packs settings:", error)
+          })
+        },
+      })
+    }
     console.warn("[Ophel] No adapter found for:", window.location.hostname)
   }
 }
+
+async function bootstrapOphel() {
+  await initAdapterRegistry()
+  if (window.ophelInitialized) return
+  initializeOphel()
+}
+
+void bootstrapOphel().catch((error) => {
+  console.error("[Ophel] Failed to initialize adapter registry:", error)
+})

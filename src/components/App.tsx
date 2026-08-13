@@ -37,7 +37,7 @@ import { useConversationsStore } from "~stores/conversations-store"
 import { useFoldersStore } from "~stores/folders-store"
 import { usePromptsStore } from "~stores/prompts-store"
 import { APP_DISPLAY_NAME, APP_VERSION } from "~utils/config"
-import { DEFAULT_SETTINGS, type Prompt } from "~utils/storage"
+import { DEFAULT_SETTINGS, getSiteTheme, type Prompt } from "~utils/storage"
 import {
   EVENT_EXTENSION_UPDATE_AVAILABLE,
   EVENT_PAGE_URL_CHANGE,
@@ -53,6 +53,7 @@ import { isLikelyMobileDevice } from "~utils/device"
 
 import { ConfirmDialog, FolderSelectDialog, TagManagerDialog } from "./ConversationDialogs"
 import { DisclaimerModal } from "./DisclaimerModal"
+import { ElementPickerOverlay } from "./ElementPickerOverlay"
 import { LoadingOverlay } from "./LoadingOverlay"
 import { MainPanel } from "./MainPanel"
 import { QueueOverlay } from "./QueueOverlay"
@@ -61,6 +62,7 @@ import { QuickButtons } from "./QuickButtons"
 import { SelectedPromptBar } from "./SelectedPromptBar"
 import { SegmentedExportDialog } from "./SegmentedExportDialog"
 import { SettingsModal } from "./SettingsModal"
+import { SiteAdapterWizard } from "./SiteAdapterWizard"
 import { GlobalSearchOverlay } from "./global-search/GlobalSearchOverlay"
 import { GlobalSearchResultItemView } from "./global-search/GlobalSearchResultItemView"
 import {
@@ -405,6 +407,7 @@ export const App = () => {
 
   // 单例实例
   const adapter = useMemo(() => getAdapter(), [])
+  const siteInstanceKey = adapter?.getSiteInstanceKey() || "_default"
 
   const promptManager = useMemo(() => {
     return adapter ? new PromptManager(adapter) : null
@@ -2249,10 +2252,8 @@ export const App = () => {
   // userscript 场景下 App 可能先于核心模块渲染，这里统一复用全局单例
   const themeManager = useMemo(() => {
     const currentAdapter = getAdapter()
-    const siteId = currentAdapter?.getSiteId() || "_default"
-    const fallbackTheme =
-      settings?.theme?.sites?.[siteId as keyof typeof settings.theme.sites] ||
-      settings?.theme?.sites?._default
+    const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
+    const fallbackTheme = settings ? getSiteTheme(settings, currentSiteInstanceKey) : undefined
 
     return ensureGlobalThemeManager({
       mode: fallbackTheme?.mode || "light",
@@ -2290,10 +2291,12 @@ export const App = () => {
 
       // 获取当前站点 ID
       const currentAdapter = getAdapter()
-      const siteId = currentAdapter?.getSiteId() || "_default"
+      const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
 
       // 确保站点配置有完整的默认值，但优先使用已有配置
-      const existingSite = sites[siteId as keyof typeof sites] || sites._default
+      const existingSite = currentSettings
+        ? getSiteTheme(currentSettings, currentSiteInstanceKey)
+        : sites._default
       const siteConfig = {
         lightStyleId: "google-gradient",
         darkStyleId: "classic-dark",
@@ -2307,7 +2310,7 @@ export const App = () => {
           ...currentSettings?.theme,
           sites: {
             ...sites,
-            [siteId]: {
+            [currentSiteInstanceKey]: {
               ...siteConfig,
               mode: nextPreference, // 最后更新 mode，确保生效
             },
@@ -2351,8 +2354,8 @@ export const App = () => {
 
     // 使用当前站点的配置而非 _default
     const currentAdapter = getAdapter()
-    const siteId = currentAdapter?.getSiteId() || "_default"
-    const siteTheme = themeSites?.[siteId as keyof typeof themeSites] || themeSites?._default
+    const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
+    const siteTheme = themeSites?.[currentSiteInstanceKey] || themeSites?._default
     const lightId = siteTheme?.lightStyleId
     const darkId = siteTheme?.darkStyleId
 
@@ -2635,11 +2638,13 @@ export const App = () => {
   // 模型锁定切换处理器 (按站点)
   const handleModelLockToggle = useCallback(() => {
     if (!adapter) return
-    const siteId = adapter.getSiteId()
     const current = settingsRef.current
     if (!current) return
 
-    const modelLockConfig = current.modelLock?.[siteId] || { enabled: false, keyword: "" }
+    const modelLockConfig = current.modelLock?.[siteInstanceKey] || {
+      enabled: false,
+      keyword: "",
+    }
 
     // 如果没有配置关键词
     if (!modelLockConfig.keyword) {
@@ -2648,7 +2653,7 @@ export const App = () => {
         setSettings({
           modelLock: {
             ...current.modelLock,
-            [siteId]: {
+            [siteInstanceKey]: {
               ...modelLockConfig,
               enabled: false,
             },
@@ -2660,7 +2665,7 @@ export const App = () => {
         setSettings({
           modelLock: {
             ...current.modelLock,
-            [siteId]: {
+            [siteInstanceKey]: {
               ...modelLockConfig,
               enabled: true,
             },
@@ -2683,7 +2688,7 @@ export const App = () => {
     setSettings({
       modelLock: {
         ...current.modelLock,
-        [siteId]: {
+        [siteInstanceKey]: {
           ...modelLockConfig,
           enabled: newEnabled,
         },
@@ -2691,14 +2696,13 @@ export const App = () => {
     })
 
     showToast(newEnabled ? t("modelLockEnabled") : t("modelLockDisabled"))
-  }, [adapter, openSettingsModal, setSettings])
+  }, [adapter, openSettingsModal, setSettings, siteInstanceKey])
 
   // 获取当前站点的模型锁定状态
   const isModelLocked = useMemo(() => {
     if (!adapter || !settings) return false
-    const siteId = adapter.getSiteId()
-    return settings.modelLock?.[siteId]?.enabled || false
-  }, [adapter, settings])
+    return settings.modelLock?.[siteInstanceKey]?.enabled || false
+  }, [adapter, settings, siteInstanceKey])
 
   // 面板统一切换：快捷键与快捷按钮组共用，确保 edge-snap 模式下同步进入 peek 状态
   const handlePanelToggle = useCallback(() => {
@@ -3130,7 +3134,12 @@ export const App = () => {
   )
 
   if (!adapter || !promptManager || !conversationManager || !outlineManager) {
-    return null
+    return (
+      <div className="gh-root">
+        <ElementPickerOverlay />
+        <SiteAdapterWizard />
+      </div>
+    )
   }
 
   const edgeTriggerMode = settings?.panel?.edgeTriggerMode ?? DEFAULT_SETTINGS.panel.edgeTriggerMode
@@ -3144,6 +3153,7 @@ export const App = () => {
 
   return (
     <div className={`gh-root ${isPassThrough ? "gh-pass-through" : ""}`}>
+      <ElementPickerOverlay />
       {shouldRenderEdgeHoverZone && edgeSnapState && (
         <div
           aria-hidden="true"
@@ -3237,7 +3247,7 @@ export const App = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={closeSettingsModal}
-        siteId={adapter.getSiteId()}
+        adapter={adapter}
         onOpenReleaseNotes={canShowCurrentReleaseNotes ? openReleaseNotes : undefined}
         onPanelHoverWidthPreviewChange={setIsHoverWidthSettingsPreviewActive}
       />

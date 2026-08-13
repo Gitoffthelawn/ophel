@@ -25,6 +25,9 @@ import {
 } from "./src/platform/userscript/katex-cdn"
 import { resources as localeResources } from "./src/locales/resources"
 
+const isUserscriptDevelopmentBuild =
+  process.env.NODE_ENV === "development" || Boolean(process.env.USERSCRIPT_ASSET_BASE_URL)
+
 // ========== Dynamic Metadata Loading ==========
 const pkg = JSON.parse(fs.readFileSync(path.resolve(__dirname, "package.json"), "utf-8"))
 const reactPkg = JSON.parse(
@@ -113,6 +116,9 @@ const userscriptGeminiWatermarkVendorUrl = `${getUserscriptAssetBaseUrl()}/${use
 const userscriptMarkdownVendorFileName = `ophel-markdown-vendor-ophel-${version}.js`
 const userscriptMarkdownVendorRelativePath = `${userscriptAssetOutDirName}/${userscriptMarkdownVendorFileName}`
 const userscriptMarkdownVendorUrl = `${getUserscriptAssetBaseUrl()}/${userscriptMarkdownVendorRelativePath}`
+const userscriptAdaptersVendorFileName = `ophel-adapters-vendor-ophel-${version}.js`
+const userscriptAdaptersVendorRelativePath = `${userscriptAssetOutDirName}/${userscriptAdaptersVendorFileName}`
+const userscriptAdaptersVendorUrl = `${getUserscriptAssetBaseUrl()}/${userscriptAdaptersVendorRelativePath}`
 
 const userscriptAssetSources = {
   icon: path.resolve(__dirname, "assets/icon.png"),
@@ -169,6 +175,14 @@ function buildUserscriptStyleBundle(): string {
 function createContentHash(content: string | Buffer): string {
   return createHash("sha256").update(content).digest("hex").slice(0, 12)
 }
+
+// Greasyfork 脚本本体大小硬限制 2MB（按字节计）；项目闸门预留余量，
+// 触闸说明需要继续向 vendor 拆分，而不是顶着上限发布。
+// 必须按 UTF-8 字节而非 UTF-16 码元度量：CJK 字符编码后占 3 字节，
+// 按字符数计量可能在未触闸的情况下超出平台字节上限。
+const USERSCRIPT_GREASYFORK_BYTE_LIMIT = 2_000_000
+const USERSCRIPT_BYTE_GATE = 1_950_000
+const userscriptMainFileName = `${pkg.name}.user.js`
 
 function createHashedFileName(fileName: string, content: string | Buffer): string {
   const ext = path.extname(fileName)
@@ -241,6 +255,7 @@ async function buildGeminiWatermarkVendor(): Promise<void> {
     publicDir: false,
     define: {
       __PLATFORM__: JSON.stringify("userscript"),
+      __OPHEL_DEV__: JSON.stringify(false),
     },
     build: {
       outDir: userscriptAssetOutDir,
@@ -270,6 +285,7 @@ async function buildMarkdownVendor(): Promise<void> {
     publicDir: false,
     define: {
       __PLATFORM__: JSON.stringify("userscript"),
+      __OPHEL_DEV__: JSON.stringify(false),
     },
     resolve: {
       alias: {
@@ -286,6 +302,104 @@ async function buildMarkdownVendor(): Promise<void> {
         name: "OphelMarkdownVendor",
         formats: ["iife"],
         fileName: () => userscriptMarkdownVendorFileName,
+      },
+      rollupOptions: {
+        output: {
+          inlineDynamicImports: true,
+        },
+      },
+    },
+  })
+}
+
+// 内置站点适配器独立 vendor 构建（经 @require 引入，压缩脚本本体字符数）。
+// 有状态模块（settings-store / watermark-remover / i18n）alias 到
+// vendor-bridge shim，运行时转发主包 window.__OphelAdaptersVendorBridge；
+// 其余共享模块无状态，vendor 自带副本即可。
+async function buildAdaptersVendor(): Promise<void> {
+  await viteBuild({
+    configFile: false,
+    publicDir: false,
+    plugins: [
+      {
+        name: "ophel-adapters-vendor-stubs",
+        enforce: "pre",
+        resolveId(source, importer) {
+          // platform.remoteConfig 仅设置 UI 使用，vendor 内不会调用；
+          // 截断该动态导入，避免把站点包注册表链路打包进 vendor。
+          if (source === "./remote-config" && importer?.endsWith("platform/userscript/index.ts")) {
+            return path.resolve(
+              __dirname,
+              "src/platform/userscript/vendor-bridge/remote-config-stub.ts",
+            )
+          }
+          return null
+        },
+      },
+    ],
+    define: {
+      __PLATFORM__: JSON.stringify("userscript"),
+      __OPHEL_DEV__: JSON.stringify(false),
+      __OPHEL_APP_VERSION__: JSON.stringify(version),
+    },
+    resolve: {
+      alias: {
+        // ========== React 走 @require 的 window 全局（与主包一致）==========
+        "react/jsx-runtime": path.resolve(
+          __dirname,
+          "src/platform/userscript/react-jsx-runtime.ts",
+        ),
+        "react-dom/client": path.resolve(
+          __dirname,
+          "src/platform/userscript/react-dom-client-global.ts",
+        ),
+        "react-dom": path.resolve(__dirname, "src/platform/userscript/react-dom-global.ts"),
+        react: path.resolve(__dirname, "src/platform/userscript/react-global.ts"),
+        // ========== 主包持有的有状态模块（桥接 shim）==========
+        "~stores/settings-store": path.resolve(
+          __dirname,
+          "src/platform/userscript/vendor-bridge/settings-store.ts",
+        ),
+        "~core/watermark-remover": path.resolve(
+          __dirname,
+          "src/platform/userscript/vendor-bridge/watermark-remover.ts",
+        ),
+        "~utils/i18n": path.resolve(__dirname, "src/platform/userscript/vendor-bridge/i18n.ts"),
+        // ========== 与主包一致的 window 全局/polyfill ==========
+        "~utils/markdown": path.resolve(__dirname, "src/platform/userscript/markdown-global.ts"),
+        "~constants/site-icons": path.resolve(
+          __dirname,
+          "src/platform/userscript/site-icons.ts",
+        ),
+        "~platform/katex": path.resolve(__dirname, "src/platform/userscript/katex.ts"),
+        // 平台实现编译期选择（必须放在 ~platform 之前，精确匹配优先）
+        "~platform/impl": path.resolve(__dirname, "src/platform/userscript/impl.ts"),
+        "@plasmohq/storage": path.resolve(
+          __dirname,
+          "src/platform/userscript/storage-polyfill.ts",
+        ),
+        // ========== 路径别名（与主包一致）==========
+        "~adapters": path.resolve(__dirname, "src/adapters"),
+        "~components": path.resolve(__dirname, "src/components"),
+        "~constants": path.resolve(__dirname, "src/constants"),
+        "~core": path.resolve(__dirname, "src/core"),
+        "~platform": path.resolve(__dirname, "src/platform"),
+        "~stores": path.resolve(__dirname, "src/stores"),
+        "~styles": path.resolve(__dirname, "src/styles"),
+        "~types": path.resolve(__dirname, "src/types"),
+        "~utils": path.resolve(__dirname, "src/utils"),
+        "~": path.resolve(__dirname, "src"),
+      },
+    },
+    build: {
+      outDir: userscriptAssetOutDir,
+      emptyOutDir: false,
+      minify: "terser",
+      lib: {
+        entry: path.resolve(__dirname, "src/platform/userscript/adapters-vendor.ts"),
+        name: "OphelAdaptersVendor",
+        formats: ["iife"],
+        fileName: () => userscriptAdaptersVendorFileName,
       },
       rollupOptions: {
         output: {
@@ -384,6 +498,7 @@ function emitUserscriptAssets(): Plugin {
 
       await buildGeminiWatermarkVendor()
       await buildMarkdownVendor()
+      await buildAdaptersVendor()
 
       fs.writeFileSync(
         path.join(userscriptAssetOutDir, userscriptAssetManifestFileName),
@@ -410,16 +525,63 @@ function emitUserscriptAssets(): Plugin {
                 fileName: userscriptMarkdownVendorFileName,
                 relativePath: userscriptMarkdownVendorRelativePath,
               },
+              adaptersVendor: {
+                fileName: userscriptAdaptersVendorFileName,
+                relativePath: userscriptAdaptersVendorRelativePath,
+              },
             },
             requireUrls: {
               geminiWatermarkRemover: userscriptGeminiWatermarkVendorUrl,
               markdownVendor: userscriptMarkdownVendorUrl,
+              adaptersVendor: userscriptAdaptersVendorUrl,
             },
           },
           null,
           2,
         ),
         "utf-8",
+      )
+
+      // ========== SRI 完整性片段 + 字符数闸门 ==========
+      // monkey 在 generateBundle 阶段产出最终 user.js，writeBundle 时文件已落盘。
+      // 为自托管资源的 @require/@resource URL 追加 #sha256= 片段，
+      // 支持 SRI 的脚本管理器（Tampermonkey）安装时校验内容完整性；
+      // 不支持的引擎会忽略 fragment，行为不变。
+      const mainScriptPath = path.join(userscriptBuildOutDir, userscriptMainFileName)
+      let mainScript = fs.readFileSync(mainScriptPath, "utf-8")
+      const assetBaseUrl = getUserscriptAssetBaseUrl()
+      const selfHostedRelativePaths = [
+        ...Object.values(userscriptResourceFiles).map(({ relativePath }) => relativePath),
+        ...Object.values(userscriptLocaleResourceFiles).map(({ relativePath }) => relativePath),
+        userscriptGeminiWatermarkVendorRelativePath,
+        userscriptMarkdownVendorRelativePath,
+        userscriptAdaptersVendorRelativePath,
+      ]
+
+      for (const relativePath of selfHostedRelativePaths) {
+        const url = `${assetBaseUrl}/${relativePath}`
+        if (!mainScript.includes(url) || mainScript.includes(`${url}#sha256=`)) continue
+
+        const digest = createHash("sha256")
+          .update(fs.readFileSync(path.join(userscriptBuildOutDir, relativePath)))
+          .digest("hex")
+        mainScript = mainScript.replaceAll(url, `${url}#sha256=${digest}`)
+      }
+
+      fs.writeFileSync(mainScriptPath, mainScript, "utf-8")
+
+      const mainScriptBytes = Buffer.byteLength(mainScript, "utf8")
+      if (mainScriptBytes > USERSCRIPT_BYTE_GATE) {
+        throw new Error(
+          `${userscriptMainFileName} is ${mainScriptBytes} bytes, exceeding the ` +
+            `${USERSCRIPT_BYTE_GATE} project gate (Greasyfork hard limit ` +
+            `${USERSCRIPT_GREASYFORK_BYTE_LIMIT}). Move more code into @require vendor ` +
+            "bundles or @resource data instead of shipping near the limit.",
+        )
+      }
+      console.warn(
+        `[ophel-userscript-assets] ${userscriptMainFileName}: ${mainScriptBytes} bytes ` +
+          `(gate ${USERSCRIPT_BYTE_GATE}, Greasyfork limit ${USERSCRIPT_GREASYFORK_BYTE_LIMIT})`,
       )
     },
   }
@@ -443,24 +605,7 @@ export default defineConfig({
         namespace: "https://github.com/urzeye/ophel",
         license: license,
         icon: "https://raw.githubusercontent.com/urzeye/ophel/main/assets/icon.png",
-        match: [
-          "https://gemini.google.com/*",
-          "https://business.gemini.google/*",
-          "https://aistudio.google.com/*",
-          "https://grok.com/*",
-          "https://chat.openai.com/*",
-          "https://chatgpt.com/*",
-          "https://claude.ai/*",
-          "https://www.doubao.com/*",
-          "https://ima.qq.com/*",
-          "https://chat.deepseek.com/*",
-          "https://www.kimi.com/*",
-          "https://chatglm.cn/*",
-          "https://chat.qwen.ai/*",
-          "https://www.qianwen.com/*",
-          "https://yuanbao.tencent.com/*",
-          "https://chat.z.ai/*",
-        ],
+        match: ["https://*/*"],
         grant: [
           "GM_getResourceText",
           "GM_getResourceURL",
@@ -505,6 +650,7 @@ export default defineConfig({
           KATEX_CDN_JS_URL,
           userscriptMarkdownVendorUrl,
           userscriptGeminiWatermarkVendorUrl,
+          userscriptAdaptersVendorUrl,
         ],
         resource: {
           ...userscriptResourceUrls,
@@ -541,6 +687,10 @@ export default defineConfig({
       // 注意：chrome-adapter.ts 已内置跨平台支持（通过 __PLATFORM__ 判断），无需 alias 替换
 
       // ========== 路径别名（与 Plasmo 的 ~ 别名一致）==========
+      // 内置适配器列表改由 @require 的 adapters vendor 提供（必须放在 ~adapters 之前）
+      "~adapters/builtin": path.resolve(__dirname, "src/platform/userscript/builtin-adapters.ts"),
+      // 平台实现编译期选择（必须放在 ~platform 之前，精确匹配优先）
+      "~platform/impl": path.resolve(__dirname, "src/platform/userscript/impl.ts"),
       "~adapters": path.resolve(__dirname, "src/adapters"),
       "~components": path.resolve(__dirname, "src/components"),
       "~constants": path.resolve(__dirname, "src/constants"),
@@ -563,6 +713,9 @@ export default defineConfig({
   define: {
     // 注入平台标识
     __PLATFORM__: JSON.stringify("userscript"),
+    __OPHEL_DEV__: JSON.stringify(isUserscriptDevelopmentBuild),
+    // 与 adapters vendor 的版本握手标识
+    __OPHEL_APP_VERSION__: JSON.stringify(version),
   },
   build: {
     outDir: "build/userscript",

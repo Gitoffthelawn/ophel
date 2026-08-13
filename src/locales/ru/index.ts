@@ -15,9 +15,174 @@ export const ru = {
   tabPrompts: "Промпты",
   tabSettings: "Настройки",
 
+  elementPickerInstruction: "Наведите указатель на элемент страницы и щёлкните, чтобы выбрать его",
+  elementPickerCancelHint: "Нажмите Esc для отмены",
+  elementPickerIframeUnsupported:
+    "Элементы внутри встроенных фреймов (iframe) выбрать нельзя. Выберите элемент за пределами фрейма.",
+
+  // Мастер адаптера сайта
+  siteAdapterWizardLauncher: "Создать адаптер для этого сайта",
+  siteAdapterWizardResume: "Продолжить настройку адаптера",
+  siteAdapterWizardTitle: "Настройка адаптера сайта",
+  siteAdapterWizardSubtitle: "Выберите элементы страницы и проверьте структуру в реальном времени.",
+  siteAdapterWizardProgress: "Шаг {current} из {total}",
+  siteAdapterWizardProgressLabel: "Ход настройки адаптера",
+  siteAdapterWizardOptional: "Необязательно",
+  siteAdapterWizardPick: "Выбрать на странице",
+  siteAdapterWizardRepick: "Выбрать снова",
+  siteAdapterWizardSelectorLabel: "Селектор элемента",
+  siteAdapterWizardSelectorGenerated: "Создан автоматически",
+  siteAdapterWizardSelectorManual: "Изменён вручную",
+  siteAdapterWizardAiTitle: "Черновик селекторов от ИИ",
+  siteAdapterWizardAiOptional: "Необязательно",
+  siteAdapterWizardAiSummary: "Скопируйте очищенный запрос и вставьте JSON селекторов",
+  siteAdapterWizardAiPrivacy:
+    "Данные не отправляются автоматически. Из запроса исключены тексты диалогов, введённые значения, ссылки, скрипты и интерфейс Ophel; перед отправкой с конфиденциальной страницы проверьте его.",
+  siteAdapterWizardAiCopy: "Скопировать запрос для ИИ",
+  siteAdapterWizardAiCopying: "Копирование…",
+  siteAdapterWizardAiCopied:
+    "Очищенный запрос для ИИ скопирован. Вставьте его в выбранного ИИ-помощника.",
+  siteAdapterWizardAiCopyFailed:
+    "Не удалось скопировать запрос для ИИ. Проверьте разрешение на доступ к буферу обмена и повторите попытку.",
+  siteAdapterWizardAiResponseLabel: "JSON селекторов от ИИ",
+  siteAdapterWizardAiResponsePlaceholder: "Вставьте JSON-объект, возвращённый ИИ",
+  siteAdapterWizardAiApply: "Применить черновик",
+  siteAdapterWizardAiSelectorSource: "Предложено ИИ",
+  siteAdapterWizardAiReviewReminder:
+    "Результат ИИ — только черновик. Проверьте каждый шаг перед сохранением.",
+  siteAdapterWizardAiAppliedSuccess:
+    "Применено {count} селекторов от ИИ, все прошли проверку на странице. Проверьте каждый шаг перед сохранением.",
+  siteAdapterWizardAiAppliedReview:
+    "Применено {applied}: {valid} прошли проверку, {review} требуют внимания; {rejected} неверных или ничего не находящих селекторов отклонены без замены существующего выбора.",
+  siteAdapterWizardAiAppliedNone:
+    "Селекторы не применены. Отклонено {rejected} неверных или ничего не находящих селекторов; существующий выбор сохранён.",
+  siteAdapterWizardAiErrorInvalidJson:
+    "Вставьте корректный JSON или один блок кода JSON без сопроводительного текста.",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "Структура черновика ИИ или поля селекторов неверны. Используйте точный формат из скопированного запроса.",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "Ответ ИИ слишком длинный. Попросите вернуть только JSON селекторов и повторите попытку.",
+  siteAdapterWizardAiErrorNoSelectors: "В ответе ИИ нет пригодных селекторов.",
+  siteAdapterWizardSelectorPlaceholder: "Введите CSS-селектор",
+  siteAdapterWizardPickFirst: "Сначала выберите элемент на странице",
+  siteAdapterWizardPickerBusy: "Уже выполняется другой выбор элемента.",
+  siteAdapterWizardIssueMissing: "Выберите элемент или введите его селектор.",
+  siteAdapterWizardIssueDisconnected: "Элемента больше нет на странице. Выберите его снова.",
+  siteAdapterWizardIssueInvalid: "Синтаксис этого селектора неверен.",
+  siteAdapterWizardIssueTooLong: "Этот селектор слишком длинный для SitePack.",
+  siteAdapterWizardIssueNoMatch: "Этот селектор сейчас не находит ни одного элемента.",
+  siteAdapterWizardIssueTargetMismatch: "Этот селектор больше не включает выбранный элемент.",
+  siteAdapterWizardIssueNotUnique:
+    "Этот элемент управления должен находиться в единственном экземпляре.",
+  siteAdapterWizardIssueUnsupportedInput: "Выберите текстовое поле или редактируемую область.",
+  siteAdapterWizardIssueContainerMissing: "Сначала выберите корректный контейнер диалога.",
+  siteAdapterWizardIssueOutsideContainer:
+    "Все найденные сообщения должны находиться внутри выбранного контейнера диалога.",
+  siteAdapterWizardGenerateDisconnected: "Элемент изменился до создания селектора.",
+  siteAdapterWizardGenerateOutsideRoot: "Этот элемент недоступен из корня текущей страницы.",
+  siteAdapterWizardGenerateManual:
+    "Не удалось создать стабильный селектор. Введите его вручную или выберите более точный элемент.",
+  siteAdapterWizardStepReady: "Этот шаг готов.",
+  siteAdapterWizardMatchCount: "Совпадений: {count}",
+  siteAdapterWizardUnique: "Уникальный",
+  siteAdapterWizardShared: "Повторяющийся",
+  siteAdapterWizardContained: "Внутри контейнера",
+  siteAdapterWizardStepTextareaTitle: "Поле сообщения",
+  siteAdapterWizardStepTextareaDesc: "Выберите поле, в котором вводится сообщение.",
+  siteAdapterWizardStepSubmitTitle: "Кнопка отправки",
+  siteAdapterWizardStepSubmitDesc: "Выберите кнопку, которая отправляет текущее сообщение.",
+  siteAdapterWizardStepContainerTitle: "Контейнер диалога",
+  siteAdapterWizardStepContainerDesc: "Выберите область с сообщениями текущего диалога.",
+  siteAdapterWizardStepUserTitle: "Сообщение пользователя",
+  siteAdapterWizardStepUserDesc:
+    "Выберите своё сообщение. Повторяющийся селектор может охватить все сообщения пользователя.",
+  siteAdapterWizardStepAssistantTitle: "Ответ ИИ",
+  siteAdapterWizardStepAssistantDesc:
+    "Выберите один ответ ИИ. Повторяющийся селектор может охватить все ответы ИИ.",
+  siteAdapterWizardStepConversationTitle: "Элемент списка диалогов",
+  siteAdapterWizardStepConversationDesc:
+    "Необязательно: выберите один элемент в истории или боковой панели.",
+  siteAdapterWizardStepNewChatTitle: "Кнопка нового диалога",
+  siteAdapterWizardStepNewChatDesc:
+    "Необязательно: выберите элемент управления для начала нового диалога.",
+  siteAdapterWizardPreviewEyebrow: "Предпросмотр",
+  siteAdapterWizardPreviewTitle: "Структура диалога",
+  siteAdapterWizardPreviewReady: "Готово",
+  siteAdapterWizardPreviewEmpty:
+    "Выберите корректные сообщения пользователя и ИИ, чтобы увидеть структуру здесь.",
+  siteAdapterWizardPreviewNoText: "В этом элементе нет читаемого текста",
+  siteAdapterWizardUser: "Пользователь",
+  siteAdapterWizardAssistant: "ИИ",
+  siteAdapterWizardCapabilitiesTitle: "Доступные возможности",
+  siteAdapterWizardCapabilitiesEmpty: "Возможности появятся после проверки обязательных элементов.",
+  siteAdapterWizardCapabilityPrompt: "Вставка промпта",
+  siteAdapterWizardCapabilityOutline: "Структура диалога",
+  siteAdapterWizardCapabilityUserQueries: "Вопросы пользователя в структуре",
+  siteAdapterWizardCapabilityExport: "Базовый экспорт",
+  siteAdapterWizardCapabilityHistory: "История чтения",
+  siteAdapterWizardCapabilityNewChat: "Новый диалог",
+  siteAdapterWizardConversationCaptured:
+    "Элемент диалога сохранён; он не войдёт в пакет, пока не будут известны правила ID и ссылок.",
+  siteAdapterWizardCompleteTitle: "Черновик адаптера готов",
+  siteAdapterWizardCompleteDesc:
+    "Обязательные элементы прошли проверку, структура диалога доступна для просмотра.",
+  siteAdapterWizardPublishEyebrow: "Сохранение и вклад",
+  siteAdapterWizardPublishTitle: "Опубликовать этот адаптер",
+  siteAdapterWizardPublishDesc:
+    "Проверьте созданные метаданные, затем сохраните пакет локально или экспортируйте тот же проверенный JSON.",
+  siteAdapterWizardPublishNameLabel: "Название сайта",
+  siteAdapterWizardPublishIdLabel: "ID пакета",
+  siteAdapterWizardPublishIdHint: "Строчные буквы, цифры и дефисы",
+  siteAdapterWizardPublishVersionHint: "Увеличивайте при обновлении того же пакета",
+  siteAdapterWizardPublishOriginLabel: "Точный origin",
+  siteAdapterWizardPublishMinVersionLabel: "Минимальная версия Ophel",
+  siteAdapterWizardPublishConversationOmitted:
+    "Элемент диалога не включён, поскольку правила его ID и URL нельзя безопасно вывести.",
+  siteAdapterWizardPublishDraftInvalid:
+    "Обязательный выбранный элемент больше недействителен. Вернитесь к этому шагу и выберите его снова.",
+  siteAdapterWizardPublishHttpsRequired: "SitePack можно создать только для HTTPS origin.",
+  siteAdapterWizardPublishManifestInvalid: "Созданный SitePack недействителен.",
+  siteAdapterWizardPublishNameInvalid: "Введите название сайта.",
+  siteAdapterWizardPublishIdInvalid:
+    "ID пакета должен содержать 2–40 строчных букв, цифр или дефисов.",
+  siteAdapterWizardPublishVersionInvalid: "Версия должна быть положительным целым числом.",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "Текущую версию Ophel нельзя использовать как корректную минимальную версию.",
+  siteAdapterWizardPublishManifestInvalidField: "Проверьте созданное поле: {field}",
+  siteAdapterWizardPublishVersionConflict:
+    "Для этого ID и версии уже сохранено другое содержимое. Увеличьте версию и повторите попытку.",
+  siteAdapterWizardPublishSourceConflict:
+    "Этот ID пакета уже установлен из другого источника. Выберите другой ID.",
+  siteAdapterWizardPublishMatchConflict:
+    "Этот origin конфликтует со встроенным или установленным SitePack.",
+  siteAdapterWizardPublishSaveFailed:
+    "Не удалось сохранить SitePack. Проверьте метаданные и повторите попытку.",
+  siteAdapterWizardPublishPermissionDenied:
+    "Доступ к сайту не предоставлен, поэтому сохранённый пакет был отключён.",
+  siteAdapterWizardPublishSaved:
+    "«{name}» сохранён локально. Перезагрузите страницу, чтобы активировать его.",
+  siteAdapterWizardPublishDownloaded: "Проверенный JSON SitePack загружен.",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON скопирован. Открыта предварительно заполненная страница вклада на GitHub.",
+  siteAdapterWizardPublishOpenFailed:
+    "JSON скопирован, но открыть GitHub не удалось. Откройте репозиторий и вставьте содержимое вручную.",
+  siteAdapterWizardPublishReloadTitle: "Требуется перезагрузка",
+  siteAdapterWizardPublishReloadDesc:
+    "Пакет сохранён и зарегистрирован. Перезагрузите страницу, чтобы все модули адаптера запустились с полным жизненным циклом страницы.",
+  siteAdapterWizardPublishOpening: "Открытие GitHub…",
+  siteAdapterWizardPublishGithub: "Скопировать JSON и открыть GitHub",
+  siteAdapterWizardPublishSaving: "Сохранение…",
+  siteAdapterWizardStartOver: "Начать заново",
+  siteAdapterWizardDone: "Готово",
+  siteAdapterWizardBack: "Назад",
+  siteAdapterWizardNext: "Далее",
+  siteAdapterWizardSkip: "Пропустить",
+  siteAdapterWizardFinish: "Завершить настройку",
+
   // ======== Options Page Navigation ========
   navGeneral: "Общие",
-  navSiteSettings: "Сайты",
+  navSiteSettings: "Настройки сайтов",
+  navSitePacks: "Пакеты сайтов",
   navGlobalSearch: "Глобальный поиск",
   navAppearance: "Вид",
   navPageContent: "Контент",
@@ -29,6 +194,103 @@ export const ru = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Настройка макета и обработки контента для каждого сайта",
+  communitySitePackBadge: "Пакет сообщества (основные функции)",
+  communitySitePackDesc:
+    "Этот сайт поддерживается пакетом сообщества. Отображаются только поддерживаемые им функции.",
+  sitePacksPageDesc:
+    "Устанавливайте пакеты сайтов и управляйте ими, чтобы Ophel поддерживал больше ИИ-сайтов.",
+
+  // SitePack Manager
+  sitePacksGuideAction: "Руководство",
+  sitePacksRegistryTitle: "Онлайн-каталог",
+  sitePacksLocalImportTitle: "Установить пакет из файла",
+  sitePacksLocalImportDesc:
+    "Устанавливает пакет адаптера из локального JSON. Подходит для офлайн-пакетов или ещё не опубликованных. Импортируйте только доверенные файлы.",
+  sitePacksCheckUpdates: "Проверить обновления",
+  sitePacksBindingHttpsRequired: "Можно добавить только HTTPS-сайты. HTTP-сайты не поддерживаются.",
+  sitePacksRegistrySearchPlaceholder: "Поиск пакетов",
+  sitePacksRegistryNoMatch: "Нет подходящих пакетов",
+  sitePacksOpenSite: "Открыть сайт",
+  sitePacksTabInstalled: "Установленные",
+  sitePacksTabOrigins: "Свои сайты",
+  sitePacksTabUpdates: "Каталог и обновления",
+  sitePacksBindingListTitle: "Добавленные сайты",
+  sitePacksStatusUnavailable: "Удалён из каталога",
+  remoteConfigStatusSummary: "Индекс {revision} · последняя проверка {time}",
+  sitePacksInstall: "Установить",
+  sitePacksUpdate: "Обновить",
+  sitePacksUninstall: "Удалить",
+  sitePacksInstalledBadge: "Установлен",
+  sitePacksEnabledLabel: "Включён",
+  sitePacksSourceRegistry: "Онлайн-каталог",
+  sitePacksSourceLocal: "Локальный импорт",
+  sitePacksStatusAvailable: "Доступен",
+  sitePacksStatusMatchRequired: "Требуется правило",
+  sitePacksStatusDisabled: "Отключён",
+  sitePacksStatusIncompatible: "Несовместим",
+  sitePacksStatusPackMissing: "Пакет отсутствует",
+  sitePackBindingNoticeTitle: "Привязка сайта неактивна",
+  sitePackBindingNoticeMessage:
+    "Этот сайт привязан к пакету «{packId}», который был удалён или больше недействителен, поэтому панель не загрузилась. Переустановите пакет или удалите эту привязку в настройках пакетов сайтов.",
+  sitePackBindingNoticeAction: "Открыть пакеты сайтов",
+  sitePacksSelfHostedBadge: "Свой хостинг",
+  sitePacksSelfHostedHint: "Требуется привязка домена",
+  sitePacksNeedsBindingBadge: "Нужна привязка",
+  sitePacksBindNowAction: "Привязать",
+  sitePacksNoInstalled: "Пакеты сайтов не установлены",
+  sitePacksRegistryEmpty: "В кэше каталога нет пакетов",
+  sitePacksLoadFailed: "Не удалось загрузить пакеты сайтов: {error}",
+  sitePacksOperationFailed: "Не удалось выполнить операцию с пакетом сайта: {error}",
+  sitePacksPermissionTitle: "Разрешить пакету сайтов доступ?",
+  sitePacksPermissionDesc: "Ophel требуется запускать «{name}» на следующих сайтах: {origins}",
+  sitePacksPermissionDenied:
+    "Доступ к сайтам для «{name}» не предоставлен, поэтому пакет остаётся отключённым.",
+  sitePacksPermissionReviewTitle: "Повторно разрешить восстановленные пакеты",
+  sitePacksInvalidFile: "Этот JSON-файл не является допустимым SitePack.",
+  sitePacksValidationErrorsTitle: "Сведения о проверке",
+  sitePacksStoredIssuesTitle: "Проблемы сохранённых пакетов",
+  sitePacksImportConfirmTitle: "Импортировать этот пакет сайта?",
+  sitePacksImportRisk:
+    "Пакеты сайтов могут изменять стили страниц и поведение Ophel на подходящих сайтах. Импортируйте пакеты только из надёжных источников.",
+  sitePacksImportSummary: "{name} ({id}), версия {version}, шаблонов сайтов: {matches}.",
+  sitePacksUninstallConfirmTitle: "Удалить этот пакет сайта?",
+  sitePacksUninstallConfirmDesc: "Удалить {name} с этого устройства?",
+  sitePacksUninstallKeepData: "Настройки сайтов и данные разговоров будут сохранены.",
+  sitePacksSavedSuccess: "Пакет {name} установлен.",
+  sitePacksUpdatedSuccess: "Пакет {name} обновлён.",
+  sitePacksRemovedSuccess: "Пакет {name} удалён.",
+  sitePacksStateChanged: "{name}: теперь {state}.",
+  sitePacksEnabledState: "включён",
+  sitePacksDisabledState: "отключён",
+  sitePacksRequiresNewerApp: "Требуется Ophel {version} или новее",
+  sitePacksCustomOriginsTitle: "Добавить свой сайт",
+  sitePacksCustomOriginsDesc:
+    "Добавьте собственный ИИ-сайт (например, Open WebUI) и выберите пакет, который его поддерживает.",
+  sitePacksCustomOriginLabel: "HTTPS-домен",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "Пакет",
+  sitePacksBindingPackPlaceholder: "Выберите установленный пакет",
+  sitePacksBindingEmpty: "Свои сайты ещё не добавлены",
+  sitePacksBindingEditing: "Редактируется: {origin}",
+  sitePacksBindingOriginExists: "{origin} уже добавлен. Сначала измените или удалите его в списке.",
+  sitePacksBindingHint:
+    "Введите точный HTTPS-домен, например https://chat.example.com. Пути и подстановочные знаки не принимаются.",
+  sitePacksBindingPermissionDenied:
+    "Разрешение для {origin} не предоставлено, поэтому сайт не сохранён.",
+  sitePacksUserscriptCoverageTitle: "Добавьте правила совпадения userscript",
+  sitePacksUserscriptCoverageDesc:
+    "В {manager} не хватает правил SitePack: {count}. Скопируйте правила ниже перед открытием этих сайтов.",
+  sitePacksUserscriptManagerUnknown: "Текущий менеджер userscript",
+  sitePacksUserscriptGuideTampermonkey:
+    "Как добавить в Tampermonkey: панель управления → этот скрипт → вкладка «Настройки» → «Пользовательские совпадения» → «Добавить» и вставьте правило выше.",
+  sitePacksUserscriptGuideViolentmonkey:
+    "Как добавить в Violentmonkey: панель управления → значок настроек рядом с этим скриптом → вкладка «Пользовательские» → вставьте правило выше в пользовательские правила совпадений.",
+  sitePacksUserscriptGuideGeneric:
+    "Откройте настройки этого скрипта в вашем менеджере userscript и добавьте указанные выше правила как пользовательские правила совпадений.",
+  sitePacksUserscriptCoveragePersistNote:
+    "Каждое правило достаточно добавить один раз — оно сохранится после обновлений скрипта. После этого обновите целевой сайт.",
+  sitePacksMatchGuideAction: "Открыть инструкцию",
+  sitePacksBindingPackRequired: "Сначала выберите установленный пакет.",
 
   generalPageDesc: "Настройте поведение расширения и интерфейс",
   appearancePageDesc: "Персонализация стилей и тем",
@@ -60,7 +322,8 @@ export const ru = {
   allowRecommended: "Разрешить (рекомендуется)",
   required: "Обязательно",
   permissionWebdavAccess: "Доступ к расширенным функциям",
-  permissionWebdavAccessDesc: "Доступ ко всем сайтам. Нужно для WebDAV и удаления водяных знаков.",
+  permissionWebdavAccessDesc:
+    "Доступ ко всем сайтам. Нужен для WebDAV, удаления водяных знаков и работы установленных Site Pack на целевых сайтах без запросов по каждому сайту.",
 
   // Required permissions
   permissionStorage: "Хранилище",
@@ -1382,6 +1645,7 @@ export const ru = {
   popupUnsupported: "Не поддерж.",
   popupNewChat: "Новый чат",
   popupQuickAccess: "Быстрый доступ",
+  popupSitePackUnbound: "Сайт не добавлен",
   popupRecentUsed: "Недавние",
   popupNoRecentPrompts: "Нет недавних промптов",
   popupCopied: "Скопировано",
@@ -1669,6 +1933,76 @@ export const ru = {
   "featureTip-notifications-desc":
     "Получайте уведомление на рабочем столе, когда ИИ закончит ответ — ничего не пропустите",
   "featureTip-notifications-path": "Функции → Оповещения → Уведомление на раб. стол",
+  // Обновления конфигурации адаптеров
+  remoteConfigSettingsTitle: "Обновления конфигурации адаптеров",
+  remoteConfigAutoUpdateLabel: "Автоматически обновлять конфигурации адаптеров",
+  remoteConfigAutoUpdateDesc: "Проверяет не чаще одного раза в 24 часа.",
+  remoteConfigRegistrySourceLabel: "Источник Registry для разработки",
+  remoteConfigRegistrySourceDesc:
+    "Доступно только в dev-сборках. Укажите полный URL index.json; оставьте поле пустым, чтобы использовать источники по умолчанию.",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "Применить",
+  remoteConfigRegistrySourceApplied:
+    "Источник Registry для разработки сохранён. Он будет использоваться при следующей проверке обновлений.",
+  remoteConfigRegistrySourceCleared: "Источники Registry по умолчанию восстановлены.",
+  remoteConfigRegistrySourceInvalid: "Недопустимый источник Registry: {error}",
+  remoteConfigCheckNowLabel: "Проверить обновления сейчас",
+  remoteConfigCheckNowButton: "Проверить сейчас",
+  remoteConfigCheckingButton: "Проверка…",
+  remoteConfigStatusLoading: "Загрузка…",
+  remoteConfigNeverChecked: "Ещё не проверялось",
+  remoteConfigActivePatchesLabel: "Активные патчи",
+  remoteConfigUsingBuiltin: "Сейчас используются встроенные конфигурации",
+  remoteConfigPatchVersionLabel: "Версия патча",
+  remoteConfigBaseVersionLabel: "Версия встроенной конфигурации",
+  remoteConfigResetBuiltinButton: "Вернуть встроенную",
+  remoteConfigResettingButton: "Возврат…",
+  remoteConfigPrivacyDesc:
+    "Проверки отправляют только GET-запросы к статическим CDN, без переписки и данных аккаунта.",
+  remoteConfigCheckUpdated:
+    "Новые конфигурации загружены. Обновите соответствующие страницы AI, чтобы применить их.",
+  remoteConfigCheckUpToDate: "Конфигурации адаптеров актуальны.",
+  remoteConfigCheckFailed: "Не удалось проверить обновления: {error}",
+  remoteConfigResetSuccess: "Для {site} восстановлена встроенная конфигурация.",
+  remoteConfigResetFailed: "Не удалось выполнить возврат: {error}",
+  remoteConfigResetUnavailable: "Нет активной конфигурации для возврата.",
+  remoteConfigRegistryActiveSourceLabel: "Активный источник",
+  remoteConfigRegistryActiveSourceDefault: "Официальные источники по умолчанию (ещё без кэша)",
+  remoteConfigRegistryOverrideLabel: "переопределено",
+  remoteConfigRegistryLastErrorLabel: "Последняя ошибка",
+  remoteConfigRegistryRestoreDefaultsButton: "Восстановить по умолчанию",
+  remoteConfigRegistryCacheClearButton: "Очистить кэш",
+  remoteConfigRegistryCacheCleared: "Кэш registry очищен (локальные патчи сохранены).",
+  remoteConfigRegistryCacheClearFailed: "Не удалось очистить кэш: {error}",
+  remoteConfigRegistryDefaultsRestored:
+    "Источники registry по умолчанию восстановлены и проверены снова.",
+  remoteConfigLocalRegistryCheckFailed:
+    "Проверка локального registry не удалась ({url}): {error}. Убедитесь, что запущен pnpm registry:serve.",
+  remoteConfigLocalRegistryUseButton: "Использовать локальный registry",
+  remoteConfigLocalRegistryHint:
+    "Сначала запустите pnpm registry:serve, затем нажмите «{button}». Локальный ключ подписи доверяется только dev-сборкам.",
+  remoteConfigLocalRegistrySourceApplied:
+    "Переключено на локальный registry и запущена проверка обновлений.",
+  remoteConfigLocalRegistryPermissionDenied:
+    "Доступ к локальному registry отклонён. Разрешите 127.0.0.1 и повторите.",
+
+  remoteConfigLocalPatchImportButton: "Импорт hotfix сайта",
+  remoteConfigLocalPatchImportDesc:
+    "Импортирует JSON hotfix селекторов для встроенного сайта. Локальные hotfix важнее удалённых патчей и нужны для проверки до вклада. Новый пакет адаптера не устанавливается.",
+  remoteConfigLocalPatchConfirmTitle: "Импортировать локальный патч?",
+  remoteConfigLocalPatchRisk:
+    "Локальные патчи не проверяются официальной подписью registry. Импортируйте только доверенные файлы.",
+  remoteConfigLocalPatchSummary:
+    "Установить патч v{version} для {site} ({id}) поверх встроенной конфигурации версии {base}.",
+  remoteConfigLocalPatchInstalled:
+    "Локальный патч v{version} для {site} установлен. Откройте сайт для проверки и при необходимости обновите страницу.",
+  remoteConfigLocalPatchRemoved: "Локальный патч для {site} удалён.",
+  remoteConfigLocalPatchRemoveFailed: "Не удалось удалить локальный патч: {error}",
+  remoteConfigLocalPatchRemoveButton: "Удалить локальный патч",
+  remoteConfigLocalPatchInvalid: "JSON локального патча недействителен или неполон.",
+  remoteConfigPatchSourceLocal: "Локальный",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Сообщество Discord",
   discordDesc:
     "Присоединяйтесь к нашему сообществу, чтобы общаться с другими пользователями, оставлять отзывы и получать последние новости",

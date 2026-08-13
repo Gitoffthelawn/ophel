@@ -18,11 +18,22 @@ declare module "*.css?inline" {
 }
 
 declare const __PLATFORM__: "extension" | "userscript"
+declare const __OPHEL_DEV__: boolean | undefined
 
 declare const GM_info: {
   scriptHandler?: string
+  scriptMetaStr?: string | null
   script: {
     version: string
+    matches?: string[]
+    header?: string | null
+    options?: {
+      override?: {
+        use_matches?: string[]
+        orig_matches?: string[]
+        merge_matches?: boolean
+      }
+    }
   }
 }
 

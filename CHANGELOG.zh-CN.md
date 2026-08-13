@@ -10,6 +10,16 @@
 
 ---
 
+## [1.2.0] - 2026-08-13
+
+### 🚀 新增功能
+
+- **热插拔式站点适配** — 设置页新增"适配中心"，可在在线适配库一键安装适配包，让 Ophel 适配更多 AI 站点（自部署站点绑定自定义域名即可使用）；内置站点改版后也能通过云端更新自动修复，不用再等插件发版。(#809)
+
+<!-- release-note-media: site-packs-video -->
+
+---
+
 ## [1.1.8] - 2026-07-28
 
 ### 🚀 新增功能
@@ -1359,6 +1369,7 @@
 
 ---
 
+[1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0
 [1.1.8]: https://github.com/urzeye/ophel/releases/tag/v1.1.8
 [1.1.7]: https://github.com/urzeye/ophel/releases/tag/v1.1.7
 [1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6

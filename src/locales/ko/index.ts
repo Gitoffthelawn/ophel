@@ -15,9 +15,169 @@ export const ko = {
   tabPrompts: "프롬프트",
   tabSettings: "설정",
 
+  elementPickerInstruction: "페이지 요소 위로 포인터를 이동한 다음 클릭하여 선택하세요",
+  elementPickerCancelHint: "Esc를 눌러 취소",
+  elementPickerIframeUnsupported:
+    "임베디드 프레임(iframe) 내부 요소는 선택할 수 없습니다. 프레임 밖의 요소를 선택하세요.",
+
+  // 사이트 어댑터 마법사
+  siteAdapterWizardLauncher: "이 사이트용 어댑터 만들기",
+  siteAdapterWizardResume: "어댑터 설정 계속하기",
+  siteAdapterWizardTitle: "사이트 어댑터 설정",
+  siteAdapterWizardSubtitle: "페이지 요소를 순서대로 선택하고 대화 개요를 실시간으로 확인하세요.",
+  siteAdapterWizardProgress: "{total}단계 중 {current}단계",
+  siteAdapterWizardProgressLabel: "어댑터 설정 진행률",
+  siteAdapterWizardOptional: "선택 사항",
+  siteAdapterWizardPick: "페이지에서 선택",
+  siteAdapterWizardRepick: "다시 선택",
+  siteAdapterWizardSelectorLabel: "요소 선택자",
+  siteAdapterWizardSelectorGenerated: "자동 생성됨",
+  siteAdapterWizardSelectorManual: "수동 편집됨",
+  siteAdapterWizardAiTitle: "AI 선택자 초안",
+  siteAdapterWizardAiOptional: "선택 사항",
+  siteAdapterWizardAiSummary: "정제된 프롬프트를 복사한 뒤 선택자 JSON 붙여넣기",
+  siteAdapterWizardAiPrivacy:
+    "데이터는 자동으로 전송되지 않습니다. 프롬프트에서 대화 본문, 입력값, 링크, 스크립트, Ophel UI를 제외합니다. 민감한 페이지에서는 공유 전에 확인하세요.",
+  siteAdapterWizardAiCopy: "AI 프롬프트 복사",
+  siteAdapterWizardAiCopying: "복사 중…",
+  siteAdapterWizardAiCopied: "정제된 AI 프롬프트를 복사했습니다. 원하는 AI 도우미에 붙여넣으세요.",
+  siteAdapterWizardAiCopyFailed:
+    "AI 프롬프트를 복사할 수 없습니다. 클립보드 권한을 확인하고 다시 시도하세요.",
+  siteAdapterWizardAiResponseLabel: "AI 선택자 JSON",
+  siteAdapterWizardAiResponsePlaceholder: "AI가 반환한 JSON 객체 붙여넣기",
+  siteAdapterWizardAiApply: "초안 적용",
+  siteAdapterWizardAiSelectorSource: "AI 제안",
+  siteAdapterWizardAiReviewReminder:
+    "AI 출력은 초안일 뿐입니다. 저장하기 전에 모든 단계를 확인하세요.",
+  siteAdapterWizardAiAppliedSuccess:
+    "AI 선택자 {count}개를 적용했고 실시간 검증을 통과했습니다. 저장 전에 모든 단계를 확인하세요.",
+  siteAdapterWizardAiAppliedReview:
+    "{applied}개 적용: {valid}개 통과, {review}개 검토 필요. 유효하지 않거나 일치하지 않는 {rejected}개는 기존 선택을 바꾸지 않고 거부했습니다.",
+  siteAdapterWizardAiAppliedNone:
+    "선택자를 적용하지 않았습니다. 유효하지 않거나 일치하지 않는 {rejected}개를 거부했고 기존 선택은 유지했습니다.",
+  siteAdapterWizardAiErrorInvalidJson:
+    "유효한 JSON 또는 주변 설명이 없는 단일 JSON 코드 블록을 붙여넣으세요.",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "AI 초안 구조나 선택자 필드가 유효하지 않습니다. 복사한 프롬프트의 형식을 정확히 사용하세요.",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "AI 응답이 너무 깁니다. 선택자 JSON만 반환하도록 요청한 뒤 다시 시도하세요.",
+  siteAdapterWizardAiErrorNoSelectors: "AI 응답에 사용할 수 있는 선택자가 없습니다.",
+  siteAdapterWizardSelectorPlaceholder: "CSS 선택자 입력",
+  siteAdapterWizardPickFirst: "먼저 페이지에서 요소를 선택하세요",
+  siteAdapterWizardPickerBusy: "다른 요소 선택 작업이 이미 진행 중입니다.",
+  siteAdapterWizardIssueMissing: "요소를 선택하거나 선택자를 입력하세요.",
+  siteAdapterWizardIssueDisconnected: "선택한 요소가 페이지에서 사라졌습니다. 다시 선택하세요.",
+  siteAdapterWizardIssueInvalid: "이 선택자의 구문이 올바르지 않습니다.",
+  siteAdapterWizardIssueTooLong: "이 선택자는 SitePack에 저장하기에는 너무 깁니다.",
+  siteAdapterWizardIssueNoMatch: "현재 이 선택자와 일치하는 요소가 없습니다.",
+  siteAdapterWizardIssueTargetMismatch: "이 선택자가 선택한 요소를 더 이상 포함하지 않습니다.",
+  siteAdapterWizardIssueNotUnique: "이 컨트롤은 정확히 하나의 요소와 일치해야 합니다.",
+  siteAdapterWizardIssueUnsupportedInput: "텍스트 상자나 편집 가능한 입력 영역을 선택하세요.",
+  siteAdapterWizardIssueContainerMissing: "먼저 유효한 대화 컨테이너를 선택하세요.",
+  siteAdapterWizardIssueOutsideContainer:
+    "일치하는 모든 메시지가 선택한 대화 컨테이너 안에 있어야 합니다.",
+  siteAdapterWizardGenerateDisconnected: "선택자를 만들기 전에 요소가 변경되었습니다.",
+  siteAdapterWizardGenerateOutsideRoot: "현재 페이지 루트에서 이 요소에 접근할 수 없습니다.",
+  siteAdapterWizardGenerateManual:
+    "안정적인 선택자를 만들 수 없습니다. 직접 입력하거나 더 명확한 요소를 선택하세요.",
+  siteAdapterWizardStepReady: "이 단계가 준비되었습니다.",
+  siteAdapterWizardMatchCount: "{count}개 일치",
+  siteAdapterWizardUnique: "고유",
+  siteAdapterWizardShared: "반복 일치",
+  siteAdapterWizardContained: "컨테이너 내부",
+  siteAdapterWizardStepTextareaTitle: "메시지 입력란",
+  siteAdapterWizardStepTextareaDesc: "메시지를 입력하는 상자를 선택하세요.",
+  siteAdapterWizardStepSubmitTitle: "보내기 버튼",
+  siteAdapterWizardStepSubmitDesc: "현재 메시지를 보내는 버튼을 선택하세요.",
+  siteAdapterWizardStepContainerTitle: "대화 컨테이너",
+  siteAdapterWizardStepContainerDesc: "현재 대화 메시지를 포함하는 전체 영역을 선택하세요.",
+  siteAdapterWizardStepUserTitle: "사용자 메시지",
+  siteAdapterWizardStepUserDesc:
+    "내 메시지 하나를 선택하세요. 반복 일치 선택자는 모든 사용자 메시지를 포함할 수 있습니다.",
+  siteAdapterWizardStepAssistantTitle: "AI 응답",
+  siteAdapterWizardStepAssistantDesc:
+    "AI 응답 하나를 선택하세요. 반복 일치 선택자는 모든 AI 응답을 포함할 수 있습니다.",
+  siteAdapterWizardStepConversationTitle: "대화 목록 항목",
+  siteAdapterWizardStepConversationDesc:
+    "선택 사항: 기록이나 사이드바의 대화 항목 하나를 선택하세요.",
+  siteAdapterWizardStepNewChatTitle: "새 대화 버튼",
+  siteAdapterWizardStepNewChatDesc: "선택 사항: 새 대화를 시작하는 컨트롤을 선택하세요.",
+  siteAdapterWizardPreviewEyebrow: "실시간 미리보기",
+  siteAdapterWizardPreviewTitle: "대화 개요",
+  siteAdapterWizardPreviewReady: "준비됨",
+  siteAdapterWizardPreviewEmpty:
+    "유효한 사용자 메시지와 AI 응답을 선택하면 여기에 개요가 표시됩니다.",
+  siteAdapterWizardPreviewNoText: "이 요소에 읽을 수 있는 텍스트가 없습니다",
+  siteAdapterWizardUser: "사용자",
+  siteAdapterWizardAssistant: "AI",
+  siteAdapterWizardCapabilitiesTitle: "사용 가능한 기능",
+  siteAdapterWizardCapabilitiesEmpty: "필수 선택이 유효해지면 사용 가능한 기능이 표시됩니다.",
+  siteAdapterWizardCapabilityPrompt: "프롬프트 삽입",
+  siteAdapterWizardCapabilityOutline: "대화 개요",
+  siteAdapterWizardCapabilityUserQueries: "개요의 사용자 질문",
+  siteAdapterWizardCapabilityExport: "기본 내보내기",
+  siteAdapterWizardCapabilityHistory: "읽기 기록",
+  siteAdapterWizardCapabilityNewChat: "새 대화",
+  siteAdapterWizardConversationCaptured:
+    "대화 항목을 기록했습니다. ID와 링크 규칙이 확인되기 전까지는 팩에 포함하지 않습니다.",
+  siteAdapterWizardCompleteTitle: "어댑터 초안이 준비되었습니다",
+  siteAdapterWizardCompleteDesc:
+    "필수 페이지 요소가 검증을 통과했고 대화 개요를 미리 볼 수 있습니다.",
+  siteAdapterWizardPublishEyebrow: "저장 및 기여",
+  siteAdapterWizardPublishTitle: "이 어댑터 게시",
+  siteAdapterWizardPublishDesc:
+    "생성된 메타데이터를 확인한 뒤 로컬에 저장하거나 동일한 검증 JSON을 내보내세요.",
+  siteAdapterWizardPublishNameLabel: "사이트 이름",
+  siteAdapterWizardPublishIdLabel: "팩 ID",
+  siteAdapterWizardPublishIdHint: "영문 소문자, 숫자, 하이픈만 사용",
+  siteAdapterWizardPublishVersionHint: "같은 팩을 업데이트할 때 값을 올리세요",
+  siteAdapterWizardPublishOriginLabel: "정확한 오리진",
+  siteAdapterWizardPublishMinVersionLabel: "최소 Ophel 버전",
+  siteAdapterWizardPublishConversationOmitted:
+    "대화 ID와 URL 규칙을 안전하게 추론할 수 없어 대화 항목은 팩에 포함되지 않습니다.",
+  siteAdapterWizardPublishDraftInvalid:
+    "필수 선택 항목이 더 이상 유효하지 않습니다. 해당 단계로 돌아가 다시 선택하세요.",
+  siteAdapterWizardPublishHttpsRequired: "SitePack은 HTTPS 오리진에 대해서만 만들 수 있습니다.",
+  siteAdapterWizardPublishManifestInvalid: "생성된 SitePack이 유효하지 않습니다.",
+  siteAdapterWizardPublishNameInvalid: "사이트 이름을 입력하세요.",
+  siteAdapterWizardPublishIdInvalid: "팩 ID는 2~40자의 영문 소문자, 숫자 또는 하이픈이어야 합니다.",
+  siteAdapterWizardPublishVersionInvalid: "버전은 양의 정수여야 합니다.",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "현재 Ophel 버전을 유효한 최소 버전으로 사용할 수 없습니다.",
+  siteAdapterWizardPublishManifestInvalidField: "생성된 필드를 확인하세요: {field}",
+  siteAdapterWizardPublishVersionConflict:
+    "이 ID와 버전에 다른 내용이 이미 있습니다. 버전을 올린 뒤 다시 시도하세요.",
+  siteAdapterWizardPublishSourceConflict:
+    "이 팩 ID는 다른 출처에서 이미 설치되었습니다. 다른 ID를 선택하세요.",
+  siteAdapterWizardPublishMatchConflict: "이 오리진은 내장 또는 설치된 SitePack과 충돌합니다.",
+  siteAdapterWizardPublishSaveFailed:
+    "SitePack을 저장할 수 없습니다. 메타데이터를 확인하고 다시 시도하세요.",
+  siteAdapterWizardPublishPermissionDenied:
+    "사이트 접근 권한이 허용되지 않아 저장된 팩을 비활성화했습니다.",
+  siteAdapterWizardPublishSaved:
+    '"{name}"을 로컬에 저장했습니다. 이 페이지를 새로고침하면 활성화됩니다.',
+  siteAdapterWizardPublishDownloaded: "검증된 SitePack JSON을 다운로드했습니다.",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON을 복사하고 미리 채운 GitHub 기여 페이지를 열었습니다.",
+  siteAdapterWizardPublishOpenFailed:
+    "JSON은 복사했지만 GitHub를 열 수 없습니다. 저장소를 열어 직접 붙여 넣으세요.",
+  siteAdapterWizardPublishReloadTitle: "새로고침이 필요합니다",
+  siteAdapterWizardPublishReloadDesc:
+    "팩이 저장되고 등록되었습니다. 모든 어댑터 모듈이 완전한 페이지 수명 주기로 시작하도록 새로고침하세요.",
+  siteAdapterWizardPublishOpening: "GitHub 여는 중…",
+  siteAdapterWizardPublishGithub: "JSON 복사 후 GitHub 열기",
+  siteAdapterWizardPublishSaving: "저장 중…",
+  siteAdapterWizardStartOver: "처음부터 다시",
+  siteAdapterWizardDone: "완료",
+  siteAdapterWizardBack: "이전",
+  siteAdapterWizardNext: "다음",
+  siteAdapterWizardSkip: "건너뛰기",
+  siteAdapterWizardFinish: "설정 완료",
+
   // ======== Options Page Navigation ========
   navGeneral: "일반 설정",
   navSiteSettings: "사이트 설정",
+  navSitePacks: "사이트 팩",
   navGlobalSearch: "전체 검색",
   navAppearance: "모양",
   navPageContent: "페이지 및 콘텐츠",
@@ -29,6 +189,103 @@ export const ko = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "사이트별 레이아웃 및 콘텐츠 처리 구성",
+  communitySitePackBadge: "커뮤니티 팩(핵심 기능)",
+  communitySitePackDesc: "이 사이트는 커뮤니티 팩으로 지원되며, 팩이 지원하는 기능만 표시됩니다.",
+  sitePacksPageDesc: "사이트 팩을 설치하고 관리하여 Ophel이 더 많은 AI 사이트를 지원하도록 합니다.",
+
+  // SitePack Manager
+  sitePacksGuideAction: "가이드",
+  sitePacksRegistryTitle: "온라인 라이브러리",
+  sitePacksLocalImportTitle: "파일에서 어댑터 패키지 설치",
+  sitePacksLocalImportDesc:
+    "로컬 JSON 파일에서 어댑터 패키지를 설치합니다. 오프라인 패키지나 아직 목록에 없는 패키지에 사용하세요. 신뢰할 수 있는 파일만 가져오세요.",
+  sitePacksCheckUpdates: "업데이트 확인",
+  sitePacksBindingHttpsRequired:
+    "HTTPS 사이트만 추가할 수 있습니다. HTTP 사이트는 지원되지 않습니다.",
+  sitePacksRegistrySearchPlaceholder: "팩 검색",
+  sitePacksRegistryNoMatch: "일치하는 팩이 없습니다",
+  sitePacksOpenSite: "사이트 열기",
+  sitePacksTabInstalled: "설치됨",
+  sitePacksTabOrigins: "사용자 지정 사이트",
+  sitePacksTabUpdates: "추가 및 업데이트",
+  sitePacksBindingListTitle: "추가된 사이트",
+  sitePacksStatusUnavailable: "라이브러리에서 제거됨",
+  remoteConfigStatusSummary: "인덱스 {revision} · 마지막 확인 {time}",
+  sitePacksInstall: "설치",
+  sitePacksUpdate: "업데이트",
+  sitePacksUninstall: "제거",
+  sitePacksInstalledBadge: "설치됨",
+  sitePacksEnabledLabel: "활성화",
+  sitePacksSourceRegistry: "온라인",
+  sitePacksSourceLocal: "로컬 가져오기",
+  sitePacksStatusAvailable: "사용 가능",
+  sitePacksStatusMatchRequired: "일치 규칙 필요",
+  sitePacksStatusDisabled: "비활성화됨",
+  sitePacksStatusIncompatible: "호환되지 않음",
+  sitePacksStatusPackMissing: "팩 없음",
+  sitePackBindingNoticeTitle: "사이트 바인딩이 비활성화됨",
+  sitePackBindingNoticeMessage:
+    '이 사이트는 사이트 팩 "{packId}"에 바인딩되어 있지만, 해당 팩이 제거되었거나 더 이상 유효하지 않아 패널이 로드되지 않았습니다. 팩을 다시 설치하거나 사이트 팩 설정에서 이 바인딩을 제거하세요.',
+  sitePackBindingNoticeAction: "사이트 팩 열기",
+  sitePacksSelfHostedBadge: "셀프 호스팅",
+  sitePacksSelfHostedHint: "사이트 도메인 바인딩이 필요합니다",
+  sitePacksNeedsBindingBadge: "도메인 바인딩 필요",
+  sitePacksBindNowAction: "지금 바인딩",
+  sitePacksNoInstalled: "설치된 사이트 팩이 없습니다",
+  sitePacksRegistryEmpty: "라이브러리 캐시에 팩이 없습니다",
+  sitePacksLoadFailed: "사이트 팩을 불러올 수 없습니다: {error}",
+  sitePacksOperationFailed: "사이트 팩 작업에 실패했습니다: {error}",
+  sitePacksPermissionTitle: "사이트 팩의 사이트 접근을 허용할까요?",
+  sitePacksPermissionDesc:
+    'Ophel에서 "{name}"을(를) 다음 사이트에서 실행하려면 권한이 필요합니다: {origins}',
+  sitePacksPermissionDenied:
+    '"{name}"의 사이트 접근 권한이 허용되지 않아 팩이 비활성화 상태로 유지됩니다.',
+  sitePacksPermissionReviewTitle: "복원한 사이트 팩 다시 승인",
+  sitePacksInvalidFile: "이 JSON 파일은 유효한 SitePack이 아닙니다.",
+  sitePacksValidationErrorsTitle: "검증 세부 정보",
+  sitePacksStoredIssuesTitle: "저장된 팩 문제",
+  sitePacksImportConfirmTitle: "이 사이트 팩을 가져오시겠습니까?",
+  sitePacksImportRisk:
+    "사이트 팩은 일치하는 사이트의 페이지 스타일과 Ophel 동작을 변경할 수 있습니다. 신뢰할 수 있는 출처의 팩만 가져오세요.",
+  sitePacksImportSummary: "{name} ({id}), 버전 {version}, 사이트 일치 패턴 {matches}개.",
+  sitePacksUninstallConfirmTitle: "이 사이트 팩을 제거하시겠습니까?",
+  sitePacksUninstallConfirmDesc: "이 기기에서 {name} 팩을 제거하시겠습니까?",
+  sitePacksUninstallKeepData: "사이트 설정과 대화 데이터는 유지됩니다.",
+  sitePacksSavedSuccess: "{name} 팩을 설치했습니다.",
+  sitePacksUpdatedSuccess: "{name} 팩을 업데이트했습니다.",
+  sitePacksRemovedSuccess: "{name} 팩을 제거했습니다.",
+  sitePacksStateChanged: "상태 변경: {name} — {state}",
+  sitePacksEnabledState: "활성화",
+  sitePacksDisabledState: "비활성화",
+  sitePacksRequiresNewerApp: "Ophel {version} 이상 필요",
+  sitePacksCustomOriginsTitle: "사용자 지정 사이트 추가",
+  sitePacksCustomOriginsDesc:
+    "직접 호스팅하는 AI 사이트(예: Open WebUI)를 추가하고 어떤 팩으로 지원할지 선택하세요.",
+  sitePacksCustomOriginLabel: "HTTPS 도메인",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "팩",
+  sitePacksBindingPackPlaceholder: "설치된 팩 선택",
+  sitePacksBindingEmpty: "추가된 사용자 지정 사이트가 없습니다",
+  sitePacksBindingEditing: "편집 중: {origin}",
+  sitePacksBindingOriginExists:
+    "{origin} 도메인은 이미 추가되어 있습니다. 먼저 목록에서 편집하거나 삭제하세요.",
+  sitePacksBindingHint:
+    "https://chat.example.com과 같은 정확한 HTTPS 도메인을 입력하세요. 경로와 와일드카드는 사용할 수 없습니다.",
+  sitePacksBindingPermissionDenied: "{origin} 권한이 허용되지 않아 사이트를 저장하지 않았습니다.",
+  sitePacksUserscriptCoverageTitle: "사용자 스크립트 일치 규칙 추가",
+  sitePacksUserscriptCoverageDesc:
+    "{manager}에 SitePack 일치 규칙 {count}개가 없습니다. 해당 사이트를 열기 전에 아래 규칙을 복사하세요.",
+  sitePacksUserscriptManagerUnknown: "현재 사용자 스크립트 관리자",
+  sitePacksUserscriptGuideTampermonkey:
+    "Tampermonkey에서 추가: 대시보드 → 이 스크립트 → '설정' 탭 → '사용자 일치' → '추가'를 선택하고 위 규칙을 붙여넣으세요.",
+  sitePacksUserscriptGuideViolentmonkey:
+    "Violentmonkey에서 추가: 대시보드 → 이 스크립트의 설정 아이콘 → '사용자 지정' 탭 → 사용자 지정 일치 규칙에 위 규칙을 붙여넣으세요.",
+  sitePacksUserscriptGuideGeneric:
+    "사용자 스크립트 관리자에서 이 스크립트의 설정을 열고 위 규칙을 사용자(사용자 지정) 일치 규칙으로 추가하세요.",
+  sitePacksUserscriptCoveragePersistNote:
+    "규칙은 한 번만 추가하면 되며 스크립트 업데이트 후에도 유지됩니다. 추가 후 대상 사이트를 새로고침하세요.",
+  sitePacksMatchGuideAction: "추가 방법 보기",
+  sitePacksBindingPackRequired: "먼저 설치된 팩을 선택하세요.",
 
   generalPageDesc: "확장 프로그램 동작 및 인터페이스 구성",
   appearancePageDesc: "시각적 스타일 및 테마 사용자 정의",
@@ -61,7 +318,7 @@ export const ko = {
   required: "필수",
   permissionWebdavAccess: "고급 기능 액세스",
   permissionWebdavAccessDesc:
-    "모든 웹사이트에 대한 액세스. WebDAV 동기화 및 AI 이미지 워터마크 제거에 필요합니다.",
+    "모든 웹사이트에 대한 액세스. WebDAV 동기화, AI 이미지 워터마크 제거, 그리고 설치된 Site Pack이 사이트별 승인 없이 대상 사이트에서 실행되는 데 필요합니다.",
 
   // Required permissions
   permissionStorage: "저장소",
@@ -1394,6 +1651,7 @@ export const ko = {
   popupUnsupported: "미지원",
   popupNewChat: "새 대화",
   popupQuickAccess: "빠른 액세스",
+  popupSitePackUnbound: "사이트 미추가",
   popupRecentUsed: "최근 사용",
   popupNoRecentPrompts: "최근 사용한 프롬프트가 없습니다",
   popupCopied: "복사됨",
@@ -1657,6 +1915,75 @@ export const ko = {
   "featureTip-notifications-title": "생성 완료 알림",
   "featureTip-notifications-desc": "AI 완료 시 데스크탑 알림 — 응답을 놓치지 마세요",
   "featureTip-notifications-path": "기능 → 알림 → 데스크탑 알림",
+  // 어댑터 구성 업데이트
+  remoteConfigSettingsTitle: "어댑터 구성 업데이트",
+  remoteConfigAutoUpdateLabel: "어댑터 구성 자동 업데이트",
+  remoteConfigAutoUpdateDesc: "24시간에 최대 한 번 확인합니다.",
+  remoteConfigRegistrySourceLabel: "개발용 Registry 소스",
+  remoteConfigRegistrySourceDesc:
+    "개발 빌드에서만 사용할 수 있습니다. 전체 index.json URL을 입력하고 비워 두면 기본 소스를 사용합니다.",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "적용",
+  remoteConfigRegistrySourceApplied:
+    "개발용 Registry 소스를 저장했습니다. 다음 업데이트 확인부터 사용됩니다.",
+  remoteConfigRegistrySourceCleared: "기본 Registry 소스로 되돌렸습니다.",
+  remoteConfigRegistrySourceInvalid: "Registry 소스가 올바르지 않습니다: {error}",
+  remoteConfigCheckNowLabel: "지금 업데이트 확인",
+  remoteConfigCheckNowButton: "지금 확인",
+  remoteConfigCheckingButton: "확인 중…",
+  remoteConfigStatusLoading: "불러오는 중…",
+  remoteConfigNeverChecked: "확인한 적 없음",
+  remoteConfigActivePatchesLabel: "활성 패치",
+  remoteConfigUsingBuiltin: "현재 기본 제공 구성을 사용 중입니다",
+  remoteConfigPatchVersionLabel: "패치 버전",
+  remoteConfigBaseVersionLabel: "기본 제공 구성 버전",
+  remoteConfigResetBuiltinButton: "기본 제공 구성으로 복원",
+  remoteConfigResettingButton: "복원 중…",
+  remoteConfigPrivacyDesc:
+    "업데이트 확인은 정적 CDN에 GET 요청만 보내며 대화나 계정 정보는 포함하지 않습니다.",
+  remoteConfigCheckUpdated:
+    "새 어댑터 구성을 다운로드했습니다. 해당 AI 페이지를 새로고침하면 적용됩니다.",
+  remoteConfigCheckUpToDate: "어댑터 구성이 최신 상태입니다.",
+  remoteConfigCheckFailed: "업데이트 확인 실패: {error}",
+  remoteConfigResetSuccess: "{site}을(를) 기본 제공 구성으로 복원했습니다.",
+  remoteConfigResetFailed: "복원 실패: {error}",
+  remoteConfigResetUnavailable: "복원할 활성 구성이 없습니다.",
+  remoteConfigRegistryActiveSourceLabel: "활성 소스",
+  remoteConfigRegistryActiveSourceDefault: "기본 공식 소스(아직 캐시 없음)",
+  remoteConfigRegistryOverrideLabel: "재정의됨",
+  remoteConfigRegistryLastErrorLabel: "마지막 오류",
+  remoteConfigRegistryRestoreDefaultsButton: "기본값 복원",
+  remoteConfigRegistryCacheClearButton: "캐시 지우기",
+  remoteConfigRegistryCacheCleared: "Registry 캐시를 지웠습니다(로컬 패치 유지).",
+  remoteConfigRegistryCacheClearFailed: "캐시 지우기 실패: {error}",
+  remoteConfigRegistryDefaultsRestored: "기본 Registry 소스를 복원하고 다시 확인했습니다.",
+  remoteConfigLocalRegistryCheckFailed:
+    "로컬 레지스트리 확인 실패({url}): {error}. pnpm registry:serve 실행 여부를 확인하세요.",
+  remoteConfigLocalRegistryUseButton: "로컬 레지스트리 사용",
+  remoteConfigLocalRegistryHint:
+    "먼저 pnpm registry:serve를 실행한 뒤 “{button}”을 누르세요. 로컬 서명 키는 개발 빌드에서만 신뢰됩니다.",
+  remoteConfigLocalRegistrySourceApplied:
+    "로컬 레지스트리 소스로 전환하고 업데이트 확인을 시작했습니다.",
+  remoteConfigLocalRegistryPermissionDenied:
+    "로컬 레지스트리 호스트 권한이 거부되었습니다. 127.0.0.1 권한을 허용한 뒤 다시 시도하세요.",
+
+  remoteConfigLocalPatchImportButton: "사이트 핫픽스 가져오기",
+  remoteConfigLocalPatchImportDesc:
+    "내장 사이트용 선택자 핫픽스 JSON을 가져옵니다. 로컬 핫픽스는 원격 패치보다 우선하며 기여 전 검증에 적합합니다. 새 어댑터 패키지는 설치하지 않습니다.",
+  remoteConfigLocalPatchConfirmTitle: "로컬 패치를 가져올까요?",
+  remoteConfigLocalPatchRisk:
+    "로컬 패치는 공식 레지스트리 서명 검증을 거치지 않습니다. 신뢰하는 파일만 가져오세요.",
+  remoteConfigLocalPatchSummary:
+    "{site}({id})에 패치 v{version}을(를) 설치합니다(내장 구성 버전 {base}).",
+  remoteConfigLocalPatchInstalled:
+    "{site}에 로컬 패치 v{version}을(를) 설치했습니다. 해당 사이트에서 확인하고 필요하면 새로고침하세요.",
+  remoteConfigLocalPatchRemoved: "{site}의 로컬 패치를 제거했습니다.",
+  remoteConfigLocalPatchRemoveFailed: "로컬 패치 제거 실패: {error}",
+  remoteConfigLocalPatchRemoveButton: "로컬 패치 제거",
+  remoteConfigLocalPatchInvalid: "로컬 패치 JSON이 유효하지 않거나 필수 필드가 없습니다.",
+  remoteConfigPatchSourceLocal: "로컬",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Discord 커뮤니티",
   discordDesc:
     "커뮤니티에 참여하여 다른 사용자와 소통하고, 피드백을 제공하고, 최신 소식을 받아보세요",

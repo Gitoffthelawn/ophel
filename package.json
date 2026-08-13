@@ -1,7 +1,7 @@
 {
   "name": "ophel",
   "displayName": "Ophel Atlas - AI 对话结构化与导航工具",
-  "version": "1.1.8",
+  "version": "1.2.0",
   "description": "将 AI 对话转化为可阅读、可导航、可复用的知识内容。通过实时大纲、会话文件夹与 Prompt 词库，让对话告别无限滚动，成为可组织、可沉淀的工作流，适用于高频使用 AI 的学习与工作场景。",
   "author": "urzeye",
   "license": "GPL-3.0-only",
@@ -21,14 +21,19 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "registry:validate": "tsx registry/scripts/validate.mjs",
+    "registry:build": "tsx registry/scripts/build-dist-local.mjs",
+    "registry:build:signed": "tsx registry/scripts/build-dist.mjs",
+    "registry:serve": "tsx registry/scripts/serve-local.mjs",
     "build": "pnpm prepare:mermaid-assets && plasmo build",
     "build:firefox": "pnpm prepare:mermaid-assets && plasmo build --target=firefox-mv3",
     "build:all": "pnpm build && pnpm build:firefox",
     "package": "pnpm build && plasmo package",
     "package:firefox": "pnpm build:firefox && node scripts/package-firefox.mjs",
     "package:all": "pnpm package && pnpm package:firefox",
-    "dev:userscript": "vite --config vite.userscript.config.ts",
     "build:userscript": "vite build --config vite.userscript.config.ts",
+    "verify:userscript-assets": "node scripts/verify-userscript-assets.mjs",
     "build:userscript:local": "node -e \"const { spawnSync } = require('node:child_process'); const path = require('node:path'); const vitePkg = require.resolve('vite/package.json'); const viteBin = path.join(path.dirname(vitePkg), 'bin', 'vite.js'); const result = spawnSync(process.execPath, [viteBin, 'build', '--config', 'vite.userscript.config.ts'], { stdio: 'inherit', env: { ...process.env, USERSCRIPT_ASSET_BASE_URL: 'http://127.0.0.1:8123' } }); process.exit(result.status ?? 1);\"",
     "serve:userscript:assets": "node scripts/serve-userscript-assets.mjs",
     "sync:supporters": "node scripts/generate-supporters-readmes.mjs",
@@ -46,6 +51,7 @@
   },
   "dependencies": {
     "@mdit/plugin-tex": "^0.24.1",
+    "@noble/ed25519": "3.1.0",
     "@pilio/gemini-watermark-remover": "1.0.17",
     "@plasmohq/storage": "^1.12.0",
     "effect": "^3.19.13",
@@ -76,6 +82,7 @@
     "@typescript-eslint/eslint-plugin": "^8.54.0",
     "@typescript-eslint/parser": "^8.54.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "ajv": "^8.17.1",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
@@ -83,11 +90,14 @@
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "prettier": "3.2.4",
+    "safe-regex2": "^5.1.1",
     "terser": "^5.46.0",
+    "tsx": "^4.23.1",
     "typescript": "5.3.3",
     "vite": "^7.3.1",
     "vite-plugin-monkey": "^7.1.8",
-    "vitepress": "^1.6.4"
+    "vitepress": "^1.6.4",
+    "vitest": "3.2.4"
   },
   "manifest": {
     "name": "__MSG_extensionName__",
@@ -107,6 +117,7 @@
     },
     "permissions": [
       "storage",
+      "alarms",
       "declarativeNetRequestWithHostAccess"
     ],
     "optional_permissions": [
@@ -145,7 +156,8 @@
           "assets/assistant-mermaid-vendor.js",
           "assets/release-notes/*",
           "assets/notification-sounds/*",
-          "assets/userscript/*"
+          "assets/userscript/*",
+          "KaTeX_*.woff2"
         ],
         "matches": [
           "<all_urls>"

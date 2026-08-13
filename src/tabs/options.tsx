@@ -12,14 +12,16 @@ import {
   GeneralIcon,
   PageContentIcon,
   PermissionsIcon,
+  SitePacksIcon,
 } from "~components/icons"
 import { resolveSettingsNavigateDetail } from "~constants"
 import { platform } from "~platform"
 import { useSettingsHydrated, useSettingsStore } from "~stores/settings-store"
-import { APP_DISPLAY_NAME, APP_ICON_URL } from "~utils/config"
+import { APP_DISPLAY_NAME, getAppIconUrl } from "~utils/config"
 import { SidebarCommunityLinks } from "~components/SidebarCommunityLinks"
 import { getOphelPlatformFontClassName } from "~utils/font"
 import { setLanguage, t } from "~utils/i18n"
+import { scrollWithinSettingsContent } from "~utils/settings-scroll"
 
 import AboutPage from "./options/pages/AboutPage"
 import AppearancePage from "./options/pages/AppearancePage"
@@ -28,6 +30,7 @@ import FeaturesPage from "./options/pages/FeaturesPage"
 // 页面组件
 import GeneralPage from "./options/pages/GeneralPage"
 import PermissionsPage from "./options/pages/PermissionsPage"
+import SitePacksPage from "./options/pages/SitePacksPage"
 import SiteSettingsPage from "./options/pages/SiteSettingsPage"
 // 样式
 import "./options.css"
@@ -37,7 +40,13 @@ import { SidebarFooter } from "./options/components/SidebarFooter"
 // 图标组件
 
 // 导航菜单定义
-const NAV_ITEMS = [
+const NAV_ITEMS: Array<{
+  id: string
+  Icon: React.ComponentType<{ size?: number }>
+  labelKey: string
+  label: string
+  beta?: boolean
+}> = [
   // 导航项定义
   {
     id: "general",
@@ -51,6 +60,13 @@ const NAV_ITEMS = [
     Icon: PageContentIcon,
     labelKey: "navSiteSettings",
     label: "站点设置",
+  },
+  {
+    id: "sitePacks",
+    Icon: SitePacksIcon,
+    labelKey: "navSitePacks",
+    label: "适配中心",
+    beta: true,
   },
   {
     id: "appearance",
@@ -128,7 +144,7 @@ const OptionsPage = () => {
           highlightedElementRef.current.classList.remove("setting-locate-highlight")
         }
 
-        target.scrollIntoView({ behavior: "smooth", block: "center" })
+        scrollWithinSettingsContent(target)
         target.classList.remove("setting-locate-highlight")
         void target.offsetWidth
         target.classList.add("setting-locate-highlight")
@@ -228,6 +244,8 @@ const OptionsPage = () => {
         return <AppearancePage siteId={siteId} initialTab={initialSubTab} />
       case "siteSettings":
         return <SiteSettingsPage siteId={siteId} initialTab={initialSubTab} />
+      case "sitePacks":
+        return <SitePacksPage initialTab={initialSubTab} />
       case "features":
         return <FeaturesPage siteId={siteId} initialTab={initialSubTab} />
       case "permissions":
@@ -265,7 +283,7 @@ const OptionsPage = () => {
       <aside className="settings-sidebar">
         <div className="settings-sidebar-header">
           <div className="settings-sidebar-logo">
-            <img src={APP_ICON_URL} alt={APP_DISPLAY_NAME} />
+            <img src={getAppIconUrl()} alt={APP_DISPLAY_NAME} />
             <span>{APP_DISPLAY_NAME}</span>
           </div>
         </div>
@@ -282,7 +300,10 @@ const OptionsPage = () => {
               <span className="settings-nav-item-icon">
                 <item.Icon size={22} />
               </span>
-              <span className="settings-nav-item-label">{t(item.labelKey)}</span>
+              <span className={`settings-nav-item-label${item.beta ? " has-badge" : ""}`}>
+                {t(item.labelKey)}
+              </span>
+              {item.beta && <span className="settings-beta-badge">{t("betaBadge")}</span>}
             </button>
           ))}
 

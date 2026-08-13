@@ -15,9 +15,171 @@ export const ja = {
   tabPrompts: "プロンプト",
   tabSettings: "設定",
 
+  elementPickerInstruction: "ページ要素にポインターを合わせ、クリックして選択します",
+  elementPickerCancelHint: "Esc キーでキャンセル",
+  elementPickerIframeUnsupported:
+    "埋め込みフレーム（iframe）内の要素は選択できません。フレーム外の要素を選んでください。",
+
+  // サイトアダプターウィザード
+  siteAdapterWizardLauncher: "このサイト用のアダプターを作成",
+  siteAdapterWizardResume: "アダプター設定を再開",
+  siteAdapterWizardTitle: "サイトアダプター設定",
+  siteAdapterWizardSubtitle: "ページ要素を順に選択し、会話アウトラインを確認します。",
+  siteAdapterWizardProgress: "{total} ステップ中 {current}",
+  siteAdapterWizardProgressLabel: "アダプター設定の進行状況",
+  siteAdapterWizardOptional: "任意",
+  siteAdapterWizardPick: "ページ上で選択",
+  siteAdapterWizardRepick: "選び直す",
+  siteAdapterWizardSelectorLabel: "要素セレクター",
+  siteAdapterWizardSelectorGenerated: "自動生成済み",
+  siteAdapterWizardSelectorManual: "手動編集済み",
+  siteAdapterWizardAiTitle: "AI セレクター下書き",
+  siteAdapterWizardAiOptional: "任意",
+  siteAdapterWizardAiSummary: "サニタイズ済みプロンプトをコピーし、セレクター JSON を貼り付け",
+  siteAdapterWizardAiPrivacy:
+    "データは自動送信されません。プロンプトから会話本文、入力値、リンク、スクリプト、Ophel UI は除外されます。機密性の高いページでは共有前に確認してください。",
+  siteAdapterWizardAiCopy: "AI 用プロンプトをコピー",
+  siteAdapterWizardAiCopying: "コピー中…",
+  siteAdapterWizardAiCopied:
+    "サニタイズ済みの AI 用プロンプトをコピーしました。任意の AI アシスタントに貼り付けてください。",
+  siteAdapterWizardAiCopyFailed:
+    "AI 用プロンプトをコピーできません。クリップボード権限を確認して再試行してください。",
+  siteAdapterWizardAiResponseLabel: "AI セレクター JSON",
+  siteAdapterWizardAiResponsePlaceholder: "AI が返した JSON オブジェクトを貼り付け",
+  siteAdapterWizardAiApply: "下書きを適用",
+  siteAdapterWizardAiSelectorSource: "AI による提案",
+  siteAdapterWizardAiReviewReminder: "AI 出力は下書きです。保存前に各ステップを確認してください。",
+  siteAdapterWizardAiAppliedSuccess:
+    "{count} 個の AI セレクターを適用し、ライブ検証に合格しました。保存前に各ステップを確認してください。",
+  siteAdapterWizardAiAppliedReview:
+    "{applied} 個を適用：{valid} 個は合格、{review} 個は要確認。無効または不一致の {rejected} 個は既存の選択を置き換えずに却下しました。",
+  siteAdapterWizardAiAppliedNone:
+    "セレクターは適用されませんでした。無効または不一致の {rejected} 個を却下し、既存の選択は保持しました。",
+  siteAdapterWizardAiErrorInvalidJson:
+    "有効な JSON、または前後に文章のない単一の JSON コードブロックを貼り付けてください。",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "AI 下書きの構造またはセレクター項目が無効です。コピーしたプロンプトの形式を厳密に使用してください。",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "AI の応答が長すぎます。セレクター JSON だけを返すよう依頼して再試行してください。",
+  siteAdapterWizardAiErrorNoSelectors: "AI の応答に使用可能なセレクターがありません。",
+  siteAdapterWizardSelectorPlaceholder: "CSS セレクターを入力",
+  siteAdapterWizardPickFirst: "先にページ上の要素を選択してください",
+  siteAdapterWizardPickerBusy: "別の要素選択がすでに進行中です。",
+  siteAdapterWizardIssueMissing: "要素を選択するか、セレクターを入力してください。",
+  siteAdapterWizardIssueDisconnected: "選択した要素がページから消えました。選び直してください。",
+  siteAdapterWizardIssueInvalid: "このセレクターの構文は無効です。",
+  siteAdapterWizardIssueTooLong: "このセレクターは SitePack に保存するには長すぎます。",
+  siteAdapterWizardIssueNoMatch: "現在、このセレクターに一致する要素がありません。",
+  siteAdapterWizardIssueTargetMismatch: "このセレクターは選択した要素を含まなくなりました。",
+  siteAdapterWizardIssueNotUnique: "このコントロールは 1 つの要素だけに一致する必要があります。",
+  siteAdapterWizardIssueUnsupportedInput:
+    "テキストボックスまたは編集可能な入力欄を選択してください。",
+  siteAdapterWizardIssueContainerMissing: "先に有効な会話コンテナーを選択してください。",
+  siteAdapterWizardIssueOutsideContainer:
+    "一致するすべてのメッセージが、選択した会話コンテナー内にある必要があります。",
+  siteAdapterWizardGenerateDisconnected: "セレクターを作成する前に要素が変更されました。",
+  siteAdapterWizardGenerateOutsideRoot: "現在のページルートからこの要素に到達できません。",
+  siteAdapterWizardGenerateManual:
+    "安定したセレクターを生成できません。手動で入力するか、より明確な要素を選択してください。",
+  siteAdapterWizardStepReady: "このステップは準備完了です。",
+  siteAdapterWizardMatchCount: "{count} 件一致",
+  siteAdapterWizardUnique: "一意",
+  siteAdapterWizardShared: "複数一致",
+  siteAdapterWizardContained: "コンテナー内",
+  siteAdapterWizardStepTextareaTitle: "メッセージ入力欄",
+  siteAdapterWizardStepTextareaDesc: "メッセージを入力する欄を選択します。",
+  siteAdapterWizardStepSubmitTitle: "送信ボタン",
+  siteAdapterWizardStepSubmitDesc: "現在のメッセージを送信するボタンを選択します。",
+  siteAdapterWizardStepContainerTitle: "会話コンテナー",
+  siteAdapterWizardStepContainerDesc: "現在の会話メッセージを含む領域全体を選択します。",
+  siteAdapterWizardStepUserTitle: "ユーザーメッセージ",
+  siteAdapterWizardStepUserDesc:
+    "自分のメッセージを 1 件選択します。複数一致なら全ユーザーメッセージを対象にできます。",
+  siteAdapterWizardStepAssistantTitle: "AI の回答",
+  siteAdapterWizardStepAssistantDesc:
+    "AI の回答を 1 件選択します。複数一致なら全 AI 回答を対象にできます。",
+  siteAdapterWizardStepConversationTitle: "会話リスト項目",
+  siteAdapterWizardStepConversationDesc: "任意：履歴またはサイドバーの会話項目を 1 つ選択します。",
+  siteAdapterWizardStepNewChatTitle: "新しいチャットボタン",
+  siteAdapterWizardStepNewChatDesc: "任意：新しい会話を始めるコントロールを選択します。",
+  siteAdapterWizardPreviewEyebrow: "ライブプレビュー",
+  siteAdapterWizardPreviewTitle: "会話アウトライン",
+  siteAdapterWizardPreviewReady: "準備完了",
+  siteAdapterWizardPreviewEmpty:
+    "有効なユーザーメッセージと AI 回答を選択すると、ここにアウトラインが表示されます。",
+  siteAdapterWizardPreviewNoText: "この要素に読み取れるテキストがありません",
+  siteAdapterWizardUser: "ユーザー",
+  siteAdapterWizardAssistant: "AI",
+  siteAdapterWizardCapabilitiesTitle: "利用可能な機能",
+  siteAdapterWizardCapabilitiesEmpty: "必須項目が有効になると、利用可能な機能が表示されます。",
+  siteAdapterWizardCapabilityPrompt: "プロンプト挿入",
+  siteAdapterWizardCapabilityOutline: "会話アウトライン",
+  siteAdapterWizardCapabilityUserQueries: "アウトライン内のユーザー質問",
+  siteAdapterWizardCapabilityExport: "基本エクスポート",
+  siteAdapterWizardCapabilityHistory: "閲覧履歴",
+  siteAdapterWizardCapabilityNewChat: "新しい会話",
+  siteAdapterWizardConversationCaptured:
+    "会話項目を記録しました。ID とリンク規則が確定するまではパックに含めません。",
+  siteAdapterWizardCompleteTitle: "アダプターの下書きが完成しました",
+  siteAdapterWizardCompleteDesc:
+    "必須のページ要素が検証に合格し、会話アウトラインをプレビューできます。",
+  siteAdapterWizardPublishEyebrow: "保存と共有",
+  siteAdapterWizardPublishTitle: "このアダプターを公開",
+  siteAdapterWizardPublishDesc:
+    "生成されたメタデータを確認し、ローカルに保存するか、同じ検証済み JSON を書き出します。",
+  siteAdapterWizardPublishNameLabel: "サイト名",
+  siteAdapterWizardPublishIdLabel: "パック ID",
+  siteAdapterWizardPublishIdHint: "小文字、数字、ハイフンのみ",
+  siteAdapterWizardPublishVersionHint: "同じパックを更新するときは増やしてください",
+  siteAdapterWizardPublishOriginLabel: "正確なオリジン",
+  siteAdapterWizardPublishMinVersionLabel: "最小 Ophel バージョン",
+  siteAdapterWizardPublishConversationOmitted:
+    "会話 ID と URL 規則を安全に推定できないため、会話項目はパックに含まれません。",
+  siteAdapterWizardPublishDraftInvalid:
+    "必須の選択項目が無効になりました。その手順に戻って選択し直してください。",
+  siteAdapterWizardPublishHttpsRequired: "SitePack は HTTPS オリジンに対してのみ作成できます。",
+  siteAdapterWizardPublishManifestInvalid: "生成された SitePack は無効です。",
+  siteAdapterWizardPublishNameInvalid: "サイト名を入力してください。",
+  siteAdapterWizardPublishIdInvalid:
+    "パック ID は 2〜40 文字の小文字、数字、ハイフンで指定してください。",
+  siteAdapterWizardPublishVersionInvalid: "バージョンは正の整数で指定してください。",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "現在の Ophel バージョンを有効な最小バージョンとして使用できません。",
+  siteAdapterWizardPublishManifestInvalidField: "生成されたフィールドを確認してください：{field}",
+  siteAdapterWizardPublishVersionConflict:
+    "この ID とバージョンには別の内容が既にあります。バージョンを上げて再試行してください。",
+  siteAdapterWizardPublishSourceConflict:
+    "このパック ID は別の提供元からインストール済みです。別の ID を選んでください。",
+  siteAdapterWizardPublishMatchConflict:
+    "このオリジンは内蔵またはインストール済みの SitePack と競合します。",
+  siteAdapterWizardPublishSaveFailed:
+    "SitePack を保存できませんでした。メタデータを確認して再試行してください。",
+  siteAdapterWizardPublishPermissionDenied:
+    "サイトへのアクセスが許可されなかったため、保存したパックを無効にしました。",
+  siteAdapterWizardPublishSaved:
+    "「{name}」をローカルに保存しました。このページを再読み込みすると有効になります。",
+  siteAdapterWizardPublishDownloaded: "検証済みの SitePack JSON をダウンロードしました。",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON をコピーし、入力済みの GitHub コントリビューションページを開きました。",
+  siteAdapterWizardPublishOpenFailed:
+    "JSON はコピーしましたが GitHub を開けませんでした。リポジトリを開いて手動で貼り付けてください。",
+  siteAdapterWizardPublishReloadTitle: "再読み込みが必要です",
+  siteAdapterWizardPublishReloadDesc:
+    "パックは保存・登録済みです。すべてのアダプターモジュールを完全なページライフサイクルで開始するため、再読み込みしてください。",
+  siteAdapterWizardPublishOpening: "GitHub を開いています…",
+  siteAdapterWizardPublishGithub: "JSON をコピーして GitHub を開く",
+  siteAdapterWizardPublishSaving: "保存しています…",
+  siteAdapterWizardStartOver: "最初からやり直す",
+  siteAdapterWizardDone: "完了",
+  siteAdapterWizardBack: "戻る",
+  siteAdapterWizardNext: "次へ",
+  siteAdapterWizardSkip: "スキップ",
+  siteAdapterWizardFinish: "設定を完了",
+
   // ======== Options Page Navigation ========
   navGeneral: "基本設定",
   navSiteSettings: "サイト設定",
+  navSitePacks: "サイトパック",
   navGlobalSearch: "グローバル検索",
   navAppearance: "外観",
   navPageContent: "ページと内容",
@@ -29,6 +191,105 @@ export const ja = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "サイトごとのレイアウトとコンテンツ処理の設定",
+  communitySitePackBadge: "コミュニティパック（コア機能）",
+  communitySitePackDesc:
+    "このサイトはコミュニティパックによって対応しており、パックがサポートする機能のみ表示されます。",
+  sitePacksPageDesc:
+    "サイトパックをインストール・管理して、Ophel が対応する AI サイトを増やします。",
+
+  // SitePack Manager
+  sitePacksGuideAction: "ガイド",
+  sitePacksRegistryTitle: "オンラインライブラリ",
+  sitePacksLocalImportTitle: "ファイルからアダプターをインストール",
+  sitePacksLocalImportDesc:
+    "ローカル JSON ファイルからアダプターパックをインストールします。オフライン配布や未掲載パック向けです。信頼できるファイルだけを取り込んでください。",
+  sitePacksCheckUpdates: "更新を確認",
+  sitePacksBindingHttpsRequired:
+    "HTTPS サイトのみ追加できます。HTTP サイトはサポートされていません。",
+  sitePacksRegistrySearchPlaceholder: "パックを検索",
+  sitePacksRegistryNoMatch: "一致するパックがありません",
+  sitePacksOpenSite: "サイトを開く",
+  sitePacksTabInstalled: "インストール済み",
+  sitePacksTabOrigins: "カスタムサイト",
+  sitePacksTabUpdates: "追加と更新",
+  sitePacksBindingListTitle: "追加済みのサイト",
+  sitePacksStatusUnavailable: "ライブラリから削除済み",
+  remoteConfigStatusSummary: "インデックス {revision} · 最終確認 {time}",
+  sitePacksInstall: "インストール",
+  sitePacksUpdate: "更新",
+  sitePacksUninstall: "アンインストール",
+  sitePacksInstalledBadge: "インストール済み",
+  sitePacksEnabledLabel: "有効",
+  sitePacksSourceRegistry: "オンライン",
+  sitePacksSourceLocal: "ローカルインポート",
+  sitePacksStatusAvailable: "利用可能",
+  sitePacksStatusMatchRequired: "マッチルールが必要",
+  sitePacksStatusDisabled: "無効",
+  sitePacksStatusIncompatible: "非対応",
+  sitePacksStatusPackMissing: "パック未検出",
+  sitePackBindingNoticeTitle: "サイトのバインドが無効です",
+  sitePackBindingNoticeMessage:
+    "このサイトはサイトパック「{packId}」にバインドされていますが、そのパックはアンインストール済みか無効なため、パネルは読み込まれませんでした。パックを再インストールするか、サイトパック設定でこのバインドを解除してください。",
+  sitePackBindingNoticeAction: "サイトパックを開く",
+  sitePacksSelfHostedBadge: "セルフホスト",
+  sitePacksSelfHostedHint: "サイトドメインのバインドが必要です",
+  sitePacksNeedsBindingBadge: "要ドメインバインド",
+  sitePacksBindNowAction: "今すぐバインド",
+  sitePacksNoInstalled: "サイトパックはまだインストールされていません",
+  sitePacksRegistryEmpty: "ライブラリのキャッシュにパックがありません",
+  sitePacksLoadFailed: "サイトパックを読み込めませんでした：{error}",
+  sitePacksOperationFailed: "サイトパックの操作に失敗しました：{error}",
+  sitePacksPermissionTitle: "サイトパックにアクセスを許可しますか？",
+  sitePacksPermissionDesc: "Ophel が「{name}」を次のサイトで実行するには許可が必要です：{origins}",
+  sitePacksPermissionDenied:
+    "「{name}」のサイトアクセスは許可されなかったため、パックは無効のままです。",
+  sitePacksPermissionReviewTitle: "復元したサイトパックを再承認",
+  sitePacksInvalidFile: "この JSON ファイルは有効な SitePack ではありません。",
+  sitePacksValidationErrorsTitle: "検証の詳細",
+  sitePacksStoredIssuesTitle: "保存済みパックの問題",
+  sitePacksImportConfirmTitle: "このサイトパックをインポートしますか？",
+  sitePacksImportRisk:
+    "サイトパックは一致するサイトのページスタイルや Ophel の動作を変更できます。信頼できる提供元のパックだけを読み込んでください。",
+  sitePacksImportSummary: "{name}（{id}）、バージョン {version}、マッチパターン {matches} 件。",
+  sitePacksUninstallConfirmTitle: "このサイトパックをアンインストールしますか？",
+  sitePacksUninstallConfirmDesc: "{name} をこのデバイスから削除しますか？",
+  sitePacksUninstallKeepData: "サイト設定と会話データは保持されます。",
+  sitePacksSavedSuccess: "{name} をインストールしました。",
+  sitePacksUpdatedSuccess: "{name} を更新しました。",
+  sitePacksRemovedSuccess: "{name} をアンインストールしました。",
+  sitePacksStateChanged: "{name} を{state}にしました。",
+  sitePacksEnabledState: "有効",
+  sitePacksDisabledState: "無効",
+  sitePacksRequiresNewerApp: "Ophel {version} 以降が必要です",
+  sitePacksCustomOriginsTitle: "カスタムサイトを追加",
+  sitePacksCustomOriginsDesc:
+    "自分でホストしている AI サイト（Open WebUI など）を追加し、どのパックで対応するかを選択します。",
+  sitePacksCustomOriginLabel: "HTTPS ドメイン",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "パック",
+  sitePacksBindingPackPlaceholder: "インストール済みパックを選択",
+  sitePacksBindingEmpty: "カスタムサイトはまだありません",
+  sitePacksBindingEditing: "編集中：{origin}",
+  sitePacksBindingOriginExists:
+    "{origin} は既に追加されています。先にリストから編集または削除してください。",
+  sitePacksBindingHint:
+    "https://chat.example.com のような正確な HTTPS ドメインを入力してください。パスとワイルドカードは使えません。",
+  sitePacksBindingPermissionDenied:
+    "{origin} の権限が許可されなかったため、サイトは保存されませんでした。",
+  sitePacksUserscriptCoverageTitle: "ユーザースクリプトのマッチルールを追加",
+  sitePacksUserscriptCoverageDesc:
+    "{manager} には SitePack 用のマッチルールが {count} 件不足しています。対象サイトを開く前に、以下のルールをコピーしてください。",
+  sitePacksUserscriptManagerUnknown: "現在のユーザースクリプト管理ツール",
+  sitePacksUserscriptGuideTampermonkey:
+    "Tampermonkey で追加：ダッシュボード → このスクリプト → 「設定」タブ → 「ユーザーマッチ」→「追加」を選び、上記のルールを貼り付けます。",
+  sitePacksUserscriptGuideViolentmonkey:
+    "Violentmonkey で追加：ダッシュボード → このスクリプトの設定アイコン → 「カスタム」タブ → カスタムマッチルールに上記のルールを貼り付けます。",
+  sitePacksUserscriptGuideGeneric:
+    "ユーザースクリプト管理ツールでこのスクリプトの設定を開き、上記のルールをユーザー（カスタム）マッチルールとして追加してください。",
+  sitePacksUserscriptCoveragePersistNote:
+    "ルールの追加は一度だけで、スクリプト更新後も保持されます。追加後は対象サイトを再読み込みしてください。",
+  sitePacksMatchGuideAction: "追加手順を見る",
+  sitePacksBindingPackRequired: "先にインストール済みのパックを選択してください。",
 
   generalPageDesc: "拡張機能の動作とインターフェースの設定",
   appearancePageDesc: "視覚スタイルとテーマのカスタマイズ",
@@ -61,7 +322,7 @@ export const ja = {
   required: "必須",
   permissionWebdavAccess: "高度な機能へのアクセス",
   permissionWebdavAccessDesc:
-    "すべてのウェブサイトへのアクセス。WebDAV同期やAI画像の透かし除去に必要です。",
+    "すべてのウェブサイトへのアクセス。WebDAV同期、AI画像の透かし除去、およびインストール済みSite Packがサイトごとの承認なしに対象サイトで動作するために必要です。",
 
   // Required permissions
   permissionStorage: "ストレージ",
@@ -1439,6 +1700,7 @@ export const ja = {
   popupUnsupported: "非対応",
   popupNewChat: "新規チャット",
   popupQuickAccess: "クイックアクセス",
+  popupSitePackUnbound: "サイト未追加",
   popupRecentUsed: "最近使用",
   popupNoRecentPrompts: "最近使用したプロンプトはありません",
   popupCopied: "コピーしました",
@@ -1673,6 +1935,75 @@ export const ja = {
   "featureTip-notifications-title": "生成完了通知",
   "featureTip-notifications-desc": "AI完了時にデスクトップ通知 — 応答を見逃すな",
   "featureTip-notifications-path": "機能 → 通知 → デスクトップ通知",
+  // アダプター設定の更新
+  remoteConfigSettingsTitle: "アダプター設定の更新",
+  remoteConfigAutoUpdateLabel: "アダプター設定を自動更新",
+  remoteConfigAutoUpdateDesc: "24 時間に 1 回までチェックします。",
+  remoteConfigRegistrySourceLabel: "開発用 Registry ソース",
+  remoteConfigRegistrySourceDesc:
+    "開発ビルドのみ使用できます。完全な index.json URL を入力し、空欄にすると既定のソースを使います。",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "適用",
+  remoteConfigRegistrySourceApplied:
+    "開発用 Registry ソースを保存しました。次回の更新確認から使用します。",
+  remoteConfigRegistrySourceCleared: "既定の Registry ソースに戻しました。",
+  remoteConfigRegistrySourceInvalid: "Registry ソースが無効です：{error}",
+  remoteConfigCheckNowLabel: "今すぐ更新を確認",
+  remoteConfigCheckNowButton: "今すぐ確認",
+  remoteConfigCheckingButton: "確認中…",
+  remoteConfigStatusLoading: "読み込み中…",
+  remoteConfigNeverChecked: "未確認",
+  remoteConfigActivePatchesLabel: "適用中のパッチ",
+  remoteConfigUsingBuiltin: "現在は組み込み設定を使用しています",
+  remoteConfigPatchVersionLabel: "パッチバージョン",
+  remoteConfigBaseVersionLabel: "組み込み設定バージョン",
+  remoteConfigResetBuiltinButton: "組み込み設定に戻す",
+  remoteConfigResettingButton: "復元中…",
+  remoteConfigPrivacyDesc:
+    "更新確認は静的 CDN への GET リクエストのみで、会話内容やアカウント情報は含みません。",
+  remoteConfigCheckUpdated:
+    "新しいアダプター設定をダウンロードしました。対象の AI ページを再読み込みすると適用されます。",
+  remoteConfigCheckUpToDate: "アダプター設定は最新です。",
+  remoteConfigCheckFailed: "更新確認に失敗しました：{error}",
+  remoteConfigResetSuccess: "{site} を組み込み設定に戻しました。",
+  remoteConfigResetFailed: "復元に失敗しました：{error}",
+  remoteConfigResetUnavailable: "復元できる有効な設定がありません。",
+  remoteConfigRegistryActiveSourceLabel: "有効なソース",
+  remoteConfigRegistryActiveSourceDefault: "公式デフォルト（未キャッシュ）",
+  remoteConfigRegistryOverrideLabel: "上書き中",
+  remoteConfigRegistryLastErrorLabel: "前回のエラー",
+  remoteConfigRegistryRestoreDefaultsButton: "デフォルトに戻す",
+  remoteConfigRegistryCacheClearButton: "キャッシュを清除",
+  remoteConfigRegistryCacheCleared: "Registry キャッシュを清除しました（ローカルパッチは保持）。",
+  remoteConfigRegistryCacheClearFailed: "キャッシュの清除に失敗しました：{error}",
+  remoteConfigRegistryDefaultsRestored: "デフォルトの Registry ソースに戻し、再チェックしました。",
+  remoteConfigLocalRegistryCheckFailed:
+    "ローカル Registry の確認に失敗（{url}）：{error}。pnpm registry:serve が起動しているか確認してください。",
+  remoteConfigLocalRegistryUseButton: "ローカル Registry を使う",
+  remoteConfigLocalRegistryHint:
+    "先に pnpm registry:serve を実行してから「{button}」を押してください。ローカル署名鍵は開発ビルドでのみ信頼されます。",
+  remoteConfigLocalRegistrySourceApplied:
+    "ローカル Registry ソースに切り替え、更新確認を開始しました。",
+  remoteConfigLocalRegistryPermissionDenied:
+    "ローカル Registry へのホスト権限が拒否されました。127.0.0.1 を許可して再試行してください。",
+
+  remoteConfigLocalPatchImportButton: "サイトホットフィックスをインポート",
+  remoteConfigLocalPatchImportDesc:
+    "組み込みサイト向けのセレクター修正 JSON を取り込みます。ローカル修正はリモートより優先され、貢献前の検証に使えます。新しいアダプターパックはインストールしません。",
+  remoteConfigLocalPatchConfirmTitle: "ローカルパッチをインポートしますか？",
+  remoteConfigLocalPatchRisk:
+    "ローカルパッチは公式 Registry の署名検証を受けません。信頼できるファイルのみインポートしてください。",
+  remoteConfigLocalPatchSummary:
+    "{site}（{id}）にパッチ v{version} をインストールします（組み込み設定バージョン {base}）。",
+  remoteConfigLocalPatchInstalled:
+    "{site} にローカルパッチ v{version} をインストールしました。対象サイトで確認し、必要なら再読み込みしてください。",
+  remoteConfigLocalPatchRemoved: "{site} のローカルパッチを削除しました。",
+  remoteConfigLocalPatchRemoveFailed: "ローカルパッチの削除に失敗しました：{error}",
+  remoteConfigLocalPatchRemoveButton: "ローカルパッチを削除",
+  remoteConfigLocalPatchInvalid: "ローカルパッチ JSON が無効か、必須フィールドが不足しています。",
+  remoteConfigPatchSourceLocal: "ローカル",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Discord コミュニティ",
   discordDesc:
     "コミュニティに参加して、他のユーザーと交流したり、フィードバックを提供したり、最新情報を入手したりできます",

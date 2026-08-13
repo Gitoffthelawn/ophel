@@ -1,4 +1,10 @@
 import type { NetworkMonitorRequestBodyRule } from "~adapters/base"
+import type { RemoteConfigCheckResult, RemoteConfigState } from "~core/remote-config-types"
+import type { SitePackOriginBinding } from "~core/site-pack-origin-bindings"
+import type {
+  SitePackOriginBindingIssue,
+  SitePackOriginReferenceEntry,
+} from "~core/site-pack-origin-references"
 
 /**
  * Messaging Protocol Definitions
@@ -32,6 +38,93 @@ export interface ProxyFetchPayload {
 
 export interface ProxyFetchMessage extends ProxyFetchPayload {
   type: typeof MSG_PROXY_FETCH
+}
+
+export const MSG_CHECK_REMOTE_CONFIG = "CHECK_REMOTE_CONFIG"
+
+export interface CheckRemoteConfigPayload {
+  force?: boolean
+  sources?: string[]
+}
+
+export interface CheckRemoteConfigMessage extends CheckRemoteConfigPayload {
+  type: typeof MSG_CHECK_REMOTE_CONFIG
+}
+
+export interface CheckRemoteConfigResponse {
+  success: boolean
+  result?: RemoteConfigCheckResult
+  error?: string
+}
+
+export const MSG_GET_REMOTE_CONFIG_STATE = "GET_REMOTE_CONFIG_STATE"
+
+export interface GetRemoteConfigStateMessage {
+  type: typeof MSG_GET_REMOTE_CONFIG_STATE
+}
+
+export interface GetRemoteConfigStateResponse {
+  success: boolean
+  state?: RemoteConfigState
+  error?: string
+}
+
+export const MSG_IGNORE_REMOTE_CONFIG_PATCH = "IGNORE_REMOTE_CONFIG_PATCH"
+
+export interface IgnoreRemoteConfigPatchPayload {
+  siteId: string
+  patchVersion?: number
+}
+
+export interface IgnoreRemoteConfigPatchMessage extends IgnoreRemoteConfigPatchPayload {
+  type: typeof MSG_IGNORE_REMOTE_CONFIG_PATCH
+}
+
+export const MSG_INSTALL_LOCAL_REMOTE_CONFIG_PATCH = "INSTALL_LOCAL_REMOTE_CONFIG_PATCH"
+
+export interface InstallLocalRemoteConfigPatchPayload {
+  patch: unknown
+  fileName?: string
+}
+
+export interface InstallLocalRemoteConfigPatchMessage extends InstallLocalRemoteConfigPatchPayload {
+  type: typeof MSG_INSTALL_LOCAL_REMOTE_CONFIG_PATCH
+}
+
+export const MSG_REMOVE_LOCAL_REMOTE_CONFIG_PATCH = "REMOVE_LOCAL_REMOTE_CONFIG_PATCH"
+
+export interface RemoveLocalRemoteConfigPatchPayload {
+  siteId: string
+}
+
+export interface RemoveLocalRemoteConfigPatchMessage extends RemoveLocalRemoteConfigPatchPayload {
+  type: typeof MSG_REMOVE_LOCAL_REMOTE_CONFIG_PATCH
+}
+
+export const MSG_CLEAR_REMOTE_CONFIG_CACHE = "CLEAR_REMOTE_CONFIG_CACHE"
+
+export interface ClearRemoteConfigCacheMessage {
+  type: typeof MSG_CLEAR_REMOTE_CONFIG_CACHE
+}
+
+export const MSG_RESET_REMOTE_CONFIG_SITE = "RESET_REMOTE_CONFIG_SITE"
+
+export interface ResetRemoteConfigSitePayload {
+  siteId: string
+}
+
+export interface ResetRemoteConfigSiteMessage extends ResetRemoteConfigSitePayload {
+  type: typeof MSG_RESET_REMOTE_CONFIG_SITE
+}
+
+export const MSG_REAPPLY_REMOTE_CONFIG_SITE = "REAPPLY_REMOTE_CONFIG_SITE"
+
+export interface ReapplyRemoteConfigSitePayload {
+  siteId: string
+}
+
+export interface ReapplyRemoteConfigSiteMessage extends ReapplyRemoteConfigSitePayload {
+  type: typeof MSG_REAPPLY_REMOTE_CONFIG_SITE
 }
 
 // WebDAV 代理请求（绕过 CORS）
@@ -96,6 +189,47 @@ export interface BasicBackgroundResponse {
   error?: string
 }
 
+export const MSG_ENSURE_SITE_PACK_ORIGINS = "ENSURE_SITE_PACK_ORIGINS"
+
+export interface EnsureSitePackOriginsMessage {
+  type: typeof MSG_ENSURE_SITE_PACK_ORIGINS
+  packId: string
+}
+
+export interface EnsureSitePackOriginsResponse extends BasicBackgroundResponse {
+  granted?: boolean
+  origins?: string[]
+  missingOrigins?: string[]
+}
+
+export const MSG_ENSURE_SITE_PACK_BINDING_ORIGIN = "ENSURE_SITE_PACK_BINDING_ORIGIN"
+
+export interface EnsureSitePackBindingOriginMessage {
+  type: typeof MSG_ENSURE_SITE_PACK_BINDING_ORIGIN
+  origin: string
+  binding: SitePackOriginBinding
+  requestName: string
+}
+
+export interface EnsureSitePackBindingOriginResponse extends BasicBackgroundResponse {
+  granted?: boolean
+  origins?: string[]
+  missingOrigins?: string[]
+}
+
+export const MSG_RECONCILE_SITE_PACK_REGISTRATIONS = "RECONCILE_SITE_PACK_REGISTRATIONS"
+
+export interface ReconcileSitePackRegistrationsMessage {
+  type: typeof MSG_RECONCILE_SITE_PACK_REGISTRATIONS
+}
+
+export interface ReconcileSitePackRegistrationsResponse extends BasicBackgroundResponse {
+  activeOrigins?: string[]
+  missingPermissionOrigins?: string[]
+  originReferences?: SitePackOriginReferenceEntry[]
+  bindingIssues?: SitePackOriginBindingIssue[]
+}
+
 // 撤销权限
 export const MSG_REVOKE_PERMISSIONS = "REVOKE_PERMISSIONS"
 
@@ -144,11 +278,21 @@ export interface ClearAllDataMessage {
   type: typeof MSG_CLEAR_ALL_DATA
 }
 
+export interface ClearAllDataResponse extends BasicBackgroundResponse {
+  tabs?: number
+}
+
 // 恢复备份数据（通知各上下文重载页面以加载最新数据）
 export const MSG_RESTORE_DATA = "RESTORE_DATA"
 
 export interface RestoreDataMessage {
   type: typeof MSG_RESTORE_DATA
+}
+
+export interface RestoreDataResponse extends BasicBackgroundResponse {
+  tabs?: number
+  activeOrigins?: string[]
+  missingPermissionOrigins?: string[]
 }
 
 // 设置Claude SessionKey Cookie
@@ -197,10 +341,21 @@ export type ExtensionMessage =
   | ShowNotificationMessage
   | FocusTabMessage
   | ProxyFetchMessage
+  | CheckRemoteConfigMessage
+  | GetRemoteConfigStateMessage
+  | IgnoreRemoteConfigPatchMessage
+  | InstallLocalRemoteConfigPatchMessage
+  | RemoveLocalRemoteConfigPatchMessage
+  | ClearRemoteConfigCacheMessage
+  | ResetRemoteConfigSiteMessage
+  | ReapplyRemoteConfigSiteMessage
   | WebDAVRequestMessage
   | CheckPermissionMessage
   | CheckPermissionsMessage
   | RequestPermissionsMessage
+  | EnsureSitePackOriginsMessage
+  | EnsureSitePackBindingOriginMessage
+  | ReconcileSitePackRegistrationsMessage
   | RevokePermissionsMessage
   | OpenOptionsPageMessage
   | OpenUrlMessage
@@ -247,9 +402,20 @@ export interface AIStudioModelsResponse {
 }
 
 interface BackgroundResponseMap {
+  [MSG_CHECK_REMOTE_CONFIG]: CheckRemoteConfigResponse
+  [MSG_GET_REMOTE_CONFIG_STATE]: GetRemoteConfigStateResponse
+  [MSG_IGNORE_REMOTE_CONFIG_PATCH]: BasicBackgroundResponse
+  [MSG_INSTALL_LOCAL_REMOTE_CONFIG_PATCH]: BasicBackgroundResponse
+  [MSG_REMOVE_LOCAL_REMOTE_CONFIG_PATCH]: BasicBackgroundResponse
+  [MSG_CLEAR_REMOTE_CONFIG_CACHE]: BasicBackgroundResponse
   [MSG_CHECK_PERMISSION]: PermissionCheckResponse
   [MSG_CHECK_PERMISSIONS]: PermissionCheckResponse
   [MSG_REQUEST_PERMISSIONS]: BasicBackgroundResponse
+  [MSG_ENSURE_SITE_PACK_ORIGINS]: EnsureSitePackOriginsResponse
+  [MSG_ENSURE_SITE_PACK_BINDING_ORIGIN]: EnsureSitePackBindingOriginResponse
+  [MSG_RECONCILE_SITE_PACK_REGISTRATIONS]: ReconcileSitePackRegistrationsResponse
+  [MSG_CLEAR_ALL_DATA]: ClearAllDataResponse
+  [MSG_RESTORE_DATA]: RestoreDataResponse
   [MSG_CHECK_CLAUDE_GENERATING]: CheckClaudeGeneratingResponse
   [MSG_GET_AISTUDIO_MODELS]: AIStudioModelsResponse
 }

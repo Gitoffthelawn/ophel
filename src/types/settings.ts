@@ -1,17 +1,8 @@
 import type { ShortcutsSettings } from "~constants/shortcuts"
 import type { WebDAVProvider } from "~types/webdav"
 
-// 站点 ID 类型
-export type SiteId =
-  | "gemini"
-  | "gemini-enterprise"
-  | "aistudio"
-  | "doubao"
-  | "ima"
-  | "deepseek"
-  | "yuanbao"
-  | "zai"
-  | "_default"
+// 内置与动态 SitePack 共用的站点 ID 类型
+export type SiteId = string
 
 // 主题模式
 export type ThemeMode = "light" | "dark" | "system"
@@ -128,6 +119,12 @@ export interface Settings {
   hasAgreedToTerms: boolean // 用户是否同意免责声明
   hasSeenOphelAdvancedGuide?: boolean
 
+  // 适配配置远程更新
+  remoteConfig: {
+    autoUpdate: boolean
+    registrySourceUrl: string
+  }
+
   // 面板行为
   panel: {
     panelExpanded: boolean // 面板是否展开（未收进快捷按钮组）
@@ -169,7 +166,7 @@ export interface Settings {
   // 主题（按站点独立 + 共享自定义样式）
   theme: {
     syncNativePageTheme: boolean
-    sites: Partial<Record<SiteId, SiteThemeConfig>>
+    sites: Record<string, SiteThemeConfig>
     customStyles: CustomStyle[] // 自定义样式列表
   }
 

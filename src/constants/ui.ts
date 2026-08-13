@@ -37,6 +37,7 @@ export const NAV_IDS = {
   APPEARANCE: "appearance",
   FEATURES: "features",
   SITE_SETTINGS: "siteSettings",
+  SITE_PACKS: "sitePacks",
   GLOBAL_SEARCH: "globalSearch",
   SHORTCUTS: "shortcuts",
   BACKUP: "backup",
@@ -54,6 +55,13 @@ export const FEATURES_TAB_IDS = {
   CONTENT: "content",
   READING_HISTORY: "readingHistory",
   TOOLBOX: "toolbox",
+} as const
+
+// ==================== Site Packs Page Tab IDs ====================
+export const SITE_PACKS_TAB_IDS = {
+  INSTALLED: "installed",
+  ORIGINS: "origins",
+  UPDATES: "updates",
 } as const
 
 // ==================== Appearance Page Tab IDs ====================
@@ -152,9 +160,17 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     page: NAV_IDS.FEATURES,
     subTab: FEATURES_TAB_IDS.REMINDER,
   },
+  "site-packs-registry": {
+    page: NAV_IDS.SITE_PACKS,
+    subTab: SITE_PACKS_TAB_IDS.UPDATES,
+  },
 } as const
 
 const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
+  {
+    prefix: "remote-config-",
+    route: { page: NAV_IDS.SITE_PACKS, subTab: SITE_PACKS_TAB_IDS.UPDATES },
+  },
   { prefix: "panel-", route: { page: NAV_IDS.GENERAL, subTab: "panel" } },
   { prefix: "quick-buttons-", route: { page: NAV_IDS.GENERAL, subTab: "shortcuts" } },
   { prefix: "tools-menu-", route: { page: NAV_IDS.GENERAL, subTab: "toolsMenu" } },
@@ -227,6 +243,8 @@ const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
 ]
 
 export const SETTING_ID_ALIASES: Record<string, string> = {
+  "remoteConfig.autoUpdate": "remote-config-auto-update",
+  "remoteConfig.registrySourceUrl": "remote-config-registry-source",
   "general.panel.panelMode": "panel-mode",
   "general.panel.edgeTriggerMode": "panel-edge-trigger-mode",
   "general.panel.defaultPosition": "panel-default-position",
@@ -345,6 +363,35 @@ const SHORTCUT_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = Object.entries(SHOR
 )
 
 export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
+  {
+    settingId: "remote-config-auto-update",
+    title: "自动更新适配配置",
+    keywords: ["remote config", "auto update", "adapter", "自动更新", "适配配置", "热修复"],
+  },
+  {
+    settingId: "remote-config-check-now",
+    title: "立即检查适配配置更新",
+    keywords: ["remote config", "check now", "manual update", "立即检查", "手动更新"],
+  },
+  {
+    settingId: "remote-config-active-patches",
+    title: "重置适配配置",
+    keywords: ["remote config", "patch", "reset", "built in", "补丁", "重置", "内置配置"],
+  },
+  {
+    settingId: "site-packs-registry",
+    title: "在线适配库",
+    keywords: [
+      "site pack",
+      "registry",
+      "community",
+      "install",
+      "适配包",
+      "在线适配库",
+      "适配中心",
+      "安装",
+    ],
+  },
   {
     settingId: "panel-mode",
     title: "面板模式",

@@ -65,6 +65,37 @@ App.tsx (Shadow DOM 内的 React 面板)
 - **油猴脚本**：通过 Vite + vite-plugin-monkey 构建，使用 `GM_*` API
 - **平台抽象层**：`src/platform/` 提供统一接口，构建时通过 `__PLATFORM__` 变量切换实现
 
+#### 油猴 adapters vendor（适配器外置）
+
+为控制 Greasyfork 的脚本字符数上限，油猴构建把全部内置站点适配器拆成独立的
+`ophel-adapters-vendor-*.js`，经 `@require` 引入（安装时缓存，不占用脚本本字符数）：
+
+- `src/adapters/builtin.ts`：扩展端内置适配器列表（顺序即匹配优先级）。
+  油猴构建通过 vite alias 把 `~adapters/builtin` 替换为
+  `src/platform/userscript/builtin-adapters.ts`，改为实例化 vendor 注册到
+  `window.__OphelBuiltinAdapters` 的类。vendor 入口
+  `src/platform/userscript/adapters-vendor.ts` 中的类顺序必须与 `builtin.ts` 一致。
+- vendor 与主包是两个独立 bundle，**有状态模块禁止双份打包**，统一经
+  `window.__OphelAdaptersVendorBridge` 懒解析主包单例，桥接 shim 位于
+  `src/platform/userscript/vendor-bridge/`。当前桥接清单：
+  `~stores/settings-store`（store 单例）、`~core/watermark-remover`（静态单例）、
+  `~utils/i18n`（语言状态）。适配器新增对有状态共享模块的 import 时，
+  必须评估是双份（仅限无状态模块）还是加入桥接清单。
+- `platform.remoteConfig` 在 vendor 中被替换为显式抛错的 stub
+  （`remote-config-stub.ts`），用于截断站点包注册表链路；
+  适配器代码不允许调用 `platform.remoteConfig.*`。
+- **版本握手**：vendor 在 `window.__OphelAdaptersVendorMeta` 注册
+  `{ version, schemaVersion }`（由 `__OPHEL_APP_VERSION__` 注入），
+  主包实例化前校验，不一致则显式报错并停用内置适配器，
+  防止脚本更新后 @require 缓存滞留导致静默错配。
+- **完整性片段**：构建会为自托管资产的 `@require`/`@resource` URL 追加
+  `#sha256=` SRI 片段，Tampermonkey 安装时校验内容；release 工作流在
+  pin URL 之后执行 `scripts/verify-userscript-assets.mjs`，逐字节比对
+  jsDelivr 远端与本地产物。
+- **字符数闸门**：构建结尾检查 `ophel.user.js` 字符数，超过项目闸门
+  （195 万，Greasyfork 硬限 200 万）直接构建失败；触闸应继续向
+  vendor/`@resource` 拆分，而不是顶着上限发布。
+
 ## 模块结构图
 
 ```mermaid
@@ -150,8 +181,9 @@ pnpm install
 # 开发模式（浏览器扩展）
 pnpm dev
 
-# 开发模式（油猴脚本）
-pnpm dev:userscript
+# 本地调试油猴脚本（两条命令配合，资源服务需保持运行）
+pnpm build:userscript:local      # 构建并指向本地资源服务
+pnpm serve:userscript:assets     # 启动本地资源服务（@require/@resource 走 127.0.0.1）
 
 # 构建浏览器扩展 (Chrome)
 pnpm build
@@ -177,8 +209,7 @@ pnpm format:check  # Prettier 只检查
 pnpm typecheck     # TypeScript 类型检查
 
 # 文档站
-pnpm docs:dev      # 本地预览
-pnpm docs:build    # 构建文档
+用户文档由独立仓库 ophel-docs 维护，发布到 https://ophel.app/docs（中文版位于 https://ophel.app/docs/zh）。
 ```
 
 ### 关键入口文件

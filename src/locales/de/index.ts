@@ -15,9 +15,181 @@ export const de = {
   tabPrompts: "Prompt-Bibliothek",
   tabSettings: "Einstellungen",
 
+  elementPickerInstruction:
+    "Bewege den Zeiger über ein Seitenelement und klicke, um es auszuwählen",
+  elementPickerCancelHint: "Drücke Esc zum Abbrechen",
+  elementPickerIframeUnsupported:
+    "Elemente in eingebetteten Frames (iframes) können nicht ausgewählt werden. Wähle ein Element außerhalb des Frames.",
+
+  // Assistent für Website-Adapter
+  siteAdapterWizardLauncher: "Adapter für diese Website erstellen",
+  siteAdapterWizardResume: "Adapter-Einrichtung fortsetzen",
+  siteAdapterWizardTitle: "Website-Adapter einrichten",
+  siteAdapterWizardSubtitle: "Seitenelemente auswählen und die Gliederung live prüfen.",
+  siteAdapterWizardProgress: "Schritt {current} von {total}",
+  siteAdapterWizardProgressLabel: "Fortschritt der Adapter-Einrichtung",
+  siteAdapterWizardOptional: "Optional",
+  siteAdapterWizardPick: "Auf der Seite auswählen",
+  siteAdapterWizardRepick: "Erneut auswählen",
+  siteAdapterWizardSelectorLabel: "Elementselektor",
+  siteAdapterWizardSelectorGenerated: "Automatisch erzeugt",
+  siteAdapterWizardSelectorManual: "Manuell bearbeitet",
+  siteAdapterWizardAiTitle: "KI-Selektorentwurf",
+  siteAdapterWizardAiOptional: "Optional",
+  siteAdapterWizardAiSummary: "Bereinigten Prompt kopieren und Selektor-JSON einfügen",
+  siteAdapterWizardAiPrivacy:
+    "Es werden keine Daten automatisch gesendet. Der Prompt enthält keine Gesprächstexte, Eingabewerte, Links, Skripte oder Ophel-Oberfläche; prüfe ihn vor dem Teilen auf sensiblen Seiten.",
+  siteAdapterWizardAiCopy: "KI-Prompt kopieren",
+  siteAdapterWizardAiCopying: "Wird kopiert…",
+  siteAdapterWizardAiCopied:
+    "Bereinigter KI-Prompt kopiert. Füge ihn in einen KI-Assistenten deiner Wahl ein.",
+  siteAdapterWizardAiCopyFailed:
+    "Der KI-Prompt konnte nicht kopiert werden. Prüfe die Zwischenablage-Berechtigung und versuche es erneut.",
+  siteAdapterWizardAiResponseLabel: "KI-Selektor-JSON",
+  siteAdapterWizardAiResponsePlaceholder: "Das von der KI zurückgegebene JSON-Objekt einfügen",
+  siteAdapterWizardAiApply: "Entwurf anwenden",
+  siteAdapterWizardAiSelectorSource: "Von KI vorgeschlagen",
+  siteAdapterWizardAiReviewReminder:
+    "Die KI-Ausgabe ist nur ein Entwurf. Prüfe jeden Schritt vor dem Speichern.",
+  siteAdapterWizardAiAppliedSuccess:
+    "{count} KI-Selektoren wurden angewendet und haben die Live-Prüfung bestanden. Prüfe jeden Schritt vor dem Speichern.",
+  siteAdapterWizardAiAppliedReview:
+    "{applied} angewendet: {valid} bestanden, {review} zu prüfen; {rejected} ungültige oder nicht passende Selektoren wurden abgelehnt, ohne vorhandene Auswahlen zu ersetzen.",
+  siteAdapterWizardAiAppliedNone:
+    "Keine Selektoren angewendet. {rejected} ungültige oder nicht passende Selektoren wurden abgelehnt; vorhandene Auswahlen blieben erhalten.",
+  siteAdapterWizardAiErrorInvalidJson:
+    "Füge gültiges JSON oder genau einen JSON-Codeblock ohne Begleittext ein.",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "Die Struktur des KI-Entwurfs oder seine Selektorfelder sind ungültig. Verwende genau das Format aus dem kopierten Prompt.",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "Die KI-Antwort ist zu lang. Bitte um ausschließliches Selektor-JSON und versuche es erneut.",
+  siteAdapterWizardAiErrorNoSelectors: "Die KI-Antwort enthält keine verwendbaren Selektoren.",
+  siteAdapterWizardSelectorPlaceholder: "CSS-Selektor eingeben",
+  siteAdapterWizardPickFirst: "Wähle zuerst ein Element auf der Seite aus",
+  siteAdapterWizardPickerBusy: "Eine andere Elementauswahl ist bereits aktiv.",
+  siteAdapterWizardIssueMissing: "Wähle ein Element aus oder gib seinen Selektor ein.",
+  siteAdapterWizardIssueDisconnected:
+    "Das ausgewählte Element ist nicht mehr auf der Seite. Wähle es erneut aus.",
+  siteAdapterWizardIssueInvalid: "Dieser Selektor hat eine ungültige Syntax.",
+  siteAdapterWizardIssueTooLong: "Dieser Selektor ist für ein SitePack zu lang.",
+  siteAdapterWizardIssueNoMatch: "Dieser Selektor trifft derzeit auf kein Element zu.",
+  siteAdapterWizardIssueTargetMismatch:
+    "Dieser Selektor enthält das ausgewählte Element nicht mehr.",
+  siteAdapterWizardIssueNotUnique: "Dieses Steuerelement darf nur auf ein Element zutreffen.",
+  siteAdapterWizardIssueUnsupportedInput:
+    "Wähle ein Textfeld oder einen bearbeitbaren Eingabebereich.",
+  siteAdapterWizardIssueContainerMissing: "Wähle zuerst einen gültigen Gesprächscontainer.",
+  siteAdapterWizardIssueOutsideContainer:
+    "Alle passenden Nachrichten müssen im ausgewählten Gesprächscontainer liegen.",
+  siteAdapterWizardGenerateDisconnected:
+    "Das Element änderte sich, bevor ein Selektor erstellt werden konnte.",
+  siteAdapterWizardGenerateOutsideRoot:
+    "Dieses Element ist vom aktuellen Seitenstamm nicht erreichbar.",
+  siteAdapterWizardGenerateManual:
+    "Es konnte kein stabiler Selektor erzeugt werden. Gib ihn manuell ein oder wähle ein eindeutigeres Element.",
+  siteAdapterWizardStepReady: "Dieser Schritt ist bereit.",
+  siteAdapterWizardMatchCount: "{count} Treffer",
+  siteAdapterWizardUnique: "Eindeutig",
+  siteAdapterWizardShared: "Mehrfach",
+  siteAdapterWizardContained: "Im Container",
+  siteAdapterWizardStepTextareaTitle: "Nachrichteneingabe",
+  siteAdapterWizardStepTextareaDesc: "Wähle das Feld, in das du eine Nachricht eingibst.",
+  siteAdapterWizardStepSubmitTitle: "Senden-Schaltfläche",
+  siteAdapterWizardStepSubmitDesc: "Wähle die Schaltfläche, die die aktuelle Nachricht sendet.",
+  siteAdapterWizardStepContainerTitle: "Gesprächscontainer",
+  siteAdapterWizardStepContainerDesc:
+    "Wähle den Bereich mit den Nachrichten der aktuellen Unterhaltung.",
+  siteAdapterWizardStepUserTitle: "Benutzernachricht",
+  siteAdapterWizardStepUserDesc:
+    "Wähle eine eigene Nachricht. Ein mehrfach passender Selektor kann alle Benutzernachrichten erfassen.",
+  siteAdapterWizardStepAssistantTitle: "KI-Antwort",
+  siteAdapterWizardStepAssistantDesc:
+    "Wähle eine KI-Antwort. Ein mehrfach passender Selektor kann alle KI-Antworten erfassen.",
+  siteAdapterWizardStepConversationTitle: "Eintrag in der Gesprächsliste",
+  siteAdapterWizardStepConversationDesc:
+    "Optional: Wähle einen Eintrag im Verlauf oder in der Seitenleiste.",
+  siteAdapterWizardStepNewChatTitle: "Schaltfläche für neuen Chat",
+  siteAdapterWizardStepNewChatDesc: "Optional: Wähle das Steuerelement für eine neue Unterhaltung.",
+  siteAdapterWizardPreviewEyebrow: "Live-Vorschau",
+  siteAdapterWizardPreviewTitle: "Gesprächsgliederung",
+  siteAdapterWizardPreviewReady: "Bereit",
+  siteAdapterWizardPreviewEmpty:
+    "Wähle gültige Benutzer- und KI-Nachrichten, um hier die Gliederung zu sehen.",
+  siteAdapterWizardPreviewNoText: "Dieses Element enthält keinen lesbaren Text",
+  siteAdapterWizardUser: "Benutzer",
+  siteAdapterWizardAssistant: "KI",
+  siteAdapterWizardCapabilitiesTitle: "Verfügbare Funktionen",
+  siteAdapterWizardCapabilitiesEmpty:
+    "Funktionen erscheinen, sobald die Pflichtauswahl gültig ist.",
+  siteAdapterWizardCapabilityPrompt: "Prompt-Einfügung",
+  siteAdapterWizardCapabilityOutline: "Gesprächsgliederung",
+  siteAdapterWizardCapabilityUserQueries: "Benutzerfragen in der Gliederung",
+  siteAdapterWizardCapabilityExport: "Basisexport",
+  siteAdapterWizardCapabilityHistory: "Leseverlauf",
+  siteAdapterWizardCapabilityNewChat: "Neue Unterhaltung",
+  siteAdapterWizardConversationCaptured:
+    "Gesprächseintrag erfasst; er bleibt aus dem Paket, bis ID- und Linkregeln bekannt sind.",
+  siteAdapterWizardCompleteTitle: "Der Adapterentwurf ist bereit",
+  siteAdapterWizardCompleteDesc:
+    "Die erforderlichen Seitenelemente sind gültig und die Gliederung kann angezeigt werden.",
+  siteAdapterWizardPublishEyebrow: "Speichern & beitragen",
+  siteAdapterWizardPublishTitle: "Diesen Adapter veröffentlichen",
+  siteAdapterWizardPublishDesc:
+    "Prüfe die erzeugten Metadaten und speichere das Paket lokal oder exportiere dasselbe validierte JSON.",
+  siteAdapterWizardPublishNameLabel: "Website-Name",
+  siteAdapterWizardPublishIdLabel: "Paket-ID",
+  siteAdapterWizardPublishIdHint: "Kleinbuchstaben, Zahlen und Bindestriche",
+  siteAdapterWizardPublishVersionHint: "Bei Aktualisierungen desselben Pakets erhöhen",
+  siteAdapterWizardPublishOriginLabel: "Exakte Domain",
+  siteAdapterWizardPublishMinVersionLabel: "Minimale Ophel-Version",
+  siteAdapterWizardPublishConversationOmitted:
+    "Der Gesprächseintrag wird nicht aufgenommen, da seine ID- und URL-Regeln nicht sicher abgeleitet werden können.",
+  siteAdapterWizardPublishDraftInvalid:
+    "Eine erforderliche Auswahl ist nicht mehr gültig. Kehre zu diesem Schritt zurück und wähle sie erneut aus.",
+  siteAdapterWizardPublishHttpsRequired:
+    "SitePacks können nur für eine HTTPS-Domain erstellt werden.",
+  siteAdapterWizardPublishManifestInvalid: "Das erzeugte SitePack ist ungültig.",
+  siteAdapterWizardPublishNameInvalid: "Gib einen Website-Namen ein.",
+  siteAdapterWizardPublishIdInvalid:
+    "Die Paket-ID muss aus 2–40 Kleinbuchstaben, Zahlen oder Bindestrichen bestehen.",
+  siteAdapterWizardPublishVersionInvalid: "Die Version muss eine positive ganze Zahl sein.",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "Die aktuelle Ophel-Version ist keine gültige Mindestversion.",
+  siteAdapterWizardPublishManifestInvalidField: "Prüfe das erzeugte Feld: {field}",
+  siteAdapterWizardPublishVersionConflict:
+    "Diese ID und Version enthalten bereits andere Inhalte. Erhöhe die Version und versuche es erneut.",
+  siteAdapterWizardPublishSourceConflict:
+    "Diese Paket-ID ist bereits aus einer anderen Quelle installiert. Wähle eine andere ID.",
+  siteAdapterWizardPublishMatchConflict:
+    "Diese Domain überschneidet sich mit einem integrierten oder installierten SitePack.",
+  siteAdapterWizardPublishSaveFailed:
+    "Das SitePack konnte nicht gespeichert werden. Prüfe die Metadaten und versuche es erneut.",
+  siteAdapterWizardPublishPermissionDenied:
+    "Der Website-Zugriff wurde nicht erlaubt; das gespeicherte Paket wurde deaktiviert.",
+  siteAdapterWizardPublishSaved:
+    "„{name}“ wurde lokal gespeichert. Lade diese Seite neu, um es zu aktivieren.",
+  siteAdapterWizardPublishDownloaded: "Das validierte SitePack-JSON wurde heruntergeladen.",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON kopiert. Die vorausgefüllte GitHub-Beitragsseite wurde geöffnet.",
+  siteAdapterWizardPublishOpenFailed:
+    "JSON wurde kopiert, aber GitHub konnte nicht geöffnet werden. Öffne das Repository und füge den Inhalt manuell ein.",
+  siteAdapterWizardPublishReloadTitle: "Neu laden erforderlich",
+  siteAdapterWizardPublishReloadDesc:
+    "Das Paket ist gespeichert und registriert. Lade neu, damit alle Adaptermodule mit einem vollständigen Seitenzyklus starten.",
+  siteAdapterWizardPublishOpening: "GitHub wird geöffnet…",
+  siteAdapterWizardPublishGithub: "JSON kopieren & GitHub öffnen",
+  siteAdapterWizardPublishSaving: "Wird gespeichert…",
+  siteAdapterWizardStartOver: "Neu beginnen",
+  siteAdapterWizardDone: "Fertig",
+  siteAdapterWizardBack: "Zurück",
+  siteAdapterWizardNext: "Weiter",
+  siteAdapterWizardSkip: "Überspringen",
+  siteAdapterWizardFinish: "Einrichtung abschließen",
+
   // ======== Options Page Navigation ========
   navGeneral: "Allgemein",
-  navSiteSettings: "Websites",
+  navSiteSettings: "Website-Einstellungen",
+  navSitePacks: "Website-Pakete",
   navGlobalSearch: "Globale Suche",
   navAppearance: "Erscheinungsbild",
   navPageContent: "Inhalt",
@@ -29,6 +201,105 @@ export const de = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Layout und Verarbeitung pro Website konfigurieren",
+  communitySitePackBadge: "Community-Paket (Kernfunktionen)",
+  communitySitePackDesc:
+    "Diese Website wird durch ein Community-Paket unterstützt. Es werden nur die Funktionen angezeigt, die das Paket unterstützt.",
+  sitePacksPageDesc:
+    "Installiere und verwalte Website-Pakete, damit Ophel weitere KI-Websites unterstützt.",
+
+  // SitePack Manager
+  sitePacksGuideAction: "Anleitung",
+  sitePacksRegistryTitle: "Online-Bibliothek",
+  sitePacksLocalImportTitle: "Paket aus Datei installieren",
+  sitePacksLocalImportDesc:
+    "Installiert ein Adapter-Paket aus einer lokalen JSON-Datei. Geeignet für Offline-Pakete oder noch nicht gelistete Pakete. Nur vertrauenswürdige Dateien importieren.",
+  sitePacksCheckUpdates: "Nach Updates suchen",
+  sitePacksBindingHttpsRequired:
+    "Nur HTTPS-Websites können hinzugefügt werden. HTTP-Websites werden nicht unterstützt.",
+  sitePacksRegistrySearchPlaceholder: "Pakete suchen",
+  sitePacksRegistryNoMatch: "Keine passenden Pakete",
+  sitePacksOpenSite: "Website öffnen",
+  sitePacksTabInstalled: "Installiert",
+  sitePacksTabOrigins: "Eigene Websites",
+  sitePacksTabUpdates: "Durchsuchen & Updates",
+  sitePacksBindingListTitle: "Hinzugefügte Websites",
+  sitePacksStatusUnavailable: "Aus Bibliothek entfernt",
+  remoteConfigStatusSummary: "Index {revision} · zuletzt geprüft {time}",
+  sitePacksInstall: "Installieren",
+  sitePacksUpdate: "Aktualisieren",
+  sitePacksUninstall: "Deinstallieren",
+  sitePacksInstalledBadge: "Installiert",
+  sitePacksEnabledLabel: "Aktiviert",
+  sitePacksSourceRegistry: "Online",
+  sitePacksSourceLocal: "Lokaler Import",
+  sitePacksStatusAvailable: "Verfügbar",
+  sitePacksStatusMatchRequired: "Match-Regel erforderlich",
+  sitePacksStatusDisabled: "Deaktiviert",
+  sitePacksStatusIncompatible: "Nicht kompatibel",
+  sitePacksStatusPackMissing: "Paket fehlt",
+  sitePackBindingNoticeTitle: "Website-Bindung ungültig",
+  sitePackBindingNoticeMessage:
+    'Diese Website ist an das Website-Paket "{packId}" gebunden, das deinstalliert wurde oder nicht mehr gültig ist. Das Panel wurde daher nicht geladen. Installieren Sie das Paket erneut oder entfernen Sie diese Bindung in den Website-Pakete-Einstellungen.',
+  sitePackBindingNoticeAction: "Website-Pakete öffnen",
+  sitePacksSelfHostedBadge: "Selbst gehostet",
+  sitePacksSelfHostedHint: "Erfordert eine gebundene Domain",
+  sitePacksNeedsBindingBadge: "Bindung erforderlich",
+  sitePacksBindNowAction: "Jetzt binden",
+  sitePacksNoInstalled: "Keine Site-Pakete installiert",
+  sitePacksRegistryEmpty: "Keine Pakete im Bibliotheks-Cache",
+  sitePacksLoadFailed: "Site-Pakete konnten nicht geladen werden: {error}",
+  sitePacksOperationFailed: "Site-Paket-Aktion fehlgeschlagen: {error}",
+  sitePacksPermissionTitle: "Site-Paket-Zugriff erlauben?",
+  sitePacksPermissionDesc: 'Ophel muss "{name}" auf folgenden Sites ausführen: {origins}',
+  sitePacksPermissionDenied:
+    'Der Site-Zugriff für "{name}" wurde nicht gewährt; das Paket bleibt deaktiviert.',
+  sitePacksPermissionReviewTitle: "Wiederhergestellte Site-Packs erneut autorisieren",
+  sitePacksInvalidFile: "Diese JSON-Datei ist kein gültiges SitePack.",
+  sitePacksValidationErrorsTitle: "Validierungsdetails",
+  sitePacksStoredIssuesTitle: "Probleme gespeicherter Pakete",
+  sitePacksImportConfirmTitle: "Dieses Site-Paket importieren?",
+  sitePacksImportRisk:
+    "Site-Pakete können Seitenstile und das Verhalten von Ophel auf passenden Websites verändern. Importieren Sie nur Pakete aus vertrauenswürdigen Quellen.",
+  sitePacksImportSummary: "{name} ({id}), Version {version}, passt auf {matches} Website-Muster.",
+  sitePacksUninstallConfirmTitle: "Dieses Site-Paket deinstallieren?",
+  sitePacksUninstallConfirmDesc: "{name} von diesem Gerät entfernen?",
+  sitePacksUninstallKeepData: "Website-Einstellungen und Gesprächsdaten bleiben erhalten.",
+  sitePacksSavedSuccess: "{name} wurde installiert.",
+  sitePacksUpdatedSuccess: "{name} wurde aktualisiert.",
+  sitePacksRemovedSuccess: "{name} wurde deinstalliert.",
+  sitePacksStateChanged: "{name} ist jetzt {state}.",
+  sitePacksEnabledState: "aktiviert",
+  sitePacksDisabledState: "deaktiviert",
+  sitePacksRequiresNewerApp: "Erfordert Ophel {version} oder neuer",
+  sitePacksCustomOriginsTitle: "Eigene Website hinzufügen",
+  sitePacksCustomOriginsDesc:
+    "Füge deine selbst gehostete KI-Website hinzu (z. B. Open WebUI) und wähle, welches Paket sie unterstützt.",
+  sitePacksCustomOriginLabel: "HTTPS-Ursprung",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "Paket",
+  sitePacksBindingPackPlaceholder: "Installiertes Pack auswählen",
+  sitePacksBindingEmpty: "Noch keine eigenen Websites hinzugefügt",
+  sitePacksBindingEditing: "Wird bearbeitet: {origin}",
+  sitePacksBindingOriginExists:
+    "{origin} wurde bereits hinzugefügt. Bearbeite oder lösche den Eintrag zuerst in der Liste.",
+  sitePacksBindingHint:
+    "Gib einen exakten HTTPS-Ursprung ein, z. B. https://chat.example.com. Pfade und Platzhalter sind nicht zulässig.",
+  sitePacksBindingPermissionDenied:
+    "Die Berechtigung für {origin} wurde nicht erteilt; die Website wurde nicht gespeichert.",
+  sitePacksUserscriptCoverageTitle: "Userscript-Match-Regeln hinzufügen",
+  sitePacksUserscriptCoverageDesc:
+    "In {manager} fehlen {count} SitePack-Match-Regeln. Kopiere die folgenden Regeln, bevor du die betroffenen Websites öffnest.",
+  sitePacksUserscriptManagerUnknown: "Der aktuelle Userscript-Manager",
+  sitePacksUserscriptGuideTampermonkey:
+    "In Tampermonkey hinzufügen: Dashboard → dieses Skript → Tab „Einstellungen“ → „Benutzer-Matches“ → „Hinzufügen“ und eine der obigen Regeln einfügen.",
+  sitePacksUserscriptGuideViolentmonkey:
+    "In Violentmonkey hinzufügen: Dashboard → Einstellungssymbol neben diesem Skript → Tab „Benutzerdefiniert“ → eine der obigen Regeln bei den benutzerdefinierten Match-Regeln einfügen.",
+  sitePacksUserscriptGuideGeneric:
+    "Öffne die Einstellungen dieses Skripts in deinem Userscript-Manager und füge die obigen Regeln als Benutzer-(benutzerdefinierte) Match-Regeln hinzu.",
+  sitePacksUserscriptCoveragePersistNote:
+    "Jede Regel muss nur einmal hinzugefügt werden und bleibt auch nach Skript-Updates erhalten. Lade danach die Zielseite neu.",
+  sitePacksMatchGuideAction: "Anleitung anzeigen",
+  sitePacksBindingPackRequired: "Wähle zuerst ein installiertes Paket aus.",
 
   generalPageDesc: "Verhalten der Erweiterung konfigurieren",
   appearancePageDesc: "Visuelle Stile und Themes anpassen",
@@ -61,7 +332,7 @@ export const de = {
   required: "Erforderlich",
   permissionWebdavAccess: "Zugriff auf erweiterte Funktionen",
   permissionWebdavAccessDesc:
-    "Zugriff auf alle Websites. Erforderlich für WebDAV und Wasserzeichen-Entfernung.",
+    "Zugriff auf alle Websites. Erforderlich für WebDAV, Wasserzeichen-Entfernung und die Ausführung installierter Site Packs auf ihren Zielseiten ohne sitebezogene Abfragen.",
 
   // Required permissions
   permissionStorage: "Speicher",
@@ -1398,6 +1669,7 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   popupUnsupported: "Nicht unterstützt",
   popupNewChat: "Neuer Chat",
   popupQuickAccess: "Schnellzugriff",
+  popupSitePackUnbound: "Keine Website hinzugefügt",
   popupRecentUsed: "Kürzlich",
   popupNoRecentPrompts: "Keine kürzlichen Prompts",
   popupCopied: "Kopiert",
@@ -1678,6 +1950,77 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   "featureTip-notifications-desc":
     "Desktop-Benachrichtigung wenn KI fertig ist — keine Antwort verpassen",
   "featureTip-notifications-path": "Funktionen → Hinweise → Desktop-Benachrichtigung",
+  // Aktualisierungen der Adapterkonfiguration
+  remoteConfigSettingsTitle: "Aktualisierungen der Adapterkonfiguration",
+  remoteConfigAutoUpdateLabel: "Adapterkonfigurationen automatisch aktualisieren",
+  remoteConfigAutoUpdateDesc: "Prüft höchstens einmal alle 24 Stunden.",
+  remoteConfigRegistrySourceLabel: "Registry-Quelle für die Entwicklung",
+  remoteConfigRegistrySourceDesc:
+    "Nur in Entwicklungs-Builds verfügbar. Vollständige index.json-URL eingeben; leer lassen, um die Standardquellen zu verwenden.",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "Anwenden",
+  remoteConfigRegistrySourceApplied:
+    "Registry-Quelle für die Entwicklung gespeichert. Sie wird bei der nächsten Update-Prüfung verwendet.",
+  remoteConfigRegistrySourceCleared: "Standard-Registry-Quellen wiederhergestellt.",
+  remoteConfigRegistrySourceInvalid: "Ungültige Registry-Quelle: {error}",
+  remoteConfigCheckNowLabel: "Jetzt nach Updates suchen",
+  remoteConfigCheckNowButton: "Jetzt prüfen",
+  remoteConfigCheckingButton: "Wird geprüft…",
+  remoteConfigStatusLoading: "Wird geladen…",
+  remoteConfigNeverChecked: "Noch nie geprüft",
+  remoteConfigActivePatchesLabel: "Aktive Patches",
+  remoteConfigUsingBuiltin: "Derzeit werden die integrierten Konfigurationen verwendet",
+  remoteConfigPatchVersionLabel: "Patch-Version",
+  remoteConfigBaseVersionLabel: "Version der integrierten Konfiguration",
+  remoteConfigResetBuiltinButton: "Auf integriert zurücksetzen",
+  remoteConfigResettingButton: "Wird zurückgesetzt…",
+  remoteConfigPrivacyDesc:
+    "Update-Prüfungen senden nur GET-Anfragen an statische CDNs, ohne Konversations- oder Kontodaten.",
+  remoteConfigCheckUpdated:
+    "Neue Adapterkonfigurationen wurden heruntergeladen. Laden Sie die passenden AI-Seiten neu, um sie anzuwenden.",
+  remoteConfigCheckUpToDate: "Ihre Adapterkonfigurationen sind aktuell.",
+  remoteConfigCheckFailed: "Update-Prüfung fehlgeschlagen: {error}",
+  remoteConfigResetSuccess: "{site} wurde auf die integrierte Konfiguration zurückgesetzt.",
+  remoteConfigResetFailed: "Zurücksetzen fehlgeschlagen: {error}",
+  remoteConfigResetUnavailable: "Es gibt keine aktive Konfiguration zum Zurücksetzen.",
+  remoteConfigRegistryActiveSourceLabel: "Aktive Quelle",
+  remoteConfigRegistryActiveSourceDefault:
+    "Offizielle Standardquellen (noch nicht zwischengespeichert)",
+  remoteConfigRegistryOverrideLabel: "Override aktiv",
+  remoteConfigRegistryLastErrorLabel: "Letzter Fehler",
+  remoteConfigRegistryRestoreDefaultsButton: "Standards wiederherstellen",
+  remoteConfigRegistryCacheClearButton: "Cache leeren",
+  remoteConfigRegistryCacheCleared: "Registry-Cache geleert (lokale Patches bleiben).",
+  remoteConfigRegistryCacheClearFailed: "Cache konnte nicht geleert werden: {error}",
+  remoteConfigRegistryDefaultsRestored:
+    "Standard-Registry-Quellen wiederhergestellt und erneut geprüft.",
+  remoteConfigLocalRegistryCheckFailed:
+    "Lokale Registry-Prüfung fehlgeschlagen ({url}): {error}. Stelle sicher, dass pnpm registry:serve läuft.",
+  remoteConfigLocalRegistryUseButton: "Lokales Registry nutzen",
+  remoteConfigLocalRegistryHint:
+    "Zuerst pnpm registry:serve ausführen, dann “{button}” klicken. Nur Entwicklungsbuilds vertrauen dem lokalen Signaturschlüssel.",
+  remoteConfigLocalRegistrySourceApplied:
+    "Auf lokale Registry-Quelle umgestellt und Update-Prüfung gestartet.",
+  remoteConfigLocalRegistryPermissionDenied:
+    "Host-Berechtigung für lokales Registry verweigert. Erlaube 127.0.0.1 und versuche es erneut.",
+
+  remoteConfigLocalPatchImportButton: "Site-Hotfix importieren",
+  remoteConfigLocalPatchImportDesc:
+    "Importiert eine Selektor-Hotfix-JSON für eine integrierte Site. Lokale Hotfixes haben Vorrang vor Remote-Patches und eignen sich zur Prüfung vor dem Beitrag. Installiert kein neues Adapter-Paket.",
+  remoteConfigLocalPatchConfirmTitle: "Lokalen Patch importieren?",
+  remoteConfigLocalPatchRisk:
+    "Lokale Patches werden nicht durch die offizielle Registry-Signatur authentifiziert. Importiere nur Dateien, denen du vertraust.",
+  remoteConfigLocalPatchSummary:
+    "Installiert Patch v{version} für {site} ({id}) gegen integrierte Config-Version {base}.",
+  remoteConfigLocalPatchInstalled:
+    "Lokaler Patch v{version} für {site} installiert. Öffne die Site zum Prüfen und lade bei Bedarf neu.",
+  remoteConfigLocalPatchRemoved: "Lokaler Patch für {site} entfernt.",
+  remoteConfigLocalPatchRemoveFailed: "Lokaler Patch konnte nicht entfernt werden: {error}",
+  remoteConfigLocalPatchRemoveButton: "Lokalen Patch entfernen",
+  remoteConfigLocalPatchInvalid: "Das lokale Patch-JSON ist ungültig oder unvollständig.",
+  remoteConfigPatchSourceLocal: "Lokal",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Discord-Community",
   discordDesc:
     "Treten Sie unserer Community bei, um sich mit anderen Nutzern auszutauschen, Feedback zu geben und die neuesten Updates zu erhalten",

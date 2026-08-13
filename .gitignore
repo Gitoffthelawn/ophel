@@ -23,8 +23,11 @@ yarn-error.log*
 .env*.local
 
 out/
+output/
 build/
 dist/
+/registry/dist/
+/.registry-dist/
 
 # plasmo
 .plasmo
@@ -39,8 +42,10 @@ docs/site/.vitepress/cache
 docs/site/.vitepress/dist
 
 .playwright-mcp
+.playwright-cli
 assets/assistant-mermaid-vendor.js
 comparison_result.txt
+test-results/
 
 # Claude AI related (all local, not for sharing)
 .claude/

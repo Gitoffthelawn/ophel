@@ -15,9 +15,174 @@ export const en = {
   tabPrompts: "Prompts",
   tabSettings: "Settings",
 
+  elementPickerInstruction: "Move over a page element, then click to select it",
+  elementPickerCancelHint: "Press Esc to cancel",
+  elementPickerIframeUnsupported:
+    "Elements inside embedded frames (iframes) cannot be selected. Choose an element outside the frame.",
+
+  // Site adapter wizard
+  siteAdapterWizardLauncher: "Create an adapter for this site",
+  siteAdapterWizardResume: "Resume adapter setup",
+  siteAdapterWizardTitle: "Site adapter setup",
+  siteAdapterWizardSubtitle: "Select page elements and check the live outline.",
+  siteAdapterWizardProgress: "Step {current} of {total}",
+  siteAdapterWizardProgressLabel: "Adapter setup progress",
+  siteAdapterWizardOptional: "Optional",
+  siteAdapterWizardPick: "Select on page",
+  siteAdapterWizardRepick: "Select again",
+  siteAdapterWizardSelectorLabel: "Element selector",
+  siteAdapterWizardSelectorGenerated: "Generated automatically",
+  siteAdapterWizardSelectorManual: "Edited manually",
+  siteAdapterWizardAiTitle: "AI selector draft",
+  siteAdapterWizardAiOptional: "Optional",
+  siteAdapterWizardAiSummary: "Copy a sanitized prompt, then paste selector JSON",
+  siteAdapterWizardAiPrivacy:
+    "Nothing is sent automatically. The prompt excludes conversation text, input values, links, scripts, and Ophel UI; review it before sharing on sensitive pages.",
+  siteAdapterWizardAiCopy: "Copy AI prompt",
+  siteAdapterWizardAiCopying: "Copying…",
+  siteAdapterWizardAiCopied:
+    "Sanitized AI prompt copied. Paste it into an AI assistant of your choice.",
+  siteAdapterWizardAiCopyFailed:
+    "Could not copy the AI prompt. Check clipboard permission and try again.",
+  siteAdapterWizardAiResponseLabel: "AI selector JSON",
+  siteAdapterWizardAiResponsePlaceholder: "Paste the JSON object returned by the AI",
+  siteAdapterWizardAiApply: "Apply draft",
+  siteAdapterWizardAiSelectorSource: "Suggested by AI",
+  siteAdapterWizardAiReviewReminder: "AI output is only a draft. Review every step before saving.",
+  siteAdapterWizardAiAppliedSuccess:
+    "AI selectors applied and live-validated: {count}. Review every step before saving.",
+  siteAdapterWizardAiAppliedReview:
+    "Applied: {applied}. Passed: {valid}. Needs review: {review}. Rejected without replacing existing selections: {rejected} invalid or non-matching.",
+  siteAdapterWizardAiAppliedNone:
+    "No selectors were applied. {rejected} invalid or non-matching selectors were rejected, and existing selections were kept.",
+  siteAdapterWizardAiErrorInvalidJson:
+    "Paste valid JSON or a single fenced JSON block with no surrounding text.",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "The AI draft shape or selector fields are invalid. Use the exact schema shown in the copied prompt.",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "The AI response is too large. Ask for selector-only JSON and try again.",
+  siteAdapterWizardAiErrorNoSelectors: "The AI response does not contain any usable selectors.",
+  siteAdapterWizardSelectorPlaceholder: "Enter a CSS selector",
+  siteAdapterWizardPickFirst: "Select an element on the page first",
+  siteAdapterWizardPickerBusy: "Another element selection is already active.",
+  siteAdapterWizardIssueMissing: "Select an element or enter its selector.",
+  siteAdapterWizardIssueDisconnected:
+    "The selected element is no longer on the page. Select it again.",
+  siteAdapterWizardIssueInvalid: "This selector has invalid syntax.",
+  siteAdapterWizardIssueTooLong: "This selector is too long for a SitePack.",
+  siteAdapterWizardIssueNoMatch: "This selector does not match any current element.",
+  siteAdapterWizardIssueTargetMismatch: "This selector no longer includes the selected element.",
+  siteAdapterWizardIssueNotUnique: "This control must match exactly one element.",
+  siteAdapterWizardIssueUnsupportedInput: "Select a text box or an editable input area.",
+  siteAdapterWizardIssueContainerMissing: "Select a valid conversation container first.",
+  siteAdapterWizardIssueOutsideContainer:
+    "Every matching message must be inside the selected conversation container.",
+  siteAdapterWizardGenerateDisconnected: "The element changed before a selector could be created.",
+  siteAdapterWizardGenerateOutsideRoot:
+    "This element cannot be reached from the current page root.",
+  siteAdapterWizardGenerateManual:
+    "A stable selector could not be generated. Enter one manually or select a more specific element.",
+  siteAdapterWizardStepReady: "This step is ready.",
+  siteAdapterWizardMatchCount: "{count} matches",
+  siteAdapterWizardUnique: "Unique",
+  siteAdapterWizardShared: "Repeated",
+  siteAdapterWizardContained: "Inside container",
+  siteAdapterWizardStepTextareaTitle: "Message input",
+  siteAdapterWizardStepTextareaDesc: "Select the box where you type a message.",
+  siteAdapterWizardStepSubmitTitle: "Send button",
+  siteAdapterWizardStepSubmitDesc: "Select the button that sends the current message.",
+  siteAdapterWizardStepContainerTitle: "Conversation container",
+  siteAdapterWizardStepContainerDesc:
+    "Select the area that contains the current conversation messages.",
+  siteAdapterWizardStepUserTitle: "User message",
+  siteAdapterWizardStepUserDesc:
+    "Select one of your messages. A repeated selector may cover all user messages.",
+  siteAdapterWizardStepAssistantTitle: "AI response",
+  siteAdapterWizardStepAssistantDesc:
+    "Select one AI response. A repeated selector may cover all AI responses.",
+  siteAdapterWizardStepConversationTitle: "Conversation list item",
+  siteAdapterWizardStepConversationDesc:
+    "Optionally select one item in the conversation history or sidebar.",
+  siteAdapterWizardStepNewChatTitle: "New chat button",
+  siteAdapterWizardStepNewChatDesc: "Optionally select the control that starts a new conversation.",
+  siteAdapterWizardPreviewEyebrow: "Live preview",
+  siteAdapterWizardPreviewTitle: "Conversation outline",
+  siteAdapterWizardPreviewReady: "Ready",
+  siteAdapterWizardPreviewEmpty:
+    "Select valid user and AI message elements to preview the outline here.",
+  siteAdapterWizardPreviewNoText: "No readable text in this element",
+  siteAdapterWizardUser: "User",
+  siteAdapterWizardAssistant: "AI",
+  siteAdapterWizardCapabilitiesTitle: "Available capabilities",
+  siteAdapterWizardCapabilitiesEmpty:
+    "Capabilities appear as the required selections become valid.",
+  siteAdapterWizardCapabilityPrompt: "Prompt insertion",
+  siteAdapterWizardCapabilityOutline: "Conversation outline",
+  siteAdapterWizardCapabilityUserQueries: "User questions in outline",
+  siteAdapterWizardCapabilityExport: "Basic export",
+  siteAdapterWizardCapabilityHistory: "Reading history",
+  siteAdapterWizardCapabilityNewChat: "New conversation",
+  siteAdapterWizardConversationCaptured:
+    "Conversation item captured; it will stay out of the pack until ID and link rules are known.",
+  siteAdapterWizardCompleteTitle: "The adapter draft is ready",
+  siteAdapterWizardCompleteDesc:
+    "The required page elements pass validation and the outline preview is available.",
+  siteAdapterWizardPublishEyebrow: "Save & contribute",
+  siteAdapterWizardPublishTitle: "Publish this adapter",
+  siteAdapterWizardPublishDesc:
+    "Review the generated metadata, then save locally or export the same validated JSON.",
+  siteAdapterWizardPublishNameLabel: "Site name",
+  siteAdapterWizardPublishIdLabel: "Pack ID",
+  siteAdapterWizardPublishIdHint: "Lowercase letters, numbers, and hyphens",
+  siteAdapterWizardPublishVersionHint: "Increase this when updating the same pack",
+  siteAdapterWizardPublishOriginLabel: "Exact origin",
+  siteAdapterWizardPublishMinVersionLabel: "Minimum Ophel version",
+  siteAdapterWizardPublishConversationOmitted:
+    "The conversation item is not included because its ID and URL rules cannot be derived safely.",
+  siteAdapterWizardPublishDraftInvalid:
+    "A required selection is no longer valid. Return to that step and select it again.",
+  siteAdapterWizardPublishHttpsRequired: "SitePacks can only be created for an HTTPS origin.",
+  siteAdapterWizardPublishManifestInvalid: "The generated SitePack is invalid.",
+  siteAdapterWizardPublishNameInvalid: "Enter a site name.",
+  siteAdapterWizardPublishIdInvalid:
+    "Use 2–40 lowercase letters, numbers, or hyphens for the pack ID.",
+  siteAdapterWizardPublishVersionInvalid: "Version must be a positive whole number.",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "The current Ophel version cannot be used as a valid minimum version.",
+  siteAdapterWizardPublishManifestInvalidField: "Check the generated field: {field}",
+  siteAdapterWizardPublishVersionConflict:
+    "This ID and version already contain different content. Increase the version and try again.",
+  siteAdapterWizardPublishSourceConflict:
+    "This pack ID is already installed from another source. Choose a different ID.",
+  siteAdapterWizardPublishMatchConflict:
+    "This origin conflicts with a built-in or installed SitePack.",
+  siteAdapterWizardPublishSaveFailed:
+    "The SitePack could not be saved. Check the metadata and try again.",
+  siteAdapterWizardPublishPermissionDenied:
+    "Site access was not granted, so the saved pack was disabled.",
+  siteAdapterWizardPublishSaved: '"{name}" was saved locally. Reload this page to activate it.',
+  siteAdapterWizardPublishDownloaded: "The validated SitePack JSON was downloaded.",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON copied. The prefilled GitHub contribution page is open.",
+  siteAdapterWizardPublishOpenFailed:
+    "JSON was copied, but GitHub could not be opened. Open the repository and paste it manually.",
+  siteAdapterWizardPublishReloadTitle: "Reload required",
+  siteAdapterWizardPublishReloadDesc:
+    "The pack is stored and registered. Reload so all adapter modules start from a clean page lifecycle.",
+  siteAdapterWizardPublishOpening: "Opening GitHub…",
+  siteAdapterWizardPublishGithub: "Copy JSON & open GitHub",
+  siteAdapterWizardPublishSaving: "Saving…",
+  siteAdapterWizardStartOver: "Start over",
+  siteAdapterWizardDone: "Done",
+  siteAdapterWizardBack: "Back",
+  siteAdapterWizardNext: "Next",
+  siteAdapterWizardSkip: "Skip",
+  siteAdapterWizardFinish: "Finish",
+
   // ======== Options Page Navigation ========
   navGeneral: "General",
-  navSiteSettings: "Site Config",
+  navSiteSettings: "Site Settings",
+  navSitePacks: "Site Packs",
   navGlobalSearch: "Global Search",
   navAppearance: "Appearance",
   navPageContent: "Page & Content",
@@ -29,6 +194,102 @@ export const en = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Configure site-specific layout and content processing",
+  communitySitePackBadge: "Community pack (core features)",
+  communitySitePackDesc:
+    "This site is powered by a community pack. Only the features it supports are shown.",
+  sitePacksPageDesc: "Install and manage site packs so Ophel supports more AI sites.",
+
+  // SitePack Manager
+  sitePacksGuideAction: "Guide",
+  sitePacksRegistryTitle: "Online pack library",
+  sitePacksLocalImportTitle: "Install pack from file",
+  sitePacksLocalImportDesc:
+    "Install a site pack from a local JSON file. Use this for offline packs or packs not yet listed. Only import files you trust.",
+  sitePacksCheckUpdates: "Check for updates",
+  sitePacksBindingHttpsRequired: "Only HTTPS sites can be added. HTTP sites are not supported.",
+  sitePacksRegistrySearchPlaceholder: "Search packs",
+  sitePacksRegistryNoMatch: "No matching packs",
+  sitePacksOpenSite: "Open site",
+  sitePacksTabInstalled: "Installed",
+  sitePacksTabOrigins: "Custom sites",
+  sitePacksTabUpdates: "Browse & updates",
+  sitePacksBindingListTitle: "Added sites",
+  sitePacksStatusUnavailable: "Removed from library",
+  remoteConfigStatusSummary: "Index {revision} · last checked {time}",
+  sitePacksInstall: "Install",
+  sitePacksUpdate: "Update",
+  sitePacksUninstall: "Uninstall",
+  sitePacksInstalledBadge: "Installed",
+  sitePacksEnabledLabel: "Enabled",
+  sitePacksSourceRegistry: "Online library",
+  sitePacksSourceLocal: "Local import",
+  sitePacksStatusAvailable: "Available",
+  sitePacksStatusMatchRequired: "Match rule needed",
+  sitePacksStatusDisabled: "Disabled",
+  sitePacksStatusIncompatible: "Incompatible",
+  sitePacksStatusPackMissing: "Pack missing",
+  sitePackBindingNoticeTitle: "Site binding inactive",
+  sitePackBindingNoticeMessage:
+    'This site is bound to the site pack "{packId}", which was uninstalled or is no longer valid, so the panel did not load. Reinstall the pack, or remove this binding in Site Packs settings.',
+  sitePackBindingNoticeAction: "Open Site Packs",
+  sitePacksSelfHostedBadge: "Self-hosted",
+  sitePacksSelfHostedHint: "Requires a bound site domain",
+  sitePacksNeedsBindingBadge: "Binding needed",
+  sitePacksBindNowAction: "Bind now",
+  sitePacksNoInstalled: "No site packs installed",
+  sitePacksRegistryEmpty: "No packs in the library cache",
+  sitePacksLoadFailed: "Could not load site packs: {error}",
+  sitePacksOperationFailed: "Site pack operation failed: {error}",
+  sitePacksPermissionTitle: "Allow site pack access?",
+  sitePacksPermissionDesc: 'Ophel needs to run "{name}" on: {origins}',
+  sitePacksPermissionDenied:
+    'Site access for "{name}" was not granted, so the pack remains disabled.',
+  sitePacksPermissionReviewTitle: "Reauthorize restored site packs",
+  sitePacksInvalidFile: "This JSON file is not a valid SitePack.",
+  sitePacksValidationErrorsTitle: "Validation details",
+  sitePacksStoredIssuesTitle: "Stored pack issues",
+  sitePacksImportConfirmTitle: "Import this site pack?",
+  sitePacksImportRisk:
+    "Site packs can change page styles and Ophel behavior on matched sites. Only import packs from sources you trust.",
+  sitePacksImportSummary: "{name} ({id}), version {version}, matches {matches} site patterns.",
+  sitePacksUninstallConfirmTitle: "Uninstall this site pack?",
+  sitePacksUninstallConfirmDesc: "Remove {name} from this device?",
+  sitePacksUninstallKeepData: "Site settings and conversation data are kept.",
+  sitePacksSavedSuccess: "{name} was installed.",
+  sitePacksUpdatedSuccess: "{name} was updated.",
+  sitePacksRemovedSuccess: "{name} was uninstalled.",
+  sitePacksStateChanged: "{name} is now {state}.",
+  sitePacksEnabledState: "enabled",
+  sitePacksDisabledState: "disabled",
+  sitePacksRequiresNewerApp: "Requires Ophel {version} or newer",
+  sitePacksCustomOriginsTitle: "Add a custom site",
+  sitePacksCustomOriginsDesc:
+    "Add your self-hosted AI site (e.g. Open WebUI) and choose which pack supports it.",
+  sitePacksCustomOriginLabel: "HTTPS origin",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "Pack",
+  sitePacksBindingPackPlaceholder: "Choose an installed pack",
+  sitePacksBindingEmpty: "No custom sites added",
+  sitePacksBindingEditing: "Editing: {origin}",
+  sitePacksBindingOriginExists: "{origin} is already added. Edit or delete it from the list first.",
+  sitePacksBindingHint:
+    "Enter an exact HTTPS origin, for example https://chat.example.com. Paths and wildcards are not accepted.",
+  sitePacksBindingPermissionDenied:
+    "Permission for {origin} was not granted, so the site was not saved.",
+  sitePacksUserscriptCoverageTitle: "Add userscript match rules",
+  sitePacksUserscriptCoverageDesc:
+    "{manager} is missing {count} SitePack match rules. Copy the rules below before opening those sites.",
+  sitePacksUserscriptManagerUnknown: "Your userscript manager",
+  sitePacksUserscriptGuideTampermonkey:
+    "To add in Tampermonkey: Dashboard → this script → Settings tab → User matches → Add, then paste a rule from above.",
+  sitePacksUserscriptGuideViolentmonkey:
+    "To add in Violentmonkey: open the dashboard → click the settings icon next to this script → Custom tab → paste a rule from above into the custom match rules.",
+  sitePacksUserscriptGuideGeneric:
+    "Open this script's settings in your userscript manager and add the rules above as user (custom) match rules.",
+  sitePacksUserscriptCoveragePersistNote:
+    "Each rule only needs to be added once and survives script updates. Refresh the target site afterwards.",
+  sitePacksMatchGuideAction: "View setup guide",
+  sitePacksBindingPackRequired: "Choose an installed pack first.",
 
   generalPageDesc: "Configure extension behavior and interface",
   appearancePageDesc: "Customize visual styles and themes",
@@ -64,7 +325,7 @@ export const en = {
   // permissionAllUrlsDesc: "Allow the extension to run on all websites to support more AI platforms.", // Deprecated
   permissionWebdavAccess: "Advanced Features Access",
   permissionWebdavAccessDesc:
-    "Access to all websites. Required for WebDAV sync and AI image watermark removal.",
+    "Access to all websites. Required for WebDAV sync, AI image watermark removal, and letting installed Site Packs run on their target sites without per-site prompts.",
 
   // Required permissions
   permissionStorage: "Storage",
@@ -1446,6 +1707,7 @@ Please output the optimized code block directly, followed by a brief summary of 
   popupUnsupported: "Unsupported",
   popupNewChat: "New Chat",
   popupQuickAccess: "Quick Access",
+  popupSitePackUnbound: "No site added",
   popupRecentUsed: "Recent",
   popupNoRecentPrompts: "No recent prompts",
   popupCopied: "Copied",
@@ -1684,6 +1946,74 @@ Please output the optimized code block directly, followed by a brief summary of 
   "featureTip-notifications-desc":
     "Get a desktop notification when AI finishes — never miss a response",
   "featureTip-notifications-path": "Features → Alerts → Desktop Notification",
+  // Adapter configuration updates
+  remoteConfigSettingsTitle: "Adapter Configuration Updates",
+  remoteConfigAutoUpdateLabel: "Automatically update adapter configurations",
+  remoteConfigAutoUpdateDesc: "Checks at most once every 24 hours.",
+  remoteConfigRegistrySourceLabel: "Development registry source",
+  remoteConfigRegistrySourceDesc:
+    "Development builds only. Enter a full index.json URL; leave blank to use the default sources.",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "Apply",
+  remoteConfigRegistrySourceApplied: "Development registry source saved; checking for updates now.",
+  remoteConfigRegistrySourceCleared: "Default registry sources restored.",
+  remoteConfigRegistrySourceInvalid: "Invalid registry source: {error}",
+  remoteConfigCheckNowLabel: "Check for updates now",
+  remoteConfigCheckNowButton: "Check now",
+  remoteConfigCheckingButton: "Checking…",
+  remoteConfigStatusLoading: "Loading…",
+  remoteConfigNeverChecked: "Never checked",
+  remoteConfigActivePatchesLabel: "Active patches",
+  remoteConfigUsingBuiltin: "Built-in configurations are currently in use",
+  remoteConfigPatchVersionLabel: "Patch version",
+  remoteConfigBaseVersionLabel: "Built-in config version",
+  remoteConfigResetBuiltinButton: "Reset to built-in",
+  remoteConfigResettingButton: "Resetting…",
+  remoteConfigPrivacyDesc:
+    "Update checks only send GET requests to static CDNs. No conversation or account data is included.",
+  remoteConfigCheckUpdated:
+    "New adapter configurations were downloaded. Refresh the matching AI pages to apply them.",
+  remoteConfigCheckUpToDate: "Your adapter configurations are up to date.",
+  remoteConfigCheckFailed: "Update check failed: {error}",
+  remoteConfigResetSuccess: "{site} was reset to its built-in configuration.",
+  remoteConfigResetFailed: "Reset failed: {error}",
+  remoteConfigResetUnavailable: "There is no active configuration to reset.",
+  remoteConfigRegistryActiveSourceLabel: "Active source",
+  remoteConfigRegistryActiveSourceDefault: "Default official sources (not cached yet)",
+  remoteConfigRegistryOverrideLabel: "override on",
+  remoteConfigRegistryLastErrorLabel: "Last error",
+  remoteConfigRegistryRestoreDefaultsButton: "Restore defaults",
+  remoteConfigRegistryCacheClearButton: "Clear cache",
+  remoteConfigRegistryCacheCleared: "Registry cache cleared (local patches kept).",
+  remoteConfigRegistryCacheClearFailed: "Failed to clear cache: {error}",
+  remoteConfigRegistryDefaultsRestored: "Default registry sources restored and rechecked.",
+  remoteConfigLocalRegistryCheckFailed:
+    "Local registry check failed ({url}): {error}. Make sure pnpm registry:serve is running.",
+  remoteConfigLocalRegistryUseButton: "Use local registry",
+  remoteConfigLocalRegistryHint:
+    "Run pnpm registry:serve first, then click “{button}”. Only development builds trust the local signing key.",
+  remoteConfigLocalRegistrySourceApplied:
+    "Switched to the local registry source and started an update check.",
+  remoteConfigLocalRegistryPermissionDenied:
+    "Local registry host permission was denied. Allow 127.0.0.1 access and try again.",
+
+  remoteConfigLocalPatchImportButton: "Import site hotfix",
+  remoteConfigLocalPatchImportDesc:
+    "Import a selector hotfix JSON for a built-in site. Local hotfixes override remote patches for pre-contribution testing. This does not install a new site pack.",
+  remoteConfigLocalPatchConfirmTitle: "Import local patch?",
+  remoteConfigLocalPatchRisk:
+    "Local patches are not authenticated by the official registry signature. Only import files you trust.",
+  remoteConfigLocalPatchSummary:
+    "Install patch v{version} for {site} ({id}) against built-in config version {base}.",
+  remoteConfigLocalPatchInstalled:
+    "Installed local patch v{version} for {site}. Open the site to verify, and reload if needed.",
+  remoteConfigLocalPatchRemoved: "Removed the local patch for {site}.",
+  remoteConfigLocalPatchRemoveFailed: "Failed to remove the local patch: {error}",
+  remoteConfigLocalPatchRemoveButton: "Remove local patch",
+  remoteConfigLocalPatchInvalid: "The local patch JSON is invalid or missing required fields.",
+  remoteConfigPatchSourceLocal: "Local",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Discord Community",
   discordDesc:
     "Join our community to chat with other users, provide feedback, and get the latest updates",

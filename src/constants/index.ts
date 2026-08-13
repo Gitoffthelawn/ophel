@@ -11,6 +11,7 @@ export {
   FEATURES_TAB_IDS,
   APPEARANCE_TAB_IDS,
   SITE_SETTINGS_TAB_IDS,
+  SITE_PACKS_TAB_IDS,
   SETTING_ID_ROUTE_MAP,
   SETTING_ID_ALIASES,
   SETTINGS_SEARCH_ITEMS,
@@ -49,7 +50,10 @@ export {
   BATCH_TEST_CONFIG,
   QUICK_QUOTE_REPLY_CHAIN_ID,
   SITE_IDS,
+  isBuiltinSiteId,
+  type BuiltinSiteId,
   type Folder,
+  type SupportedAiPlatform,
 } from "./defaults"
 
 // 提示词模块

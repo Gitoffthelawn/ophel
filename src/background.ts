@@ -1,19 +1,44 @@
 import { DEFAULT_SHORTCUTS_SETTINGS } from "~constants/shortcuts"
+import {
+  INSTALLED_SITE_PACKS_STORAGE_KEY,
+  isInstalledSitePackEffectivelyEnabled,
+} from "~core/pack-manager"
+import { createRuntimePackManager } from "~core/pack-manager-runtime"
+import { createRuntimeRemoteConfigManager } from "~core/remote-config-runtime"
+import {
+  REMOTE_CONFIG_ALARM_NAME,
+  REMOTE_CONFIG_ALARM_PERIOD_MINUTES,
+} from "~core/remote-config-types"
+import { SITE_PACK_ORIGIN_BINDINGS_STORAGE_KEY } from "~core/site-pack-storage-constants"
+import { extensionRegistryTransport } from "~platform/extension/registry-transport"
+import { createRuntimeSitePackRegistrationManager } from "~platform/extension/site-pack-registration-runtime"
+import { extensionStorage } from "~platform/extension/storage"
 import { APP_DISPLAY_NAME } from "~utils/config"
 import {
   MSG_CLEAR_ALL_DATA,
   MSG_CHECK_CLAUDE_GENERATING,
   MSG_CHECK_PERMISSION,
   MSG_CHECK_PERMISSIONS,
+  MSG_CHECK_REMOTE_CONFIG,
+  MSG_CLEAR_REMOTE_CONFIG_CACHE,
+  MSG_ENSURE_SITE_PACK_BINDING_ORIGIN,
+  MSG_ENSURE_SITE_PACK_ORIGINS,
   MSG_EXTENSION_UPDATE_AVAILABLE,
   MSG_FOCUS_TAB,
   MSG_GET_AISTUDIO_MODELS,
   MSG_GET_CLAUDE_SESSION_KEY,
+  MSG_GET_REMOTE_CONFIG_STATE,
+  MSG_IGNORE_REMOTE_CONFIG_PATCH,
+  MSG_INSTALL_LOCAL_REMOTE_CONFIG_PATCH,
   MSG_OPEN_OPTIONS_PAGE,
   MSG_OPEN_URL,
   MSG_PROXY_FETCH,
+  MSG_RECONCILE_SITE_PACK_REGISTRATIONS,
+  MSG_REMOVE_LOCAL_REMOTE_CONFIG_PATCH,
   MSG_REQUEST_PERMISSIONS,
   MSG_RESTORE_DATA,
+  MSG_RESET_REMOTE_CONFIG_SITE,
+  MSG_REAPPLY_REMOTE_CONFIG_SITE,
   MSG_REVOKE_PERMISSIONS,
   MSG_SET_CLAUDE_SESSION_KEY,
   MSG_SHOW_NOTIFICATION,
@@ -22,6 +47,10 @@ import {
   MSG_WEBDAV_REQUEST,
   type ExtensionMessage,
 } from "~utils/messaging"
+import {
+  PERSISTED_SETTINGS_STORAGE_KEY,
+  readRemoteConfigAutoUpdate,
+} from "~utils/persisted-settings"
 import { localStorage, type Settings } from "~utils/storage"
 
 /**
@@ -34,22 +63,123 @@ import { localStorage, type Settings } from "~utils/storage"
  * - 代理请求（图片 Base64 转换等）
  */
 
-const OPHEL_TARGET_URLS = [
-  "https://gemini.google.com/*",
-  "https://business.gemini.google/*",
-  "https://aistudio.google.com/*",
-  "https://grok.com/*",
-  "https://chat.openai.com/*",
-  "https://chatgpt.com/*",
-  "https://claude.ai/*",
-  "https://www.doubao.com/*",
-  "https://ima.qq.com/*",
-  "https://chat.deepseek.com/*",
-  "https://chatglm.cn/*",
-  "https://chat.qwen.ai/*",
-  "https://yuanbao.tencent.com/*",
-  "https://chat.z.ai/*",
-]
+const STATIC_OPHEL_TARGET_URLS = Array.from(
+  new Set(
+    (chrome.runtime.getManifest().content_scripts ?? []).flatMap((script) => script.matches ?? []),
+  ),
+)
+
+const remoteConfigManager = createRuntimeRemoteConfigManager(
+  extensionStorage,
+  extensionRegistryTransport,
+)
+const packManager = createRuntimePackManager(extensionStorage)
+const sitePackRegistrationManager = createRuntimeSitePackRegistrationManager(packManager)
+
+let sitePackReconciliationScheduled = false
+
+function scheduleSitePackRegistrationReconciliation(reason: string) {
+  if (sitePackReconciliationScheduled) return
+  sitePackReconciliationScheduled = true
+  queueMicrotask(() => {
+    sitePackReconciliationScheduled = false
+    void sitePackRegistrationManager
+      .reconcile()
+      .then((result) => {
+        for (const issue of result.packIssues) {
+          console.warn("[Ophel] SitePack registration ignored an invalid pack:", issue)
+        }
+        for (const issue of result.bindingIssues) {
+          console.warn("[Ophel] SitePack registration ignored an invalid binding:", issue)
+        }
+        if (result.missingPermissionOrigins.length > 0) {
+          console.warn(
+            "[Ophel] SitePack origins are installed but not authorized:",
+            result.missingPermissionOrigins,
+          )
+        }
+      })
+      .catch((error) => {
+        console.error(`[Ophel] Failed to reconcile SitePack registrations (${reason}):`, error)
+      })
+  })
+}
+
+async function syncInstalledRegistryPacks(): Promise<void> {
+  try {
+    const result = await packManager.syncRegistryPacks()
+    if (result.issues.length > 0) {
+      console.warn("[Ophel] Installed SitePack sync issues:", result.issues)
+    }
+  } catch (error) {
+    console.error("[Ophel] Failed to sync installed SitePacks:", error)
+  }
+}
+
+async function shouldRunAutomaticRemoteConfig(): Promise<boolean> {
+  try {
+    const enabled = await readRemoteConfigAutoUpdate(extensionStorage)
+    if (!enabled) {
+      await chrome.alarms.clear(REMOTE_CONFIG_ALARM_NAME)
+    }
+    return enabled
+  } catch (error) {
+    await chrome.alarms.clear(REMOTE_CONFIG_ALARM_NAME)
+    throw error
+  }
+}
+
+async function runRemoteConfigCheck(force: boolean, sources?: readonly string[]) {
+  if (!force && !(await shouldRunAutomaticRemoteConfig())) return null
+
+  const result = await remoteConfigManager.checkForUpdates({
+    force,
+    ...(sources && sources.length > 0 ? { sources } : {}),
+  })
+  if (result.status === "failed") {
+    console.warn("[Ophel] Remote config check failed:", result.error)
+  } else {
+    await syncInstalledRegistryPacks()
+  }
+  return result
+}
+
+async function ensureRemoteConfigAlarm() {
+  const alarm = await chrome.alarms.get(REMOTE_CONFIG_ALARM_NAME)
+  if (alarm?.periodInMinutes === REMOTE_CONFIG_ALARM_PERIOD_MINUTES) return
+  await chrome.alarms.create(REMOTE_CONFIG_ALARM_NAME, {
+    delayInMinutes: 1,
+    periodInMinutes: REMOTE_CONFIG_ALARM_PERIOD_MINUTES,
+  })
+}
+
+async function syncRemoteConfigAlarm() {
+  if (!(await shouldRunAutomaticRemoteConfig())) return
+  await ensureRemoteConfigAlarm()
+}
+
+function scheduleRemoteConfigCheck(force: boolean) {
+  void runRemoteConfigCheck(force).catch((error) => {
+    console.warn("[Ophel] Remote config check crashed:", error)
+  })
+}
+
+function scheduleRemoteConfigAlarmSetup() {
+  void syncRemoteConfigAlarm().catch((error) => {
+    console.warn("[Ophel] Failed to initialize remote config alarm:", error)
+  })
+}
+
+scheduleRemoteConfigAlarmSetup()
+setTimeout(() => scheduleSitePackRegistrationReconciliation("background-init"), 0)
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName !== "local") return
+  if (changes[PERSISTED_SETTINGS_STORAGE_KEY]) scheduleRemoteConfigAlarmSetup()
+  if (changes[INSTALLED_SITE_PACKS_STORAGE_KEY] || changes[SITE_PACK_ORIGIN_BINDINGS_STORAGE_KEY]) {
+    scheduleSitePackRegistrationReconciliation("site-pack-state-changed")
+  }
+})
 
 // 通知 ID 格式："ophel|{tabId}|{windowId}|{uuid}"
 // 将 Tab 信息编码进 notifId，避免 MV3 Service Worker 重启后内存 Map 丢失
@@ -91,13 +221,29 @@ if (chrome.notifications?.onClicked) {
   })
 }
 
-async function queryOphelTabs() {
-  return chrome.tabs.query({ url: OPHEL_TARGET_URLS })
+async function queryOphelTabs(dynamicMatches?: readonly string[]) {
+  let resolvedDynamicMatches = dynamicMatches
+  if (resolvedDynamicMatches === undefined) {
+    try {
+      resolvedDynamicMatches = await sitePackRegistrationManager.getRegisteredMatchPatterns()
+    } catch (error) {
+      console.error("[Ophel] Failed to load dynamic SitePack tab targets:", error)
+      resolvedDynamicMatches = []
+    }
+  }
+  return chrome.tabs.query({
+    url: Array.from(new Set([...STATIC_OPHEL_TARGET_URLS, ...resolvedDynamicMatches])),
+  })
 }
 
 async function broadcastToOphelTabs(message: ExtensionMessage) {
   const tabs = await queryOphelTabs()
 
+  await broadcastToTabs(tabs, message)
+  return tabs
+}
+
+async function broadcastToTabs(tabs: chrome.tabs.Tab[], message: ExtensionMessage) {
   await Promise.all(
     tabs
       .filter((tab) => tab.id)
@@ -107,13 +253,25 @@ async function broadcastToOphelTabs(message: ExtensionMessage) {
         }),
       ),
   )
-
-  return tabs
 }
 
 // 监听扩展安装/更新
 chrome.runtime.onInstalled.addListener(() => {
   setupDynamicRules()
+  scheduleRemoteConfigAlarmSetup()
+  scheduleRemoteConfigCheck(false)
+  scheduleSitePackRegistrationReconciliation("runtime-installed")
+})
+
+chrome.runtime.onStartup.addListener(() => {
+  scheduleRemoteConfigAlarmSetup()
+  scheduleSitePackRegistrationReconciliation("runtime-startup")
+})
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === REMOTE_CONFIG_ALARM_NAME) {
+    scheduleRemoteConfigCheck(false)
+  }
 })
 
 chrome.runtime.onUpdateAvailable.addListener((details) => {
@@ -131,6 +289,7 @@ chrome.runtime.onUpdateAvailable.addListener((details) => {
 
 // 监听权限移除
 chrome.permissions.onRemoved.addListener(async (removed) => {
+  scheduleSitePackRegistrationReconciliation("permission-removed")
   if (removed.origins && removed.origins.includes("<all_urls>")) {
     // 获取当前设置
     const settings = await localStorage.get<Settings>("settings")
@@ -140,6 +299,12 @@ chrome.permissions.onRemoved.addListener(async (removed) => {
       await localStorage.set("settings", settings)
     }
   }
+})
+
+chrome.permissions.onAdded.addListener((added) => {
+  // 单个 SitePack origin 由授权消息按实际启用状态对账，避免抢在 UI 启用前撤回权限。
+  if (!added.origins?.includes("<all_urls>")) return
+  scheduleSitePackRegistrationReconciliation("permission-added")
 })
 
 interface PersistedSettingsEnvelope {
@@ -297,6 +462,107 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
       sendResponse({ success: true })
       break
 
+    case MSG_CHECK_REMOTE_CONFIG:
+      if (message.force !== undefined && typeof message.force !== "boolean") {
+        sendResponse({ success: false, error: "force must be a boolean" })
+        break
+      }
+      if (
+        message.sources !== undefined &&
+        (!Array.isArray(message.sources) ||
+          message.sources.some((source) => typeof source !== "string"))
+      ) {
+        sendResponse({ success: false, error: "sources must be a string array" })
+        break
+      }
+      ;(async () => {
+        const result = await runRemoteConfigCheck(message.force ?? true, message.sources)
+        if (!result) {
+          sendResponse({ success: true })
+          return
+        }
+        sendResponse({
+          success: result.status !== "failed",
+          result,
+          ...(result.error ? { error: result.error } : {}),
+        })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
+    case MSG_GET_REMOTE_CONFIG_STATE:
+      ;(async () => {
+        const state = await remoteConfigManager.getState()
+        sendResponse({ success: true, state })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
+    case MSG_IGNORE_REMOTE_CONFIG_PATCH:
+      ;(async () => {
+        const ignored = await remoteConfigManager.ignorePatch(message.siteId, {
+          patchVersion: message.patchVersion,
+        })
+        if (ignored) {
+          await broadcastToOphelTabs({
+            type: MSG_RESET_REMOTE_CONFIG_SITE,
+            siteId: message.siteId,
+          })
+        }
+        sendResponse({
+          success: ignored,
+          ...(ignored ? {} : { error: "No active patch version to ignore" }),
+        })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
+    case MSG_INSTALL_LOCAL_REMOTE_CONFIG_PATCH:
+      ;(async () => {
+        const result = await remoteConfigManager.installLocalPatch(message.patch, {
+          ...(message.fileName ? { fileName: message.fileName } : {}),
+        })
+        await broadcastToOphelTabs({
+          type: MSG_REAPPLY_REMOTE_CONFIG_SITE,
+          siteId: result.siteId,
+        })
+        sendResponse({ success: true })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
+    case MSG_REMOVE_LOCAL_REMOTE_CONFIG_PATCH:
+      ;(async () => {
+        const result = await remoteConfigManager.removeLocalPatch(message.siteId)
+        if (result.changed) {
+          await broadcastToOphelTabs({
+            type: MSG_REAPPLY_REMOTE_CONFIG_SITE,
+            siteId: result.siteId,
+          })
+        }
+        sendResponse({
+          success: result.changed,
+          ...(result.changed ? {} : { error: "No local patch to remove" }),
+        })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
+    case MSG_CLEAR_REMOTE_CONFIG_CACHE:
+      ;(async () => {
+        // Idempotent: success even when there was no cached snapshot/error to drop.
+        await remoteConfigManager.clearCachedRegistrySnapshot()
+        sendResponse({ success: true })
+      })().catch((error) => {
+        sendResponse({ success: false, error: (error as Error).message })
+      })
+      break
+
     case MSG_PROXY_FETCH:
       ;(async () => {
         try {
@@ -394,6 +660,76 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
           sendResponse({ success: true, hasPermission })
         } catch (err) {
           console.error("Permissions check failed:", err)
+          sendResponse({ success: false, error: (err as Error).message })
+        }
+      })()
+      break
+
+    case MSG_ENSURE_SITE_PACK_BINDING_ORIGIN:
+      if (
+        typeof message.origin !== "string" ||
+        typeof message.requestName !== "string" ||
+        message.requestName.trim().length === 0 ||
+        message.requestName.trim().length > 120
+      ) {
+        sendResponse({
+          success: false,
+          error: "origin must be a string and requestName must contain 1-120 characters",
+        })
+        break
+      }
+      ;(async () => {
+        try {
+          const result = await sitePackRegistrationManager.ensureBindingOrigin(
+            message.origin,
+            message.binding,
+            message.requestName,
+          )
+          sendResponse({ success: true, ...result })
+        } catch (err) {
+          console.error("SitePack binding origin permission request failed:", err)
+          sendResponse({ success: false, error: (err as Error).message })
+        }
+      })()
+      break
+
+    case MSG_ENSURE_SITE_PACK_ORIGINS:
+      if (typeof message.packId !== "string" || message.packId.length === 0) {
+        sendResponse({ success: false, error: "packId must be a non-empty string" })
+        break
+      }
+      ;(async () => {
+        try {
+          const result = await sitePackRegistrationManager.ensurePackOrigins(message.packId)
+          const snapshot = await packManager.getSnapshot()
+          const pack = snapshot.packs.find((candidate) => candidate.manifest.id === message.packId)
+          if (pack && isInstalledSitePackEffectivelyEnabled(pack)) {
+            if (!result.granted) {
+              await packManager.setEnabled(message.packId, false)
+            }
+            await sitePackRegistrationManager.reconcile()
+          }
+          sendResponse({ success: true, ...result })
+        } catch (err) {
+          console.error("SitePack origin permission request failed:", err)
+          sendResponse({ success: false, error: (err as Error).message })
+        }
+      })()
+      break
+
+    case MSG_RECONCILE_SITE_PACK_REGISTRATIONS:
+      ;(async () => {
+        try {
+          const result = await sitePackRegistrationManager.reconcile()
+          sendResponse({
+            success: true,
+            activeOrigins: result.activeOrigins,
+            missingPermissionOrigins: result.missingPermissionOrigins,
+            originReferences: result.originReferences,
+            bindingIssues: result.bindingIssues,
+          })
+        } catch (err) {
+          console.error("SitePack registration reconciliation failed:", err)
           sendResponse({ success: false, error: (err as Error).message })
         }
       })()
@@ -507,10 +843,13 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
     case MSG_CLEAR_ALL_DATA:
       ;(async () => {
         try {
-          const tabs = await broadcastToOphelTabs({ type: MSG_CLEAR_ALL_DATA })
+          const dynamicMatches = await sitePackRegistrationManager.getRegisteredMatchPatterns()
+          const tabs = await queryOphelTabs(dynamicMatches)
+          await sitePackRegistrationManager.clearAll()
+          await broadcastToTabs(tabs, { type: MSG_CLEAR_ALL_DATA })
           sendResponse({ success: true, tabs: tabs.length })
         } catch (err) {
-          console.error("Broadcast clear all data failed:", err)
+          console.error("Clear all data runtime cleanup failed:", err)
           sendResponse({ success: false, error: (err as Error).message })
         }
       })()
@@ -519,10 +858,17 @@ chrome.runtime.onMessage.addListener((message: ExtensionMessage, sender, sendRes
     case MSG_RESTORE_DATA:
       ;(async () => {
         try {
-          const tabs = await broadcastToOphelTabs({ type: MSG_RESTORE_DATA })
-          sendResponse({ success: true, tabs: tabs.length })
+          const registrationResult = await sitePackRegistrationManager.reconcile()
+          const tabs = await queryOphelTabs(registrationResult.activeOrigins)
+          await broadcastToTabs(tabs, { type: MSG_RESTORE_DATA })
+          sendResponse({
+            success: true,
+            tabs: tabs.length,
+            activeOrigins: registrationResult.activeOrigins,
+            missingPermissionOrigins: registrationResult.missingPermissionOrigins,
+          })
         } catch (err) {
-          console.error("Broadcast restore data failed:", err)
+          console.error("Restore data reconciliation failed:", err)
           sendResponse({ success: false, error: (err as Error).message })
         }
       })()

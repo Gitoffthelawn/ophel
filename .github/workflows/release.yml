@@ -177,12 +177,46 @@ jobs:
           echo "commit=$ASSET_COMMIT" >> "$GITHUB_OUTPUT"
           echo "Userscript assets commit: $ASSET_COMMIT"
 
-      - name: Pin userscript asset URLs
+      - name: Pin userscript asset manifest to commit
         run: |
           node scripts/pin-userscript-asset-urls.mjs \
             ${{ steps.userscript_assets.outputs.commit }} \
+            build/userscript/userscript-assets/manifest.json
+
+      - name: Publish pinned userscript manifest
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/userscript/userscript-assets
+          publish_branch: userscript-assets
+          destination_dir: userscript-assets
+          keep_files: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "Pin userscript asset manifest URLs [skip ci]"
+
+      - name: Resolve userscript asset commit (final)
+        id: userscript_assets_final
+        run: |
+          ASSET_COMMIT=$(git ls-remote origin refs/heads/userscript-assets | awk '{print $1}')
+          if ! echo "$ASSET_COMMIT" | grep -Eq '^[0-9a-f]{40}$'; then
+            echo "Invalid userscript-assets commit: $ASSET_COMMIT"
+            exit 1
+          fi
+          echo "commit=$ASSET_COMMIT" >> "$GITHUB_OUTPUT"
+          echo "Userscript assets final commit: $ASSET_COMMIT"
+
+      - name: Pin userscript asset URLs
+        run: |
+          node scripts/pin-userscript-asset-urls.mjs \
+            ${{ steps.userscript_assets_final.outputs.commit }} \
             build/userscript/ophel.user.js \
             build/userscript/userscript-assets/manifest.json
+
+      - name: Verify userscript assets on jsDelivr
+        run: |
+          node scripts/verify-userscript-assets.mjs \
+            ${{ steps.userscript_assets_final.outputs.commit }}
 
       - name: Rename artifacts for release
         run: |

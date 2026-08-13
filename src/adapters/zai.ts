@@ -20,111 +20,23 @@ import {
   SiteAdapter,
   type ConversationInfo,
   type ConversationObserverConfig,
-  type ExportLifecycleContext,
   type ExportConfig,
+  type ExportLifecycleContext,
   type ModelSwitcherConfig,
   type OutlineItem,
   type PanelAvoidanceConfig,
 } from "./base"
+import type { BuiltinSiteConfig } from "./declarative"
+import {
+  ZAI_CONFIG,
+  ZAI_CONFIG_VERSION,
+  ZAI_EXPORT_ROLE_ATTR as EXPORT_ROLE_ATTR,
+  type ZaiSiteConfig,
+} from "./zai-config"
 
 const HOSTNAME = "chat.z.ai"
 const CHAT_PATH_PATTERN = /\/(?:c|s)\/([a-z0-9-]+)(?:\/|$)/i
 const SHARE_PATH_PATTERN = /\/s\/([a-z0-9-]+)(?:\/|$)/i
-const TEXTAREA_SELECTORS = ["#chat-input", "textarea#chat-input"]
-const SUBMIT_BUTTON_SELECTOR = "#send-message-button"
-const NEW_CHAT_BUTTON_SELECTORS = ["#sidebar-new-chat-button", "#new-chat-button"]
-const MODEL_SELECTOR_BUTTON_SELECTORS = [
-  "button.modelSelectorButton",
-  'button[id^="model-selector-"][id$="-button"]',
-  "#model-selector-glm-5-button",
-  "button[data-melt-dropdown-menu-trigger][data-menu-trigger].modelSelectorButton",
-]
-const MODEL_MENU_ITEM_SELECTOR =
-  'button[aria-label="model-item"], button[data-melt-collapsible-trigger]'
-const MODEL_SUB_MENU_SELECTOR = "button[data-melt-collapsible-trigger]"
-const CHAT_CONTAINER_SELECTOR = "#chat-container"
-const CHAT_MESSAGES_CONTAINER_SELECTOR = `${CHAT_CONTAINER_SELECTOR} #messages-container`
-const CHAT_SCROLL_CONTAINER_SELECTOR = [
-  CHAT_MESSAGES_CONTAINER_SELECTOR,
-  `${CHAT_CONTAINER_SELECTOR} .flex.overflow-y-scroll.flex-col.w-full.h-full`,
-  `${CHAT_CONTAINER_SELECTOR} .scrollbar-none.flex.flex-col`,
-  `${CHAT_CONTAINER_SELECTOR} [data-pane-id] .overflow-y-scroll`,
-  `${CHAT_CONTAINER_SELECTOR} [data-pane-id] .scrollbar-none`,
-].join(", ")
-const CHAT_MESSAGE_WIDTH_SELECTOR = [
-  `${CHAT_CONTAINER_SELECTOR} [class*="max-w-[808px]"]`,
-  `${CHAT_CONTAINER_SELECTOR} [class*="max-w-[894px]"]`,
-  `${CHAT_CONTAINER_SELECTOR} [class*="max-w-[1000px]"]`,
-  `${CHAT_CONTAINER_SELECTOR} [class*="max-w-[960px]"]`,
-].join(", ")
-const CHAT_INPUT_WIDTH_SELECTOR = [
-  `${CHAT_CONTAINER_SELECTOR} .messageInputContainer [class*="max-w-[768px]"]`,
-  `${CHAT_CONTAINER_SELECTOR} .messageInputContainer [class*="max-w-[854px]"]`,
-].join(", ")
-const CHAT_INPUT_SAFE_AREA_SELECTOR = `${CHAT_CONTAINER_SELECTOR}:not(:has([data-pane-id] .placeholder-input)) .messageInputContainer`
-const NEW_CHAT_CONTENT_SAFE_AREA_SELECTOR = `${CHAT_CONTAINER_SELECTOR} [data-pane-id]:has(.placeholder-input)`
-const USER_QUERY_SELECTOR = [
-  '[id^="message-"].user-message',
-  ".user-message .chat-user.markdown-prose",
-  ".user-message .chat-user",
-  `${CHAT_CONTAINER_SELECTOR} .chat-user.markdown-prose`,
-  `${CHAT_CONTAINER_SELECTOR} .chat-user`,
-  `${CHAT_CONTAINER_SELECTOR} [data-message-author-role="user"]`,
-  `${CHAT_CONTAINER_SELECTOR} [data-role="user"]`,
-  `${CHAT_CONTAINER_SELECTOR} .message-user`,
-  `${CHAT_CONTAINER_SELECTOR} .user-message`,
-  `${CHAT_CONTAINER_SELECTOR} .chat-message-user`,
-  `${CHAT_CONTAINER_SELECTOR} .message.user`,
-].join(", ")
-const ASSISTANT_BODY_SELECTOR = [
-  `${CHAT_CONTAINER_SELECTOR} .markdown-prose:not(.chat-user)`,
-  `${CHAT_CONTAINER_SELECTOR} [data-message-author-role="assistant"]`,
-  `${CHAT_CONTAINER_SELECTOR} [data-role="assistant"]`,
-  `${CHAT_CONTAINER_SELECTOR} .message-assistant`,
-  `${CHAT_CONTAINER_SELECTOR} .assistant-message`,
-  `${CHAT_CONTAINER_SELECTOR} .chat-message-assistant`,
-  `${CHAT_CONTAINER_SELECTOR} .markdown`,
-  `${CHAT_CONTAINER_SELECTOR} .markdown-body`,
-  `${CHAT_CONTAINER_SELECTOR} .prose`,
-  `${CHAT_CONTAINER_SELECTOR} article`,
-  `${CHAT_CONTAINER_SELECTOR} [data-markdown]`,
-  '[id^="message-"]:not(.user-message) .markdown-prose:not(.chat-user)',
-  '[id^="message-"]:not(.user-message) .markdown-body',
-  '[id^="message-"]:not(.user-message) [data-markdown]',
-].join(", ")
-const ASSISTANT_MARKDOWN_SELECTOR = [
-  '[id^="message-"]:not(.user-message)',
-  ASSISTANT_BODY_SELECTOR,
-].join(", ")
-const EXPORT_ROLE_ATTR = "data-gh-export-role"
-const EXPORT_USER_QUERY_SELECTOR = `[${EXPORT_ROLE_ATTR}="user"]`
-const EXPORT_ASSISTANT_SELECTOR = `[${EXPORT_ROLE_ATTR}="assistant"]`
-const THINKING_CONTAINER_SELECTOR = ".thinking-chain-container, .thinking-block"
-const THINKING_BLOCKQUOTE_SELECTOR =
-  "blockquote[slot='content'], .thinking-block blockquote, .thinking-chain-container blockquote"
-const USER_CONTENT_CANDIDATE_SELECTORS = [
-  ".gh-user-query-raw",
-  ".rounded-xl.whitespace-pre-wrap",
-  ".rounded-xl",
-  ".whitespace-pre-wrap",
-  "[data-user-content]",
-  ".message-content",
-  ".chat-message-content",
-  ".user-message-content",
-  ".content",
-  'div[dir="auto"]',
-  "p",
-]
-const EXPORT_DECORATION_SELECTOR = [
-  ".gh-root",
-  ".gh-user-query-markdown",
-  "button",
-  "[role='button']",
-  "svg",
-  "[aria-hidden='true']",
-  "style",
-  "script",
-].join(", ")
 const ZAI_ATTACHMENT_SOURCE_ATTRS = [
   "href",
   "src",
@@ -139,17 +51,9 @@ const ZAI_ATTACHMENT_SOURCE_ATTRS = [
   "data-image-url",
   "data-image-src",
 ]
-const STOP_BUTTON_SELECTOR = [
-  'div[aria-label="停止"] button',
-  "button:has(span.rounded-xs):has(span.size-3)",
-  "button:has(span.rounded-xs):has(span.block)",
-].join(", ")
-const SIDEBAR_ITEM_SELECTOR = "#sidebar .w-full.mb-1.relative.group"
-const SIDEBAR_TITLE_SELECTOR = 'div[dir="auto"]'
 const CID_STORAGE_KEY = "_arms_uid"
 const MODEL_STORAGE_KEY = "selectedModels"
 const THEME_STORAGE_KEY = "theme"
-const META_THEME_SELECTOR = 'meta[name="theme-color"]'
 const THEME_COLORS = {
   light: "#F4F6F8",
   dark: "#141618",
@@ -214,6 +118,7 @@ interface ZaiUserAttachment {
 }
 
 export class ZaiAdapter extends SiteAdapter {
+  private config: ZaiSiteConfig = ZAI_CONFIG
   private exportIncludeThoughtsOverride: boolean | null = null
   private exportUserAttachmentsByMessageId = new Map<string, ZaiUserAttachment[]>()
   private exportShareTitle: string | null = null
@@ -230,12 +135,24 @@ export class ZaiAdapter extends SiteAdapter {
     return "Z.ai"
   }
 
+  getBuiltinConfig(): ZaiSiteConfig {
+    return ZAI_CONFIG
+  }
+
+  getBuiltinConfigVersion(): number {
+    return ZAI_CONFIG_VERSION
+  }
+
+  applyMergedConfig(config: BuiltinSiteConfig): void {
+    this.config = config as ZaiSiteConfig
+  }
+
   getThemeColors(): { primary: string; secondary: string } {
     return { primary: "#0881F0", secondary: "#0B6ED8" }
   }
 
   getTextareaSelectors(): string[] {
-    return [...TEXTAREA_SELECTORS]
+    return [...this.config.selectors.textarea]
   }
 
   insertPrompt(content: string): boolean {
@@ -273,11 +190,13 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getSubmitButtonSelectors(): string[] {
-    return [`${SUBMIT_BUTTON_SELECTOR}:not([disabled])`]
+    return [`${this.config.sitePrivateSelectors.submitButton}:not([disabled])`]
   }
 
   findSubmitButton(): HTMLElement | null {
-    const button = document.querySelector(SUBMIT_BUTTON_SELECTOR) as HTMLElement | null
+    const button = document.querySelector(
+      this.config.sitePrivateSelectors.submitButton,
+    ) as HTMLElement | null
     if (!button || button.hasAttribute("disabled")) return null
     if (button.offsetParent === null) return null
     return button
@@ -286,7 +205,7 @@ export class ZaiAdapter extends SiteAdapter {
   // ===== 导出与大纲 =====
 
   getResponseContainerSelector(): string {
-    return CHAT_SCROLL_CONTAINER_SELECTOR
+    return this.config.selectors.responseContainer
   }
 
   private getConversationContentContainer(options?: {
@@ -294,14 +213,14 @@ export class ZaiAdapter extends SiteAdapter {
   }): Element | null {
     const explicitContainer =
       document.querySelector(this.getResponseContainerSelector()) ||
-      document.querySelector(CHAT_CONTAINER_SELECTOR)
+      document.querySelector(this.config.sitePrivateSelectors.chatContainer)
     if (explicitContainer) return explicitContainer
 
     const scrollContainer = this.getScrollContainer()
     if (scrollContainer) return scrollContainer
 
     const hasMessages = Boolean(
-      document.body.querySelector(`${USER_QUERY_SELECTOR}, ${ASSISTANT_MARKDOWN_SELECTOR}`),
+      document.body.querySelector(this.config.selectors.chatContent.join(", ")),
     )
     if (hasMessages && (this.isSharePage() || options?.allowBodyFallback)) {
       return document.body
@@ -311,11 +230,23 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getChatContentSelectors(): string[] {
-    return [USER_QUERY_SELECTOR, ASSISTANT_MARKDOWN_SELECTOR]
+    return [...this.config.selectors.chatContent]
   }
 
   getUserQuerySelector(): string | null {
-    return USER_QUERY_SELECTOR
+    return this.config.selectors.userQuery
+  }
+
+  private getAssistantMarkdownSelector(): string {
+    return this.config.sitePrivateSelectors.assistantMarkdown.join(", ")
+  }
+
+  private getAssistantBodySelector(): string {
+    return this.config.sitePrivateSelectors.assistantBody.join(", ")
+  }
+
+  getSubmitKeyConfig(): { key: "Enter" | "Ctrl+Enter" } {
+    return { key: this.config.input.submitKey ?? "Enter" }
   }
 
   extractUserQueryText(element: Element): string {
@@ -373,12 +304,7 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getExportConfig(): ExportConfig {
-    return {
-      userQuerySelector: EXPORT_USER_QUERY_SELECTOR,
-      assistantResponseSelector: EXPORT_ASSISTANT_SELECTOR,
-      turnSelector: null,
-      useShadowDOM: false,
-    }
+    return { ...this.config.export }
   }
 
   async prepareConversationExport(context: ExportLifecycleContext): Promise<unknown> {
@@ -422,7 +348,7 @@ export class ZaiAdapter extends SiteAdapter {
   private shouldSkipExportElement(element: Element): boolean {
     if (element.closest(".gh-root")) return true
     if (element.closest(".gh-user-query-markdown")) return true
-    if (element.closest(THINKING_CONTAINER_SELECTOR)) return true
+    if (element.closest(this.config.sitePrivateSelectors.thinkingContainer)) return true
     return false
   }
 
@@ -430,15 +356,17 @@ export class ZaiAdapter extends SiteAdapter {
     users: Element[]
     assistants: Element[]
   } {
-    const userCandidates = Array.from(container.querySelectorAll(USER_QUERY_SELECTOR))
+    const userCandidates = Array.from(container.querySelectorAll(this.config.selectors.userQuery))
     const userTop = this.collectTopLevelBlocks(userCandidates).filter(
       (el) => !this.shouldSkipExportElement(el),
     )
 
-    const assistantCandidates = Array.from(container.querySelectorAll(ASSISTANT_MARKDOWN_SELECTOR))
+    const assistantCandidates = Array.from(
+      container.querySelectorAll(this.getAssistantMarkdownSelector()),
+    )
     const assistantTop = this.collectTopLevelBlocks(assistantCandidates).filter((el) => {
       if (this.shouldSkipExportElement(el)) return false
-      if (el.closest(USER_QUERY_SELECTOR)) return false
+      if (el.closest(this.config.selectors.userQuery)) return false
       return true
     })
 
@@ -509,7 +437,7 @@ export class ZaiAdapter extends SiteAdapter {
     }
 
     const blockquoteNodes = Array.from(
-      element.querySelectorAll(THINKING_BLOCKQUOTE_SELECTOR),
+      element.querySelectorAll(this.config.sitePrivateSelectors.thinkingBlockquote),
     ) as Element[]
 
     if (blockquoteNodes.length > 0) {
@@ -522,8 +450,8 @@ export class ZaiAdapter extends SiteAdapter {
         }
 
         const container =
-          blockquote.closest(".thinking-chain-container") ||
-          blockquote.closest(".thinking-block") ||
+          blockquote.closest(this.config.sitePrivateSelectors.thinkingChainContainer) ||
+          blockquote.closest(this.config.sitePrivateSelectors.thinkingBlock) ||
           blockquote
         removalNodes.push(container)
       }
@@ -534,11 +462,14 @@ export class ZaiAdapter extends SiteAdapter {
       }
     }
 
-    const thoughtNodes = Array.from(element.querySelectorAll(THINKING_CONTAINER_SELECTOR))
+    const thoughtNodes = Array.from(
+      element.querySelectorAll(this.config.sitePrivateSelectors.thinkingContainer),
+    )
     const topLevel = this.collectTopLevelBlocks(thoughtNodes)
     for (const thought of topLevel) {
       const thoughtContent =
-        thought.querySelector("blockquote[slot='content']") || thought.querySelector("blockquote")
+        thought.querySelector(this.config.sitePrivateSelectors.thinkingContent) ||
+        thought.querySelector(this.config.sitePrivateSelectors.blockquote)
       const target = thoughtContent || thought
       const markdown = extractInnerMarkdown(target)
       const normalized = markdown.trim()
@@ -567,11 +498,15 @@ export class ZaiAdapter extends SiteAdapter {
       thoughtResult.removalNodes.forEach((node) => node.remove())
     }
     // 兜底：再次清理残留的思维链元素
-    sanitized.querySelectorAll(THINKING_CONTAINER_SELECTOR).forEach((node) => node.remove())
+    sanitized
+      .querySelectorAll(this.config.sitePrivateSelectors.thinkingContainer)
+      .forEach((node) => node.remove())
 
     const bodyRoot = this.findAssistantBodyRoot(sanitized)
     const bodyClone = bodyRoot.cloneNode(true) as Element
-    bodyClone.querySelectorAll(EXPORT_DECORATION_SELECTOR).forEach((node) => node.remove())
+    bodyClone
+      .querySelectorAll(this.config.sitePrivateSelectors.exportDecoration)
+      .forEach((node) => node.remove())
 
     const bodyMarkdown = htmlToMarkdown(bodyClone) || this.extractTextWithLineBreaks(bodyClone)
     const normalizedBody = bodyMarkdown.trim()
@@ -587,10 +522,10 @@ export class ZaiAdapter extends SiteAdapter {
   private findAssistantBodyRoot(element: Element): Element {
     if (this.isAssistantBodyElement(element)) return element
 
-    const candidates = Array.from(element.querySelectorAll(ASSISTANT_BODY_SELECTOR)).filter(
+    const candidates = Array.from(element.querySelectorAll(this.getAssistantBodySelector())).filter(
       (candidate) =>
-        !candidate.closest(USER_QUERY_SELECTOR) &&
-        !candidate.closest(THINKING_CONTAINER_SELECTOR) &&
+        !candidate.closest(this.config.selectors.userQuery) &&
+        !candidate.closest(this.config.sitePrivateSelectors.thinkingContainer) &&
         !candidate.closest(".gh-root"),
     )
     const topLevel = this.collectTopLevelBlocks(candidates)
@@ -599,9 +534,9 @@ export class ZaiAdapter extends SiteAdapter {
 
   private isAssistantBodyElement(element: Element): boolean {
     return (
-      element.matches(ASSISTANT_BODY_SELECTOR) &&
-      !element.closest(USER_QUERY_SELECTOR) &&
-      !element.closest(THINKING_CONTAINER_SELECTOR)
+      element.matches(this.getAssistantBodySelector()) &&
+      !element.closest(this.config.selectors.userQuery) &&
+      !element.closest(this.config.sitePrivateSelectors.thinkingContainer)
     )
   }
 
@@ -643,7 +578,7 @@ export class ZaiAdapter extends SiteAdapter {
       if (!startEl) return 0
       try {
         if (isUserQueryItem) {
-          const allAssistants = container.querySelectorAll(ASSISTANT_MARKDOWN_SELECTOR)
+          const allAssistants = container.querySelectorAll(this.getAssistantMarkdownSelector())
           let totalText = ""
 
           for (const assistant of Array.from(allAssistants)) {
@@ -659,7 +594,9 @@ export class ZaiAdapter extends SiteAdapter {
 
             const clone = assistant.cloneNode(true) as HTMLElement
             clone
-              .querySelectorAll(`${THINKING_CONTAINER_SELECTOR}, .gh-user-query-markdown`)
+              .querySelectorAll(
+                `${this.config.sitePrivateSelectors.thinkingContainer}, .gh-user-query-markdown`,
+              )
               .forEach((node) => node.remove())
             totalText += clone.textContent || ""
           }
@@ -689,7 +626,7 @@ export class ZaiAdapter extends SiteAdapter {
           return this.calculateRangeWordCount(startEl, nextUserQuery, container)
         }
 
-        const allAssistants = container.querySelectorAll(ASSISTANT_MARKDOWN_SELECTOR)
+        const allAssistants = container.querySelectorAll(this.getAssistantMarkdownSelector())
         if (allAssistants.length > 0) {
           const lastAssistant = allAssistants[allAssistants.length - 1]
           return this.calculateRangeWordCount(startEl, null, lastAssistant)
@@ -779,13 +716,15 @@ export class ZaiAdapter extends SiteAdapter {
   // ===== 生成状态检测 =====
 
   isGenerating(): boolean {
-    const stopButton = document.querySelector(STOP_BUTTON_SELECTOR) as HTMLElement | null
+    const stopButton = document.querySelector(
+      this.config.generating.existsSelectors.join(", "),
+    ) as HTMLElement | null
     if (stopButton && stopButton.offsetParent !== null) return true
     return false
   }
 
   getStopButtonSelectors(): string[] {
-    return [STOP_BUTTON_SELECTOR]
+    return [...this.config.selectors.stopButton]
   }
 
   getLatestReplyText(): string | null {
@@ -805,7 +744,7 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getNewChatButtonSelectors(): string[] {
-    return [...NEW_CHAT_BUTTON_SELECTORS]
+    return [...this.config.selectors.newChatButton]
   }
 
   getNewTabUrl(): string {
@@ -855,7 +794,7 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getConversationList(): ConversationInfo[] {
-    const nodes = document.querySelectorAll(SIDEBAR_ITEM_SELECTOR)
+    const nodes = document.querySelectorAll(this.config.sitePrivateSelectors.sidebarItem)
     if (!nodes.length) return []
     const cid = this.getCurrentCid() || undefined
     const list: ConversationInfo[] = []
@@ -879,7 +818,7 @@ export class ZaiAdapter extends SiteAdapter {
 
   getConversationObserverConfig(): ConversationObserverConfig | null {
     return {
-      selector: SIDEBAR_ITEM_SELECTOR,
+      selector: this.config.sitePrivateSelectors.sidebarItem,
       shadow: false,
       extractInfo: (el) => {
         const id = this.extractConversationId(el)
@@ -894,12 +833,13 @@ export class ZaiAdapter extends SiteAdapter {
           isActive: id === this.getSessionId(),
         }
       },
-      getTitleElement: (el) => el.querySelector(SIDEBAR_TITLE_SELECTOR) || el,
+      getTitleElement: (el) =>
+        el.querySelector(this.config.sitePrivateSelectors.sidebarTitle) || el,
     }
   }
 
   getSidebarScrollContainer(): Element | null {
-    return document.querySelector("#sidebar .overflow-y-auto")
+    return document.querySelector(this.config.sitePrivateSelectors.sidebarScrollContainer)
   }
 
   getScrollContainer(): HTMLElement | null {
@@ -909,15 +849,19 @@ export class ZaiAdapter extends SiteAdapter {
       return fromMessages
     }
 
-    const paneRoots = Array.from(document.querySelectorAll("[data-pane-id]"))
+    const paneRoots = Array.from(
+      document.querySelectorAll(this.config.sitePrivateSelectors.paneRoot),
+    )
     return this.pickBestScrollableAncestor(paneRoots)
   }
 
   navigateToConversation(id: string, url?: string): boolean {
-    const nodes = document.querySelectorAll(SIDEBAR_ITEM_SELECTOR)
+    const nodes = document.querySelectorAll(this.config.sitePrivateSelectors.sidebarItem)
     for (const node of Array.from(nodes)) {
       if (this.extractConversationId(node) !== id) continue
-      const button = node.querySelector("button") as HTMLElement | null
+      const button = node.querySelector(
+        this.config.sitePrivateSelectors.sidebarItemTrigger,
+      ) as HTMLElement | null
       if (button) {
         button.click()
         return true
@@ -930,7 +874,7 @@ export class ZaiAdapter extends SiteAdapter {
     const stored = this.getSelectedModelFromStorage()
     if (stored) return stored
 
-    const button = this.findElementBySelectors(MODEL_SELECTOR_BUTTON_SELECTORS)
+    const button = this.findElementBySelectors(this.config.modelSwitcher.selectorButtonSelectors)
     const text = button?.textContent?.trim()
     return text || null
   }
@@ -943,14 +887,12 @@ export class ZaiAdapter extends SiteAdapter {
   getModelSwitcherConfig(keyword: string): ModelSwitcherConfig | null {
     if (!this.isNewConversation()) return null
     return {
+      ...this.config.modelSwitcher,
       targetModelKeyword: keyword,
-      selectorButtonSelectors: [...MODEL_SELECTOR_BUTTON_SELECTORS],
-      menuItemSelector: MODEL_MENU_ITEM_SELECTOR,
-      checkInterval: 1000,
-      maxAttempts: 12,
-      menuRenderDelay: 400,
-      subMenuSelector: MODEL_SUB_MENU_SELECTOR,
-      subMenuTriggers: ["更多模型", "more"],
+      selectorButtonSelectors: [...this.config.modelSwitcher.selectorButtonSelectors],
+      subMenuTriggers: this.config.modelSwitcher.subMenuTriggers
+        ? [...this.config.modelSwitcher.subMenuTriggers]
+        : undefined,
     }
   }
 
@@ -969,7 +911,7 @@ export class ZaiAdapter extends SiteAdapter {
       document.documentElement.style.colorScheme = resolvedMode
       document.body.style.colorScheme = resolvedMode
 
-      const meta = document.querySelector(META_THEME_SELECTOR)
+      const meta = document.querySelector(this.config.sitePrivateSelectors.themeMeta)
       if (meta) {
         meta.setAttribute("content", THEME_COLORS[resolvedMode])
       }
@@ -992,40 +934,31 @@ export class ZaiAdapter extends SiteAdapter {
   // ==================== 页面宽度控制 ====================
 
   getWidthSelectors() {
-    return [
-      {
-        selector: CHAT_MESSAGE_WIDTH_SELECTOR,
-        property: "max-width",
-      },
-      {
-        selector: CHAT_INPUT_WIDTH_SELECTOR,
-        property: "max-width",
-      },
-    ]
+    return this.config.widthSelectors.map((selector) => ({ ...selector }))
   }
 
   getPanelAvoidanceConfig(): PanelAvoidanceConfig {
     return {
-      scopeSelector: CHAT_CONTAINER_SELECTOR,
+      scopeSelector: this.config.sitePrivateSelectors.chatContainer,
       widthSelectors: [
         {
-          selector: CHAT_MESSAGE_WIDTH_SELECTOR,
+          selector: this.config.sitePrivateSelectors.chatMessageWidth,
           property: "max-width",
           extraCss: "width: 100% !important; min-width: 0 !important;",
         },
       ],
       insetSelectors: [
         {
-          selector: CHAT_MESSAGES_CONTAINER_SELECTOR,
+          selector: this.config.sitePrivateSelectors.chatMessagesContainer,
           extraCss: "box-sizing: border-box;",
         },
         {
-          selector: CHAT_INPUT_SAFE_AREA_SELECTOR,
+          selector: this.config.sitePrivateSelectors.chatInputSafeArea,
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
         },
         {
-          selector: NEW_CHAT_CONTENT_SAFE_AREA_SELECTOR,
+          selector: this.config.sitePrivateSelectors.newChatContentSafeArea,
           insetMode: "edge",
           extraCss:
             "box-sizing: border-box; width: 100% !important; max-width: 100% !important; min-width: 0 !important;",
@@ -1039,7 +972,7 @@ export class ZaiAdapter extends SiteAdapter {
   getUserQueryWidthSelectors() {
     return [
       {
-        selector: `${CHAT_CONTAINER_SELECTOR} .chat-user [class*="max-w-[90%]"]`,
+        selector: this.config.sitePrivateSelectors.userQueryWidth,
         property: "max-width",
         noCenter: true,
       },
@@ -1047,13 +980,16 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   getZenModeConfig() {
+    const { hide, rootClass, styles } = this.config.zenMode
     return {
-      hide: ["#sidebar"],
+      ...(hide ? { hide: [...hide] } : {}),
+      ...(rootClass ? { rootClass: { ...rootClass } } : {}),
+      ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }
   }
 
   private extractConversationTitle(node: Element): string {
-    const titleEl = node.querySelector(SIDEBAR_TITLE_SELECTOR)
+    const titleEl = node.querySelector(this.config.sitePrivateSelectors.sidebarTitle)
     return titleEl?.textContent?.trim() || ""
   }
 
@@ -1067,7 +1003,7 @@ export class ZaiAdapter extends SiteAdapter {
 
   private collectScrollAnchorRoots(): Element[] {
     const roots = Array.from(
-      document.querySelectorAll(`${USER_QUERY_SELECTOR}, ${ASSISTANT_MARKDOWN_SELECTOR}`),
+      document.querySelectorAll(this.config.selectors.chatContent.join(", ")),
     )
     return this.collectTopLevelBlocks(roots).filter(
       (element) => !element.closest(".gh-root, .gh-table-container"),
@@ -1138,8 +1074,8 @@ export class ZaiAdapter extends SiteAdapter {
     const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0
     const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 0
     const rect = element.getBoundingClientRect()
-    const userCount = element.querySelectorAll(USER_QUERY_SELECTOR).length
-    const assistantCount = element.querySelectorAll(ASSISTANT_MARKDOWN_SELECTOR).length
+    const userCount = element.querySelectorAll(this.config.selectors.userQuery).length
+    const assistantCount = element.querySelectorAll(this.getAssistantMarkdownSelector()).length
 
     let score = 0
 
@@ -1162,15 +1098,18 @@ export class ZaiAdapter extends SiteAdapter {
       score += 350
     }
 
-    if (element.closest("[data-pane-id]")) {
+    if (element.closest(this.config.sitePrivateSelectors.paneRoot)) {
       score += 300
     }
 
-    if (element.querySelector("textarea, #chat-input")) {
+    if (element.querySelector(this.config.sitePrivateSelectors.inputWithinScrollContainer)) {
       score -= 700
     }
 
-    if (element.matches(".scrollbar-none") && element.scrollWidth > element.clientWidth) {
+    if (
+      element.matches(this.config.sitePrivateSelectors.horizontalScrollContainer) &&
+      element.scrollWidth > element.clientWidth
+    ) {
       score -= 400
     }
 
@@ -1181,7 +1120,7 @@ export class ZaiAdapter extends SiteAdapter {
     if (!this.isOutlineElementVisible(element)) return true
     if (element.closest(".gh-root")) return true
     if (this.isInRenderedMarkdownContainer(element)) return true
-    if (element.closest(THINKING_CONTAINER_SELECTOR)) return true
+    if (element.closest(this.config.sitePrivateSelectors.thinkingContainer)) return true
     return false
   }
 
@@ -1270,7 +1209,9 @@ export class ZaiAdapter extends SiteAdapter {
 
   private collectDomMessageIds(container: Element): string[] {
     const ids: string[] = []
-    const nodes = Array.from(container.querySelectorAll('[id^="message-"]'))
+    const nodes = Array.from(
+      container.querySelectorAll(this.config.sitePrivateSelectors.messageRoot),
+    )
 
     nodes.forEach((node) => {
       const id = this.extractZaiMessageId(node)
@@ -1283,7 +1224,7 @@ export class ZaiAdapter extends SiteAdapter {
   private extractZaiMessageId(element: Element): string {
     const messageRoot = element.id?.startsWith("message-")
       ? element
-      : element.closest('[id^="message-"]')
+      : element.closest(this.config.sitePrivateSelectors.messageRoot)
     const id = messageRoot?.id || ""
     const match = id.match(MESSAGE_ID_PATTERN)
     return match?.[1] || ""
@@ -1390,12 +1331,14 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   private extractZaiUserAttachmentsFromDom(element: Element): ZaiUserAttachment[] {
-    const scope = element.matches(USER_QUERY_SELECTOR)
+    const scope = element.matches(this.config.selectors.userQuery)
       ? element
-      : element.closest(USER_QUERY_SELECTOR)
+      : element.closest(this.config.selectors.userQuery)
     if (!scope) return []
 
-    const cards = Array.from(scope.querySelectorAll("button")).filter((button) => {
+    const cards = Array.from(
+      scope.querySelectorAll(this.config.sitePrivateSelectors.attachmentCards),
+    ).filter((button) => {
       const text = button.textContent?.replace(/\s+/g, " ").trim() || ""
       if (!text) return false
       if (!this.looksLikeZaiAttachmentCard(button, text)) return false
@@ -1418,9 +1361,12 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   private looksLikeZaiAttachmentCard(card: Element, text: string): boolean {
-    if (card.querySelector("img[data-cy='image'], img.not-prose")) return true
+    if (card.querySelector(this.config.sitePrivateSelectors.attachmentImages)) return true
     if (!/\.[A-Za-z0-9]{1,10}\b/.test(text)) return false
-    return /\b(?:B|KB|MB|GB|TB)\b/i.test(text) || Boolean(card.querySelector("img[src*='/icons/']"))
+    return (
+      /\b(?:B|KB|MB|GB|TB)\b/i.test(text) ||
+      Boolean(card.querySelector(this.config.sitePrivateSelectors.attachmentIconImages))
+    )
   }
 
   private extractZaiDomUserAttachment(card: Element): ZaiUserAttachment | null {
@@ -1608,12 +1554,12 @@ export class ZaiAdapter extends SiteAdapter {
   }
 
   private findUserContentRoot(element: Element): Element | null {
-    const messageRoot = element.matches(USER_QUERY_SELECTOR)
+    const messageRoot = element.matches(this.config.selectors.userQuery)
       ? element
-      : element.closest(USER_QUERY_SELECTOR)
+      : element.closest(this.config.selectors.userQuery)
     const scope = messageRoot || element
 
-    for (const selector of USER_CONTENT_CANDIDATE_SELECTORS) {
+    for (const selector of this.config.sitePrivateSelectors.userContentCandidates) {
       const candidate = scope.querySelector(selector)
       if (!candidate) continue
       if (candidate.closest(".gh-user-query-markdown")) continue

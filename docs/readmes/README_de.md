@@ -412,9 +412,9 @@ Tiefer Dank gilt den folgenden großartigen Personen. Eure Beiträge lassen dies
 <div align="center">
 <a href="https://www.star-history.com/?repos=urzeye%2Fophel&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
  </picture>
 </a>
 <p>

@@ -133,6 +133,8 @@ export class LayoutManager {
 
   updateConfig(config: PageWidthConfig) {
     this.pageWidthConfig = config
+    // 站点包热更新后避让规则可能变化，重新读取；内置站点配置为静态，重读等价。
+    this.panelAvoidanceConfig = this.getPanelAvoidanceConfig()
     this.apply()
     this.schedulePanelAvoidanceUpdate()
   }
@@ -1165,10 +1167,10 @@ export class LayoutManager {
   }
 
   private handleZenModeExit = () => {
-    const siteId = this.siteAdapter.getSiteId()
+    const siteInstanceKey = this.siteAdapter.getSiteInstanceKey()
     const nextZenMode = { ...this.zenModeConfig, enabled: false }
     this.updateZenMode(nextZenMode)
-    useSettingsStore.getState().updateDeepSetting("layout", "zenMode", siteId, nextZenMode)
+    useSettingsStore.getState().updateDeepSetting("layout", "zenMode", siteInstanceKey, nextZenMode)
   }
 
   // ==================== 国际化支持 ====================

@@ -2,15 +2,29 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.1.8",
-  date: "2026-07-28",
+  version: "1.2.0",
+  date: "2026-08-13",
   notes: {
-    en: "### 🚀 New Features\n\n- **Prompt platform filter** — Prompts now support optional platform assignment (e.g., ChatGPT, Gemini, Claude) via the editor dialog; a new globe icon in the category bar opens a multi-select filter popover with a badge count, so users can quickly narrow prompts to those relevant for a specific platform. (#802)\n\n### ✨ Improvements\n\n- **Prompt queue overlay z-index** — Lowered the queue capsule and panel z-index from 99998/99999 to 9998/9999 so the floating bar no longer blocks the main panel, magic codex viewer, and import/preview dialogs.\n\n### 🐛 Bug Fixes\n\n- **Prompt variable multiline input** — Fixed issue where pasting multi-line Markdown into a prompt variable collapsed it onto a single line because the input was single-line; variable text fields now use an auto-resizing box that stays compact for short values and grows to preserve line breaks and formatting for long content. (#801)\n\n* **ChatGPT panel avoidance input width** — Fixed issue where the smart avoidance feature caused ChatGPT's input box to become excessively narrow after the site's 2026 redesign.\n* **Doubao Zen Mode sidebar** — Fixed issue where enabling Zen Mode on Doubao left a visible sidebar placeholder because the old DOM selector no longer matched the updated sidebar structure; added the new container selector so the sidebar collapses completely. (#806)",
-    zh: "### 🚀 新增功能\n\n- **提示词平台筛选** — 提示词现在支持在编辑弹窗中设置适用平台（如 ChatGPT、Gemini、Claude）；分类栏新增地球图标按钮，点击可弹出多选筛选面板并显示角标计数，方便用户按平台快速筛选提示词。(#802)\n\n### ✨ 功能优化\n\n- **提示词队列悬浮条层级** — 将队列胶囊和面板的 z-index 从 99998/99999 下调至 9998/9999，避免悬浮条遮挡主面板、提示词预览和导入/预览弹窗。\n\n### 🐛 问题修复\n\n- **提示词变量多行输入** — 修复向提示词变量粘贴多行 Markdown 内容时，因输入框为单行导致换行被压成一行的问题；变量文本框现在改为自适应高度，短内容保持紧凑，长内容自动增高以保留换行与格式。(#801)\n\n* **ChatGPT 智能避让输入框宽度** — 修复 ChatGPT 改版后，智能避让功能导致输入框过窄的问题。\n* **豆包禅模式侧边栏** — 修复开启禅模式后豆包侧边栏仍留有占位空间的问题，原因为旧 DOM 选择器未能匹配更新后的侧边栏结构；新增对应容器选择器，确保侧边栏完全自动收缩。(#806)",
+    en: '### 🚀 New Features\n\n- **Site packs** — Added a "Site Packs" section in settings for installing adapter packs from the online library, extending Ophel to more AI sites (self-hosted instances can be enabled by binding a custom domain); built-in site adapters can now be fixed via cloud updates instead of waiting for the next extension release. (#809)\n\n<!-- release-note-media: site-packs-video -->',
+    zh: '### 🚀 新增功能\n\n- **热插拔式站点适配** — 设置页新增"适配中心"，可在在线适配库一键安装适配包，让 Ophel 适配更多 AI 站点（自部署站点绑定自定义域名即可使用）；内置站点改版后也能通过云端更新自动修复，不用再等插件发版。(#809)\n\n<!-- release-note-media: site-packs-video -->',
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
     zh: "https://ophel.app/docs/zh/changelog",
   },
-  media: [],
+  media: [
+    {
+      id: "site-packs-video",
+      type: "video",
+      src: "https://github.com/user-attachments/assets/49274b97-abfc-4167-9068-695946c26af9",
+      alt: {
+        en: "Installing adapter packs from the online library in Settings",
+        zh: "在设置页从在线适配库安装适配包",
+      },
+      caption: {
+        en: "Browse the online adapter library in Settings, install a pack with one click, and extend Ophel to more AI sites.",
+        zh: "在设置页浏览在线适配库，一键安装适配包，让 Ophel 适配更多 AI 站点。",
+      },
+    },
+  ],
 } as const satisfies ReleaseNotesContent

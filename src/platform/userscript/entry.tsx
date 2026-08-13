@@ -1,12 +1,14 @@
 import React from "react"
 import ReactDOM from "react-dom/client"
 
+import { BACKUP_EXCLUDED_STORAGE_KEYS, BACKUP_USER_DATA_STORAGE_KEYS } from "~core/backup-codec"
+import { applyOphelPlatformFontClass } from "~utils/font"
+
 import { USERSCRIPT_RESOURCE_DEFINITIONS } from "./resource-manifest"
 import { injectGeminiCanvasCodeBridge } from "./gemini-canvas-inject"
 import { getInitialUserscriptLanguage, primeUserscriptLocales, subscribeI18nChanges } from "./i18n"
 import { injectScrollLock } from "./scroll-lock-inject"
 import { injectYuanbaoMonacoWrap } from "./yuanbao-monaco-wrap-inject"
-import { applyOphelPlatformFontClass } from "~utils/font"
 
 const USERSCRIPT_OBJECT_URLS = new Set<string>()
 
@@ -201,19 +203,18 @@ declare function GM_deleteValue(key: string): void
 if (typeof chrome === "undefined" || !chrome.storage) {
   // 创建 chrome.storage.local polyfill
   // 定义所有已知的 storage keys（用于 get(null) 时获取全部数据）
-  const KNOWN_STORAGE_KEYS = [
-    "settings",
-    "prompts",
-    "promptChains",
-    "folders",
-    "tags",
-    "readingHistory",
-    "claudeSessionKeys",
-    "conversations",
-    "ophel:releaseNotesState",
-    "ophel:clearAllFlag",
-    "ophel:restoreFlag",
-  ]
+  const KNOWN_STORAGE_KEYS = Array.from(
+    new Set([
+      ...BACKUP_USER_DATA_STORAGE_KEYS,
+      "ophel:global-search-shortcut-nudge:v1",
+      "ophel:releaseNotesState",
+      "ophel:clearAllFlag",
+      "ophel:restoreFlag",
+    ]),
+  )
+  const CLEARABLE_STORAGE_KEYS = Array.from(
+    new Set([...KNOWN_STORAGE_KEYS, ...BACKUP_EXCLUDED_STORAGE_KEYS]),
+  )
 
   userscriptWindow.chrome = {
     storage: {
@@ -257,8 +258,8 @@ if (typeof chrome === "undefined" || !chrome.storage) {
           callback?.()
         },
         clear: (callback?: () => void) => {
-          // 遍历所有已知的 storage keys 并删除
-          for (const key of KNOWN_STORAGE_KEYS) {
+          // remote-state 不参与 get(null) 备份，但清除全部数据时仍需删除。
+          for (const key of CLEARABLE_STORAGE_KEYS) {
             GM_deleteValue(key)
           }
           callback?.()
@@ -304,7 +305,7 @@ if (typeof chrome === "undefined" || !chrome.storage) {
           callback?.()
         },
         clear: (callback?: () => void) => {
-          for (const key of KNOWN_STORAGE_KEYS) {
+          for (const key of CLEARABLE_STORAGE_KEYS) {
             GM_deleteValue(key)
           }
           callback?.()
@@ -341,24 +342,39 @@ if (chromeRuntime && !chromeRuntime.onMessage) {
   }
 }
 
-// 防止在 iframe 中执行
-if (window.top !== window.self) {
-  throw new Error("Ophel: Running in iframe, skipping initialization")
-}
+// ========== 早期白名单检查（仅 userscript） ==========
+// 虽然 @match 设为 */*（技术原因，油猴无法动态添加 match），
+// 但只在白名单站点（内置 15 个站点 + 已安装 SitePack + 自定义绑定）上初始化。
+// 非白名单站点在此处早期退出，性能影响极小（<1ms）。
+// 注意：不要用顶层 throw 退出——每个非白名单页面都会在控制台留下一条
+// 未捕获错误噪音。用条件分支跳过所有后续副作用。
+const { shouldInitializeOnCurrentSite } = await import("./whitelist-check")
+const shouldRun = await shouldInitializeOnCurrentSite()
+if (!shouldRun) {
+  console.debug(
+    "[Ophel] Current site is not in whitelist (built-in sites, installed SitePacks, or custom bindings). Skipping initialization.",
+  )
+} else if (window.top !== window.self) {
+  // 防止在 iframe 中执行（@noframes 之外的兜底防御）
+  console.warn("[Ophel] Running in iframe, skipping initialization")
+} else if (window.ophelUserscriptInitialized) {
+  // 防止重复初始化
+  console.warn("[Ophel] Already initialized, skipping")
+} else {
+  window.ophelUserscriptInitialized = true
 
-// 防止重复初始化
-if (window.ophelUserscriptInitialized) {
-  throw new Error("Ophel: Already initialized")
-}
-window.ophelUserscriptInitialized = true
+  // 注入滚动锁定 API 劫持到页面主世界
+  // 等效于浏览器扩展中的 scroll-lock-main.ts (MAIN World content script)
+  // 必须在 document-start 时同步执行，在页面代码加载前劫持滚动 API
+  // 否则 ChatGPT 等平台可能缓存原始 API 引用，导致位置锁被绕过
+  injectScrollLock()
+  injectGeminiCanvasCodeBridge()
+  injectYuanbaoMonacoWrap()
 
-// 注入滚动锁定 API 劫持到页面主世界
-// 等效于浏览器扩展中的 scroll-lock-main.ts (MAIN World content script)
-// 必须在 document-start 时同步执行，在页面代码加载前劫持滚动 API
-// 否则 ChatGPT 等平台可能缓存原始 API 引用，导致位置锁被绕过
-injectScrollLock()
-injectGeminiCanvasCodeBridge()
-injectYuanbaoMonacoWrap()
+  // 启动：document-start 时 DOM 未就绪，需等待
+  // injectScrollLock() 已在上方同步执行，后续初始化延迟到 DOM 就绪
+  startWhenReady()
+}
 
 // 注意：Flutter 滚动容器现在在 scroll-helper.ts 中直接通过 unsafeWindow 访问
 // 不再需要在这里注入 Main World 监听器
@@ -368,24 +384,45 @@ injectYuanbaoMonacoWrap()
  * document-start 时 DOM 尚未就绪，需等待 document.readyState 变化
  */
 async function init() {
-  const [{ getAdapter }, { App }, { initNetworkMonitor }, { initGeminiTitleGuard }] =
-    await Promise.all([
-      import("~adapters"),
-      import("~components/App"),
-      import("~core/network-monitor"),
-      import("~core/gemini-title-guard"),
-    ])
+  void import("./remote-config")
+    .then(({ checkUserscriptRemoteConfigOnStartup }) => checkUserscriptRemoteConfigOnStartup())
+    .then((result) => {
+      if (result?.status === "failed") {
+        console.warn("[Ophel] Remote config check failed:", result.error)
+      }
+    })
+    .catch((error) => {
+      console.warn("[Ophel] Failed to start remote config check:", error)
+    })
 
+  const [
+    { getAdapter, getBrokenOriginBinding, initAdapterRegistry },
+    { App },
+    { initNetworkMonitor },
+    { initGeminiTitleGuard },
+    { showSitePackBindingIssueNotice },
+    { publishAdaptersVendorBridge },
+  ] = await Promise.all([
+    import("~adapters"),
+    import("~components/App"),
+    import("~core/network-monitor"),
+    import("~core/gemini-title-guard"),
+    import("~utils/binding-issue-notice"),
+    import("./publish-vendor-bridge"),
+  ])
+
+  // 向 @require 引入的 adapters vendor 发布有状态模块单例，
+  // 必须先于适配器注册与任何适配器方法调用。
+  publishAdaptersVendorBridge()
+  await initAdapterRegistry()
   initGeminiTitleGuard()
 
   const adapter = getAdapter()
 
-  if (!adapter) {
-    return
+  if (adapter) {
+    // 初始化适配器
+    adapter.afterPropertiesSet({})
   }
-
-  // 初始化适配器
-  adapter.afterPropertiesSet({})
 
   let mountObserver: MutationObserver | null = null
   let mountInterval: number | null = null
@@ -490,9 +527,28 @@ async function init() {
   }
 
   await mountUserscriptApp()
+  window.addEventListener("unload", cleanupMountWatchers)
+  window.addEventListener("unload", cleanupUserscriptObjectUrls)
+
+  if (!adapter) {
+    const brokenBinding = getBrokenOriginBinding()
+    if (brokenBinding) {
+      showSitePackBindingIssueNotice({
+        packId: brokenBinding.packId,
+        onOpenSettings: () => {
+          window.dispatchEvent(
+            new CustomEvent("ophel:navigateSettingsPage", { detail: { page: "sitePacks" } }),
+          )
+        },
+      })
+    }
+    return
+  }
 
   // 等待 Zustand hydration 完成后初始化核心模块
-  const { useSettingsStore, getSettingsState } = await import("~stores/settings-store")
+  const { useSettingsStore, getSettingsState, claimLegacySiteSettings } = await import(
+    "~stores/settings-store"
+  )
   const { useConversationsStore } = await import("~stores/conversations-store")
   const { useFoldersStore } = await import("~stores/folders-store")
   const { useTagsStore } = await import("~stores/tags-store")
@@ -549,16 +605,19 @@ async function init() {
     waitForHydration(useReadingHistoryStore),
   ])
 
-  // 获取用户设置
-  const settings = getSettingsState()
   const siteId = adapter.getSiteId()
+  const siteInstanceKey = adapter.getSiteInstanceKey()
+  if (adapter.canClaimLegacySiteData()) {
+    claimLegacySiteSettings(siteId, siteInstanceKey)
+  }
+  const settings = getSettingsState()
 
   // ========== 初始化所有核心模块（使用共享模块） ==========
   const { initCoreModules, subscribeModuleUpdates, initUrlChangeObserver } = await import(
     "~core/modules-init"
   )
 
-  const ctx = { adapter, settings, siteId }
+  const ctx = { adapter, settings, siteId, siteInstanceKey }
 
   await initCoreModules(ctx)
 
@@ -572,13 +631,8 @@ async function init() {
   // 初始化 URL 变化监听 (SPA 导航)
   const cleanupUrlChangeObserver = initUrlChangeObserver(ctx)
   window.addEventListener("unload", cleanupUrlChangeObserver, { once: true })
-
-  window.addEventListener("unload", cleanupMountWatchers)
-  window.addEventListener("unload", cleanupUserscriptObjectUrls)
 }
 
-// 启动：document-start 时 DOM 未就绪，需等待
-// injectScrollLock() 已在上方同步执行，后续初始化延迟到 DOM 就绪
 function startWhenReady() {
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => void init(), { once: true })
@@ -586,4 +640,3 @@ function startWhenReady() {
     void init()
   }
 }
-startWhenReady()

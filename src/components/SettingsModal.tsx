@@ -4,6 +4,7 @@
  */
 import React, { useEffect, useRef, useState } from "react"
 
+import type { SiteAdapter } from "~adapters/base"
 import {
   AboutIcon,
   AppearanceIcon,
@@ -16,6 +17,7 @@ import {
   PageContentIcon,
   PermissionsIcon,
   RestoreIcon,
+  SitePacksIcon,
   SearchIcon,
 } from "~components/icons"
 import ModelLockSettingsContent from "~components/ModelLockSettingsContent"
@@ -33,10 +35,12 @@ import GlobalSearchPage from "~tabs/options/pages/GlobalSearchPage"
 import GeneralPage from "~tabs/options/pages/GeneralPage"
 import PermissionsPage from "~tabs/options/pages/PermissionsPage"
 import ShortcutsPage from "~tabs/options/pages/ShortcutsPage"
+import SitePacksPage from "~tabs/options/pages/SitePacksPage"
 import SiteSettingsPage from "~tabs/options/pages/SiteSettingsPage"
-import { APP_DISPLAY_NAME, APP_ICON_URL } from "~utils/config"
+import { APP_DISPLAY_NAME, getAppIconUrl } from "~utils/config"
 import { attachEditableKeyboardFocusGuard, OPHEL_INTERACTION_LAYER_PROPS } from "~utils/dom-toolkit"
 import { setLanguage, t } from "~utils/i18n"
+import { scrollWithinSettingsContent } from "~utils/settings-scroll"
 
 const getLocalizedLabel = (labelKey: string, fallback: string): string => {
   const localized = t(labelKey)
@@ -74,7 +78,13 @@ const getFocusableElements = (container: HTMLElement): HTMLElement[] =>
   )
 
 // 导航菜单定义
-const NAV_ITEMS = [
+const NAV_ITEMS: Array<{
+  id: string
+  Icon: React.ComponentType<{ size?: number }>
+  labelKey: string
+  label: string
+  beta?: boolean
+}> = [
   {
     id: NAV_IDS.GENERAL,
     Icon: GeneralIcon,
@@ -92,7 +102,14 @@ const NAV_ITEMS = [
     id: NAV_IDS.SITE_SETTINGS,
     Icon: PageContentIcon,
     labelKey: "navSiteSettings",
-    label: "站点配置",
+    label: "站点设置",
+  },
+  {
+    id: NAV_IDS.SITE_PACKS,
+    Icon: SitePacksIcon,
+    labelKey: "navSitePacks",
+    label: "适配中心",
+    beta: true,
   },
   {
     id: NAV_IDS.GLOBAL_SEARCH,
@@ -114,7 +131,7 @@ const NAV_ITEMS = [
 interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
-  siteId: string
+  adapter: SiteAdapter
   onOpenReleaseNotes?: () => void
   onPanelHoverWidthPreviewChange?: (isActive: boolean) => void
 }
@@ -122,10 +139,12 @@ interface SettingsModalProps {
 export const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
   onClose,
-  siteId,
+  adapter,
   onOpenReleaseNotes,
   onPanelHoverWidthPreviewChange,
 }) => {
+  const siteId = adapter.getSiteId()
+  const siteInstanceKey = adapter.getSiteInstanceKey()
   const [activePage, setActivePage] = useState<string>(NAV_IDS.GENERAL)
   const [initialSubTab, setInitialSubTab] = useState<string | undefined>(undefined)
   const [locateRequest, setLocateRequest] = useState<{ settingId: string; token: number } | null>(
@@ -281,7 +300,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           highlightedElementRef.current.classList.remove("setting-locate-highlight")
         }
 
-        target.scrollIntoView({ behavior: "smooth", block: "center" })
+        scrollWithinSettingsContent(target)
         target.classList.remove("setting-locate-highlight")
         void target.offsetWidth
         target.classList.add("setting-locate-highlight")
@@ -388,12 +407,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         return (
           <SiteSettingsPage
             siteId={siteId}
+            siteInstanceKey={siteInstanceKey}
+            adapter={adapter}
             initialTab={initialSubTab}
-            modelLockContent={<ModelLockSettingsContent />}
+            modelLockContent={
+              <ModelLockSettingsContent siteId={siteInstanceKey} siteName={adapter.getName()} />
+            }
           />
         )
+      case NAV_IDS.SITE_PACKS:
+        return <SitePacksPage initialTab={initialSubTab} />
       case NAV_IDS.APPEARANCE:
-        return <AppearancePage siteId={siteId} initialTab={initialSubTab} />
+        return <AppearancePage siteId={siteInstanceKey} initialTab={initialSubTab} />
       case NAV_IDS.FEATURES:
         return <FeaturesPage siteId={siteId} initialTab={initialSubTab} />
       case NAV_IDS.GLOBAL_SEARCH:
@@ -453,7 +478,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         <aside className="settings-sidebar">
           <div className="settings-sidebar-header">
             <div className="settings-sidebar-logo">
-              <img src={APP_ICON_URL} alt={APP_DISPLAY_NAME} />
+              <img src={getAppIconUrl()} alt={APP_DISPLAY_NAME} />
               <span id={titleId} tabIndex={-1}>
                 {APP_DISPLAY_NAME}
               </span>
@@ -477,9 +502,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 <span className="settings-nav-item-icon">
                   <item.Icon size={22} />
                 </span>
-                <span className="settings-nav-item-label">
+                <span className={`settings-nav-item-label${item.beta ? " has-badge" : ""}`}>
                   {getLocalizedLabel(item.labelKey, item.label)}
                 </span>
+                {item.beta && (
+                  <span className="settings-beta-badge">
+                    {getLocalizedLabel("betaBadge", "Beta")}
+                  </span>
+                )}
               </button>
             ))}
 
@@ -488,7 +518,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
           </nav>
 
           {/* 侧边栏底部快捷设置 */}
-          <SidebarFooter siteId={siteId} />
+          <SidebarFooter siteId={siteInstanceKey} />
         </aside>
 
         {/* 内容区 */}

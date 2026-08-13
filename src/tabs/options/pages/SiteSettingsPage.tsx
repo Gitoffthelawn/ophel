@@ -3,15 +3,28 @@
  * 包含：页面布局、内容处理
  * 这些设置与具体站点相关，按站点存储配置
  */
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 
+import type { SiteAdapter } from "~adapters/base"
+import {
+  createFeatureCapabilitiesFromSignature,
+  getFeatureCapabilitiesSignature,
+  type SitePackCapability,
+} from "~adapters/feature-capabilities"
 import { PageContentIcon as LayoutIcon } from "~components/icons"
 import { NumberInput, Slider } from "~components/ui"
-import { LAYOUT_CONFIG, SITE_IDS, SITE_SETTINGS_TAB_IDS } from "~constants"
+import { LAYOUT_CONFIG, SITE_IDS, SITE_SETTINGS_TAB_IDS, isBuiltinSiteId } from "~constants"
 import { platform } from "~platform"
 import { useSettingsStore } from "~stores/settings-store"
-import { t } from "~utils/i18n"
+import { getCurrentLang, subscribeI18nChanges, t } from "~utils/i18n"
 import { MSG_CHECK_PERMISSIONS, MSG_REQUEST_PERMISSIONS, sendToBackground } from "~utils/messaging"
+import {
+  getSiteCleanMode,
+  getSitePageWidth,
+  getSitePanelAvoidance,
+  getSiteUserQueryWidth,
+  getSiteZenMode,
+} from "~utils/storage"
 import { showToast, showToastThrottled } from "~utils/toast"
 
 import { PageTitle, SettingCard, SettingRow, TabGroup, ToggleRow } from "../components"
@@ -19,20 +32,24 @@ import ClaudeSettings from "./ClaudeSettings"
 
 interface SiteSettingsPageProps {
   siteId: string
+  siteInstanceKey?: string
+  adapter?: SiteAdapter | null
   initialTab?: string
   modelLockContent?: React.ReactNode
 }
 
 const normalizeSiteSettingsTab = (
   tab: string | undefined,
-  hasModelLockContent: boolean,
+  availableTabs: readonly string[],
 ): string => {
-  if (!tab) return SITE_SETTINGS_TAB_IDS.LAYOUT
-  if (tab === SITE_SETTINGS_TAB_IDS.MODEL_LOCK && !hasModelLockContent) {
-    return SITE_SETTINGS_TAB_IDS.LAYOUT
-  }
-  return tab
+  return tab && availableTabs.includes(tab) ? tab : SITE_SETTINGS_TAB_IDS.LAYOUT
 }
+
+const SITE_PACK_INFO_URL_EN = "https://ophel.app/docs/enhancements/site-extensions/capabilities"
+const SITE_PACK_INFO_URL_ZH = "https://ophel.app/docs/zh/enhancements/site-extensions/capabilities"
+
+const getSitePackInfoUrl = (lang: string): string =>
+  lang.startsWith("zh") ? SITE_PACK_INFO_URL_ZH : SITE_PACK_INFO_URL_EN
 
 const PANEL_AVOIDANCE_SUPPORTED_SITE_IDS = new Set<string>([
   SITE_IDS.AISTUDIO,
@@ -54,17 +71,40 @@ const PANEL_AVOIDANCE_SUPPORTED_SITE_IDS = new Set<string>([
 
 const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
   siteId,
+  siteInstanceKey = siteId,
+  adapter,
   initialTab,
   modelLockContent,
 }) => {
-  const hasModelLockContent = Boolean(modelLockContent)
-  const [activeTab, setActiveTab] = useState<string>(
-    normalizeSiteSettingsTab(initialTab, hasModelLockContent),
+  const featureCapabilitiesSignature = getFeatureCapabilitiesSignature(
+    adapter?.getFeatureCapabilities() ?? [],
   )
+  const featureCapabilities = useMemo(
+    () => createFeatureCapabilitiesFromSignature(featureCapabilitiesSignature),
+    [featureCapabilitiesSignature],
+  )
+  const isCommunitySitePack = Boolean(adapter && !isBuiltinSiteId(siteId))
+  const supportsFeature = (capability: SitePackCapability): boolean =>
+    !isCommunitySitePack || featureCapabilities.has(capability)
+  const hasModelLockContent = Boolean(modelLockContent) && supportsFeature("model-lock")
+  const availableTabs = useMemo(
+    () => [
+      SITE_SETTINGS_TAB_IDS.LAYOUT,
+      ...(hasModelLockContent ? [SITE_SETTINGS_TAB_IDS.MODEL_LOCK] : []),
+      ...(!isCommunitySitePack
+        ? [SITE_IDS.GEMINI, SITE_IDS.AISTUDIO, SITE_IDS.CHATGPT, SITE_IDS.CLAUDE]
+        : []),
+    ],
+    [hasModelLockContent, isCommunitySitePack],
+  )
+  const [activeTab, setActiveTab] = useState<string>(
+    normalizeSiteSettingsTab(initialTab, availableTabs),
+  )
+  const currentLanguage = useSyncExternalStore(subscribeI18nChanges, getCurrentLang, getCurrentLang)
 
   useEffect(() => {
-    setActiveTab(normalizeSiteSettingsTab(initialTab, hasModelLockContent))
-  }, [initialTab, hasModelLockContent])
+    setActiveTab(normalizeSiteSettingsTab(initialTab, availableTabs))
+  }, [initialTab, availableTabs])
   const { settings, setSettings, setPreviewSettings, clearPreviewSettings, updateNestedSetting } =
     useSettingsStore()
   const prerequisiteToastTemplate = t("enablePrerequisiteToast")
@@ -72,19 +112,29 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
     showToastThrottled(prerequisiteToastTemplate.replace("{setting}", label), 2000, {}, 1500, label)
   const enablePageWidthLabel = t("enablePageWidth")
   const enableUserQueryWidthLabel = t("enableUserQueryWidth")
-  const supportsPanelAvoidance = PANEL_AVOIDANCE_SUPPORTED_SITE_IDS.has(siteId)
-
+  const supportsPanelAvoidance =
+    PANEL_AVOIDANCE_SUPPORTED_SITE_IDS.has(siteId) ||
+    (isCommunitySitePack && supportsFeature("panel-avoidance"))
+  const supportsPageWidth = supportsFeature("width")
+  const supportsUserQueryWidth =
+    !isCommunitySitePack ||
+    (supportsPageWidth && (adapter?.getUserQueryWidthSelectors().length ?? 0) > 0)
+  const supportsZenMode = supportsFeature("zen")
+  const supportsCleanMode = supportsFeature("clean")
   // 宽度布局相关状态
-  const currentPageWidth =
-    settings?.layout?.pageWidth?.[siteId as keyof typeof settings.layout.pageWidth] ||
-    settings?.layout?.pageWidth?._default
-  const currentUserQueryWidth =
-    settings?.layout?.userQueryWidth?.[siteId as keyof typeof settings.layout.userQueryWidth] ||
-    settings?.layout?.userQueryWidth?._default
-  const currentZenMode = settings?.layout?.zenMode?.[siteId] ||
-    settings?.layout?.zenMode?._default || { enabled: false, showExitButton: true }
-  const currentPanelAvoidance = settings?.layout?.panelAvoidance?.[siteId] ||
-    settings?.layout?.panelAvoidance?._default || { enabled: true }
+  const currentPageWidth = settings ? getSitePageWidth(settings, siteInstanceKey) : undefined
+  const currentUserQueryWidth = settings
+    ? getSiteUserQueryWidth(settings, siteInstanceKey)
+    : undefined
+  const currentZenMode = settings
+    ? getSiteZenMode(settings, siteInstanceKey)
+    : { enabled: false, showExitButton: true }
+  const currentCleanMode = settings
+    ? getSiteCleanMode(settings, siteInstanceKey)
+    : { enabled: true }
+  const currentPanelAvoidance = settings
+    ? getSitePanelAvoidance(settings, siteInstanceKey)
+    : { enabled: true }
   const panelAvoidanceTitle = (
     <span className="settings-card-title-with-badge">
       <span>{t("panelAvoidanceTitle")}</span>
@@ -122,7 +172,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
         ...settings.layout,
         [key]: {
           ...settings.layout?.[key],
-          [siteId]: {
+          [siteInstanceKey]: {
             ...current,
             value: String(nextValue),
             unit: "%",
@@ -151,15 +201,32 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
     ...(hasModelLockContent
       ? [{ id: SITE_SETTINGS_TAB_IDS.MODEL_LOCK, label: t("tabModelLock") }]
       : []),
-    { id: SITE_IDS.GEMINI, label: t("tabGemini") },
-    { id: SITE_IDS.AISTUDIO, label: "AI Studio" },
-    { id: SITE_IDS.CHATGPT, label: "ChatGPT" },
-    { id: SITE_IDS.CLAUDE, label: "Claude" },
+    ...(!isCommunitySitePack
+      ? [
+          { id: SITE_IDS.GEMINI, label: t("tabGemini") },
+          { id: SITE_IDS.AISTUDIO, label: "AI Studio" },
+          { id: SITE_IDS.CHATGPT, label: "ChatGPT" },
+          { id: SITE_IDS.CLAUDE, label: "Claude" },
+        ]
+      : []),
   ]
 
   return (
     <div>
       <PageTitle title={t("navSiteSettings")} Icon={LayoutIcon} />
+      {isCommunitySitePack && (
+        <div className="settings-site-pack-notice" role="note">
+          <span className="settings-site-pack-badge">{t("communitySitePackBadge")}</span>
+          <span className="settings-site-pack-notice-text">{t("communitySitePackDesc")}</span>
+          <a
+            className="settings-site-pack-link"
+            href={getSitePackInfoUrl(currentLanguage)}
+            target="_blank"
+            rel="noreferrer">
+            {t("learnMore")}
+          </a>
+        </div>
+      )}
       <p className="settings-page-desc">{t("siteSettingsPageDesc")}</p>
 
       <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
@@ -180,7 +247,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
                       ...settings.layout,
                       panelAvoidance: {
                         ...settings.layout?.panelAvoidance,
-                        [siteId]: {
+                        [siteInstanceKey]: {
                           ...currentPanelAvoidance,
                           enabled: !currentPanelAvoidance.enabled,
                         },
@@ -193,176 +260,177 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
           )}
 
           {/* 页面宽度卡片 */}
-          <SettingCard title={t("layoutSettingsTitle")}>
-            <ToggleRow
-              label={t("enablePageWidth")}
-              description={t("pageWidthDesc")}
-              settingId="layout-page-width-enabled"
-              checked={currentPageWidth?.enabled ?? false}
-              onChange={() => {
-                const current = currentPageWidth || { enabled: false, value: "81", unit: "%" }
-                setSettings({
-                  layout: {
-                    ...settings?.layout,
-                    pageWidth: {
-                      ...settings?.layout?.pageWidth,
-                      [siteId]: { ...current, enabled: !current.enabled },
+          {supportsPageWidth && (
+            <SettingCard title={t("layoutSettingsTitle")}>
+              <ToggleRow
+                label={t("enablePageWidth")}
+                description={t("pageWidthDesc")}
+                settingId="layout-page-width-enabled"
+                checked={currentPageWidth?.enabled ?? false}
+                onChange={() => {
+                  const current = currentPageWidth || { enabled: false, value: "81", unit: "%" }
+                  setSettings({
+                    layout: {
+                      ...settings?.layout,
+                      pageWidth: {
+                        ...settings?.layout?.pageWidth,
+                        [siteInstanceKey]: { ...current, enabled: !current.enabled },
+                      },
                     },
-                  },
-                })
-              }}
-            />
-
-            <SettingRow
-              label={t("pageWidthValueLabel")}
-              settingId="layout-page-width-value"
-              disabled={!currentPageWidth?.enabled}
-              onDisabledClick={() => showPrerequisiteToast(enablePageWidthLabel)}>
-              <Slider
-                value={currentPageWidthValue}
-                onChange={(value) => updatePercentWidth("pageWidth", value)}
-                onPreviewChange={(value) => updatePercentWidthPreview("pageWidth", value)}
-                onCancelPreview={clearPreviewSettings}
-                min={LAYOUT_CONFIG.PAGE_WIDTH.MIN_PERCENT}
-                max={LAYOUT_CONFIG.PAGE_WIDTH.MAX_PERCENT}
-                step={1}
-                unit="%"
-                defaultValue={Number.parseInt(LAYOUT_CONFIG.PAGE_WIDTH.DEFAULT_PERCENT, 10)}
-                disabled={!currentPageWidth?.enabled}
-                formatValue={(value) => `${value}%`}
-                ariaLabel={t("pageWidthValueLabel")}
+                  })
+                }}
               />
-            </SettingRow>
-          </SettingCard>
+
+              <SettingRow
+                label={t("pageWidthValueLabel")}
+                settingId="layout-page-width-value"
+                disabled={!currentPageWidth?.enabled}
+                onDisabledClick={() => showPrerequisiteToast(enablePageWidthLabel)}>
+                <Slider
+                  value={currentPageWidthValue}
+                  onChange={(value) => updatePercentWidth("pageWidth", value)}
+                  onPreviewChange={(value) => updatePercentWidthPreview("pageWidth", value)}
+                  onCancelPreview={clearPreviewSettings}
+                  min={LAYOUT_CONFIG.PAGE_WIDTH.MIN_PERCENT}
+                  max={LAYOUT_CONFIG.PAGE_WIDTH.MAX_PERCENT}
+                  step={1}
+                  unit="%"
+                  defaultValue={Number.parseInt(LAYOUT_CONFIG.PAGE_WIDTH.DEFAULT_PERCENT, 10)}
+                  disabled={!currentPageWidth?.enabled}
+                  formatValue={(value) => `${value}%`}
+                  ariaLabel={t("pageWidthValueLabel")}
+                />
+              </SettingRow>
+            </SettingCard>
+          )}
 
           {/* 用户问题宽度卡片 */}
-          <SettingCard title={t("userQueryWidthSettings")}>
-            <ToggleRow
-              label={t("enableUserQueryWidth")}
-              description={t("userQueryWidthDesc")}
-              settingId="layout-user-query-width-enabled"
-              checked={currentUserQueryWidth?.enabled ?? false}
-              onChange={() => {
-                const current = currentUserQueryWidth || {
-                  enabled: false,
-                  value: "81",
-                  unit: "%",
-                }
-                setSettings({
-                  layout: {
-                    ...settings?.layout,
-                    userQueryWidth: {
-                      ...settings?.layout?.userQueryWidth,
-                      [siteId]: { ...current, enabled: !current.enabled },
+          {supportsUserQueryWidth && (
+            <SettingCard title={t("userQueryWidthSettings")}>
+              <ToggleRow
+                label={t("enableUserQueryWidth")}
+                description={t("userQueryWidthDesc")}
+                settingId="layout-user-query-width-enabled"
+                checked={currentUserQueryWidth?.enabled ?? false}
+                onChange={() => {
+                  const current = currentUserQueryWidth || {
+                    enabled: false,
+                    value: "81",
+                    unit: "%",
+                  }
+                  setSettings({
+                    layout: {
+                      ...settings?.layout,
+                      userQueryWidth: {
+                        ...settings?.layout?.userQueryWidth,
+                        [siteInstanceKey]: { ...current, enabled: !current.enabled },
+                      },
                     },
-                  },
-                })
-              }}
-            />
-
-            <SettingRow
-              label={t("userQueryWidthValueLabel")}
-              settingId="layout-user-query-width-value"
-              disabled={!currentUserQueryWidth?.enabled}
-              onDisabledClick={() => showPrerequisiteToast(enableUserQueryWidthLabel)}>
-              <Slider
-                value={currentUserQueryWidthValue}
-                onChange={(value) => updatePercentWidth("userQueryWidth", value)}
-                onPreviewChange={(value) => updatePercentWidthPreview("userQueryWidth", value)}
-                onCancelPreview={clearPreviewSettings}
-                min={LAYOUT_CONFIG.USER_QUERY_WIDTH.MIN_PERCENT}
-                max={LAYOUT_CONFIG.USER_QUERY_WIDTH.MAX_PERCENT}
-                step={1}
-                unit="%"
-                defaultValue={Number.parseInt(LAYOUT_CONFIG.USER_QUERY_WIDTH.DEFAULT_PERCENT, 10)}
-                disabled={!currentUserQueryWidth?.enabled}
-                formatValue={(value) => `${value}%`}
-                ariaLabel={t("userQueryWidthValueLabel")}
+                  })
+                }}
               />
-            </SettingRow>
-          </SettingCard>
+
+              <SettingRow
+                label={t("userQueryWidthValueLabel")}
+                settingId="layout-user-query-width-value"
+                disabled={!currentUserQueryWidth?.enabled}
+                onDisabledClick={() => showPrerequisiteToast(enableUserQueryWidthLabel)}>
+                <Slider
+                  value={currentUserQueryWidthValue}
+                  onChange={(value) => updatePercentWidth("userQueryWidth", value)}
+                  onPreviewChange={(value) => updatePercentWidthPreview("userQueryWidth", value)}
+                  onCancelPreview={clearPreviewSettings}
+                  min={LAYOUT_CONFIG.USER_QUERY_WIDTH.MIN_PERCENT}
+                  max={LAYOUT_CONFIG.USER_QUERY_WIDTH.MAX_PERCENT}
+                  step={1}
+                  unit="%"
+                  defaultValue={Number.parseInt(LAYOUT_CONFIG.USER_QUERY_WIDTH.DEFAULT_PERCENT, 10)}
+                  disabled={!currentUserQueryWidth?.enabled}
+                  formatValue={(value) => `${value}%`}
+                  ariaLabel={t("userQueryWidthValueLabel")}
+                />
+              </SettingRow>
+            </SettingCard>
+          )}
 
           {/* 禅模式 (Zen Mode) 卡片 */}
-          <SettingCard title={t("zenModeTitle")}>
-            <ToggleRow
-              label={t("zenModeLabel")}
-              description={t("zenModeDesc")}
-              settingId="layout-zen-mode-enabled"
-              checked={currentZenMode.enabled}
-              onChange={() => {
-                const newZenEnabled = !currentZenMode.enabled
-                const updatedLayout: typeof settings.layout = {
-                  ...settings.layout,
-                  zenMode: {
-                    ...settings.layout?.zenMode,
-                    [siteId]: {
-                      ...currentZenMode,
-                      enabled: newZenEnabled,
-                    },
-                  },
-                }
-                // 开启禅模式时自动开启净化模式
-                if (newZenEnabled) {
-                  updatedLayout.cleanMode = {
-                    ...settings.layout?.cleanMode,
-                    [siteId]: { enabled: true },
-                  }
-                }
-                setSettings({ layout: updatedLayout })
-              }}
-            />
-            <ToggleRow
-              label={t("zenModeExitButtonVisibleLabel")}
-              description={t("zenModeExitButtonVisibleDesc")}
-              settingId="layout-zen-mode-exit-button-visible"
-              checked={currentZenMode.showExitButton ?? true}
-              onChange={() => {
-                setSettings({
-                  layout: {
+          {supportsZenMode && (
+            <SettingCard title={t("zenModeTitle")}>
+              <ToggleRow
+                label={t("zenModeLabel")}
+                description={t("zenModeDesc")}
+                settingId="layout-zen-mode-enabled"
+                checked={currentZenMode.enabled}
+                onChange={() => {
+                  const newZenEnabled = !currentZenMode.enabled
+                  const updatedLayout: typeof settings.layout = {
                     ...settings.layout,
                     zenMode: {
                       ...settings.layout?.zenMode,
-                      [siteId]: {
+                      [siteInstanceKey]: {
                         ...currentZenMode,
-                        showExitButton: !(currentZenMode.showExitButton ?? true),
+                        enabled: newZenEnabled,
                       },
                     },
-                  },
-                })
-              }}
-            />
-          </SettingCard>
+                  }
+                  // 开启禅模式时自动开启净化模式
+                  if (newZenEnabled && supportsCleanMode) {
+                    updatedLayout.cleanMode = {
+                      ...settings.layout?.cleanMode,
+                      [siteInstanceKey]: { enabled: true },
+                    }
+                  }
+                  setSettings({ layout: updatedLayout })
+                }}
+              />
+              <ToggleRow
+                label={t("zenModeExitButtonVisibleLabel")}
+                description={t("zenModeExitButtonVisibleDesc")}
+                settingId="layout-zen-mode-exit-button-visible"
+                checked={currentZenMode.showExitButton ?? true}
+                onChange={() => {
+                  setSettings({
+                    layout: {
+                      ...settings.layout,
+                      zenMode: {
+                        ...settings.layout?.zenMode,
+                        [siteInstanceKey]: {
+                          ...currentZenMode,
+                          showExitButton: !(currentZenMode.showExitButton ?? true),
+                        },
+                      },
+                    },
+                  })
+                }}
+              />
+            </SettingCard>
+          )}
 
           {/* 净化模式 (Clean Mode) 卡片 */}
-          <SettingCard title={t("cleanModeTitle")}>
-            <ToggleRow
-              label={t("cleanModeLabel")}
-              description={t("cleanModeDesc")}
-              settingId="layout-clean-mode-enabled"
-              checked={
-                settings.layout?.cleanMode?.[siteId as keyof typeof settings.layout.cleanMode]
-                  ?.enabled ?? true
-              }
-              onChange={() => {
-                const currentCleanMode = settings.layout?.cleanMode?.[
-                  siteId as keyof typeof settings.layout.cleanMode
-                ] || { enabled: true }
-
-                setSettings({
-                  layout: {
-                    ...settings.layout,
-                    cleanMode: {
-                      ...settings.layout?.cleanMode,
-                      [siteId]: {
-                        ...currentCleanMode,
-                        enabled: !currentCleanMode.enabled,
+          {supportsCleanMode && (
+            <SettingCard title={t("cleanModeTitle")}>
+              <ToggleRow
+                label={t("cleanModeLabel")}
+                description={t("cleanModeDesc")}
+                settingId="layout-clean-mode-enabled"
+                checked={currentCleanMode.enabled}
+                onChange={() => {
+                  setSettings({
+                    layout: {
+                      ...settings.layout,
+                      cleanMode: {
+                        ...settings.layout?.cleanMode,
+                        [siteInstanceKey]: {
+                          ...currentCleanMode,
+                          enabled: !currentCleanMode.enabled,
+                        },
                       },
                     },
-                  },
-                })
-              }}
-            />
-          </SettingCard>
+                  })
+                }}
+              />
+            </SettingCard>
+          )}
         </>
       )}
 

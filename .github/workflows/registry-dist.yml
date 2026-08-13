@@ -1,0 +1,166 @@
+name: "📦 Publish SitePack Registry"
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "registry/**"
+      - "src/adapters/declarative/**"
+      - "src/adapters/zai-config.ts"
+      - "src/constants/defaults.ts"
+      - "src/core/builtin-config-registry.ts"
+      - "src/core/remote-config-constants.ts"
+      - "src/core/remote-config-types.ts"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/registry-dist.yml"
+  workflow_dispatch:
+    inputs:
+      revision-override:
+        description: "Force registryRevision for disaster recovery (must exceed the published revision)"
+        required: false
+        type: number
+
+permissions:
+  contents: write
+
+concurrency:
+  group: registry-dist
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    name: Validate and publish registry-dist
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source branch
+        uses: actions/checkout@v6
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate registry sources
+        run: pnpm registry:validate
+
+      - name: Load previous registry-dist
+        id: previous
+        shell: bash
+        run: |
+          set +e
+          git ls-remote --exit-code --heads origin registry-dist >/dev/null 2>&1
+          STATUS=$?
+          set -e
+          case "$STATUS" in
+            0)
+              git fetch origin registry-dist
+              git worktree add --detach .registry-dist origin/registry-dist
+              echo "directory=$GITHUB_WORKSPACE/.registry-dist" >> "$GITHUB_OUTPUT"
+              ;;
+            2)
+              echo "directory=" >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "Failed to query registry-dist branch (exit $STATUS)" >&2
+              exit "$STATUS"
+              ;;
+          esac
+
+      - name: Build immutable registry dist
+        id: build
+        shell: bash
+        env:
+          PREVIOUS_DIRECTORY: ${{ steps.previous.outputs.directory }}
+          REGISTRY_SIGNING_KEY_ID: ophel-registry-2026-07
+          REGISTRY_SIGNING_PRIVATE_KEY: ${{ secrets.REGISTRY_SIGNING_PRIVATE_KEY }}
+        run: |
+          if [ -z "$REGISTRY_SIGNING_PRIVATE_KEY" ]; then
+            echo "REGISTRY_SIGNING_PRIVATE_KEY is not configured" >&2
+            exit 1
+          fi
+          # registryRevision increments by 1 per publish on every branch; the
+          # workflow_dispatch input overrides it only for disaster recovery.
+          REVISION_OVERRIDE="${{ inputs.revision-override }}"
+          if [ -n "$REVISION_OVERRIDE" ]; then
+            REVISION="$REVISION_OVERRIDE"
+          elif [ -n "$PREVIOUS_DIRECTORY" ]; then
+            REVISION=$(
+              node --input-type=module -e '
+                import { readFileSync } from "node:fs"
+                const index = JSON.parse(readFileSync(process.argv[1], "utf8"))
+                if (!Number.isSafeInteger(index.registryRevision) || index.registryRevision < 1) {
+                  throw new Error("Previous registryRevision is invalid")
+                }
+                process.stdout.write(String(index.registryRevision + 1))
+              ' "$PREVIOUS_DIRECTORY/index.json"
+            )
+          else
+            REVISION=1
+          fi
+          GENERATED_AT=$(($(git show -s --format=%ct HEAD) * 1000))
+          if [ -n "$PREVIOUS_DIRECTORY" ]; then
+            pnpm registry:build:signed --revision "$REVISION" --generated-at "$GENERATED_AT" --previous-dir "$PREVIOUS_DIRECTORY"
+          else
+            pnpm registry:build:signed --revision "$REVISION" --generated-at "$GENERATED_AT"
+          fi
+          echo "revision=$REVISION" >> "$GITHUB_OUTPUT"
+
+      - name: Publish registry-dist branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: registry-dist
+          publish_dir: registry/dist
+          force_orphan: true
+          keep_files: true
+          user_name: "github-actions[bot]"
+          user_email: "github-actions[bot]@users.noreply.github.com"
+          commit_message: "Publish registry from ${{ github.sha }} [skip ci]"
+
+      # jsDelivr caches branch-ref URLs for many hours (observed: 19h+), so purging is
+      # the only reliable refresh; without it clients keep installing stale packs
+      # because the raw fallback only triggers on fetch/signature failure, not on
+      # stale-but-valid data. Two caveats make a bare purge insufficient:
+      #   - purge.jsdelivr.net returns HTTP 200 with "throttled": true when the same
+      #     path was purged recently (throttlingReset can reach ~700s) and then does
+      #     NOT purge, so HTTP success alone proves nothing;
+      #   - a purge can race GitHub's origin propagation and get re-cached stale.
+      # Verify the CDN actually serves the revision we just published, re-purging
+      # with escalating waits to ride out throttle windows.
+      - name: Purge and verify jsDelivr cache for mutable index files
+        shell: bash
+        env:
+          EXPECTED_REVISION: ${{ steps.build.outputs.revision }}
+        run: |
+          set -e
+          CDN_BASE="https://cdn.jsdelivr.net/gh/urzeye/ophel@registry-dist"
+          PURGE_BASE="https://purge.jsdelivr.net/gh/urzeye/ophel@registry-dist"
+          purge() {
+            for file in index.json index.sig.json; do
+              echo "Purging $PURGE_BASE/$file"
+              curl -fsS "$PURGE_BASE/$file" || echo "::warning::jsDelivr purge request failed for $file"
+              echo ""
+            done
+          }
+          purge
+          for delay in 10 20 40 80 160 320; do
+            sleep "$delay"
+            curl -fsS "$CDN_BASE/index.json" -o cdn-index.json
+            ACTUAL=$(node -e "try { process.stdout.write(String(JSON.parse(require('fs').readFileSync('cdn-index.json', 'utf8')).registryRevision ?? '')) } catch { process.stdout.write('') }")
+            if [ "$ACTUAL" = "$EXPECTED_REVISION" ]; then
+              echo "jsDelivr serves registry revision $ACTUAL as expected"
+              exit 0
+            fi
+            echo "jsDelivr still serves revision '${ACTUAL:-unknown}', expected $EXPECTED_REVISION"
+            purge
+          done
+          echo "::error::jsDelivr cache did not converge to revision $EXPECTED_REVISION; clients will see a stale registry"
+          exit 1

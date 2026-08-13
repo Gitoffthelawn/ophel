@@ -5,6 +5,7 @@
 import { t } from "~utils/i18n"
 import type { Prompt } from "~utils/storage"
 import type { PromptChain } from "~core/prompt-action-types"
+import { siteMatchPatternMatchesUrl } from "~adapters/declarative/match-pattern"
 
 // ==================== Zustand Store Keys ====================
 // 用于备份导出/导入时识别 Zustand persist 格式的数据
@@ -16,11 +17,17 @@ export const ZUSTAND_KEYS: string[] = [
   "tags",
   "conversations",
   "readingHistory",
+  "claudeSessionKeys",
 ]
 
 // 多属性 Store（导入时需要特殊处理）
 // 这些 store 的 state 中包含多个属性，不只是与 key 同名的主数据
-export const MULTI_PROP_STORES: string[] = ["conversations", "readingHistory"]
+export const MULTI_PROP_STORES: string[] = [
+  "promptChains",
+  "conversations",
+  "readingHistory",
+  "claudeSessionKeys",
+]
 
 // ==================== 默认提示词 ====================
 // 返回国际化后的默认提示词
@@ -130,118 +137,176 @@ export const SITE_IDS = {
   ZAI: "zai",
 } as const
 
+export type BuiltinSiteId = (typeof SITE_IDS)[keyof typeof SITE_IDS]
+
+const BUILTIN_SITE_IDS = new Set<string>(Object.values(SITE_IDS))
+
+export const isBuiltinSiteId = (siteId: string): siteId is BuiltinSiteId =>
+  BUILTIN_SITE_IDS.has(siteId)
+
+export interface SiteUrlPatternMatcher {
+  test(url: string): boolean
+}
+
 export interface SupportedAiPlatform {
-  id: (typeof SITE_IDS)[keyof typeof SITE_IDS]
+  id: string
   name: string
-  pattern: RegExp
-  url: string
+  /** 产品侧 URL 识别与 registry 冲突校验共用的单一域名声明。 */
+  matchPatterns: readonly string[]
+  pattern: SiteUrlPatternMatcher
+  /**
+   * 可直接打开的入口地址。内置站点恒为一条；适配包按静态 matches 与用户绑定域名展开，
+   * 未绑定任何域名时为空数组——消费方必须显式处理"没有入口"这种状态。
+   */
+  entryUrls: readonly string[]
   icon: string
+  faviconUrl?: string
+}
+
+type SupportedAiPlatformDefinition = Omit<SupportedAiPlatform, "pattern">
+
+interface CreateSupportedAiPlatformOptions {
+  allowEmptyMatchPatterns?: boolean
+}
+
+export const createSupportedAiPlatform = (
+  definition: SupportedAiPlatformDefinition,
+  options: CreateSupportedAiPlatformOptions = {},
+): SupportedAiPlatform => {
+  const matchPatterns = [...definition.matchPatterns]
+  if (matchPatterns.length === 0 && !options.allowEmptyMatchPatterns) {
+    throw new Error(`Supported platform ${definition.id} must declare at least one match pattern`)
+  }
+  return {
+    ...definition,
+    matchPatterns,
+    pattern: {
+      test(url: string): boolean {
+        let parsedUrl: URL
+        try {
+          parsedUrl = new URL(url)
+        } catch {
+          return false
+        }
+        return matchPatterns.some((pattern) => siteMatchPatternMatchesUrl(parsedUrl, pattern))
+      },
+    },
+  }
 }
 
 export const SUPPORTED_AI_PLATFORMS: SupportedAiPlatform[] = [
-  {
+  createSupportedAiPlatform({
     id: SITE_IDS.CHATGPT,
     name: "ChatGPT",
-    pattern: /chatgpt\.com/,
-    url: "https://chatgpt.com",
+    matchPatterns: [
+      "https://chatgpt.com/*",
+      "https://*.chatgpt.com/*",
+      "https://chat.openai.com/*",
+    ],
+    entryUrls: ["https://chatgpt.com"],
     icon: "💬",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.GEMINI,
     name: "Gemini",
-    pattern: /gemini\.google\.com/,
-    url: "https://gemini.google.com",
+    matchPatterns: ["https://gemini.google.com/*", "https://*.gemini.google.com/*"],
+    entryUrls: ["https://gemini.google.com"],
     icon: "🌟",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.CLAUDE,
     name: "Claude",
-    pattern: /claude\.(ai|com)/,
-    url: "https://claude.ai",
+    matchPatterns: [
+      "https://claude.ai/*",
+      "https://*.claude.ai/*",
+      "https://claude.com/*",
+      "https://*.claude.com/*",
+    ],
+    entryUrls: ["https://claude.ai"],
     icon: "🎭",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.AISTUDIO,
     name: "AI Studio",
-    pattern: /aistudio\.google\.com/,
-    url: "https://aistudio.google.com",
+    matchPatterns: ["https://aistudio.google.com/*"],
+    entryUrls: ["https://aistudio.google.com"],
     icon: "🧪",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.GROK,
     name: "Grok",
-    pattern: /grok\.com/,
-    url: "https://grok.com",
+    matchPatterns: ["https://grok.com/*", "https://*.grok.com/*"],
+    entryUrls: ["https://grok.com"],
     icon: "🤖",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.GEMINI_ENTERPRISE,
     name: "Gemini Enterprise",
-    pattern: /business\.gemini\.google/,
-    url: "https://business.gemini.google",
+    matchPatterns: ["https://business.gemini.google/*", "https://*.business.gemini.google/*"],
+    entryUrls: ["https://business.gemini.google"],
     icon: "🏢",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.DOUBAO,
     name: "Doubao",
-    pattern: /www\.doubao\.com/,
-    url: "https://www.doubao.com",
+    matchPatterns: ["https://www.doubao.com/*"],
+    entryUrls: ["https://www.doubao.com"],
     icon: "🌱",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.DEEPSEEK,
     name: "DeepSeek",
-    pattern: /chat\.deepseek\.com/,
-    url: "https://chat.deepseek.com",
+    matchPatterns: ["https://chat.deepseek.com/*"],
+    entryUrls: ["https://chat.deepseek.com"],
     icon: "🌀",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.KIMI,
     name: "Kimi",
-    pattern: /www\.kimi\.com/,
-    url: "https://www.kimi.com",
+    matchPatterns: ["https://www.kimi.com/*"],
+    entryUrls: ["https://www.kimi.com"],
     icon: "🌙",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.ZAI,
     name: "Z.ai",
-    pattern: /chat\.z\.ai/,
-    url: "https://chat.z.ai",
+    matchPatterns: ["https://chat.z.ai/*"],
+    entryUrls: ["https://chat.z.ai"],
     icon: "⚡",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.CHATGLM,
     name: "ChatGLM",
-    pattern: /chatglm\.cn/,
-    url: "https://chatglm.cn/main/alltoolsdetail?lang=zh",
+    matchPatterns: ["https://chatglm.cn/*"],
+    entryUrls: ["https://chatglm.cn/main/alltoolsdetail?lang=zh"],
     icon: "🧠",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.YUANBAO,
     name: "Yuanbao",
-    pattern: /yuanbao\.tencent\.com/,
-    url: "https://yuanbao.tencent.com",
+    matchPatterns: ["https://yuanbao.tencent.com/*"],
+    entryUrls: ["https://yuanbao.tencent.com"],
     icon: "💎",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.QIANWEN,
     name: "Qianwen",
-    pattern: /www\.qianwen\.com/,
-    url: "https://www.qianwen.com",
+    matchPatterns: ["https://qianwen.com/*", "https://www.qianwen.com/*"],
+    entryUrls: ["https://www.qianwen.com"],
     icon: "🔮",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.QWENAI,
     name: "Qwen Studio",
-    pattern: /chat\.qwen\.ai/,
-    url: "https://chat.qwen.ai",
+    matchPatterns: ["https://chat.qwen.ai/*"],
+    entryUrls: ["https://chat.qwen.ai"],
     icon: "🪄",
-  },
-  {
+  }),
+  createSupportedAiPlatform({
     id: SITE_IDS.IMA,
     name: "ima",
-    pattern: /ima\.qq\.com/,
-    url: "https://ima.qq.com",
+    matchPatterns: ["https://ima.qq.com/*"],
+    entryUrls: ["https://ima.qq.com"],
     icon: "🐼",
-  },
+  }),
 ]

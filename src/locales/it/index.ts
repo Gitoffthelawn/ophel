@@ -15,9 +15,177 @@ export const it = {
   tabPrompts: "Suggerimenti",
   tabSettings: "Impostazioni",
 
+  elementPickerInstruction:
+    "Sposta il puntatore su un elemento della pagina, quindi fai clic per selezionarlo",
+  elementPickerCancelHint: "Premi Esc per annullare",
+  elementPickerIframeUnsupported:
+    "Gli elementi nei riquadri incorporati (iframe) non possono essere selezionati. Scegli un elemento esterno al riquadro.",
+
+  // Procedura guidata adattatore sito
+  siteAdapterWizardLauncher: "Crea un adattatore per questo sito",
+  siteAdapterWizardResume: "Riprendi la configurazione",
+  siteAdapterWizardTitle: "Configurazione adattatore sito",
+  siteAdapterWizardSubtitle: "Seleziona gli elementi e controlla la struttura in tempo reale.",
+  siteAdapterWizardProgress: "Passaggio {current} di {total}",
+  siteAdapterWizardProgressLabel: "Avanzamento configurazione adattatore",
+  siteAdapterWizardOptional: "Facoltativo",
+  siteAdapterWizardPick: "Seleziona nella pagina",
+  siteAdapterWizardRepick: "Seleziona di nuovo",
+  siteAdapterWizardSelectorLabel: "Selettore dell'elemento",
+  siteAdapterWizardSelectorGenerated: "Generato automaticamente",
+  siteAdapterWizardSelectorManual: "Modificato manualmente",
+  siteAdapterWizardAiTitle: "Bozza di selettori AI",
+  siteAdapterWizardAiOptional: "Facoltativo",
+  siteAdapterWizardAiSummary: "Copia un prompt anonimizzato e incolla il JSON dei selettori",
+  siteAdapterWizardAiPrivacy:
+    "Nessun dato viene inviato automaticamente. Il prompt esclude testo delle conversazioni, valori immessi, link, script e interfaccia Ophel; controllalo prima di condividerlo da pagine sensibili.",
+  siteAdapterWizardAiCopy: "Copia prompt AI",
+  siteAdapterWizardAiCopying: "Copia in corso…",
+  siteAdapterWizardAiCopied:
+    "Prompt AI anonimizzato copiato. Incollalo nell'assistente AI che preferisci.",
+  siteAdapterWizardAiCopyFailed:
+    "Impossibile copiare il prompt AI. Controlla l'autorizzazione degli appunti e riprova.",
+  siteAdapterWizardAiResponseLabel: "JSON dei selettori AI",
+  siteAdapterWizardAiResponsePlaceholder: "Incolla l'oggetto JSON restituito dall'AI",
+  siteAdapterWizardAiApply: "Applica bozza",
+  siteAdapterWizardAiSelectorSource: "Suggerito dall'AI",
+  siteAdapterWizardAiReviewReminder:
+    "L'output dell'AI è solo una bozza. Controlla ogni passaggio prima di salvare.",
+  siteAdapterWizardAiAppliedSuccess:
+    "Sono stati applicati {count} selettori AI, tutti validi nel controllo in tempo reale. Controlla ogni passaggio prima di salvare.",
+  siteAdapterWizardAiAppliedReview:
+    "Applicati {applied}: {valid} validi, {review} da controllare; {rejected} selettori non validi o senza corrispondenze sono stati respinti senza sostituire le selezioni esistenti.",
+  siteAdapterWizardAiAppliedNone:
+    "Nessun selettore applicato. Sono stati respinti {rejected} selettori non validi o senza corrispondenze e le selezioni esistenti sono rimaste invariate.",
+  siteAdapterWizardAiErrorInvalidJson:
+    "Incolla JSON valido o un singolo blocco di codice JSON senza testo aggiuntivo.",
+  siteAdapterWizardAiErrorInvalidSchema:
+    "La struttura della bozza AI o i campi dei selettori non sono validi. Usa esattamente il formato mostrato nel prompt copiato.",
+  siteAdapterWizardAiErrorResponseTooLarge:
+    "La risposta AI è troppo lunga. Chiedi di restituire solo il JSON dei selettori e riprova.",
+  siteAdapterWizardAiErrorNoSelectors: "La risposta AI non contiene selettori utilizzabili.",
+  siteAdapterWizardSelectorPlaceholder: "Inserisci un selettore CSS",
+  siteAdapterWizardPickFirst: "Seleziona prima un elemento nella pagina",
+  siteAdapterWizardPickerBusy: "È già attiva un'altra selezione di elementi.",
+  siteAdapterWizardIssueMissing: "Seleziona un elemento o inserisci il suo selettore.",
+  siteAdapterWizardIssueDisconnected: "L'elemento non è più nella pagina. Selezionalo di nuovo.",
+  siteAdapterWizardIssueInvalid: "La sintassi di questo selettore non è valida.",
+  siteAdapterWizardIssueTooLong: "Questo selettore è troppo lungo per un SitePack.",
+  siteAdapterWizardIssueNoMatch: "Questo selettore non corrisponde ad alcun elemento attuale.",
+  siteAdapterWizardIssueTargetMismatch: "Questo selettore non include più l'elemento selezionato.",
+  siteAdapterWizardIssueNotUnique: "Questo controllo deve corrispondere a un solo elemento.",
+  siteAdapterWizardIssueUnsupportedInput: "Seleziona una casella di testo o un'area modificabile.",
+  siteAdapterWizardIssueContainerMissing: "Seleziona prima un contenitore di conversazione valido.",
+  siteAdapterWizardIssueOutsideContainer:
+    "Tutti i messaggi corrispondenti devono trovarsi nel contenitore selezionato.",
+  siteAdapterWizardGenerateDisconnected: "L'elemento è cambiato prima di creare il selettore.",
+  siteAdapterWizardGenerateOutsideRoot:
+    "Questo elemento non è raggiungibile dalla radice della pagina.",
+  siteAdapterWizardGenerateManual:
+    "Non è stato possibile generare un selettore stabile. Inseriscilo manualmente o scegli un elemento più specifico.",
+  siteAdapterWizardStepReady: "Questo passaggio è pronto.",
+  siteAdapterWizardMatchCount: "{count} corrispondenze",
+  siteAdapterWizardUnique: "Univoco",
+  siteAdapterWizardShared: "Ripetuto",
+  siteAdapterWizardContained: "Nel contenitore",
+  siteAdapterWizardStepTextareaTitle: "Campo del messaggio",
+  siteAdapterWizardStepTextareaDesc: "Seleziona la casella in cui scrivi un messaggio.",
+  siteAdapterWizardStepSubmitTitle: "Pulsante Invia",
+  siteAdapterWizardStepSubmitDesc: "Seleziona il pulsante che invia il messaggio corrente.",
+  siteAdapterWizardStepContainerTitle: "Contenitore conversazione",
+  siteAdapterWizardStepContainerDesc: "Seleziona l'area che contiene i messaggi correnti.",
+  siteAdapterWizardStepUserTitle: "Messaggio utente",
+  siteAdapterWizardStepUserDesc:
+    "Seleziona un tuo messaggio. Un selettore ripetuto può includere tutti i messaggi utente.",
+  siteAdapterWizardStepAssistantTitle: "Risposta IA",
+  siteAdapterWizardStepAssistantDesc:
+    "Seleziona una risposta IA. Un selettore ripetuto può includere tutte le risposte IA.",
+  siteAdapterWizardStepConversationTitle: "Elemento elenco conversazioni",
+  siteAdapterWizardStepConversationDesc:
+    "Facoltativo: seleziona un elemento nella cronologia o nella barra laterale.",
+  siteAdapterWizardStepNewChatTitle: "Pulsante Nuova chat",
+  siteAdapterWizardStepNewChatDesc:
+    "Facoltativo: seleziona il controllo che avvia una nuova conversazione.",
+  siteAdapterWizardPreviewEyebrow: "Anteprima dal vivo",
+  siteAdapterWizardPreviewTitle: "Struttura conversazione",
+  siteAdapterWizardPreviewReady: "Pronta",
+  siteAdapterWizardPreviewEmpty:
+    "Seleziona messaggi utente e IA validi per vedere qui la struttura.",
+  siteAdapterWizardPreviewNoText: "Questo elemento non contiene testo leggibile",
+  siteAdapterWizardUser: "Utente",
+  siteAdapterWizardAssistant: "IA",
+  siteAdapterWizardCapabilitiesTitle: "Funzioni disponibili",
+  siteAdapterWizardCapabilitiesEmpty:
+    "Le funzioni appariranno quando le selezioni richieste saranno valide.",
+  siteAdapterWizardCapabilityPrompt: "Inserimento prompt",
+  siteAdapterWizardCapabilityOutline: "Struttura conversazione",
+  siteAdapterWizardCapabilityUserQueries: "Domande utente nella struttura",
+  siteAdapterWizardCapabilityExport: "Esportazione di base",
+  siteAdapterWizardCapabilityHistory: "Cronologia di lettura",
+  siteAdapterWizardCapabilityNewChat: "Nuova conversazione",
+  siteAdapterWizardConversationCaptured:
+    "Elemento conversazione acquisito; resterà fuori dal pacchetto finché non saranno note le regole per ID e link.",
+  siteAdapterWizardCompleteTitle: "La bozza dell'adattatore è pronta",
+  siteAdapterWizardCompleteDesc:
+    "Gli elementi richiesti sono validi e la struttura della conversazione è disponibile.",
+  siteAdapterWizardPublishEyebrow: "Salva e contribuisci",
+  siteAdapterWizardPublishTitle: "Pubblica questo adattatore",
+  siteAdapterWizardPublishDesc:
+    "Controlla i metadati generati, quindi salva il pacchetto in locale o esporta lo stesso JSON convalidato.",
+  siteAdapterWizardPublishNameLabel: "Nome del sito",
+  siteAdapterWizardPublishIdLabel: "ID pacchetto",
+  siteAdapterWizardPublishIdHint: "Lettere minuscole, numeri e trattini",
+  siteAdapterWizardPublishVersionHint: "Aumentala quando aggiorni lo stesso pacchetto",
+  siteAdapterWizardPublishOriginLabel: "Origine esatta",
+  siteAdapterWizardPublishMinVersionLabel: "Versione minima di Ophel",
+  siteAdapterWizardPublishConversationOmitted:
+    "L'elemento conversazione non è incluso perché le regole per ID e URL non possono essere dedotte in modo sicuro.",
+  siteAdapterWizardPublishDraftInvalid:
+    "Una selezione obbligatoria non è più valida. Torna a quel passaggio e selezionala di nuovo.",
+  siteAdapterWizardPublishHttpsRequired:
+    "I SitePack possono essere creati solo per un'origine HTTPS.",
+  siteAdapterWizardPublishManifestInvalid: "Il SitePack generato non è valido.",
+  siteAdapterWizardPublishNameInvalid: "Inserisci il nome del sito.",
+  siteAdapterWizardPublishIdInvalid:
+    "L'ID deve contenere da 2 a 40 lettere minuscole, numeri o trattini.",
+  siteAdapterWizardPublishVersionInvalid: "La versione deve essere un numero intero positivo.",
+  siteAdapterWizardPublishAppVersionInvalid:
+    "La versione attuale di Ophel non può essere usata come versione minima valida.",
+  siteAdapterWizardPublishManifestInvalidField: "Controlla il campo generato: {field}",
+  siteAdapterWizardPublishVersionConflict:
+    "Questo ID e questa versione contengono già contenuti diversi. Aumenta la versione e riprova.",
+  siteAdapterWizardPublishSourceConflict:
+    "Questo ID pacchetto è già installato da un'altra origine. Scegli un ID diverso.",
+  siteAdapterWizardPublishMatchConflict:
+    "Questa origine è in conflitto con un SitePack integrato o installato.",
+  siteAdapterWizardPublishSaveFailed:
+    "Impossibile salvare il SitePack. Controlla i metadati e riprova.",
+  siteAdapterWizardPublishPermissionDenied:
+    "L'accesso al sito non è stato concesso, quindi il pacchetto salvato è stato disattivato.",
+  siteAdapterWizardPublishSaved:
+    '"{name}" è stato salvato in locale. Ricarica questa pagina per attivarlo.',
+  siteAdapterWizardPublishDownloaded: "Il JSON convalidato del SitePack è stato scaricato.",
+  siteAdapterWizardPublishContributionOpened:
+    "JSON copiato. La pagina GitHub precompilata per contribuire è aperta.",
+  siteAdapterWizardPublishOpenFailed:
+    "Il JSON è stato copiato, ma non è stato possibile aprire GitHub. Apri il repository e incollalo manualmente.",
+  siteAdapterWizardPublishReloadTitle: "Ricaricamento necessario",
+  siteAdapterWizardPublishReloadDesc:
+    "Il pacchetto è salvato e registrato. Ricarica affinché tutti i moduli dell'adattatore partano con un ciclo di pagina completo.",
+  siteAdapterWizardPublishOpening: "Apertura di GitHub…",
+  siteAdapterWizardPublishGithub: "Copia JSON e apri GitHub",
+  siteAdapterWizardPublishSaving: "Salvataggio…",
+  siteAdapterWizardStartOver: "Ricomincia",
+  siteAdapterWizardDone: "Fatto",
+  siteAdapterWizardBack: "Indietro",
+  siteAdapterWizardNext: "Avanti",
+  siteAdapterWizardSkip: "Salta",
+  siteAdapterWizardFinish: "Completa configurazione",
+
   // ======== Options Page Navigation ========
   navGeneral: "Generale",
-  navSiteSettings: "Configurazione del sito",
+  navSiteSettings: "Impostazioni del sito",
+  navSitePacks: "Pacchetti sito",
   navGlobalSearch: "Ricerca globale",
   navAppearance: "Aspetto",
   navPageContent: "Pagina e contenuto",
@@ -29,6 +197,106 @@ export const it = {
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Configura il layout specifico del sito e l'elaborazione dei contenuti",
+  communitySitePackBadge: "Pacchetto della community (funzioni principali)",
+  communitySitePackDesc:
+    "Questo sito è supportato da un pacchetto della community. Vengono mostrate solo le funzioni che supporta.",
+  sitePacksPageDesc: "Installa e gestisci i pacchetti sito affinché Ophel supporti più siti di IA.",
+
+  // SitePack Manager
+  sitePacksGuideAction: "Guida",
+  sitePacksRegistryTitle: "Libreria online",
+  sitePacksLocalImportTitle: "Installa pacchetto da file",
+  sitePacksLocalImportDesc:
+    "Installa un pacchetto adattatore da un file JSON locale. Utile per pacchetti offline o non ancora in elenco. Importa solo file di cui ti fidi.",
+  sitePacksCheckUpdates: "Controlla aggiornamenti",
+  sitePacksBindingHttpsRequired:
+    "È possibile aggiungere solo siti HTTPS. I siti HTTP non sono supportati.",
+  sitePacksRegistrySearchPlaceholder: "Cerca pacchetti",
+  sitePacksRegistryNoMatch: "Nessun pacchetto corrispondente",
+  sitePacksOpenSite: "Apri sito",
+  sitePacksTabInstalled: "Installati",
+  sitePacksTabOrigins: "Siti personalizzati",
+  sitePacksTabUpdates: "Catalogo e aggiornamenti",
+  sitePacksBindingListTitle: "Siti aggiunti",
+  sitePacksStatusUnavailable: "Rimosso dalla libreria",
+  remoteConfigStatusSummary: "Indice {revision} · ultimo controllo {time}",
+  sitePacksInstall: "Installa",
+  sitePacksUpdate: "Aggiorna",
+  sitePacksUninstall: "Disinstalla",
+  sitePacksInstalledBadge: "Installato",
+  sitePacksEnabledLabel: "Attivo",
+  sitePacksSourceRegistry: "Online",
+  sitePacksSourceLocal: "Importazione locale",
+  sitePacksStatusAvailable: "Disponibile",
+  sitePacksStatusMatchRequired: "Regola richiesta",
+  sitePacksStatusDisabled: "Disattivato",
+  sitePacksStatusIncompatible: "Non compatibile",
+  sitePacksStatusPackMissing: "Pacchetto mancante",
+  sitePackBindingNoticeTitle: "Associazione del sito non attiva",
+  sitePackBindingNoticeMessage:
+    'Questo sito è associato al pacchetto "{packId}", che è stato disinstallato o non è più valido, quindi il pannello non è stato caricato. Reinstalla il pacchetto o rimuovi questa associazione nelle impostazioni Pacchetti sito.',
+  sitePackBindingNoticeAction: "Apri Pacchetti sito",
+  sitePacksSelfHostedBadge: "Self-hosted",
+  sitePacksSelfHostedHint: "Richiede un dominio collegato",
+  sitePacksNeedsBindingBadge: "Collegamento necessario",
+  sitePacksBindNowAction: "Collega ora",
+  sitePacksNoInstalled: "Nessun pacchetto sito installato",
+  sitePacksRegistryEmpty: "Nessun pacchetto nella cache della libreria",
+  sitePacksLoadFailed: "Impossibile caricare i pacchetti sito: {error}",
+  sitePacksOperationFailed: "Operazione sul pacchetto sito non riuscita: {error}",
+  sitePacksPermissionTitle: "Consentire l'accesso al pacchetto sito?",
+  sitePacksPermissionDesc: 'Ophel deve eseguire "{name}" nei seguenti siti: {origins}',
+  sitePacksPermissionDenied:
+    'L\'accesso ai siti per "{name}" non è stato concesso, quindi il pacchetto rimane disattivato.',
+  sitePacksPermissionReviewTitle: "Riautorizza i pacchetti ripristinati",
+  sitePacksInvalidFile: "Questo file JSON non è un SitePack valido.",
+  sitePacksValidationErrorsTitle: "Dettagli della convalida",
+  sitePacksStoredIssuesTitle: "Problemi dei pacchetti salvati",
+  sitePacksImportConfirmTitle: "Importare questo pacchetto sito?",
+  sitePacksImportRisk:
+    "I pacchetti sito possono modificare lo stile delle pagine e il comportamento di Ophel sui siti corrispondenti. Importa solo pacchetti da fonti attendibili.",
+  sitePacksImportSummary:
+    "{name} ({id}), versione {version}, {matches} schemi di corrispondenza dei siti.",
+  sitePacksUninstallConfirmTitle: "Disinstallare questo pacchetto sito?",
+  sitePacksUninstallConfirmDesc: "Rimuovere {name} da questo dispositivo?",
+  sitePacksUninstallKeepData:
+    "Le impostazioni dei siti e i dati delle conversazioni restano salvati.",
+  sitePacksSavedSuccess: "{name} è stato installato.",
+  sitePacksUpdatedSuccess: "{name} è stato aggiornato.",
+  sitePacksRemovedSuccess: "{name} è stato disinstallato.",
+  sitePacksStateChanged: "{name}: ora {state}.",
+  sitePacksEnabledState: "attivo",
+  sitePacksDisabledState: "disattivato",
+  sitePacksRequiresNewerApp: "Richiede Ophel {version} o versione successiva",
+  sitePacksCustomOriginsTitle: "Aggiungi un sito personalizzato",
+  sitePacksCustomOriginsDesc:
+    "Aggiungi il tuo sito di IA self-hosted (ad es. Open WebUI) e scegli quale pacchetto lo supporta.",
+  sitePacksCustomOriginLabel: "Origine HTTPS",
+  sitePacksCustomOriginPlaceholder: "https://chat.example.com",
+  sitePacksBindingPackLabel: "Pacchetto",
+  sitePacksBindingPackPlaceholder: "Scegli un pack installato",
+  sitePacksBindingEmpty: "Nessun sito personalizzato aggiunto",
+  sitePacksBindingEditing: "Modifica in corso: {origin}",
+  sitePacksBindingOriginExists:
+    "{origin} è già stato aggiunto. Modificalo o eliminalo prima dall'elenco.",
+  sitePacksBindingHint:
+    "Inserisci un'origine HTTPS esatta, ad esempio https://chat.example.com. Percorsi e caratteri jolly non sono accettati.",
+  sitePacksBindingPermissionDenied:
+    "Il permesso per {origin} non è stato concesso, quindi il sito non è stato salvato.",
+  sitePacksUserscriptCoverageTitle: "Aggiungi le regole di corrispondenza userscript",
+  sitePacksUserscriptCoverageDesc:
+    "In {manager} mancano {count} regole di corrispondenza SitePack. Copia le regole seguenti prima di aprire i siti interessati.",
+  sitePacksUserscriptManagerUnknown: "Il gestore userscript corrente",
+  sitePacksUserscriptGuideTampermonkey:
+    "Per aggiungere in Tampermonkey: dashboard → questo script → scheda Impostazioni → Corrispondenze utente → Aggiungi e incolla una regola qui sopra.",
+  sitePacksUserscriptGuideViolentmonkey:
+    "Per aggiungere in Violentmonkey: dashboard → icona delle impostazioni accanto a questo script → scheda Personalizzato → incolla una regola qui sopra nelle regole di corrispondenza personalizzate.",
+  sitePacksUserscriptGuideGeneric:
+    "Apri le impostazioni di questo script nel tuo gestore userscript e aggiungi le regole qui sopra come regole di corrispondenza utente (personalizzate).",
+  sitePacksUserscriptCoveragePersistNote:
+    "Ogni regola va aggiunta una sola volta e resta anche dopo gli aggiornamenti dello script. Ricarica poi il sito di destinazione.",
+  sitePacksMatchGuideAction: "Vedi guida all'aggiunta",
+  sitePacksBindingPackRequired: "Scegli prima un pacchetto installato.",
 
   generalPageDesc: "Configura il comportamento e l'interfaccia dell'estensione",
   appearancePageDesc: "Personalizza stili e temi visivi",
@@ -66,7 +334,7 @@ export const it = {
   // permissionAllUrlsDesc: "Allow the extension to run on all websites to support more AI platforms.", // Deprecated
   permissionWebdavAccess: "Accesso alle funzionalità avanzate",
   permissionWebdavAccessDesc:
-    "Accesso a tutti i siti web. Richiesto per la sincronizzazione WebDAV e la rimozione della filigrana dell'immagine AI.",
+    "Accesso a tutti i siti web. Richiesto per la sincronizzazione WebDAV, la rimozione della filigrana dell'immagine AI e l'esecuzione dei Site Pack installati sui loro siti target senza richieste per singolo sito.",
 
   // Required permissions
   permissionStorage: "Archiviazione",
@@ -1497,6 +1765,7 @@ export const it = {
   popupUnsupported: "Non supportato",
   popupNewChat: "Nuova chiacchierata",
   popupQuickAccess: "Accesso rapido",
+  popupSitePackUnbound: "Nessun sito aggiunto",
   popupRecentUsed: "Recente",
   popupNoRecentPrompts: "Nessuna richiesta recente",
   popupCopied: "Copiato",
@@ -1748,6 +2017,77 @@ export const it = {
   "featureTip-notifications-desc":
     "Ricevi una notifica sul desktop quando l'intelligenza artificiale termina: non perdere mai una risposta",
   "featureTip-notifications-path": "Funzionalità → Avvisi → Notifica sul desktop",
+  // Aggiornamenti della configurazione degli adattatori
+  remoteConfigSettingsTitle: "Aggiornamenti della configurazione degli adattatori",
+  remoteConfigAutoUpdateLabel: "Aggiorna automaticamente le configurazioni degli adattatori",
+  remoteConfigAutoUpdateDesc: "Controlla al massimo una volta ogni 24 ore.",
+  remoteConfigRegistrySourceLabel: "Sorgente Registry di sviluppo",
+  remoteConfigRegistrySourceDesc:
+    "Disponibile solo nelle build di sviluppo. Inserisci un URL completo di index.json; lascia vuoto per usare le sorgenti predefinite.",
+  remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
+  remoteConfigRegistrySourceApplyButton: "Applica",
+  remoteConfigRegistrySourceApplied:
+    "Sorgente Registry di sviluppo salvata. Verrà usata al prossimo controllo degli aggiornamenti.",
+  remoteConfigRegistrySourceCleared: "Ripristinate le sorgenti Registry predefinite.",
+  remoteConfigRegistrySourceInvalid: "Sorgente Registry non valida: {error}",
+  remoteConfigCheckNowLabel: "Controlla ora gli aggiornamenti",
+  remoteConfigCheckNowButton: "Controlla ora",
+  remoteConfigCheckingButton: "Controllo…",
+  remoteConfigStatusLoading: "Caricamento…",
+  remoteConfigNeverChecked: "Mai controllato",
+  remoteConfigActivePatchesLabel: "Patch attive",
+  remoteConfigUsingBuiltin: "Sono attualmente in uso le configurazioni integrate",
+  remoteConfigPatchVersionLabel: "Versione patch",
+  remoteConfigBaseVersionLabel: "Versione config. integrata",
+  remoteConfigResetBuiltinButton: "Ripristina integrata",
+  remoteConfigResettingButton: "Ripristino…",
+  remoteConfigPrivacyDesc:
+    "I controlli inviano solo richieste GET a CDN statiche, senza conversazioni né dati dell'account.",
+  remoteConfigCheckUpdated:
+    "Sono state scaricate nuove configurazioni. Aggiorna le pagine AI corrispondenti per applicarle.",
+  remoteConfigCheckUpToDate: "Le configurazioni degli adattatori sono aggiornate.",
+  remoteConfigCheckFailed: "Controllo aggiornamenti non riuscito: {error}",
+  remoteConfigResetSuccess: "{site} è stato ripristinato alla configurazione integrata.",
+  remoteConfigResetFailed: "Ripristino non riuscito: {error}",
+  remoteConfigResetUnavailable: "Non c'è alcuna configurazione attiva da ripristinare.",
+  remoteConfigRegistryActiveSourceLabel: "Origine attiva",
+  remoteConfigRegistryActiveSourceDefault: "Origini ufficiali predefinite (non ancora in cache)",
+  remoteConfigRegistryOverrideLabel: "override attivo",
+  remoteConfigRegistryLastErrorLabel: "Ultimo errore",
+  remoteConfigRegistryRestoreDefaultsButton: "Ripristina predefiniti",
+  remoteConfigRegistryCacheClearButton: "Svuota cache",
+  remoteConfigRegistryCacheCleared: "Cache del registry svuotata (patch locali conservate).",
+  remoteConfigRegistryCacheClearFailed: "Impossibile svuotare la cache: {error}",
+  remoteConfigRegistryDefaultsRestored:
+    "Origini registry predefinite ripristinate e ricontrollate.",
+  remoteConfigLocalRegistryCheckFailed:
+    "Controllo registry locale non riuscito ({url}): {error}. Verifica che pnpm registry:serve sia in esecuzione.",
+  remoteConfigLocalRegistryUseButton: "Usa registry locale",
+  remoteConfigLocalRegistryHint:
+    "Esegui prima pnpm registry:serve, poi premi “{button}”. Solo le build di sviluppo si fidano della chiave di firma locale.",
+  remoteConfigLocalRegistrySourceApplied:
+    "Passato all’origine registry locale e avviato il controllo aggiornamenti.",
+  remoteConfigLocalRegistryPermissionDenied:
+    "Autorizzazione host per il registry locale negata. Consenti l’accesso a 127.0.0.1 e riprova.",
+
+  remoteConfigLocalPatchImportButton: "Importa hotfix del sito",
+  remoteConfigLocalPatchImportDesc:
+    "Importa un JSON di hotfix selettori per un sito integrato. Gli hotfix locali hanno priorità su quelli remoti per i test pre-contributo. Non installa un nuovo pacchetto.",
+  remoteConfigLocalPatchConfirmTitle: "Importare la patch locale?",
+  remoteConfigLocalPatchRisk:
+    "Le patch locali non sono autenticate dalla firma del registry ufficiale. Importa solo file di cui ti fidi.",
+  remoteConfigLocalPatchSummary:
+    "Installa la patch v{version} per {site} ({id}) sulla config integrata versione {base}.",
+  remoteConfigLocalPatchInstalled:
+    "Patch locale v{version} installata per {site}. Apri il sito per verificarla e ricarica se necessario.",
+  remoteConfigLocalPatchRemoved: "Patch locale rimossa per {site}.",
+  remoteConfigLocalPatchRemoveFailed: "Rimozione della patch locale non riuscita: {error}",
+  remoteConfigLocalPatchRemoveButton: "Rimuovi patch locale",
+  remoteConfigLocalPatchInvalid:
+    "Il JSON della patch locale non è valido o manca di campi obbligatori.",
+  remoteConfigPatchSourceLocal: "Locale",
+  remoteConfigPatchSourceRegistry: "Registry",
+
   discordCommunity: "Comunità Discord",
   discordDesc:
     "Unisciti alla nostra community per chattare con altri utenti, fornire feedback e ricevere gli ultimi aggiornamenti",

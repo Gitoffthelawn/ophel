@@ -11,6 +11,16 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] - 2026-08-13
+
+### 🚀 New Features
+
+- **Site packs** — Added a "Site Packs" section in settings for installing adapter packs from the online library, extending Ophel to more AI sites (self-hosted instances can be enabled by binding a custom domain); built-in site adapters can now be fixed via cloud updates instead of waiting for the next extension release. (#809)
+
+<!-- release-note-media: site-packs-video -->
+
+---
+
 ## [1.1.8] - 2026-07-28
 
 ### 🚀 New Features
@@ -1360,6 +1370,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0
 [1.1.8]: https://github.com/urzeye/ophel/releases/tag/v1.1.8
 [1.1.7]: https://github.com/urzeye/ophel/releases/tag/v1.1.7
 [1.1.6]: https://github.com/urzeye/ophel/releases/tag/v1.1.6

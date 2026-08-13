@@ -36,7 +36,7 @@ function normalizeVersion(input) {
 
 const version = normalizeVersion(process.argv[2] || readPackageVersion())
 const outputPath = path.join(PROJECT_ROOT, RELEASE_NOTES_OUTPUT_FILE)
-const moduleContent = buildReleaseNotesModuleFromFiles(PROJECT_ROOT, version)
+const moduleContent = await buildReleaseNotesModuleFromFiles(PROJECT_ROOT, version)
 
 fs.mkdirSync(path.dirname(outputPath), { recursive: true })
 fs.writeFileSync(outputPath, moduleContent, "utf8")

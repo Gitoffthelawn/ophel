@@ -358,7 +358,7 @@ function writeReleaseFiles(updates) {
   }
 }
 
-function runRelease(version, options) {
+async function runRelease(version, options) {
   const tagName = `v${version}`
   const packageJson = readPackageJson()
   const previousVersion = packageJson.version
@@ -369,7 +369,7 @@ function runRelease(version, options) {
   const changelogs = new Map(
     CHANGELOGS.map((fileName) => [fileName, updateChangelog(fileName, version, releaseDate)]),
   )
-  const releaseNotesModule = buildReleaseNotesModule({
+  const releaseNotesModule = await buildReleaseNotesModule({
     version,
     enChangelog: changelogs.get("CHANGELOG.md"),
     zhChangelog: changelogs.get("CHANGELOG.zh-CN.md"),
@@ -515,5 +515,5 @@ if (options.command === "redo") {
     : bumpPatch(packageJson.version)
 
   assertTagDoesNotExist(`v${version}`)
-  runRelease(version, options)
+  await runRelease(version, options)
 }

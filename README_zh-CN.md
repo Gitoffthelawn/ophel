@@ -186,6 +186,19 @@
 
 </details>
 
+<details>
+<summary><strong>常见问题：油猴版如何支持自定义适配包域名？</strong></summary>
+
+脚本管理器不允许 Ophel 自动增加新的 `@match`。在 **设置 → 适配中心** 添加自定义站点后，请复制油猴访问提示中列出的每条规则，并按管理器添加：
+
+- **Tampermonkey：** 打开 Ophel 脚本，进入 **设置 → 包含/排除 → 用户匹配**，加入复制的规则并保存。
+- **Violentmonkey：** 打开 Ophel 脚本设置，在自定义 `@match` 规则中加入复制的规则。
+- **ScriptCat：** 打开脚本设置，在用户匹配或自定义匹配规则中加入；不同版本的入口名称可能略有差异。
+
+保存后重新加载对应站点。建议使用管理器提供的自定义规则，不要直接修改 Ophel 元数据头；脚本更新时，管理器侧规则会继续保留。
+
+</details>
+
 ## 🙌 支持 Ophel Atlas
 
 <!-- supporters:start -->
@@ -421,9 +434,9 @@ _🌌 开源的璀璨，源于社区中每一颗闪耀的星。_
 <div align="center">
 <a href="https://www.star-history.com/?repos=urzeye%2Fophel&type=date&legend=top-left">
  <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
-   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=L12UxrFEo1SBUqeBQbV64q92fjec3vXmv4I75q8YYn5m5Qi7NDHcFH0qOKtoxTvtVoKVT0lL6IXf-97iHb7OPFxZyLdeZsX6DZjDr9hgxp9cmsD-Pe2uCg" />
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&theme=dark&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=urzeye/ophel&type=date&legend=top-left&sealed_token=eJUyyO8MegbZbTgroJLGXEM4laGqNGoI3y8hdCX-ji_l03FqCJn_zAkBNH3oNKTV9o3YacvQm6oNXJH9Eqrs8WpqIhnLy-IyjmNxbPOLxITble3OQDiztg" />
  </picture>
 </a>
 <p>

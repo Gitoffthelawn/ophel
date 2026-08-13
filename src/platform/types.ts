@@ -4,6 +4,13 @@
  * 定义平台能力接口，用于同时支持浏览器扩展和油猴脚本
  */
 
+import type { RemoteConfigCheckResult, RemoteConfigState } from "~core/remote-config-types"
+import type {
+  SitePackOriginBindingIssue,
+  SitePackOriginReferenceEntry,
+} from "~core/site-pack-origin-references"
+import type { SitePackOriginBinding } from "~core/site-pack-origin-bindings"
+
 /**
  * 存储接口
  */
@@ -85,6 +92,42 @@ export interface ClaudeTestResult {
 }
 
 /**
+ * 适配配置远程更新接口
+ */
+export interface CheckRemoteConfigRequestOptions {
+  sources?: readonly string[]
+}
+
+export interface PlatformRemoteConfig {
+  getState(): Promise<RemoteConfigState>
+  checkForUpdates(options?: CheckRemoteConfigRequestOptions): Promise<RemoteConfigCheckResult>
+  resetSite(siteId: string, patchVersion?: number): Promise<boolean>
+  installLocalPatch(patch: unknown, fileName?: string): Promise<boolean>
+  removeLocalPatch(siteId: string): Promise<boolean>
+  /** Drop cached registry snapshot; preserves localPatches. */
+  clearCache(): Promise<boolean>
+}
+
+export type SitePackOriginPermissionResult = "ready" | "denied" | "unsupported"
+
+export interface SitePackRuntimeStatus {
+  activeOrigins: string[]
+  missingPermissionOrigins: string[]
+  originReferences: SitePackOriginReferenceEntry[]
+  bindingIssues: SitePackOriginBindingIssue[]
+}
+
+export interface PlatformSitePacks {
+  ensureOrigins(packId: string): Promise<SitePackOriginPermissionResult>
+  ensureBindingOrigin(
+    origin: string,
+    binding: SitePackOriginBinding,
+    requestName: string,
+  ): Promise<SitePackOriginPermissionResult>
+  reconcile(): Promise<SitePackRuntimeStatus>
+}
+
+/**
  * 平台能力接口
  */
 export interface Platform {
@@ -97,6 +140,16 @@ export interface Platform {
    * 存储接口
    */
   readonly storage: PlatformStorage
+
+  /**
+   * 适配配置远程更新
+   */
+  readonly remoteConfig: PlatformRemoteConfig
+
+  /**
+   * SitePack 域名授权与动态脚本注册
+   */
+  readonly sitePacks: PlatformSitePacks
 
   /**
    * 发起网络请求（绕过 CORS）

@@ -4,6 +4,7 @@
  */
 import React from "react"
 
+import { PlatformIcon } from "~components/PlatformIcon"
 import {
   AboutIcon,
   ChromeIcon,
@@ -20,10 +21,9 @@ import {
   StarIcon,
 } from "~components/icons"
 import { SparkleIcon } from "~components/icons/SparkleIcon"
-import { SUPPORTED_AI_PLATFORMS } from "~constants/defaults"
-import { SITE_ICONS } from "~constants/site-icons"
 import { STORE_LINKS } from "~constants/store-links"
-import { APP_DISPLAY_NAME, APP_ICON_URL, APP_VERSION } from "~utils/config"
+import { useSupportedAiPlatforms } from "~hooks/useSupportedAiPlatforms"
+import { APP_DISPLAY_NAME, APP_VERSION, getAppIconUrl } from "~utils/config"
 import { t } from "~utils/i18n"
 
 import { PageTitle } from "../components"
@@ -33,7 +33,8 @@ interface AboutPageProps {
 }
 
 const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
-  const supportedPlatformsCount = String(SUPPORTED_AI_PLATFORMS.length)
+  const supportedPlatforms = useSupportedAiPlatforms()
+  const supportedPlatformsCount = String(supportedPlatforms.length)
   return (
     <div>
       <PageTitle title={t("navAbout")} Icon={AboutIcon} />
@@ -54,7 +55,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
       {/* Hero Card */}
       <div className="about-hero-card">
         <img
-          src={APP_ICON_URL}
+          src={getAppIconUrl()}
           alt={APP_DISPLAY_NAME}
           className="about-hero-logo"
           onError={(e) => {
@@ -269,28 +270,40 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
           <span className="about-platforms-count">{supportedPlatformsCount}</span>
         </div>
         <div className="about-platforms-grid">
-          {SUPPORTED_AI_PLATFORMS.map((platform) => (
-            <a
-              key={platform.id}
-              href={platform.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="about-platform-chip"
-              title={platform.url}>
-              {SITE_ICONS[platform.name] ? (
-                <img
-                  src={SITE_ICONS[platform.name]}
-                  alt={platform.name}
-                  className="about-platform-chip-icon"
-                />
-              ) : (
-                <span className="about-platform-chip-emoji" aria-hidden="true">
-                  {platform.icon}
+          {supportedPlatforms.map((platform) => {
+            const [entryUrl] = platform.entryUrls
+            const icon = (
+              <PlatformIcon
+                platform={platform}
+                size={18}
+                className="about-platform-chip-icon"
+                fallbackClassName="about-platform-chip-emoji"
+              />
+            )
+
+            // 未绑定域名的适配包没有可打开地址，渲染为纯标签而不是死链接。
+            if (!entryUrl) {
+              return (
+                <span key={platform.id} className="about-platform-chip">
+                  {icon}
+                  <span>{platform.name}</span>
                 </span>
-              )}
-              <span>{platform.name}</span>
-            </a>
-          ))}
+              )
+            }
+
+            return (
+              <a
+                key={platform.id}
+                href={entryUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="about-platform-chip"
+                title={entryUrl}>
+                {icon}
+                <span>{platform.name}</span>
+              </a>
+            )
+          })}
         </div>
       </div>
 
