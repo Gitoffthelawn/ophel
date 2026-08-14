@@ -143,14 +143,29 @@ jobs:
           set -e
           CDN_BASE="https://cdn.jsdelivr.net/gh/urzeye/ophel@registry-dist"
           PURGE_BASE="https://purge.jsdelivr.net/gh/urzeye/ophel@registry-dist"
+          THROTTLED=0
           purge() {
+            # jsDelivr 对每个文件的 purge 有严格限流（窗口约 40 分钟）；
+            # 被限流后请求会被直接忽略，继续重试只会白白消耗窗口
+            if [ "$THROTTLED" = "1" ]; then
+              return
+            fi
             for file in index.json index.sig.json; do
               echo "Purging $PURGE_BASE/$file"
-              curl -fsS "$PURGE_BASE/$file" || echo "::warning::jsDelivr purge request failed for $file"
+              if ! response=$(curl -fsS "$PURGE_BASE/$file"); then
+                echo "::warning::jsDelivr purge request failed for $file"
+                continue
+              fi
+              echo "$response"
+              if echo "$response" | grep -q '"throttled": true'; then
+                THROTTLED=1
+                echo "::notice::jsDelivr purge is throttled; skipping further purge requests and polling only"
+              fi
               echo ""
             done
           }
           purge
+          REPURGED=0
           for delay in 10 20 40 80 160 320; do
             sleep "$delay"
             curl -fsS "$CDN_BASE/index.json" -o cdn-index.json
@@ -160,7 +175,11 @@ jobs:
               exit 0
             fi
             echo "jsDelivr still serves revision '${ACTUAL:-unknown}', expected $EXPECTED_REVISION"
-            purge
+            if [ "$REPURGED" = "0" ]; then
+              REPURGED=1
+              purge
+            fi
           done
-          echo "::error::jsDelivr cache did not converge to revision $EXPECTED_REVISION; clients will see a stale registry"
-          exit 1
+          # registry-dist 已发布成功，CDN 收敛属于外部传播问题，不应让整个 run 失败；
+          # 客户端还有 raw.githubusercontent.com 兜底源，缓存最迟随 TTL 过期或人工 purge 刷新
+          echo "::warning::jsDelivr cache did not converge to revision $EXPECTED_REVISION; it will refresh on TTL expiry or a later manual purge (clients also fall back to raw.githubusercontent.com)"
