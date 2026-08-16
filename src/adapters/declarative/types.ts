@@ -30,6 +30,8 @@ export interface SitePackSelectors {
   stopButton?: string[]
   scrollContainer?: string[]
   sidebarScrollContainer?: string
+  /** 大纲提取时需要排除的容器选择器；命中任一选择器的元素及其后代都不参与大纲。 */
+  outlineExclude?: string[]
 }
 
 export interface SitePackInputConfig {
@@ -100,6 +102,11 @@ export interface SitePackConfig {
   supportsHostThemeSync?: boolean
   /** 声明后启用 localStorage + html class 机制的宿主页主题联动。 */
   themeSync?: SitePackThemeSyncConfig
+  /**
+   * 缺省 false。站点在用户真实滚动前持续把对话拉回底部（吸底）时声明：
+   * 大纲跳转后补发零增量 wheel 并重试跳转，解除站点吸底。
+   */
+  scrollPinRelease?: boolean
 }
 
 /**

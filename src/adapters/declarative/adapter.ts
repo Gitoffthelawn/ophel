@@ -25,6 +25,7 @@ const DEFAULT_THEME_COLORS = {
 }
 
 const ZERO_WIDTH_EDITOR_MARKERS = /[\u200B\u200C\u200D\uFEFF]/g
+const EDITOR_WHITESPACE = /\s+/g
 
 type TextControl = HTMLInputElement | HTMLTextAreaElement
 
@@ -79,6 +80,11 @@ const setNestedThemeValue = (
 
 const getEditorText = (editor: HTMLElement): string =>
   isTextControl(editor) ? editor.value : editor.textContent ?? ""
+
+// contenteditable DOM（如 ProseMirror 多段落）的 textContent 不保留换行与原始空白，
+// 校验插入结果时移除两侧全部空白字符，避免多行内容已插入却被误判为失败。
+const normalizeEditorText = (text: string): string =>
+  text.replace(ZERO_WIDTH_EDITOR_MARKERS, "").replace(EDITOR_WHITESPACE, "")
 
 const compareDomOrder = (left: Element, right: Element): number => {
   if (left === right) return 0
@@ -252,7 +258,7 @@ export class DeclarativeAdapter extends SiteAdapter {
     const editorText = getEditorText(editor)
     const contentMatches =
       content.length > 0
-        ? editorText.includes(content)
+        ? normalizeEditorText(editorText).includes(normalizeEditorText(content))
         : editorText.replace(ZERO_WIDTH_EDITOR_MARKERS, "").length === 0
 
     return contentMatches && (!requireSubmitButton || this.hasReadySubmitButton())
@@ -402,6 +408,12 @@ export class DeclarativeAdapter extends SiteAdapter {
     if (!this.isEditorUpdateValid(configuredEditor.editor, "", false)) return
   }
 
+  private isInsideOutlineExclude(element: Element): boolean {
+    const excludeSelectors = this.manifest.selectors.outlineExclude
+    if (!excludeSelectors || excludeSelectors.length === 0) return false
+    return excludeSelectors.some((selector) => element.closest(selector) !== null)
+  }
+
   private getOutlineCandidates(
     maxLevel: number,
   ): { container: HTMLElement; candidates: OutlineCandidate[] } | null {
@@ -418,6 +430,7 @@ export class DeclarativeAdapter extends SiteAdapter {
 
     const candidates = Array.from(container.querySelectorAll(selectors.join(", ")))
       .filter((element) => !isInsideOphelContainer(element, container))
+      .filter((element) => !this.isInsideOutlineExclude(element))
       .map((element): OutlineCandidate | null => {
         const isUserQuery = userQuerySelector ? element.matches(userQuerySelector) : false
         if (isUserQuery) {
@@ -648,6 +661,59 @@ export class DeclarativeAdapter extends SiteAdapter {
 
   getSubmitButtonSelectors(): string[] {
     return [...(this.manifest.selectors.submitButton ?? [])]
+  }
+
+  scrollToOutlineTarget(element: HTMLElement): void {
+    super.scrollToOutlineTarget(element)
+    if (this.manifest.scrollPinRelease) this.signalUserScrollIntent(element)
+  }
+
+  private outlineJumpSeq = 0
+  private emittingPinReleaseWheel = false
+
+  /**
+   * 部分站点（如 LongCat）靠 wheel/touchmove 判断用户已接管滚动，判定前
+   * 内容区的 MutationObserver 会反复把容器拉回底部，撤销大纲的程序化跳转。
+   * 跳转后补发零增量 wheel 让站点停止自动吸底；若期间被拉回则重试跳转。
+   * 仅对 manifest 声明 scrollPinRelease 的站点启用，避免影响其他适配包站点。
+   */
+  private signalUserScrollIntent(element: HTMLElement): void {
+    const container = this.getScrollContainer()
+    if (!container) return
+
+    // 序号守卫：仅最后一次大纲跳转的重试生效，避免连点不同标题时旧重试把视图拽回。
+    const seq = ++this.outlineJumpSeq
+    const isCurrentJump = () => seq === this.outlineJumpSeq
+
+    // 重试窗口内的真实用户滚动（排除补发的合成 wheel）视为用户已接管，放弃后续重试。
+    const cancelOnUserScroll = () => {
+      if (this.emittingPinReleaseWheel) return
+      if (isCurrentJump()) this.outlineJumpSeq += 1
+    }
+    container.addEventListener("wheel", cancelOnUserScroll, { passive: true })
+    container.addEventListener("touchmove", cancelOnUserScroll, { passive: true })
+    setTimeout(() => {
+      container.removeEventListener("wheel", cancelOnUserScroll)
+      container.removeEventListener("touchmove", cancelOnUserScroll)
+    }, 480)
+
+    const attempt = () => {
+      if (!isCurrentJump() || !element.isConnected) return
+      super.scrollToOutlineTarget(element)
+      requestAnimationFrame(() => {
+        if (!isCurrentJump()) return
+        this.emittingPinReleaseWheel = true
+        try {
+          container.dispatchEvent(new WheelEvent("wheel", { bubbles: true, cancelable: true }))
+        } finally {
+          this.emittingPinReleaseWheel = false
+        }
+      })
+    }
+
+    attempt()
+    setTimeout(attempt, 120)
+    setTimeout(attempt, 320)
   }
 
   getNewChatButtonSelectors(): string[] {

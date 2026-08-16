@@ -87,7 +87,7 @@ interface SemanticVersion {
   prerelease: string[]
 }
 
-const DANGEROUS_OBJECT_KEYS = new Set(["__proto__", "prototype", "constructor"])
+export const DANGEROUS_OBJECT_KEYS = new Set(["__proto__", "prototype", "constructor"])
 
 const SITE_PACK_CAPABILITIES = new Set<SitePackCapability>(SITE_PACK_CAPABILITY_VALUES)
 
@@ -109,6 +109,7 @@ const CONFIG_KEYS = [
   "mermaidSupport",
   "quickQuote",
   "supportsHostThemeSync",
+  "scrollPinRelease",
   "themeSync",
 ] as const
 
@@ -668,6 +669,7 @@ const validateSelectors = (
     "stopButton",
     "scrollContainer",
     "sidebarScrollContainer",
+    "outlineExclude",
   ] as const
   const selectors = validateObject(value, path, context, selectorKeys, [], mode)
   if (!selectors) return
@@ -679,6 +681,7 @@ const validateSelectors = (
     "newChatButton",
     "stopButton",
     "scrollContainer",
+    "outlineExclude",
   ] as const) {
     if (selectors[key] !== undefined) {
       validateSelectorArray(selectors[key], `${path}.${key}`, context, mode)
@@ -1614,6 +1617,9 @@ const validateConfigFields = (
   }
   if (config.supportsHostThemeSync !== undefined) {
     validateBoolean(config.supportsHostThemeSync, `${path}.supportsHostThemeSync`, context, mode)
+  }
+  if (config.scrollPinRelease !== undefined) {
+    validateBoolean(config.scrollPinRelease, `${path}.scrollPinRelease`, context, mode)
   }
   if (config.themeSync !== undefined) {
     validateThemeSync(config.themeSync, `${path}.themeSync`, context, mode)
