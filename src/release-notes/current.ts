@@ -2,29 +2,15 @@
 import type { ReleaseNotesContent } from "./types"
 
 export const currentReleaseNotes = {
-  version: "1.2.0",
-  date: "2026-08-13",
+  version: "1.2.1",
+  date: "2026-08-17",
   notes: {
-    en: '### 🚀 New Features\n\n- **Site packs** — Added a "Site Packs" section in settings for installing adapter packs from the online library, extending Ophel to more AI sites (self-hosted instances can be enabled by binding a custom domain); built-in site adapters can now be fixed via cloud updates instead of waiting for the next extension release. (#809)\n\n<!-- release-note-media: site-packs-video -->',
-    zh: '### 🚀 新增功能\n\n- **热插拔式站点适配** — 设置页新增"适配中心"，可在在线适配库一键安装适配包，让 Ophel 适配更多 AI 站点（自部署站点绑定自定义域名即可使用）；内置站点改版后也能通过云端更新自动修复，不用再等插件发版。(#809)\n\n<!-- release-note-media: site-packs-video -->',
+    en: '### 🚀 New Features\n\n- **DeepSeek Harness support** — The online adapter library now includes DeepSeek Harness; install the pack and bind it to your self-hosted instance\'s domain to enable outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, prompt insertion, and reading history. (#825)\n- **OpenCode Share support** — The online adapter library now includes OpenCode Share (opncd.ai); installing the pack enables outlines with user query detection and basic export for shared OpenCode conversations. (#800)\n- **LongCat AI support** — The online adapter library now includes LongCat AI (longcat.chat); installing the pack enables outlines with user queries, export, generation detection and stop, page width, Zen Mode, new chat, and prompt insertion on the site.\n- **HTTP self-hosted sites** — Site Packs can now be bound to HTTP origins such as `http://192.168.1.10:3000`, so a self-hosted AI site that is not served over HTTPS can still be adapted; the in-page adapter wizard and local pack import accept HTTP origins as well.\n\n### ✨ Improvements\n\n- **Site packs auto update check** — Opening Settings -> Site Packs -> "Get & Updates" now automatically checks for adapter updates once, so first-time users see the online library right away instead of an empty list. (#821)\n- **Site pack outline exclusion** — Site Packs can now declare containers to exclude from outline extraction, so reasoning or thinking sections no longer pollute the outline with draft headings. (#800)\n\n### 🐛 Bug Fixes\n\n- **Claude new layout adaptation** — Adapted to Claude.ai\'s new DOM structure: updated sidebar conversation list, send button, generation detection, Zen Mode, and panel avoidance selectors, and fixed issue where pinning and then unpinning a conversation showed its title twice in the conversation manager. （#834 @urzeye, #820 @crazyn2）\n- **ChatGPT page redesign adaptation** — Fixed issues caused by ChatGPT\'s page redesign: conversations could be scanned but not added to the conversation list, the "ChatGPT can make mistakes" disclaimer stayed visible in Clean Mode, and double-clicking LaTeX formulas reported missing source; sidebar chat links and formula sources are now read from the redesigned structure.\n- **Userscript adapter library updates** — Fixed issue where the userscript version kept showing an outdated online adapter library (for up to a week) because the browser cached the CDN response; update checks now always fetch the latest index.\n- **Site pack forward-compatible fields** — The registry PR validator now tolerates schema-declared fields at any nesting level when base code has not yet learned them, so a new selector or config sub-field can ship in the same PR as the pack that uses it instead of splitting into two separate PRs. (#800)\n- **Hidden conversations recovery** — Fixed issue where some conversations stayed invisible in the conversation list even after re-syncing (their folder had been removed earlier); upgrading now automatically moves such conversations back to the inbox.\n- **Site pack prompt insertion** — Fixed issue where inserting a multi-line prompt into a site\'s rich text input box (such as LongCat AI) showed an "Insert failed" toast even though the text had been inserted correctly.',
+    zh: '### 🚀 新增功能\n\n- **DeepSeek Harness 站点支持** — 在线适配库新增 DeepSeek Harness，安装适配包并绑定自建实例域名后，即可使用大纲（含用户提问）、基础导出、生成检测与停止、对话宽度、禅模式、提示词插入和阅读进度功能。(#825)\n- **OpenCode 分享支持** — 在线适配库新增 OpenCode 分享（opncd.ai），安装适配包后即可在 OpenCode 分享对话页面使用大纲（含用户提问识别）和基础导出功能。(#800)\n- **LongCat AI 站点支持** — 在线适配库新增 LongCat AI（longcat.chat），安装适配包后即可在该站点使用大纲（含用户提问）、导出、生成检测与停止、页面宽度、禅模式、新对话和提示词插入功能。\n- **HTTP 自建站点支持** — 适配中心现在可以绑定 `http://127.0.0.1:3080` 这类 HTTP 域名，未启用 HTTPS 的自建 AI 站点也能使用 Ophel；页内适配向导和本地适配包导入同样支持 HTTP 域名。\n\n### ✨ 功能优化\n\n- **适配库自动检查更新** — 打开设置-适配中心-"获取与更新"时会自动检查一次适配更新，首次安装的用户进入即可看到在线适配库，不再面对空列表。(#821)\n- **适配包大纲排除** — 适配包现在可以声明需要从大纲中排除的容器，思考链等内容不再把草稿标题混入大纲。(#800)\n\n### 🐛 问题修复\n\n- **Claude 新版页面适配** — 适配 Claude.ai 新版 DOM 结构，更新侧边栏会话列表、发送按钮、生成检测、禅模式、宽度调整和智能避让的选择器。（#834 @urzeye, #820 @crazyn2）\n- **ChatGPT 新版页面适配** — 适配 ChatGPT 新版 DOM 结构：会话能被扫描到却无法加入会话管理、净化模式下无法移除「ChatGPT 也可能会犯错」提示、双击公式提示缺少可复制的源码；现已兼容新版侧边栏链接与公式结构。\n- **油猴端适配库更新** — 修复油猴脚本因浏览器缓存 CDN 响应，在线适配库长时间停留在旧版本（最长可达一周）的问题；现在每次检查更新都会拉取最新索引。\n- **适配包前向兼容字段** — registry PR 校验现在对任意嵌套层级的 schema 已声明字段做前向兼容放行，新的选择器或配置子字段可以和使用它的适配包在同一 PR 中提交，无需再拆成两个 PR 分别合入。(#800)\n- **隐藏会话自动恢复** — 修复部分历史会话在会话管理中不可见、即使重新同步也无法恢复的问题；升级后会自动把指向已删除文件夹的会话移回收件箱。\n- **适配包提示词插入** — 修复向部分站点的富文本输入框插入多行提示词时，文本已成功插入却提示"插入失败"的问题。',
   },
   fullChangelogUrls: {
     en: "https://ophel.app/docs/changelog",
     zh: "https://ophel.app/docs/zh/changelog",
   },
-  media: [
-    {
-      id: "site-packs-video",
-      type: "video",
-      src: "https://github.com/user-attachments/assets/49274b97-abfc-4167-9068-695946c26af9",
-      alt: {
-        en: "Installing adapter packs from the online library in Settings",
-        zh: "在设置页从在线适配库安装适配包",
-      },
-      caption: {
-        en: "Browse the online adapter library in Settings, install a pack with one click, and extend Ophel to more AI sites.",
-        zh: "在设置页浏览在线适配库，一键安装适配包，让 Ophel 适配更多 AI 站点。",
-      },
-    },
-  ],
+  media: [],
 } as const satisfies ReleaseNotesContent

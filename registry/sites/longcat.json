@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "longcat",
   "version": 1,
-  "minAppVersion": "1.2.0",
+  "minAppVersion": "1.2.1",
   "name": "LongCat AI",
   "nameI18n": {
     "zh-CN": "LongCat AI",

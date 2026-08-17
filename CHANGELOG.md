@@ -11,29 +11,46 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🚀 New Features
 
+- **StepFun support** — The online adapter library now includes StepFun (chat.stepfun.com); installing the pack enables outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, new chat, and prompt insertion on conversations and shared pages. (#839, #792, #352)
+
+### 🐛 Bug Fixes
+
+- **Outline anchor position lost** — Fixed issue where quickly or repeatedly clicking "Return to Anchor", "Go to Top", "Go to Bottom", or clicking the same outline heading twice collapsed the saved anchor onto the current position, so "Return to Anchor" could no longer jump back to the previous location; anchor operations are now serialized, and the anchor is preserved when the target is already reached.
+- **Doubao conversation title sync** — Fixed issue where conversations synced from Doubao showed their titles repeated three times (e.g. a title became "titletitletitle") after the site rolled out its new sidebar conversation list; titles are now read correctly from the new structure. (#846)
+- **Qwen Studio scroll shortcuts** — Adapted to Qwen Studio's new chat scroll container, fixing "Go to Top", "Go to Bottom", and "Return to Anchor" failing after the site updated its page structure.
+- **Adapt to Grok's new DOM structure** — Adapt to Grok's new chat scroll container and theme style selector, and fix the problem of "Go to Top", "Go to Bottom" and "Return to Anchor" on Grok failing and switching between light/dark themes causing the page to freeze and become unresponsive. (#842, #843)
+- **ChatGLM theme switching** — Adapted to ChatGLM's new theme popover structure, fixing light/dark/system theme switching that failed after the site moved the options into a hidden popover the old two-step menu navigation couldn't reach.
+- **ChatGPT prompt insertion on Firefox** — Fixed issue where inserting a multi-line prompt into ChatGPT in Firefox lost all line breaks; inserted prompts now keep their original line structure. (#811, #838)
+- **AI Studio theme toggle** — Fixed issue where toggling light/dark theme on AI Studio no longer changed the site theme and the stored preference was never updated; the page theme now follows the panel toggle again. (#844)
+
+---
+
+## [1.2.1][1.2.1] - 2026-08-17
+
+### 🚀 New Features
+
+- **DeepSeek Harness support** — The online adapter library now includes DeepSeek Harness; install the pack and bind it to your self-hosted instance's domain to enable outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, prompt insertion, and reading history. (#825)
 - **OpenCode Share support** — The online adapter library now includes OpenCode Share (opncd.ai); installing the pack enables outlines with user query detection and basic export for shared OpenCode conversations. (#800)
 - **LongCat AI support** — The online adapter library now includes LongCat AI (longcat.chat); installing the pack enables outlines with user queries, export, generation detection and stop, page width, Zen Mode, new chat, and prompt insertion on the site.
 - **HTTP self-hosted sites** — Site Packs can now be bound to HTTP origins such as `http://192.168.1.10:3000`, so a self-hosted AI site that is not served over HTTPS can still be adapted; the in-page adapter wizard and local pack import accept HTTP origins as well.
 
 ### ✨ Improvements
 
-- **Site pack outline exclusion** — Site Packs can now declare containers to exclude from outline extraction, so reasoning or thinking sections no longer pollute the outline with draft headings. (#800)
 - **Site packs auto update check** — Opening Settings -> Site Packs -> "Get & Updates" now automatically checks for adapter updates once, so first-time users see the online library right away instead of an empty list. (#821)
+- **Site pack outline exclusion** — Site Packs can now declare containers to exclude from outline extraction, so reasoning or thinking sections no longer pollute the outline with draft headings. (#800)
 
 ### 🐛 Bug Fixes
 
-- **Site pack forward-compatible fields** — The registry PR validator now tolerates schema-declared fields at any nesting level when base code has not yet learned them, so a new selector or config sub-field can ship in the same PR as the pack that uses it instead of splitting into two separate PRs. (#800)
-- **Userscript adapter library updates** — Fixed issue where the userscript version kept showing an outdated online adapter library (for up to a week) because the browser cached the CDN response; update checks now always fetch the latest index.
-- **Claude page width** — Fixed issue where the page width setting no longer widened conversations after Claude updated its layout.
+- **Claude new layout adaptation** — Adapted to Claude.ai's new DOM structure: updated sidebar conversation list, send button, generation detection, Zen Mode, and panel avoidance selectors, and fixed issue where pinning and then unpinning a conversation showed its title twice in the conversation manager. （#834 @urzeye, #820 @crazyn2）
 - **ChatGPT page redesign adaptation** — Fixed issues caused by ChatGPT's page redesign: conversations could be scanned but not added to the conversation list, the "ChatGPT can make mistakes" disclaimer stayed visible in Clean Mode, and double-clicking LaTeX formulas reported missing source; sidebar chat links and formula sources are now read from the redesigned structure.
+- **Userscript adapter library updates** — Fixed issue where the userscript version kept showing an outdated online adapter library (for up to a week) because the browser cached the CDN response; update checks now always fetch the latest index.
+- **Site pack forward-compatible fields** — The registry PR validator now tolerates schema-declared fields at any nesting level when base code has not yet learned them, so a new selector or config sub-field can ship in the same PR as the pack that uses it instead of splitting into two separate PRs. (#800)
 - **Hidden conversations recovery** — Fixed issue where some conversations stayed invisible in the conversation list even after re-syncing (their folder had been removed earlier); upgrading now automatically moves such conversations back to the inbox.
 - **Site pack prompt insertion** — Fixed issue where inserting a multi-line prompt into a site's rich text input box (such as LongCat AI) showed an "Insert failed" toast even though the text had been inserted correctly.
-- **Site pack reading position restore** — Fixed issue where reading position restore could still run on adapter-pack sites that do not support reading history, interrupting in-page navigation such as outline jumps on LongCat AI.
-- **LongCat AI outline navigation** — Fixed issue where clicking outline titles right after a page refresh did not jump, or snapped back to the bottom, until the page was scrolled by hand; the site keeps auto-pinning the conversation to the bottom until it sees real user scrolling, so outline jumps now release that pinning.
 
 ---
 
-## [1.2.0] - 2026-08-13
+## [1.2.0][1.2.0] - 2026-08-13
 
 ### 🚀 New Features
 
@@ -43,7 +60,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.1.8] - 2026-07-28
+## [1.1.8][1.1.8] - 2026-07-28
 
 ### 🚀 New Features
 
@@ -1392,6 +1409,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.1]: https://github.com/urzeye/ophel/releases/tag/v1.2.1
 [1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0
 [1.1.8]: https://github.com/urzeye/ophel/releases/tag/v1.1.8
 [1.1.7]: https://github.com/urzeye/ophel/releases/tag/v1.1.7

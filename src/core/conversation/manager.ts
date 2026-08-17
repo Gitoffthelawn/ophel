@@ -34,6 +34,7 @@ import {
   htmlToMarkdown,
 } from "~utils/exporter"
 import { getAllLocalizedTexts, t } from "~utils/i18n"
+import { getTopScrollPosition } from "~utils/scroll-helper"
 import { createSiteScopedStorageKey, resolvePersistedSiteInstanceKey } from "~utils/site-identity"
 import { consumeRestoreFlag, type ExportPackaging } from "~utils/storage"
 import { showToast } from "~utils/toast"
@@ -1606,7 +1607,7 @@ export class ConversationManager {
         const maxRetries = 50
 
         while (retries < maxRetries) {
-          scrollContainer.scrollTop = 0
+          scrollContainer.scrollTop = getTopScrollPosition(scrollContainer)
           await new Promise((resolve) => setTimeout(resolve, 500))
 
           const currentHeight = scrollContainer.scrollHeight
@@ -1896,13 +1897,16 @@ export class ConversationManager {
     const { userQuerySelector, assistantResponseSelector, turnSelector, useShadowDOM } = config
 
     if (turnSelector) {
-      const turns =
+      let turns =
         (DOMToolkit.query(turnSelector, {
           all: true,
           shadow: useShadowDOM,
         }) as Element[]) || []
 
       if (turns.length > 0) {
+        // Sites with flex-col-reverse message lists render newest turns
+        // first in the DOM; reverse so exported messages follow visual order.
+        if (this.siteAdapter.isExportReversed()) turns = turns.reverse()
         const collectTurnMatches = (turn: Element, selector: string): Element[] => {
           const matches: Element[] = []
 
@@ -1975,17 +1979,22 @@ export class ConversationManager {
       }
     }
 
-    const userMessages =
+    let userMessages =
       (DOMToolkit.query(userQuerySelector, {
         all: true,
         shadow: useShadowDOM,
       }) as Element[]) || []
 
-    const aiMessages =
+    let aiMessages =
       (DOMToolkit.query(assistantResponseSelector, {
         all: true,
         shadow: useShadowDOM,
       }) as Element[]) || []
+
+    if (this.siteAdapter.isExportReversed()) {
+      userMessages.reverse()
+      aiMessages.reverse()
+    }
 
     const maxLen = Math.max(userMessages.length, aiMessages.length)
     for (let i = 0; i < maxLen; i++) {

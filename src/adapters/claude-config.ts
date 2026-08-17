@@ -93,10 +93,10 @@ export interface ClaudeSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const CLAUDE_CONFIG_VERSION = 2
+export const CLAUDE_CONFIG_VERSION = 3
 
 const createClaudeConfig = (): ClaudeSiteConfig => {
-  const conversationItem = 'a[data-dd-action-name="sidebar-chat-item"]'
+  const conversationItem = 'nav[data-testid="sidebar"] a[href*="/chat/"]'
   const userQuery = '[data-testid="user-message"]'
   const assistantResponse = ".font-claude-response"
   const documentRoot = "#wiggle-file-content"
@@ -107,12 +107,20 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
   const thoughtStatus = 'span[role="status"][aria-live="polite"]'
   const stopButton = ['button[aria-label="Stop response"]']
   const layoutScope = "#main-content"
-  const chatColumnScope = `${layoutScope} div:has(> [data-testid="page-header"]):has(> [data-autoscroll-container="true"])`
+  // 灰度后 data-autoscroll-container 不再是 page-header 的直接子节点，而是下移一层；
+  // 用后代 has() 匹配新结构，同时保留直接子选择器兼容旧结构。
+  const chatColumnScope = [
+    `${layoutScope} div:has(> [data-testid="page-header"]):has([data-autoscroll-container="true"])`,
+    `${layoutScope} div:has(> [data-testid="page-header"]):has(> [data-autoscroll-container="true"])`,
+  ].join(", ")
   const panelScope = [
     chatColumnScope,
     `${layoutScope}:not(:has([data-autoscroll-container="true"]))`,
   ].join(", ")
-  const panelCanvasScope = `${layoutScope} [data-testid="chat-stale-nav-inert"] > div > div:not([aria-hidden="true"]):has([data-skill-file-viewer="true"])`
+  const panelCanvasScope = [
+    `${layoutScope} [data-testid="chat-stale-nav-frame"] > div > div:not([aria-hidden="true"]):has([data-skill-file-viewer="true"])`,
+    `${layoutScope} [data-testid="chat-stale-nav-inert"] > div > div:not([aria-hidden="true"]):has([data-skill-file-viewer="true"])`,
+  ].join(", ")
   const panelObstacle = [
     documentRoot,
     '[data-testid="artifact-panel"]',
@@ -125,6 +133,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       textarea: ['[contenteditable="true"]', ".ProseMirror", 'div[role="textbox"]'],
       submitButton: [
         'button[aria-label="Send Message"]',
+        'button[aria-label="Send message"]',
         'button[data-testid="send-button"]',
         'button[aria-label="Send"]',
       ],
@@ -132,7 +141,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       chatContent: [`div${userQuery}`, `div${assistantResponse}`],
       userQuery,
       assistantResponse,
-      newChatButton: ['a[data-dd-action-name="sidebar-new-item"]', 'a[href="/new"]'],
+      newChatButton: ['a[aria-label="New chat"]', 'a[href*="/new"]'],
       stopButton: [...stopButton],
       scrollContainer: [
         '[data-autoscroll-container="true"]',
@@ -151,7 +160,11 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       shadow: false,
     },
     generating: {
-      existsSelectors: [...stopButton, '[class*="streaming"], [class*="typing"]'],
+      existsSelectors: [
+        ...stopButton,
+        '[data-is-streaming="true"]',
+        '[class*="streaming"], [class*="typing"]',
+      ],
     },
     networkMonitor: {
       urlPatterns: ["/api/"],
@@ -190,7 +203,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       },
     ],
     zenMode: {
-      hide: [`nav:has(${conversationItem})`],
+      hide: ['nav[data-testid="sidebar"]'],
     },
     cleanMode: {
       hide: ['[data-disclaimer="true"]'],
@@ -202,8 +215,8 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       nativeQuotePopover: ['[data-selection-tooltip="true"]'],
       validTextarea: '[contenteditable="true"], .ProseMirror, [role="textbox"]',
       sidebarScrollFallback: "div.overflow-y-auto",
-      conversationGroup: "div.flex.flex-col",
-      conversationGroupHeading: "h3",
+      conversationGroup: "[class*='group/nsh'], div.flex.flex-col",
+      conversationGroupHeading: "span[role=button], h3",
       conversationGroupList: "ul",
       conversationPinnedList: "ul.-mx-1\\.5",
       conversationActionButton: [
@@ -239,7 +252,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       outlineIgnoredHeading: ".pointer-events-none",
       srOnly: ".sr-only",
       userQueryText: "p.whitespace-pre-wrap",
-      userMessageBubble: '[data-user-message-bubble="true"]',
+      userMessageBubble: "[data-cds='UserMessage'], [data-user-message-bubble='true']",
       userMessageBoundary: `${assistantResponse}, main, [role='main']`,
       userFileThumbnail,
       thoughtToggle,
