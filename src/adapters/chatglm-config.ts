@@ -30,10 +30,7 @@ interface ChatGLMSiteSelectors extends SitePackSelectors {
 
 type ChatGLMPrivateSelectors = SitePrivateSelectors & {
   nativeQuotePopover: string[]
-  themeUserMenuButtons: string[]
-  themeEntry: string
   themeOptionCandidates: string[]
-  themeClickable: string[]
   themeRootCandidates: string[]
   conversationScope: string
   conversationInner: string
@@ -74,7 +71,7 @@ export interface ChatGLMSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const CHATGLM_CONFIG_VERSION = 1
+export const CHATGLM_CONFIG_VERSION = 2
 
 const createChatGLMConfig = (): ChatGLMSiteConfig => {
   const responseContainer = ".conversation-list"
@@ -246,18 +243,11 @@ const createChatGLMConfig = (): ChatGLMSiteConfig => {
         '[aria-label*="引用"]',
         '[aria-label*="quote"]',
       ],
-      themeUserMenuButtons: [
-        ".userInfoBar-header .me-icon",
-        ".userInfoBar-header .me",
-        ".userInfoBar-header img.avatar",
-      ],
-      themeEntry: ".themes",
       themeOptionCandidates: [
         `${themePopover} ${themeOption}`,
         `.selecttheme ${themeOption}`,
         themeOption,
       ],
-      themeClickable: [".me-icon", ".me", ".userInfoBar-header"],
       themeRootCandidates: ["#app", "[data-v-app]", ".app", ".app-container"],
       conversationScope,
       conversationInner,

@@ -21,6 +21,9 @@
   font-size: 14px;
   line-height: 1.5;
   color: var(--gh-text, #333);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   /* Allow tooltips and popups to overflow the shadow host boundaries */
   overflow: visible !important;
 }
@@ -2027,6 +2030,7 @@
   color: var(--gh-primary, #4285f4);
   border-bottom-color: var(--gh-primary, #4285f4);
   background: color-mix(in srgb, var(--gh-bg, #ffffff) 82%, transparent);
+  font-weight: 600;
 }
 
 .gh-panel-tab-btn:focus-visible {
@@ -2752,11 +2756,12 @@
 /* ============= 用户提问节点样式 ============= */
 /* ============= 用户提问节点样式 (Focus Card - Theme Adaptive) ============= */
 .outline-item.user-query-node {
-  /* 背景适配：使用 var(--gh-bg) 混合，确保亮暗模式都自然 */
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-bg));
+  /* 背景适配：使用更柔和的浅底色，突出当前激活项 */
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 6%, var(--gh-bg-secondary, #f9fafb));
 
-  /* 边框适配：四边完整，消除左侧断裂感 */
-  border: 1px solid color-mix(in srgb, var(--gh-primary, #4285f4) 30%, transparent);
+  /* 边框适配：四边完整，微弱主色勾边 */
+  border: 1px solid
+    color-mix(in srgb, var(--gh-border, #e5e7eb) 75%, var(--gh-primary, #4285f4) 25%);
 
   /* 阴影：移除硬编码的白色内发光, 使用通用阴影变量 */
   box-shadow: var(--gh-shadow-sm);
@@ -2807,9 +2812,9 @@
 
 /* Hover 状态 */
 .outline-item.user-query-node:hover {
-  /* Hover 时进一步加深混合比例 */
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 18%, var(--gh-bg));
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 50%, transparent);
+  /* Hover 时微加深混合比例 */
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 10%, var(--gh-bg-secondary, #f9fafb));
+  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 45%, transparent);
   /* 悬浮阴影 */
   box-shadow: var(--gh-shadow-brand);
   transform: translateY(-1px);
@@ -3795,25 +3800,36 @@
   width: 100%;
   height: 32px;
   border-radius: 8px;
-  border: none;
+  border: 1px solid
+    color-mix(in srgb, var(--gh-border, #e5e7eb) 80%, var(--gh-primary, #4285f4) 20%);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
-  color: var(--gh-footer-text, var(--gh-text-on-primary, white));
-  gap: 4px;
-  background: var(--gh-header-bg);
-  box-shadow: var(--gh-btn-shadow, 0 2px 6px rgba(0, 0, 0, 0.15));
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--gh-text, #374151);
+  gap: 5px;
+  background: color-mix(in srgb, var(--gh-bg, #ffffff) 90%, var(--gh-bg-secondary, #f3f4f6));
+  box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
   transition:
-    transform 0.2s,
-    box-shadow 0.2s,
-    opacity 0.2s;
+    color 0.16s ease,
+    background 0.16s ease,
+    border-color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
 }
 
 .scroll-nav-btn:hover {
+  color: var(--gh-primary, #4285f4);
+  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 45%, var(--gh-border, #e5e7eb));
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 9%, var(--gh-bg, #ffffff));
   transform: translateY(-1px);
-  box-shadow: var(--gh-btn-shadow-hover, 0 4px 12px rgba(0, 0, 0, 0.2));
+  box-shadow: 0 3px 8px color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
+}
+
+.scroll-nav-btn:active {
+  transform: translateY(0) scale(0.97);
 }
 
 .scroll-nav-btn:focus-visible {
@@ -3830,6 +3846,11 @@
   padding: 0;
   border-radius: 50%;
   font-size: 14px;
+  color: var(--gh-text-secondary, #6b7280);
+}
+
+.scroll-nav-btn.anchor-btn:hover {
+  color: var(--gh-primary, #4285f4);
 }
 
 .scroll-nav-btn.anchor-btn:not(:disabled):hover .gh-panel-footer-anchor-icon {
@@ -3941,7 +3962,7 @@
 /* 提示词卡片悬停效果 */
 .prompt-item:hover {
   border-color: var(--gh-primary, #4285f4) !important;
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.15);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--gh-primary, #4285f4) 15%, transparent);
   transform: translateY(-2px);
 }
 
@@ -3960,11 +3981,11 @@
 /* 悬停时显示操作按钮 */
 .prompt-item:hover .prompt-item-actions {
   display: flex !important;
-  /* 渐变辮色道：左侧透明渐变至背景色，避免长标题防穿图标 */
-  background: linear-gradient(to right, transparent, var(--gh-bg, #fff) 20px);
-  padding-left: 20px;
-  margin-left: -20px;
-  border-radius: 0 4px 4px 0;
+  /* 渐变遮罩：左侧透明渐变至卡片背景色，避免长标题防穿图标 */
+  background: linear-gradient(to right, transparent, var(--gh-card-bg, var(--gh-bg, #ffffff)) 18px);
+  padding-left: 16px;
+  margin-left: -16px;
+  border-radius: 0 6px 6px 0;
 }
 
 /* 操作按钮悬停效果 */
@@ -3982,7 +4003,7 @@
   background: color-mix(in srgb, var(--gh-primary, #4285f4) 9%, var(--gh-bg, #fff)) !important;
   border: 1px dashed var(--gh-primary, #4285f4) !important;
   box-shadow:
-    0 8px 18px rgba(66, 133, 244, 0.18),
+    0 8px 18px color-mix(in srgb, var(--gh-primary, #4285f4) 18%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--gh-primary, #4285f4) 18%, transparent) !important;
   transform: scale(0.985) !important;
 }
@@ -3993,7 +4014,7 @@
   outline-offset: -3px;
   box-shadow:
     inset 0 3px 0 var(--gh-primary, #4285f4),
-    0 6px 16px rgba(66, 133, 244, 0.16) !important;
+    0 6px 16px color-mix(in srgb, var(--gh-primary, #4285f4) 16%, transparent) !important;
   transform: translateY(-1px);
 }
 
@@ -4006,7 +4027,7 @@
   height: 5px;
   border-radius: 999px;
   background: var(--gh-primary, #4285f4);
-  box-shadow: 0 2px 8px rgba(66, 133, 244, 0.3);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--gh-primary, #4285f4) 30%, transparent);
   pointer-events: none;
   transform: translateX(-50%);
 }
@@ -4189,6 +4210,74 @@
 .gh-prompt-platform-filter-option:active,
 .gh-prompt-platform-filter-btn:active {
   transform: translateY(1px);
+}
+
+/* 提示词/提示词链底部添加按钮 (Theme-Adaptive Option A) */
+.gh-prompt-add-container {
+  padding: 10px 12px 12px;
+}
+
+.gh-prompt-add-btn {
+  width: 100%;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 1px dashed color-mix(in srgb, var(--gh-primary, #4285f4) 38%, var(--gh-border, #e5e7eb));
+  background: color-mix(
+    in srgb,
+    var(--gh-primary, #4285f4) 6%,
+    var(--gh-card-bg, var(--gh-bg, #ffffff))
+  );
+  color: var(--gh-primary, #4285f4);
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: var(--gh-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.18s ease;
+}
+
+.gh-prompt-add-btn:hover {
+  background: color-mix(
+    in srgb,
+    var(--gh-primary, #4285f4) 12%,
+    var(--gh-card-bg, var(--gh-bg, #ffffff))
+  );
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 55%, var(--gh-border, #e5e7eb));
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
+}
+
+.gh-prompt-add-btn:active {
+  transform: translateY(0) scale(0.985);
+  background: color-mix(
+    in srgb,
+    var(--gh-primary, #4285f4) 18%,
+    var(--gh-card-bg, var(--gh-bg, #ffffff))
+  );
+}
+
+.gh-prompt-add-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.gh-prompt-add-icon {
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .gh-prompt-library-switch {

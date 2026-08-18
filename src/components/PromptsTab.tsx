@@ -2992,6 +2992,15 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
+            {searchQuery && (
+              <button
+                type="button"
+                className="gh-panel-search-action"
+                onClick={() => setSearchQuery("")}
+                aria-label={t("clear")}>
+                <ClearIcon size={13} />
+              </button>
+            )}
           </div>
           {activeLibraryView === "prompts" && (
             <div className="gh-panel-menu-anchor">
@@ -3402,8 +3411,8 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                 onDrop={(e) => handleDrop(e, p.id)}
                 style={{
                   background: isHighlighted
-                    ? "linear-gradient(135deg, #e8f0fe 0%, #f1f8e9 100%)"
-                    : "var(--gh-bg, white)",
+                    ? "color-mix(in srgb, var(--gh-primary, #4285f4) 10%, var(--gh-card-bg, var(--gh-bg, #ffffff)))"
+                    : "var(--gh-card-bg, var(--gh-bg, #ffffff))",
                   border: isHighlighted
                     ? "1px solid var(--gh-primary, #4285f4)"
                     : "1px solid var(--gh-border, #e5e7eb)",
@@ -3451,9 +3460,9 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                     />
                     <span
                       style={{
-                        fontSize: "11px",
-                        padding: "2px 6px",
-                        background: "var(--gh-hover, #f3f4f6)",
+                        fontSize: "12px",
+                        padding: "2px 7px",
+                        background: "var(--gh-bg-secondary, #f3f4f6)",
                         borderRadius: "4px",
                         color: "var(--gh-text-secondary, #6b7280)",
                         flexShrink: 0,
@@ -3468,7 +3477,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                   style={{
                     fontSize: "13px",
                     color: "var(--gh-text-secondary, #6b7280)",
-                    lineHeight: 1.4,
+                    lineHeight: 1.55,
                     display: "-webkit-box",
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: "vertical",
@@ -3545,41 +3554,20 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
       </div>
 
       {/* 添加按钮 */}
-      <div style={{ padding: "12px" }}>
+      <div className="gh-prompt-add-container">
         <button
+          type="button"
+          className="gh-prompt-add-btn"
           onClick={() => {
             if (activeLibraryView === "chains") {
               openChainEditor()
               return
             }
             openEditModal()
-          }}
-          style={{
-            width: "100%",
-            padding: "10px",
-            background: "var(--gh-header-bg)",
-            color: "var(--gh-footer-text, var(--gh-text-on-primary, white))",
-            border: "none",
-            borderRadius: "8px",
-            fontSize: "14px",
-            fontWeight: 500,
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: "6px",
-            boxShadow: "var(--gh-btn-shadow)",
-            transition: "transform 0.2s, box-shadow 0.2s",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-1px)"
-            e.currentTarget.style.boxShadow = "var(--gh-btn-shadow-hover)"
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)"
-            e.currentTarget.style.boxShadow = "var(--gh-btn-shadow)"
           }}>
-          <span>+</span>
+          <span className="gh-prompt-add-icon" aria-hidden="true">
+            +
+          </span>
           <span>{activeLibraryView === "chains" ? t("chainAdd") : t("addPrompt")}</span>
         </button>
       </div>

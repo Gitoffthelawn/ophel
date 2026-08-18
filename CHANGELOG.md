@@ -11,17 +11,31 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🚀 New Features
 
+- **Genspark support** — The online adapter library now includes Genspark (genspark.ai); installing the pack enables outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, new chat, prompt insertion, and Clean Mode. (#851)
+
+### ✨ Improvements
+
+- **Settings and panel visual experience polish** — Settings pages now feature sticky tab bars with backdrop blur; the Backup page is redesigned into a clean tabbed layout for local and WebDAV options; Permissions and Shortcuts pages now use crisp SVG icons and keyboard badges; and prompt action buttons along with UI components across all 24 themes now have refined visual hierarchy and contrast.
+
+---
+
+## [1.2.2][1.2.2] - 2026-08-18
+
+### 🚀 New Features
+
 - **StepFun support** — The online adapter library now includes StepFun (chat.stepfun.com); installing the pack enables outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, new chat, and prompt insertion on conversations and shared pages. (#839, #792, #352)
 
 ### 🐛 Bug Fixes
 
-- **Outline anchor position lost** — Fixed issue where quickly or repeatedly clicking "Return to Anchor", "Go to Top", "Go to Bottom", or clicking the same outline heading twice collapsed the saved anchor onto the current position, so "Return to Anchor" could no longer jump back to the previous location; anchor operations are now serialized, and the anchor is preserved when the target is already reached.
+- **Outline anchor position lost** — Fixed issue where quickly or repeatedly clicking "Return to Anchor", "Go to Top", "Go to Bottom", or clicking the same outline heading twice collapsed the saved anchor onto the current position, so "Return to Anchor" could no longer jump back to the previous location; anchor operations are now serialized, and the anchor is preserved when the target is already reached. (#848)
+- **Adapt to Claude's new page layout** — Claude updated the page structure again, **Fuck you, Claude!** (#823, #849)
 - **Doubao conversation title sync** — Fixed issue where conversations synced from Doubao showed their titles repeated three times (e.g. a title became "titletitletitle") after the site rolled out its new sidebar conversation list; titles are now read correctly from the new structure. (#846)
 - **Qwen Studio scroll shortcuts** — Adapted to Qwen Studio's new chat scroll container, fixing "Go to Top", "Go to Bottom", and "Return to Anchor" failing after the site updated its page structure.
 - **Adapt to Grok's new DOM structure** — Adapt to Grok's new chat scroll container and theme style selector, and fix the problem of "Go to Top", "Go to Bottom" and "Return to Anchor" on Grok failing and switching between light/dark themes causing the page to freeze and become unresponsive. (#842, #843)
 - **ChatGLM theme switching** — Adapted to ChatGLM's new theme popover structure, fixing light/dark/system theme switching that failed after the site moved the options into a hidden popover the old two-step menu navigation couldn't reach.
 - **ChatGPT prompt insertion on Firefox** — Fixed issue where inserting a multi-line prompt into ChatGPT in Firefox lost all line breaks; inserted prompts now keep their original line structure. (#811, #838)
 - **AI Studio theme toggle** — Fixed issue where toggling light/dark theme on AI Studio no longer changed the site theme and the stored preference was never updated; the page theme now follows the panel toggle again. (#844)
+- **DeepSeek Harness steering messages** — Fixed issue where steering instructions sent while a response was generating were missing from the outline and exports on DeepSeek Harness; these messages are now recognized as user queries.
 
 ---
 
@@ -1409,6 +1423,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.2]: https://github.com/urzeye/ophel/releases/tag/v1.2.2
 [1.2.1]: https://github.com/urzeye/ophel/releases/tag/v1.2.1
 [1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0
 [1.1.8]: https://github.com/urzeye/ophel/releases/tag/v1.1.8
