@@ -8,8 +8,13 @@
 
 ## [Unreleased]
 
+---
+
+## [1.2.3] - 2026-08-20
+
 ### 🚀 新增功能
 
+- **Proton Lumo 支持** — 在线适配库新增 Proton Lumo（lumo.proton.me），安装适配包后即可使用大纲（含用户提问）、基础导出、生成检测与停止、对话宽度、禅模式、净化模式、新对话和提示词插入功能。
 - **Genspark 支持** — 在线适配库新增 Genspark（genspark.ai），安装适配包后即可使用大纲（含用户提问）、基础导出、生成检测与停止、对话宽度、禅模式、新对话、提示词插入和净化模式功能。 (#851)
 
 ### ✨ 功能优化
@@ -1426,6 +1431,7 @@
 
 ---
 
+[1.2.3]: https://github.com/urzeye/ophel/releases/tag/v1.2.3
 [1.2.2]: https://github.com/urzeye/ophel/releases/tag/v1.2.2
 [1.2.1]: https://github.com/urzeye/ophel/releases/tag/v1.2.1
 [1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0

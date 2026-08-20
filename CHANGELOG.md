@@ -9,8 +9,13 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.2.3] - 2026-08-20
+
 ### 🚀 New Features
 
+- **Proton Lumo support** — The online adapter library now includes Proton Lumo (lumo.proton.me); installing the pack enables outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, Clean Mode, new chat, and prompt insertion.
 - **Genspark support** — The online adapter library now includes Genspark (genspark.ai); installing the pack enables outlines with user queries, basic export, generation detection and stop, chat width, Zen Mode, new chat, prompt insertion, and Clean Mode. (#851)
 
 ### ✨ Improvements
@@ -1427,6 +1432,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.3]: https://github.com/urzeye/ophel/releases/tag/v1.2.3
 [1.2.2]: https://github.com/urzeye/ophel/releases/tag/v1.2.2
 [1.2.1]: https://github.com/urzeye/ophel/releases/tag/v1.2.1
 [1.2.0]: https://github.com/urzeye/ophel/releases/tag/v1.2.0
