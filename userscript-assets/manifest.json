@@ -107,8 +107,8 @@
     }
   },
   "requireUrls": {
-    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.3.js",
-    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.2.3.js",
-    "adaptersVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-adapters-vendor-ophel-1.2.3.js"
+    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@45599440dbe01a41030950d4c22e9a45510c41b9/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.3.js",
+    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@45599440dbe01a41030950d4c22e9a45510c41b9/userscript-assets/ophel-markdown-vendor-ophel-1.2.3.js",
+    "adaptersVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@45599440dbe01a41030950d4c22e9a45510c41b9/userscript-assets/ophel-adapters-vendor-ophel-1.2.3.js"
   }
 }
