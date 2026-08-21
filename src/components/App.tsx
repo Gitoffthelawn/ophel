@@ -2548,11 +2548,13 @@ export const App = () => {
       showToast(t("exportNeedOpenFirst"))
       return
     }
-    const success = await conversationManager.exportConversation(sessionId, "markdown")
+    // 使用用户在设置中选择的默认导出格式（支持 HTML）
+    const format = settings.export?.defaultExportFormat ?? "markdown"
+    const success = await conversationManager.exportConversation(sessionId, format)
     if (!success) {
       showToast(t("exportFailed"))
     }
-  }, [conversationManager, adapter])
+  }, [conversationManager, adapter, settings.export?.defaultExportFormat])
 
   const handleFloatingToolbarSegmentedExport = useCallback(async () => {
     if (!conversationManager || !adapter) return
@@ -2630,6 +2632,20 @@ export const App = () => {
       return
     }
     const success = await conversationManager.exportConversation(sessionId, "clipboard")
+    if (!success) {
+      showToast(t("exportFailed"))
+    }
+  }, [conversationManager, adapter])
+
+  // 工具箱直接导出 HTML 处理器
+  const handleFloatingToolbarHTMLExport = useCallback(async () => {
+    if (!conversationManager || !adapter) return
+    const sessionId = adapter.getSessionId()
+    if (!sessionId) {
+      showToast(t("exportNeedOpenFirst"))
+      return
+    }
+    const success = await conversationManager.exportConversation(sessionId, "html")
     if (!success) {
       showToast(t("exportFailed"))
     }
@@ -3230,6 +3246,7 @@ export const App = () => {
         }}
         onGlobalSearch={openGlobalSettingsSearch}
         onCopyMarkdown={handleCopyMarkdown}
+        onExportHTML={handleFloatingToolbarHTMLExport}
         onSegmentedExport={handleFloatingToolbarSegmentedExport}
         onModelLockToggle={handleModelLockToggle}
         isModelLocked={isModelLocked}

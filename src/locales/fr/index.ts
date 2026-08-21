@@ -121,6 +121,7 @@ export const fr = {
   siteAdapterWizardCapabilityPrompt: "Insertion de prompts",
   siteAdapterWizardCapabilityOutline: "Plan de conversation",
   siteAdapterWizardCapabilityUserQueries: "Questions utilisateur dans le plan",
+  siteAdapterWizardCapabilityDocumentOutline: "Plan du document",
   siteAdapterWizardCapabilityExport: "Exportation de base",
   siteAdapterWizardCapabilityHistory: "Historique de lecture",
   siteAdapterWizardCapabilityNewChat: "Nouvelle conversation",
@@ -1182,6 +1183,8 @@ export const fr = {
   exportMetaSource: "Origine",
   exportNotSupported: "Non supporté ici",
   exportToTXT: "TXT",
+  exportToHTML: "HTML",
+  exportToHTMLMenu: "Exporter en HTML",
   exportMetaUrl: "Lien",
   exportUntitled: "Sans Titre",
   exportToClipboard: "Copier Markdown",
@@ -1657,10 +1660,15 @@ Donnez le code puis un résumé des améliorations.`,
   exportFilenameTimestamp: "Ajouter un horodatage au nom du fichier",
   exportFilenameTimestampDesc: "Ajouter un horodatage à la fin du nom du fichier exporté",
   exportIncludeThoughtsLabel: "Inclure le raisonnement à l'export",
+  exportThoughtCollapsedLabel: "Processus de réflexion",
   exportIncludeThoughtsDesc:
-    "Inclure et déplier automatiquement le raisonnement lors de l'export (en blocs de citation)",
+    "Inclure les réflexions lors de l'export ; elles sont repliées sous un bouton « Processus de réflexion » que les lecteurs peuvent déplier",
   exportAttachmentsLabel: "Pièces jointes",
   exportPackagingLabel: "Méthode d'export Markdown",
+  exportDefaultFormatLabel: "Format d'export par défaut",
+  exportDefaultFormatDesc:
+    "Définit le format par défaut utilisé par le raccourci clavier et l'export rapide (Markdown / JSON / TXT / HTML)",
+
   exportPackagingDesc:
     "ZIP inclut le fichier Markdown et les pièces jointes téléchargeables, place les pièces jointes dans assets et les référence avec des chemins relatifs.",
   exportPackagingMarkdown: "Markdown",

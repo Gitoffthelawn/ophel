@@ -119,6 +119,7 @@ export const en = {
   siteAdapterWizardCapabilityPrompt: "Prompt insertion",
   siteAdapterWizardCapabilityOutline: "Conversation outline",
   siteAdapterWizardCapabilityUserQueries: "User questions in outline",
+  siteAdapterWizardCapabilityDocumentOutline: "Document outline",
   siteAdapterWizardCapabilityExport: "Basic export",
   siteAdapterWizardCapabilityHistory: "Reading history",
   siteAdapterWizardCapabilityNewChat: "New conversation",
@@ -890,10 +891,15 @@ export const en = {
   exportFilenameTimestamp: "Add Timestamp to Filename",
   exportFilenameTimestampDesc: "Add a timestamp to the end of the exported filename",
   exportIncludeThoughtsLabel: "Include Thoughts in Export",
+  exportThoughtCollapsedLabel: "Thinking process",
   exportIncludeThoughtsDesc:
-    "Include and auto-expand thoughts when exporting (rendered as blockquotes)",
+    'Include thoughts when exporting; they are collapsed under a "Thinking process" toggle that readers can expand',
   exportAttachmentsLabel: "Attachments",
   exportPackagingLabel: "Markdown Export Method",
+  exportDefaultFormatLabel: "Default Export Format",
+  exportDefaultFormatDesc:
+    "Sets the default format used by the keyboard shortcut and quick export (Markdown / JSON / TXT / HTML)",
+
   exportPackagingDesc:
     "ZIP includes the Markdown file and downloadable attachments, storing attachments in assets and referencing them with relative paths.",
   exportPackagingMarkdown: "Markdown",
@@ -1227,6 +1233,8 @@ export const en = {
   exportMetaSource: "Source",
   exportNotSupported: "Export not supported on this site",
   exportToTXT: "TXT",
+  exportToHTML: "HTML",
+  exportToHTMLMenu: "HTML Export",
   exportMetaUrl: "URL",
   exportUntitled: "Untitled",
   exportToClipboard: "Copy Markdown",

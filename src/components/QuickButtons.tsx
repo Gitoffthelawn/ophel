@@ -21,6 +21,7 @@ import {
   COLLAPSED_BUTTON_DEFS,
   TOOLS_MENU_IDS,
   TOOLS_MENU_ITEMS,
+  getDefaultToolsMenuIds,
   isBuiltinSiteId,
   type ToolsMenuId,
 } from "~constants"
@@ -63,6 +64,7 @@ interface QuickButtonsProps {
   scrollLocked?: boolean
   // 新增功能
   onCopyMarkdown?: () => void
+  onExportHTML?: () => void
   onSegmentedExport?: () => void
   onModelLockToggle?: () => void
   isModelLocked?: boolean
@@ -115,6 +117,7 @@ const COLLAPSED_BUTTON_CAPABILITY_REQUIREMENTS: Partial<Record<string, SitePackC
 const TOOLS_MENU_CAPABILITY_REQUIREMENTS: Partial<Record<ToolsMenuId, SitePackCapability>> = {
   [TOOLS_MENU_IDS.EXPORT]: "export-basic",
   [TOOLS_MENU_IDS.SEGMENTED_EXPORT]: "export-basic",
+  [TOOLS_MENU_IDS.EXPORT_HTML]: "export-basic",
   [TOOLS_MENU_IDS.COPY_MARKDOWN]: "export-basic",
   [TOOLS_MENU_IDS.MOVE]: "conversation-list",
   [TOOLS_MENU_IDS.SET_TAG]: "conversation-list",
@@ -138,6 +141,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
   onGlobalSearch,
   scrollLocked,
   onCopyMarkdown,
+  onExportHTML,
   onSegmentedExport,
   onModelLockToggle,
   isModelLocked,
@@ -1000,6 +1004,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
   const toolsMenuActions: Record<string, () => void> = {
     [TOOLS_MENU_IDS.EXPORT]: () => onExport?.(),
     [TOOLS_MENU_IDS.SEGMENTED_EXPORT]: () => onSegmentedExport?.(),
+    [TOOLS_MENU_IDS.EXPORT_HTML]: () => onExportHTML?.(),
     [TOOLS_MENU_IDS.COPY_MARKDOWN]: () => onCopyMarkdown?.(),
     [TOOLS_MENU_IDS.MOVE]: () => onMove?.(),
     [TOOLS_MENU_IDS.SET_TAG]: () => onSetTag?.(),
@@ -1023,7 +1028,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     let lastWasSystem = false
 
     // 从设置中获取启用的菜单项，如果没有则使用默认全部显示
-    const enabledIds = quickButtonsSettings.toolsMenu ?? TOOLS_MENU_ITEMS.map((item) => item.id)
+    const enabledIds = quickButtonsSettings.toolsMenu ?? getDefaultToolsMenuIds()
     const enabledSet = new Set(enabledIds)
 
     for (const item of TOOLS_MENU_ITEMS) {

@@ -122,6 +122,7 @@ export const es = {
   siteAdapterWizardCapabilityPrompt: "Inserción de prompts",
   siteAdapterWizardCapabilityOutline: "Esquema de conversación",
   siteAdapterWizardCapabilityUserQueries: "Preguntas del usuario en el esquema",
+  siteAdapterWizardCapabilityDocumentOutline: "Esquema del documento",
   siteAdapterWizardCapabilityExport: "Exportación básica",
   siteAdapterWizardCapabilityHistory: "Historial de lectura",
   siteAdapterWizardCapabilityNewChat: "Nueva conversación",
@@ -1181,6 +1182,8 @@ export const es = {
   exportMetaSource: "Origen",
   exportNotSupported: "No soportado aquí",
   exportToTXT: "TXT",
+  exportToHTML: "HTML",
+  exportToHTMLMenu: "Exportar HTML",
   exportMetaUrl: "Enlace",
   exportUntitled: "Sin Título",
   exportToClipboard: "Copiar Markdown",
@@ -1651,10 +1654,15 @@ Dame el código y luego un resumen de mejoras.`,
   exportFilenameTimestampDesc:
     "Agrega una marca de tiempo al final del nombre del archivo exportado",
   exportIncludeThoughtsLabel: "Incluir razonamiento en la exportación",
+  exportThoughtCollapsedLabel: "Proceso de pensamiento",
   exportIncludeThoughtsDesc:
-    "Incluir y expandir automáticamente el razonamiento al exportar (como bloques de cita)",
+    'Incluir pensamientos al exportar; se muestran plegados bajo un conmutador "Proceso de pensamiento" que los lectores pueden expandir',
   exportAttachmentsLabel: "Archivos adjuntos",
   exportPackagingLabel: "Método de exportación Markdown",
+  exportDefaultFormatLabel: "Formato de exportación predeterminado",
+  exportDefaultFormatDesc:
+    "Establece el formato predeterminado que usan el atajo de teclado y la exportación rápida (Markdown / JSON / TXT / HTML)",
+
   exportPackagingDesc:
     "ZIP incluye el archivo Markdown y los adjuntos descargables, guarda los adjuntos en assets y los referencia con rutas relativas.",
   exportPackagingMarkdown: "Markdown",

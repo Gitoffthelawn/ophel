@@ -3,6 +3,7 @@ import { createPortal } from "react-dom"
 
 import {
   ExportIcon,
+  HTMLFileIcon,
   JSONFileIcon,
   LinkIcon,
   MarkdownIcon,
@@ -413,6 +414,7 @@ interface ExportMenuProps {
   onExportMarkdown: () => void
   onExportJSON: () => void
   onExportTXT: () => void
+  onExportHTML: () => void
   onSegmentedExport?: () => void
 }
 
@@ -423,6 +425,7 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
   onExportMarkdown,
   onExportJSON,
   onExportTXT,
+  onExportHTML,
   onSegmentedExport,
 }) => {
   return (
@@ -455,6 +458,16 @@ export const ExportMenu: React.FC<ExportMenuProps> = ({
         <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           <TXTFileIcon size={14} />
           <span>{t("exportToTXT")}</span>
+        </div>
+      </MenuButton>
+      <MenuButton
+        onClick={() => {
+          onClose()
+          onExportHTML()
+        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+          <HTMLFileIcon size={14} />
+          <span>{t("exportToHTML")}</span>
         </div>
       </MenuButton>
       {onSegmentedExport && (

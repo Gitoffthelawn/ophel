@@ -124,6 +124,7 @@ export const de = {
   siteAdapterWizardCapabilityPrompt: "Prompt-Einfügung",
   siteAdapterWizardCapabilityOutline: "Gesprächsgliederung",
   siteAdapterWizardCapabilityUserQueries: "Benutzerfragen in der Gliederung",
+  siteAdapterWizardCapabilityDocumentOutline: "Dokumentengliederung",
   siteAdapterWizardCapabilityExport: "Basisexport",
   siteAdapterWizardCapabilityHistory: "Leseverlauf",
   siteAdapterWizardCapabilityNewChat: "Neue Unterhaltung",
@@ -1185,6 +1186,8 @@ export const de = {
   exportMetaSource: "Quelle",
   exportNotSupported: "Hier nicht unterstützt",
   exportToTXT: "TXT",
+  exportToHTML: "HTML",
+  exportToHTMLMenu: "HTML exportieren",
   exportMetaUrl: "Link",
   exportUntitled: "Unbenannt",
   exportToClipboard: "Markdown kopieren",
@@ -1653,10 +1656,15 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   exportFilenameTimestamp: "Zeitstempel an Dateinamen anhängen",
   exportFilenameTimestampDesc: "Dem exportierten Dateinamen am Ende einen Zeitstempel hinzufügen",
   exportIncludeThoughtsLabel: "Gedankengang beim Export einbeziehen",
+  exportThoughtCollapsedLabel: "Denkprozess",
   exportIncludeThoughtsDesc:
-    "Gedankengang beim Export einbeziehen und automatisch erweitern (als Zitatblöcke)",
+    "Beim Exportieren Gedanken einschließen; sie sind unter einem „Denkprozess“-Umschalter eingeklappt, den Leser erweitern können",
   exportAttachmentsLabel: "Anhänge",
   exportPackagingLabel: "Markdown-Exportmethode",
+  exportDefaultFormatLabel: "Standard-Exportformat",
+  exportDefaultFormatDesc:
+    "Legt das Standardformat fest, das die Tastenkombination und der Schnellexport verwenden (Markdown / JSON / TXT / HTML)",
+
   exportPackagingDesc:
     "ZIP enthält die Markdown-Datei und herunterladbare Anhänge, speichert Anhänge in assets und referenziert sie relativ.",
   exportPackagingMarkdown: "Markdown",
