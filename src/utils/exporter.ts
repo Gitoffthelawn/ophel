@@ -48,6 +48,8 @@ export interface ExportMetadata {
   source: string
   customUserName?: string
   customModelName?: string
+  showIndex?: boolean
+  customDivider?: string
 }
 
 export type ExportFormat = "markdown" | "json" | "txt" | "html" | "clipboard"
@@ -561,7 +563,168 @@ export function htmlToMarkdown(el: Element): string {
   return processNode(el).trim()
 }
 
-// ==================== 格式化函数 ====================
+// ==================== 格式化函数与清洗管道 ====================
+
+const THOUGHT_MARKDOWN_LINE =
+  /^\s*(?:\[(?:Thoughts?|思维链|思考过程)\]|\*{0,2}💭\s*思考过程\*{0,2})\s*$/i
+
+const CODE_FENCE_LINE = /^\s*(`{3,}|~{3,})/
+
+function getThoughtMarkerIndex(lines: string[]): number {
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index].replace(/^>\s?/, "").trim()
+    if (!line) continue
+    return THOUGHT_MARKDOWN_LINE.test(line) ? index : -1
+  }
+
+  return -1
+}
+
+/**
+ * 按行标记 fenced code block 内部（含闭合围栏行之前的所有内容行），
+ * 思维链聚合只处理普通引用块，不能改写代码示例中的 > 引用文本
+ */
+function computeCodeFenceFlags(lines: string[]): boolean[] {
+  const flags: boolean[] = []
+  let fenceChar = ""
+  let fenceLength = 0
+
+  for (const line of lines) {
+    flags.push(fenceLength > 0)
+    const match = line.match(CODE_FENCE_LINE)
+    if (!match) continue
+    const marker = match[1]
+    if (fenceLength === 0) {
+      fenceChar = marker[0]
+      fenceLength = marker.length
+    } else if (marker[0] === fenceChar && marker.length >= fenceLength) {
+      fenceChar = ""
+      fenceLength = 0
+    }
+  }
+
+  return flags
+}
+
+/**
+ * 通用思维链聚合函数：
+ * 扫描内容中的连续 > [Thoughts] 引用块，合并为单一标准的思维链引用块，避免分段产生多个 [Thoughts] 标签。
+ */
+export function consolidateThoughtBlocks(content: string): string {
+  if (!content || !content.includes(">")) return content
+
+  const lines = content.replace(/\r\n?/g, "\n").split("\n")
+  const inCodeFence = computeCodeFenceFlags(lines)
+  const merged: string[] = []
+  let index = 0
+
+  while (index < lines.length) {
+    if (inCodeFence[index] || !lines[index].startsWith(">")) {
+      merged.push(lines[index])
+      index += 1
+      continue
+    }
+
+    const block: string[] = []
+    while (index < lines.length && !inCodeFence[index] && lines[index].startsWith(">")) {
+      block.push(lines[index])
+      index += 1
+    }
+
+    const markerIndex = getThoughtMarkerIndex(block)
+    if (markerIndex !== 0) {
+      merged.push(...block)
+      continue
+    }
+
+    const normalizedBlock = [...block]
+    normalizedBlock[markerIndex] = "> [Thoughts]"
+    const thoughtGroup = [...normalizedBlock]
+
+    while (true) {
+      let nextIndex = index
+      while (nextIndex < lines.length && lines[nextIndex].trim() === "") nextIndex += 1
+      if (nextIndex >= lines.length || inCodeFence[nextIndex] || !lines[nextIndex].startsWith(">"))
+        break
+
+      const nextBlock: string[] = []
+      let scanIndex = nextIndex
+      while (
+        scanIndex < lines.length &&
+        !inCodeFence[scanIndex] &&
+        lines[scanIndex].startsWith(">")
+      ) {
+        nextBlock.push(lines[scanIndex])
+        scanIndex += 1
+      }
+
+      const nextMarkerIndex = getThoughtMarkerIndex(nextBlock)
+      if (nextMarkerIndex < 0) break
+
+      thoughtGroup.push(">")
+      thoughtGroup.push(...nextBlock.slice(nextMarkerIndex + 1))
+      index = scanIndex
+    }
+
+    merged.push(...thoughtGroup)
+  }
+
+  return merged.join("\n")
+}
+
+/**
+ * 判断内容是否为纯思维链块（整段由引用行组成，且头部为思考过程标记）
+ */
+export function isPureThoughtContent(content: string): boolean {
+  const trimmed = content.trim()
+  if (!trimmed || !trimmed.startsWith(">")) return false
+  const lines = trimmed.split("\n")
+  const markerIdx = getThoughtMarkerIndex(lines)
+  if (markerIdx === -1) return false
+  return lines.every((line) => !line.trim() || line.trimStart().startsWith(">"))
+}
+
+/**
+ * 消息序列归一化管道：
+ * 1. 对每条消息统一聚合思维链（合并碎片化 [Thoughts]）
+ * 2. 安全合并规则：连续 Assistant 角色且前一条为纯思维链时，自动将思维链作为前缀拼到后续正文前
+ * 3. 用户（User）消息与连续普通正文严格保持原样，绝不发生误合并
+ */
+export function normalizeExportMessages(messages: ExportMessage[]): ExportMessage[] {
+  if (!Array.isArray(messages) || messages.length === 0) return []
+
+  const result: ExportMessage[] = []
+  let i = 0
+
+  while (i < messages.length) {
+    let current: ExportMessage = {
+      role: messages[i].role,
+      content: consolidateThoughtBlocks(messages[i].content),
+    }
+
+    // 仅当连续 assistant 且当前累积内容仍为纯思维链时，安全前缀合并；
+    // 内层循环覆盖多段思维链分片（如 [思考A, 思考B, 正文]），用户消息与连续正文一律保持原样
+    if (current.role === "assistant" && isPureThoughtContent(current.content)) {
+      while (
+        i + 1 < messages.length &&
+        messages[i + 1].role === "assistant" &&
+        isPureThoughtContent(current.content)
+      ) {
+        const nextContent = consolidateThoughtBlocks(messages[i + 1].content)
+        current = {
+          role: "assistant",
+          content: consolidateThoughtBlocks(`${current.content}\n\n${nextContent}`),
+        }
+        i += 1
+      }
+    }
+
+    result.push(current)
+    i += 1
+  }
+
+  return result
+}
 
 /**
  * 为 UTF-8 文本添加 BOM，提升 Windows 记事本等工具的编码识别
@@ -576,8 +739,10 @@ export function ensureUtf8Bom(content: string): string {
  */
 export function formatToMarkdown(metadata: ExportMetadata, messages: ExportMessage[]): string {
   const lines: string[] = []
+  const normalizedMessages = normalizeExportMessages(messages)
+  const divider = metadata.customDivider !== undefined ? metadata.customDivider : "---"
 
-  // 元数据头
+  // 元数据头（头部结构分隔线固定为 ---，自定义分割线只作用于消息之间）
   lines.push(`# ${metadata.title}`)
   lines.push("")
   lines.push("---")
@@ -592,23 +757,32 @@ export function formatToMarkdown(metadata: ExportMetadata, messages: ExportMessa
   lines.push("")
 
   // 对话内容
-  messages.forEach((msg) => {
+  let turnNumber = 0
+  normalizedMessages.forEach((msg) => {
     if (msg.role === "user") {
+      turnNumber += 1
       const userLabel = metadata.customUserName || t("exportUserLabel")
-      lines.push(`## ${EMOJI_USER} ${userLabel}`)
+      const titlePrefix = metadata.showIndex ? `${turnNumber}. ` : ""
+      lines.push(`## ${titlePrefix}${EMOJI_USER} ${userLabel}`)
       lines.push("")
       lines.push(msg.content)
       lines.push("")
-      lines.push("---")
-      lines.push("")
+      if (divider) {
+        lines.push(divider)
+        lines.push("")
+      }
     } else {
       const modelLabel = metadata.customModelName || metadata.source
-      lines.push(`## ${EMOJI_ASSISTANT} ${modelLabel}`)
+      // 开场 assistant（尚未出现 user 轮次）不编号，避免与首轮 1 重复
+      const titlePrefix = metadata.showIndex && turnNumber > 0 ? `${turnNumber}. ` : ""
+      lines.push(`## ${titlePrefix}${EMOJI_ASSISTANT} ${modelLabel}`)
       lines.push("")
       lines.push(msg.content)
       lines.push("")
-      lines.push("---")
-      lines.push("")
+      if (divider) {
+        lines.push(divider)
+        lines.push("")
+      }
     }
   })
 
@@ -619,6 +793,7 @@ export function formatToMarkdown(metadata: ExportMetadata, messages: ExportMessa
  * 格式化为 JSON
  */
 export function formatToJSON(metadata: ExportMetadata, messages: ExportMessage[]): string {
+  const normalizedMessages = normalizeExportMessages(messages)
   const data = {
     metadata: {
       title: metadata.title,
@@ -627,7 +802,7 @@ export function formatToJSON(metadata: ExportMetadata, messages: ExportMessage[]
       exportTime: metadata.exportTime,
       source: metadata.source,
     },
-    messages: messages.map((msg) => ({
+    messages: normalizedMessages.map((msg) => ({
       role: msg.role,
       content: msg.content,
     })),
@@ -640,6 +815,7 @@ export function formatToJSON(metadata: ExportMetadata, messages: ExportMessage[]
  */
 export function formatToTXT(metadata: ExportMetadata, messages: ExportMessage[]): string {
   const lines: string[] = []
+  const normalizedMessages = normalizeExportMessages(messages)
 
   lines.push(`${t("exportMetaConvTitle")}: ${metadata.title}`)
   lines.push(`${t("exportMetaTime")}: ${metadata.exportTime}`)
@@ -649,13 +825,17 @@ export function formatToTXT(metadata: ExportMetadata, messages: ExportMessage[])
   lines.push("=".repeat(50))
   lines.push("")
 
-  messages.forEach((msg) => {
+  let turnNumber = 0
+  normalizedMessages.forEach((msg) => {
     if (msg.role === "user") {
+      turnNumber += 1
       const userLabel = metadata.customUserName || t("exportUserLabel")
-      lines.push(`[${userLabel}]`)
+      const prefix = metadata.showIndex ? `${turnNumber}. ` : ""
+      lines.push(`[${prefix}${userLabel}]`)
     } else {
       const modelLabel = metadata.customModelName || metadata.source
-      lines.push(`[${modelLabel}]`)
+      const prefix = metadata.showIndex && turnNumber > 0 ? `${turnNumber}. ` : ""
+      lines.push(`[${prefix}${modelLabel}]`)
     }
     lines.push(msg.content)
     lines.push("")
@@ -703,73 +883,6 @@ const getHtmlExportMarkdownIt = (): ReturnType<typeof createMarkdownIt> => {
 
 const COPY_ICON_SVG =
   '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>'
-
-const THOUGHT_MARKDOWN_LINE =
-  /^\s*(?:\[(?:Thoughts?|思维链|思考过程)\]|\*{0,2}💭\s*思考过程\*{0,2})\s*$/i
-
-function getThoughtMarkerIndex(lines: string[]): number {
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index].replace(/^>\s?/, "").trim()
-    if (!line) continue
-    return THOUGHT_MARKDOWN_LINE.test(line) ? index : -1
-  }
-
-  return -1
-}
-
-function mergeSegmentedThoughtBlocks(content: string): string {
-  const lines = content.replace(/\r\n?/g, "\n").split("\n")
-  const merged: string[] = []
-  let index = 0
-
-  while (index < lines.length) {
-    if (!lines[index].startsWith(">")) {
-      merged.push(lines[index])
-      index += 1
-      continue
-    }
-
-    const block: string[] = []
-    while (index < lines.length && lines[index].startsWith(">")) {
-      block.push(lines[index])
-      index += 1
-    }
-
-    const markerIndex = getThoughtMarkerIndex(block)
-    if (markerIndex !== 0) {
-      merged.push(...block)
-      continue
-    }
-
-    const normalizedBlock = [...block]
-    normalizedBlock[markerIndex] = "> [Thoughts]"
-    const thoughtGroup = [...normalizedBlock]
-
-    while (true) {
-      let nextIndex = index
-      while (nextIndex < lines.length && lines[nextIndex].trim() === "") nextIndex += 1
-      if (nextIndex >= lines.length || !lines[nextIndex].startsWith(">")) break
-
-      const nextBlock: string[] = []
-      let scanIndex = nextIndex
-      while (scanIndex < lines.length && lines[scanIndex].startsWith(">")) {
-        nextBlock.push(lines[scanIndex])
-        scanIndex += 1
-      }
-
-      const nextMarkerIndex = getThoughtMarkerIndex(nextBlock)
-      if (nextMarkerIndex < 0) break
-
-      thoughtGroup.push(">")
-      thoughtGroup.push(...nextBlock.slice(nextMarkerIndex + 1))
-      index = scanIndex
-    }
-
-    merged.push(...thoughtGroup)
-  }
-
-  return merged.join("\n")
-}
 
 type TopLevelBlockquote = {
   index: number
@@ -837,7 +950,7 @@ const renderThoughtGroup = (blocks: string[]): string => {
  * 复用面板同源的 markdown-it + highlight.js 管线，保证所见即所谈
  */
 function renderExportMarkdown(content: string): string {
-  let html = getHtmlExportMarkdownIt().render(mergeSegmentedThoughtBlocks(content))
+  let html = getHtmlExportMarkdownIt().render(consolidateThoughtBlocks(content))
 
   // 高亮变量占位符 {{varName}}
   html = html.replace(/\{\{([^\s{}]+)\}\}/g, '<span class="gh-variable-highlight">{{$1}}</span>')
@@ -1335,14 +1448,22 @@ const USER_ICON_SVG =
 const ASSISTANT_ICON_SVG =
   '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.8 5.8 1.9-5.8 1.9L12 18.4l-1.9-5.8L4.3 10.7l5.8-1.9z"></path><path d="M19 3v3"></path><path d="M20.5 4.5h-3"></path></svg>'
 
-function formatMessageHtml(msg: ExportMessage, metadata: ExportMetadata): string {
+function formatMessageHtml(
+  msg: ExportMessage,
+  metadata: ExportMetadata,
+  turnNumber?: number,
+): string {
   const isUser = msg.role === "user"
   const isAssistant = msg.role === "assistant"
-  const label = isUser
+  let label = isUser
     ? metadata.customUserName || t("exportUserLabel")
     : isAssistant
       ? metadata.customModelName || metadata.source
       : msg.role
+
+  if (metadata.showIndex && turnNumber) {
+    label = `${turnNumber}. ${label}`
+  }
   const icon = isUser ? USER_ICON_SVG : ASSISTANT_ICON_SVG
 
   return `<article class="gh-message" data-role="${escapeHtml(msg.role)}">
@@ -1362,7 +1483,18 @@ export function formatToHTML(metadata: ExportMetadata, messages: ExportMessage[]
   const title = escapeHtml(metadata.title)
   const time = escapeHtml(metadata.exportTime)
   const source = escapeHtml(metadata.source)
-  const messagesHtml = messages.map((msg) => formatMessageHtml(msg, metadata)).join("\n")
+  const normalizedMessages = normalizeExportMessages(messages)
+
+  let turnNumber = 0
+  const messagesHtml = normalizedMessages
+    .map((msg) => {
+      if (msg.role === "user") {
+        turnNumber += 1
+      }
+      // 开场 assistant（turnNumber 仍为 0）不传序号，标题不编号
+      return formatMessageHtml(msg, metadata, turnNumber > 0 ? turnNumber : undefined)
+    })
+    .join("\n")
 
   return `<!DOCTYPE html>
 <html lang="${lang}" data-theme="auto">
@@ -2086,7 +2218,12 @@ export function createExportMetadata(
   title: string,
   source: string,
   id?: string,
-  options?: { customUserName?: string; customModelName?: string },
+  options?: {
+    customUserName?: string
+    customModelName?: string
+    showIndex?: boolean
+    customDivider?: string
+  },
 ): ExportMetadata {
   return {
     title: title || t("exportUntitled"),
@@ -2096,5 +2233,7 @@ export function createExportMetadata(
     source,
     customUserName: options?.customUserName,
     customModelName: options?.customModelName,
+    showIndex: options?.showIndex,
+    customDivider: options?.customDivider,
   }
 }

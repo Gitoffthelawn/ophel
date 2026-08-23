@@ -1,15 +1,7 @@
 import React, { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
-import {
-  ExportIcon,
-  HTMLFileIcon,
-  JSONFileIcon,
-  LinkIcon,
-  MarkdownIcon,
-  SegmentedExportIcon,
-  TXTFileIcon,
-} from "~components/icons"
+import { ExportIcon, LinkIcon } from "~components/icons"
 import { DeleteIcon } from "~components/icons/DeleteIcon"
 import { FolderMoveIcon } from "~components/icons/FolderMoveIcon"
 import { PinIcon } from "~components/icons/PinIcon"
@@ -380,7 +372,7 @@ export const ConversationMenu: React.FC<ConversationMenuProps> = ({
             justifyContent: "space-between",
             gap: "16px",
           }}>
-          <span>{t("export")}</span>
+          <span>{t("exportMenuItem")}</span>
           <ExportIcon size={13} />
         </span>
       </MenuButton>
@@ -401,96 +393,6 @@ export const ConversationMenu: React.FC<ConversationMenuProps> = ({
           <DeleteIcon size={13} />
         </span>
       </MenuButton>
-    </ContextMenu>
-  )
-}
-
-// ==================== 导出菜单 ====================
-
-interface ExportMenuProps {
-  anchorEl: HTMLElement | null
-  anchorPoint?: MenuAnchorPoint
-  onClose: () => void
-  onExportMarkdown: () => void
-  onExportJSON: () => void
-  onExportTXT: () => void
-  onExportHTML: () => void
-  onSegmentedExport?: () => void
-}
-
-export const ExportMenu: React.FC<ExportMenuProps> = ({
-  anchorEl,
-  anchorPoint,
-  onClose,
-  onExportMarkdown,
-  onExportJSON,
-  onExportTXT,
-  onExportHTML,
-  onSegmentedExport,
-}) => {
-  return (
-    <ContextMenu anchorEl={anchorEl} anchorPoint={anchorPoint} onClose={onClose}>
-      <MenuButton
-        onClick={() => {
-          onClose()
-          onExportMarkdown()
-        }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <MarkdownIcon size={14} />
-          <span>{t("exportToMarkdown")}</span>
-        </div>
-      </MenuButton>
-      <MenuButton
-        onClick={() => {
-          onClose()
-          onExportJSON()
-        }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <JSONFileIcon size={14} />
-          <span>{t("exportToJSON")}</span>
-        </div>
-      </MenuButton>
-      <MenuButton
-        onClick={() => {
-          onClose()
-          onExportTXT()
-        }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <TXTFileIcon size={14} />
-          <span>{t("exportToTXT")}</span>
-        </div>
-      </MenuButton>
-      <MenuButton
-        onClick={() => {
-          onClose()
-          onExportHTML()
-        }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-          <HTMLFileIcon size={14} />
-          <span>{t("exportToHTML")}</span>
-        </div>
-      </MenuButton>
-      {onSegmentedExport && (
-        <>
-          <div
-            style={{
-              height: "1px",
-              background: "var(--gh-border, #e5e7eb)",
-              margin: "3px 4px",
-            }}
-          />
-          <MenuButton
-            onClick={() => {
-              onClose()
-              onSegmentedExport()
-            }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-              <SegmentedExportIcon size={14} />
-              <span>{t("segmentedExportMenuItem")}</span>
-            </div>
-          </MenuButton>
-        </>
-      )}
     </ContextMenu>
   )
 }
