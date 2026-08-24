@@ -105,6 +105,24 @@ export interface ExportLifecycleContext {
   packaging: ExportPackaging
 }
 
+/**
+ * 导出采集完整性报告。
+ *
+ * 虚拟滚动站点在 prepareConversationExport 中采集消息时生成，
+ * 供 ConversationManager 判断是否需要补扫或向用户提示"导出可能不完整"。
+ * 无法提供完整性判定的站点保持默认 null，行为与现状一致。
+ */
+export interface ExportCollectionReport {
+  /** 站点锚点序列给出的应有锚点总数；无法获知时为 null */
+  expectedCount: number | null
+  /** 实际采集到的锚点数 */
+  collectedCount: number
+  /** 连续性校验发现的缺口描述（如缺失的 turn-N / 行号），无校验能力时为空数组 */
+  missingAnchors: string[]
+  /** 是否有内容疑似截断的条目（抓到了但可能不全） */
+  hasTruncated: boolean
+}
+
 export interface ConversationObserverConfig {
   selector: string
   shadow: boolean
@@ -1385,6 +1403,27 @@ export abstract class SiteAdapter {
     _context: ExportLifecycleContext,
     _state: unknown,
   ): Promise<void> {}
+
+  /**
+   * 导出采集完整性报告（虚拟滚动站点可选实现）。
+   *
+   * 适配器在 prepareConversationExport 采集后缓存报告，manager 在提取完成后读取。
+   * 默认返回 null，表示该站点不提供完整性判定。
+   */
+  getExportCollectionReport(): ExportCollectionReport | null {
+    return null
+  }
+
+  /**
+   * 历史起点是否未加载完（适配器可选实现）。
+   *
+   * manager 的 loading-history 高度收敛后调用：返回 true 说明最早锚点尚未进入 DOM
+   * （如 ChatGPT 起始 conversation-turn-N > 1，慢网络下分页请求在飞时高度可能暂时不变），
+   * manager 会继续滚顶做有界补载。默认 false——无法判定的站点行为与现状一致。
+   */
+  hasUnloadedConversationHistory(): boolean {
+    return false
+  }
 
   // ==================== 新对话监听 ====================
 

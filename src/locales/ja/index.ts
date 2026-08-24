@@ -1192,6 +1192,8 @@ export const ja = {
   exportLoading: "履歴を読み込み中...",
   exportSuccess: "出力成功",
   exportFailed: "出力失敗",
+  exportMayBeIncomplete:
+    "エクスポートが不完全な可能性があります：一部のコンテンツが完全に読み込まれませんでした。結果を確認してください。",
   exportNoContent: "内容が見つかりません",
   copySuccess: "コピーしました",
   copyFailed: "コピー失敗",
@@ -1675,6 +1677,15 @@ export const ja = {
   chatgptSettingsDesc: "ChatGPT ページのデフォルト動作を構成",
   chatgptMarkdownFixLabel: "Markdown 太字修正",
   chatgptMarkdownFixDesc: "ChatGPT の回答でレンダリングされない **太字** テキストを修正します",
+  chatgptCodeBlockBatchMountLabel: "コードブロックの一括マウント",
+  chatgptCodeBlockBatchMountDesc:
+    "長い会話を開く・切り替える際にコードエディターをまとめてマウントし、ページのフリーズを軽減します",
+  chatgptStreamingRenderOptimizeLabel: "ストリーミング描画の最適化",
+  chatgptStreamingRenderOptimizeDesc:
+    "回答の生成中にメッセージ領域のアニメーションとトランジションを一時停止し、描画負荷を抑えます",
+  chatgptDisableBackdropBlurLabel: "背景ぼかしを無効化",
+  chatgptDisableBackdropBlurDesc:
+    "背景ぼかし効果をオフにして、長い会話をスクロールしたときのコマ落ちを減らします。ページの見た目が少し変わります",
 
   aistudioRemoveWatermark: "画像の透かしを削除",
   aistudioRemoveWatermarkDesc:

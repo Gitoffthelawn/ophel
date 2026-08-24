@@ -9,9 +9,19 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🚀 New Features
+
+- **ChatGPT long conversation performance** — ChatGPT site settings now include three rendering optimizations: code block batch mount (on by default; batches code editor mounting when opening or switching long conversations to reduce page freezes), streaming render optimization (on by default; pauses message-area animations while a response is being generated), and an optional backdrop blur toggle that reduces scroll frame drops at the cost of a slight visual change. (#868)
+
+### 🐛 Bug Fixes
+
+- **Adapt to ChatGPT's new DOM structure** — Adapted to ChatGPT's redesigned prompt rail and off-screen placeholder turns, fixing missing user questions in the outline after refresh and restoring complete turn collection during long conversation export. (#871, #872)
+- **Long conversation and asset export reliability** — Virtual-scroll exports for ChatGPT, Doubao, DeepSeek, and AI Studio now wait for rows to mount, verify turn continuity, and fill missing segments to prevent skipped, duplicated, or unordered messages; incomplete exports now show clear notices, and stuck image downloads in ZIP export gracefully degrade to external links without stalling. (#865)
+- **Doubao new input box adaptation** — Prompt insertion, queued send, generation stop detection, and model lock now work with Doubao's redesigned TipTap input box and the updated send/stop/model-switch controls. (#867)
+
 ---
 
-## [1.2.4] - 2026-08-23
+## [1.2.4][1.2.4] - 2026-08-23
 
 ### 🚀 New Features
 

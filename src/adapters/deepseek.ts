@@ -2368,7 +2368,7 @@ export class DeepSeekAdapter extends SiteAdapter {
         scrollContainer.scrollTop = top
         scrollContainer.dispatchEvent(new Event("scroll", { bubbles: true }))
         scrollContainer.getBoundingClientRect()
-        await this.sleep(80)
+        await this.waitForExportMessagesMounted(scrollContainer)
 
         const batch = this.readVisibleExportMessageSnapshots(scrollContainer, collector)
         collected = this.mergeExportMessageBatch(collected, batch)
@@ -2379,6 +2379,46 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
 
     return collected
+  }
+
+  /**
+   * 挂载确认：轮询当前可见消息签名（数量 + 首尾文本长度），连续两次采样一致即稳定，
+   * 替代固定 80ms sleep——渲染慢时不再读到未挂载完成的批次，从源头避免 overlap 失配。
+   */
+  private async waitForExportMessagesMounted(
+    container: HTMLElement,
+    timeoutMs = 800,
+  ): Promise<void> {
+    const deadline = Date.now() + timeoutMs
+    // 先等一帧再首采样：scroll 事件在下一帧才派发，滚动后立即采样拿到的是旧位置的消息，
+    // 慢渲染下两次采样一致会被误判为稳定（假稳定竞态）。
+    // 与 sleep 竞速：后台标签页 rAF 不触发，避免悬挂
+    await Promise.race([
+      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+      this.sleep(100),
+    ])
+    let lastSignature = ""
+    while (Date.now() < deadline) {
+      const signature = this.getVisibleExportMessageSignature(container)
+      if (signature && signature === lastSignature) return
+      lastSignature = signature
+      await this.sleep(60)
+    }
+  }
+
+  private getVisibleExportMessageSignature(container: HTMLElement): string {
+    const messageSelector = this.config.sitePrivateSelectors.message
+    const messages = Array.from(container.querySelectorAll(messageSelector)).filter(
+      (message): message is HTMLElement =>
+        message instanceof HTMLElement &&
+        !message.closest(`[${DEEPSEEK_EXPORT_ROOT_ATTR}]`) &&
+        !message.parentElement?.closest(messageSelector),
+    )
+    if (messages.length === 0) return ""
+    const firstLength = messages[0].textContent?.length ?? 0
+    const lastLength = messages[messages.length - 1].textContent?.length ?? 0
+    // 混入 scrollTop：同一组消息在不同滚动位置不会产生假稳定
+    return `${Math.round(container.scrollTop)}:${messages.length}:${firstLength}:${lastLength}`
   }
 
   private buildExportSnapshotPositions(scrollContainer: HTMLElement): number[] {

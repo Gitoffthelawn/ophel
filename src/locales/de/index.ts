@@ -1175,6 +1175,8 @@ export const de = {
   exportLoading: "Lädt...",
   exportSuccess: "Erfolg",
   exportFailed: "Fehler",
+  exportMayBeIncomplete:
+    "Der Export ist möglicherweise unvollständig: Einige Inhalte wurden nicht vollständig geladen. Bitte prüfe das Ergebnis.",
   exportNoContent: "Leer",
   copySuccess: "Kopiert",
   copyFailed: "Kopie fehlgeschlagen",
@@ -1642,6 +1644,15 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   chatgptSettingsDesc: "Standardverhalten für die ChatGPT-Seite konfigurieren",
   chatgptMarkdownFixLabel: "Markdown Fettschrift-Fix",
   chatgptMarkdownFixDesc: "Nicht gerenderten **fetten** Text in ChatGPT-Antworten reparieren",
+  chatgptCodeBlockBatchMountLabel: "Codeblöcke gebündelt einhängen",
+  chatgptCodeBlockBatchMountDesc:
+    "Beim Öffnen oder Wechseln langer Unterhaltungen Code-Editoren gebündelt einhängen, um Seitenruckler zu reduzieren",
+  chatgptStreamingRenderOptimizeLabel: "Streaming-Render-Optimierung",
+  chatgptStreamingRenderOptimizeDesc:
+    "Pausiert Animationen und Übergänge im Nachrichtenbereich während der Antwortgenerierung, um den Renderaufwand zu verringern",
+  chatgptDisableBackdropBlurLabel: "Hintergrundunschärfe deaktivieren",
+  chatgptDisableBackdropBlurDesc:
+    "Deaktiviert Hintergrundunschärfe-Effekte, um Frame-Einbrüche beim Scrollen langer Unterhaltungen zu reduzieren; verändert das Erscheinungsbild der Seite leicht",
 
   aistudioRemoveWatermark: "Wasserzeichen entfernen",
   aistudioRemoveWatermarkDesc:

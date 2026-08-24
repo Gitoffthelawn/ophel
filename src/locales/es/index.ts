@@ -1171,6 +1171,8 @@ export const es = {
   exportLoading: "Cargando...",
   exportSuccess: "Éxito",
   exportFailed: "Fallo",
+  exportMayBeIncomplete:
+    "La exportación puede estar incompleta: parte del contenido no se cargó por completo. Revisa el resultado.",
   exportNoContent: "Vacío",
   copySuccess: "Copiado",
   copyFailed: "Fallo copia",
@@ -1639,6 +1641,15 @@ Dame el código y luego un resumen de mejoras.`,
   chatgptSettingsDesc: "Configurar el comportamiento predeterminado de la página ChatGPT",
   chatgptMarkdownFixLabel: "Corrección de Markdown Negrita",
   chatgptMarkdownFixDesc: "Corregir texto **negrita** no renderizado en respuestas de ChatGPT",
+  chatgptCodeBlockBatchMountLabel: "Montaje por lotes de bloques de código",
+  chatgptCodeBlockBatchMountDesc:
+    "Monta los editores de código por lotes al abrir o cambiar conversaciones largas para reducir los bloqueos de la página",
+  chatgptStreamingRenderOptimizeLabel: "Optimización de renderizado en streaming",
+  chatgptStreamingRenderOptimizeDesc:
+    "Pausa las animaciones y transiciones del área de mensajes mientras se genera la respuesta para reducir la carga de renderizado",
+  chatgptDisableBackdropBlurLabel: "Desactivar desenfoque de fondo",
+  chatgptDisableBackdropBlurDesc:
+    "Desactiva los efectos de desenfoque de fondo para reducir las caídas de fotogramas al desplazarse por conversaciones largas; cambia ligeramente el aspecto de la página",
 
   aistudioRemoveWatermark: "Eliminar marca de agua",
   aistudioRemoveWatermarkDesc:

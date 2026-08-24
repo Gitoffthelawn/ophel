@@ -251,7 +251,8 @@ const createChatGPTConfig = (): ChatGPTSiteConfig => {
       srOnlyFallback: "[class*='sr-only']",
       assistantMarkdown: ".markdown, .prose, [class*='prose']",
       exportCleanup: `${srOnly}, button, [role="button"], svg, [aria-hidden="true"]`,
-      exportTurnContainer: 'section[data-turn], [data-testid^="conversation-turn"]',
+      exportTurnContainer:
+        'section[data-turn], [data-testid^="conversation-turn"], [data-turn-id-container]',
       exportMountedMessage: "[data-message-author-role]",
       exportImageContainer: '[class*="imagegen-image"], [data-testid*="image-gen"]',
       exportFileTile: '[role="group"][aria-label], [class*="file-tile"]',
@@ -276,8 +277,8 @@ const createChatGPTConfig = (): ChatGPTSiteConfig => {
         'main#main [role="dialog"][class*="fixed"][class*="inset-0"]:has(.cm-editor)',
       panelLibraryShellInset: libraryShell,
       panelLibraryComposerWrapperInset: libraryComposerWrapper,
-      nativeTocRail: ".no-scrollbar",
-      nativeTocButton: 'button[aria-label][class*="h-0.5"][class*="w-4.5"]',
+      nativeTocRail: "div:has(> button[data-toc-item-index])",
+      nativeTocButton: "button[data-toc-item-index]",
       nativeTocHoverAncestor: [".relative.flex.items-start", ".fixed"],
       nativeTocTitleElement: [
         "button[data-fill] [title]",
