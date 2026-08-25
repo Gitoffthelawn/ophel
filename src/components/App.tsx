@@ -8,6 +8,7 @@ import React, {
 } from "react"
 
 import { getAdapter } from "~adapters/index"
+import type { SiteAdapter } from "~adapters/base"
 import { SITE_IDS } from "~constants/defaults"
 import {
   ConversationManager,
@@ -55,7 +56,6 @@ import { isLikelyMobileDevice } from "~utils/device"
 
 import { ConfirmDialog, FolderSelectDialog, TagManagerDialog } from "./ConversationDialogs"
 import { DisclaimerModal } from "./DisclaimerModal"
-import { ElementPickerOverlay } from "./ElementPickerOverlay"
 import { LoadingOverlay } from "./LoadingOverlay"
 import { MainPanel } from "./MainPanel"
 import { QueueOverlay } from "./QueueOverlay"
@@ -65,7 +65,6 @@ import { SelectedPromptBar } from "./SelectedPromptBar"
 import { ExportDialog } from "./ExportDialog"
 import { SegmentedExportDialog } from "./SegmentedExportDialog"
 import { SettingsModal } from "./SettingsModal"
-import { SiteAdapterWizard } from "./SiteAdapterWizard"
 import { GlobalSearchOverlay } from "./global-search/GlobalSearchOverlay"
 import { GlobalSearchResultItemView } from "./global-search/GlobalSearchResultItemView"
 import {
@@ -183,7 +182,11 @@ const PASS_THROUGH_CONTROL_KEY_ALIASES = new Set(["Control", "Ctrl"])
 
 const hasPromptVariables = (content: string): boolean => /\{\{([^\s{}]+)\}\}/.test(content)
 
-export const App = () => {
+export interface AppProps {
+  adapter?: SiteAdapter | null
+}
+
+export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   // 读取设置 - 使用 Zustand Store
   const { settings, setSettings, updateDeepSetting, updateNestedSetting } = useSettingsStore()
   const isSettingsHydrated = useSettingsHydrated()
@@ -409,7 +412,8 @@ export const App = () => {
   )
 
   // 单例实例
-  const adapter = useMemo(() => getAdapter(), [])
+  const fallbackAdapter = useMemo(() => getAdapter(), [])
+  const adapter = propAdapter !== undefined ? propAdapter : fallbackAdapter
   const siteInstanceKey = adapter?.getSiteInstanceKey() || "_default"
 
   const promptManager = useMemo(() => {
@@ -3193,12 +3197,7 @@ export const App = () => {
   )
 
   if (!adapter || !promptManager || !conversationManager || !outlineManager) {
-    return (
-      <div className="gh-root">
-        <ElementPickerOverlay />
-        <SiteAdapterWizard />
-      </div>
-    )
+    return null
   }
 
   const edgeTriggerMode = settings?.panel?.edgeTriggerMode ?? DEFAULT_SETTINGS.panel.edgeTriggerMode
@@ -3212,7 +3211,6 @@ export const App = () => {
 
   return (
     <div className={`gh-root ${isPassThrough ? "gh-pass-through" : ""}`}>
-      <ElementPickerOverlay />
       {shouldRenderEdgeHoverZone && edgeSnapState && (
         <div
           aria-hidden="true"

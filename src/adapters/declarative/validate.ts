@@ -133,6 +133,7 @@ const MANIFEST_KEYS = [
   "description",
   "descriptionI18n",
   "matches",
+  "logoUrl",
   ...CONFIG_KEYS,
 ] as const
 
@@ -851,6 +852,50 @@ const validateSession = (
   }
 }
 
+// 点分隔路径逐段校验，拒绝空段和原型污染风险段
+const validateThemeSyncDotPath = (
+  value: string,
+  path: string,
+  context: ValidationContext,
+): void => {
+  for (const segment of value.split(".")) {
+    if (segment.length === 0) {
+      addError(context, path, "invalid_value", "Path segments must not be empty")
+      break
+    }
+    if (DANGEROUS_OBJECT_KEYS.has(segment)) {
+      addError(context, path, "invalid_value", `Path segment "${segment}" is not allowed`)
+      break
+    }
+  }
+}
+
+const validateThemeSyncValues = (
+  value: unknown,
+  path: string,
+  context: ValidationContext,
+  mode: ValidationMode,
+): void => {
+  const values = validateObject(
+    value,
+    path,
+    context,
+    ["dark", "light", "system"],
+    ["dark", "light"],
+    mode,
+  )
+  if (!values) return
+  if (values.dark !== undefined) {
+    validateString(values.dark, `${path}.dark`, context, mode, { maxLength: 100 })
+  }
+  if (values.light !== undefined) {
+    validateString(values.light, `${path}.light`, context, mode, { maxLength: 100 })
+  }
+  if (values.system !== undefined) {
+    validateString(values.system, `${path}.system`, context, mode, { maxLength: 100 })
+  }
+}
+
 const validateThemeSync = (
   value: unknown,
   path: string,
@@ -861,7 +906,17 @@ const validateThemeSync = (
     value,
     path,
     context,
-    ["storageKey", "valuePath", "valueFormat", "values", "darkClass", "lightClass"],
+    [
+      "storageKey",
+      "valuePath",
+      "valueFormat",
+      "timestampPath",
+      "staticFields",
+      "values",
+      "extraKeys",
+      "darkClass",
+      "lightClass",
+    ],
     ["storageKey", "values"],
     mode,
   )
@@ -874,22 +929,7 @@ const validateThemeSync = (
   if (themeSync.valuePath !== undefined) {
     const valuePathPath = `${path}.valuePath`
     if (validateString(themeSync.valuePath, valuePathPath, context, mode, { maxLength: 200 })) {
-      // 点分隔路径逐段校验，拒绝原型污染风险段
-      for (const segment of themeSync.valuePath.split(".")) {
-        if (segment.length === 0) {
-          addError(context, valuePathPath, "invalid_value", "Path segments must not be empty")
-          break
-        }
-        if (DANGEROUS_OBJECT_KEYS.has(segment)) {
-          addError(
-            context,
-            valuePathPath,
-            "invalid_value",
-            `Path segment "${segment}" is not allowed`,
-          )
-          break
-        }
-      }
+      validateThemeSyncDotPath(themeSync.valuePath, valuePathPath, context)
     }
     // 嵌套存储时值总是以裸字符串写入对象，valueFormat 无意义
     if (themeSync.valueFormat !== undefined) {
@@ -904,25 +944,100 @@ const validateThemeSync = (
     validateEnum(themeSync.valueFormat, `${path}.valueFormat`, context, mode, ["raw", "json"])
   }
 
+  // timestampPath/staticFields 仅服务于嵌套存储（valuePath），扁平存储下无意义
+  if (themeSync.timestampPath !== undefined) {
+    const timestampPathPath = `${path}.timestampPath`
+    if (themeSync.valuePath === undefined) {
+      addError(context, timestampPathPath, "invalid_value", "timestampPath requires valuePath")
+    } else if (
+      validateString(themeSync.timestampPath, timestampPathPath, context, mode, {
+        maxLength: 200,
+      })
+    ) {
+      validateThemeSyncDotPath(themeSync.timestampPath, timestampPathPath, context)
+    }
+  }
+
+  if (themeSync.staticFields !== undefined) {
+    const staticFieldsPath = `${path}.staticFields`
+    if (themeSync.valuePath === undefined) {
+      addError(context, staticFieldsPath, "invalid_value", "staticFields requires valuePath")
+    } else if (isPlainRecord(themeSync.staticFields)) {
+      for (const [field, fieldValue] of Object.entries(themeSync.staticFields)) {
+        if (field.length === 0 || DANGEROUS_OBJECT_KEYS.has(field)) {
+          addError(
+            context,
+            `${staticFieldsPath}.${field}`,
+            "invalid_value",
+            `Field name "${field}" is not allowed`,
+          )
+          continue
+        }
+        validateString(fieldValue, `${staticFieldsPath}.${field}`, context, mode, {
+          maxLength: 100,
+        })
+      }
+    } else {
+      addError(context, staticFieldsPath, "invalid_type", "Expected an object")
+    }
+  }
+
   if (themeSync.values !== undefined) {
-    const values = validateObject(
-      themeSync.values,
-      `${path}.values`,
-      context,
-      ["dark", "light", "system"],
-      ["dark", "light"],
-      mode,
-    )
-    if (values) {
-      if (values.dark !== undefined) {
-        validateString(values.dark, `${path}.values.dark`, context, mode, { maxLength: 100 })
+    validateThemeSyncValues(themeSync.values, `${path}.values`, context, mode)
+  }
+
+  if (themeSync.extraKeys !== undefined) {
+    const extraKeysPath = `${path}.extraKeys`
+    // 不能用提前 return：darkClass/lightClass 校验在本块之后，删除或类型错误时也要继续校验
+    if (!isDeletion(themeSync.extraKeys, mode) && !Array.isArray(themeSync.extraKeys)) {
+      addError(context, extraKeysPath, "invalid_type", "Expected an array")
+    }
+    if (Array.isArray(themeSync.extraKeys)) {
+      if (themeSync.extraKeys.length > SITE_PACK_MAX_ARRAY_ITEMS) {
+        addError(
+          context,
+          extraKeysPath,
+          "too_large",
+          `Array must not contain more than ${SITE_PACK_MAX_ARRAY_ITEMS} items`,
+        )
       }
-      if (values.light !== undefined) {
-        validateString(values.light, `${path}.values.light`, context, mode, { maxLength: 100 })
-      }
-      if (values.system !== undefined) {
-        validateString(values.system, `${path}.values.system`, context, mode, { maxLength: 100 })
-      }
+      themeSync.extraKeys.forEach((extra, index) => {
+        const extraPath = `${extraKeysPath}[${index}]`
+        const extraKey = validateObject(
+          extra,
+          extraPath,
+          context,
+          ["storageKey", "valueFormat", "values"],
+          ["storageKey", "values"],
+          "full",
+        )
+        if (!extraKey) return
+        if (extraKey.storageKey !== undefined) {
+          if (
+            validateString(extraKey.storageKey, `${extraPath}.storageKey`, context, mode, {
+              maxLength: 200,
+            }) &&
+            extraKey.storageKey === themeSync.storageKey
+          ) {
+            addError(
+              context,
+              `${extraPath}.storageKey`,
+              "invalid_value",
+              "extraKeys storageKey must differ from themeSync.storageKey",
+            )
+          }
+        }
+        if (extraKey.valueFormat !== undefined) {
+          validateEnum(extraKey.valueFormat, `${extraPath}.valueFormat`, context, mode, [
+            "raw",
+            "json",
+          ])
+        }
+        // 数组合并是整体替换，数组项必须按 full 校验，否则 partial 补丁可引入缺 dark/light 的 values
+        if (extraKey.values !== undefined) {
+          validateThemeSyncValues(extraKey.values, `${extraPath}.values`, context, "full")
+        }
+      })
     }
   }
 
@@ -1689,6 +1804,26 @@ const validateConfigFields = (
   if (mode === "full") validateCapabilityRequirements(config, path, context)
 }
 
+/** logoUrl 仅允许 https；本地导入（allowHttpMatches）放宽 http 以覆盖明文 HTTP 自托管实例。 */
+const validateLogoUrl = (value: unknown, path: string, context: ValidationContext): void => {
+  if (!validateString(value, path, context, "full", { maxLength: 500 })) return
+  let url: URL
+  try {
+    url = new URL(value)
+  } catch {
+    addError(context, path, "invalid_value", "logoUrl must be a valid URL")
+    return
+  }
+  if (url.protocol === "https:") return
+  if (url.protocol === "http:" && context.allowHttpMatches) return
+  addError(
+    context,
+    path,
+    "invalid_value",
+    context.allowHttpMatches ? "logoUrl must use http:// or https://" : "logoUrl must use https://",
+  )
+}
+
 const validateMatchPattern = (value: string, path: string, context: ValidationContext): void => {
   if (value === "<all_urls>" || value === "https://*/*" || value === "http://*/*") {
     addError(context, path, "invalid_pattern", "Global match patterns are not allowed")
@@ -1802,6 +1937,9 @@ export function validateSitePackManifest(
   }
   if (manifest.descriptionI18n !== undefined) {
     validateI18nRecord(manifest.descriptionI18n, "$.descriptionI18n", context)
+  }
+  if (manifest.logoUrl !== undefined) {
+    validateLogoUrl(manifest.logoUrl, "$.logoUrl", context)
   }
   if (manifest.matches !== undefined) {
     validateStringArray(manifest.matches, "$.matches", context, "full", {

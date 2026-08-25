@@ -28,6 +28,7 @@ SitePack 的 TypeScript 运行时校验器是安全与兼容性的最终真值�
 | `minAppVersion`        | 最早理解这些字段并完成过验证的 Ophel SemVer 版本。                                                                          |
 | `name` / `description` | 默认展示文本；可用 `nameI18n` / `descriptionI18n` 提供多语映射。                                                            |
 | `matches`              | 最多 10 条 HTTPS match pattern；禁止全局匹配、顶层通配及与内置/现有包重叠。自部署站点包可为空，仅经用户自定义域名绑定激活。 |
+| `logoUrl`              | 可选 HTTPS 图片 URL，作为适配包图标；缺省时取首个 match 来源的 `/favicon.ico`。                                             |
 | `capabilities`         | 用户界面能力契约，只能声明已经提供所需字段并在真实页面验证的能力。                                                          |
 | `selectors`            | 通用页面选择器集合；各字符串最长 500 字符，普通数组最多 50 项。                                                             |
 
@@ -60,7 +61,7 @@ SitePack 的 TypeScript 运行时校验器是安全与兼容性的最终真值�
 - `zenMode` / `cleanMode`：隐藏选择器、根 class 和受限样式规则。
 - `widthSelectors`：可调整宽度的目标与受限 CSS 值。
 - `mermaidSupport` / `quickQuote` / `supportsHostThemeSync`：通用行为开关。
-- `themeSync`：宿主页主题联动（亮暗）的声明式配置。仅支持 “写 localStorage + 切换 `<html>` class + 派发 storage 事件” 机制，键名、写入值、类名全部显式声明：`storageKey` 必填，`values.dark` / `values.light` 必填，`values.system` 仅当站点自身存储独立的跟随系统值时提供；`darkClass`、`lightClass` 均可选，两者都缺省时不动 DOM 类，仅靠写存储和事件让站点自行应用（适用于监听 storage 事件的站点，如 LobeChat）。扁平存储默认写裸字符串，`valueFormat: "json"` 表示写 JSON 编码字符串；键内存放 JSON 对象时用 `valuePath` 指定主题值的点分隔路径（只改写该路径，保留同键其它偏好），且不能与 `valueFormat` 同用。body class、`data-theme` 属性、模拟点击等机制不支持；不监听 storage 事件的站点无法实时生效，不得声明。声明 `themeSync` 即视为支持宿主页主题联动，不得同时声明 `supportsHostThemeSync: false`。
+- `themeSync`：宿主页主题联动（亮暗）的声明式配置。仅支持 “写 localStorage + 切换 `<html>` class + 派发 storage 事件” 机制，键名、写入值、类名全部显式声明：`storageKey` 必填，`values.dark` / `values.light` 必填，`values.system` 仅当站点自身存储独立的跟随系统值时提供；`darkClass`、`lightClass` 均可选，两者都缺省时不动 DOM 类，仅靠写存储和事件让站点自行应用（适用于监听 storage 事件的站点，如 LobeChat）。扁平存储默认写裸字符串，`valueFormat: "json"` 表示写 JSON 编码字符串；键内存放 JSON 对象时用 `valuePath` 指定主题值的点分隔路径（只改写该路径，保留同键其它偏好），且不能与 `valueFormat` 同用。嵌套存储下还可用 `timestampPath` 让指定路径每次写入时刷新为当前时间戳、`staticFields` 声明每次必写的固定字段（如 `{ "mode": "manual" }`）；站点另存独立主题标记（如布尔键）时用 `extraKeys` 追加扁平键写入，每个键都会派发各自的 storage 事件。body class、`data-theme` 属性、模拟点击等机制不支持；不监听 storage 事件的站点无法实时生效，不得声明。声明 `themeSync` 即视为支持宿主页主题联动，不得同时声明 `supportsHostThemeSync: false`。
 
 完整字段、类型、长度和条件约束以 [`site-pack.schema.json`](schema/site-pack.schema.json) 与 `src/adapters/declarative/validate.ts` 为准；两者冲突时，以运行时校验器为准并同步修正 Schema。
 

@@ -9,9 +9,19 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.2.5] - 2026-08-25
+
 ### 🚀 New Features
 
+- **Notion AI support** — The online adapter library now includes Notion AI (app.notion.com); installing the pack enables outlines with user queries, basic export, chat width, Zen Mode, new chat, and prompt insertion on conversations and shared pages.(#873)
+- **Zhihu Zhida support** — The online adapter library now includes Zhihu Zhida (zhida.zhihu.com); installing the pack enables outlines with user queries, basic export, chat width, Zen Mode, new chat, and prompt insertion on conversations and shared pages.
 - **ChatGPT long conversation performance** — ChatGPT site settings now include three rendering optimizations: code block batch mount (on by default; batches code editor mounting when opening or switching long conversations to reduce page freezes), streaming render optimization (on by default; pauses message-area animations while a response is being generated), and an optional backdrop blur toggle that reduces scroll frame drops at the cost of a slight visual change. (#868)
+
+### ✨ Improvements
+
+- **Site Pack icons** — Adapter packs can now declare a custom icon image, so sites like Notion AI whose icon is not served at the default favicon path show their real logo instead of a letter placeholder.
 
 ### 🐛 Bug Fixes
 
@@ -1458,6 +1468,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.5]: https://github.com/urzeye/ophel/releases/tag/v1.2.5
 [1.2.4]: https://github.com/urzeye/ophel/releases/tag/v1.2.4
 [1.2.3]: https://github.com/urzeye/ophel/releases/tag/v1.2.3
 [1.2.2]: https://github.com/urzeye/ophel/releases/tag/v1.2.2

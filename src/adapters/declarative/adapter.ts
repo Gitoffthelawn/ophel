@@ -24,7 +24,7 @@ import { getCurrentLang } from "~utils/i18n"
 
 import { resolveSitePackName } from "./localization"
 import { siteMatchPatternMatchesUrl, siteMatchPatternOrigin } from "./match-pattern"
-import type { SitePackManifest } from "./types"
+import type { SitePackManifest, SitePackThemeSyncConfig } from "./types"
 
 const DEFAULT_THEME_COLORS = {
   primary: "#2563eb",
@@ -68,7 +68,7 @@ const isTextControl = (element: HTMLElement): element is TextControl =>
 const setNestedThemeValue = (
   target: Record<string, unknown>,
   path: string,
-  value: string,
+  value: string | number,
 ): void => {
   const segments = path.split(".")
   let current: Record<string, unknown> = target
@@ -339,6 +339,12 @@ export class DeclarativeAdapter extends SiteAdapter {
   }
 
   private selectAllEditorContent(editor: HTMLElement): boolean {
+    try {
+      editor.ownerDocument.execCommand("selectAll", false, undefined)
+    } catch {
+      // ignore
+    }
+
     const selection = editor.ownerDocument.getSelection()
     if (!selection) return false
 
@@ -346,6 +352,8 @@ export class DeclarativeAdapter extends SiteAdapter {
       selection.selectAllChildren(editor)
       return true
     } catch {
+      // selectAllChildren 失败时选区停留在 execCommand 的整页范围，
+      // 不能当作成功，否则后续 insertText/deletion 会作用于错误位置。
       return false
     }
   }
@@ -357,19 +365,106 @@ export class DeclarativeAdapter extends SiteAdapter {
   ): boolean {
     editor.focus()
 
-    if (this.selectAllEditorContent(editor)) {
+    if (content === "") {
+      // 优先走浏览器原生编辑管线：select-all + execCommand("delete") 会触发
+      // 可信 beforeinput/input，对自有模型驱动的编辑器（如 Notion AI）等同真实
+      // 键盘删除。合成事件必须放在其后兜底，否则编辑器会按自身选区模型部分处理
+      // 合成事件，而强写 textContent 又会被模型重渲染还原，表现为清空无效。
+      this.selectAllEditorContent(editor)
+
+      try {
+        editor.ownerDocument.execCommand("delete", false, undefined)
+      } catch {
+        // Unsupported execCommand attempt continues to synthetic events.
+      }
+
+      if (this.isEditorUpdateValid(editor, "", requireSubmitButton)) return true
+
+      this.selectAllEditorContent(editor)
+
+      try {
+        editor.dispatchEvent(
+          new KeyboardEvent("keydown", {
+            key: "Backspace",
+            code: "Backspace",
+            keyCode: 8,
+            which: 8,
+            bubbles: true,
+            composed: true,
+          }),
+        )
+      } catch {
+        // Unsupported keydown construction continues.
+      }
+
       try {
         editor.dispatchEvent(
           new InputEvent("beforeinput", {
             bubbles: true,
             cancelable: true,
             composed: true,
-            data: content,
-            inputType: "insertText",
+            inputType: "deleteContentBackward",
           }),
         )
       } catch {
-        // Unsupported beforeinput construction continues to the execCommand attempt.
+        // Unsupported beforeinput construction continues to execCommand.
+      }
+
+      try {
+        editor.ownerDocument.execCommand("delete", false, undefined)
+      } catch {
+        // Unsupported execCommand attempt continues.
+      }
+
+      try {
+        editor.dispatchEvent(
+          new InputEvent("input", {
+            bubbles: true,
+            composed: true,
+            inputType: "deleteContentBackward",
+          }),
+        )
+      } catch {
+        // Unsupported input construction continues.
+      }
+
+      try {
+        editor.dispatchEvent(
+          new KeyboardEvent("keyup", {
+            key: "Backspace",
+            code: "Backspace",
+            keyCode: 8,
+            which: 8,
+            bubbles: true,
+            composed: true,
+          }),
+        )
+      } catch {
+        // Unsupported keyup construction continues.
+      }
+
+      if (editor.textContent && editor.textContent.length > 0) {
+        try {
+          editor.textContent = ""
+        } catch {
+          // ignore
+        }
+      }
+
+      editor.dispatchEvent(new Event("input", { bubbles: true, composed: true }))
+      editor.dispatchEvent(new Event("change", { bubbles: true }))
+
+      return this.isEditorUpdateValid(editor, "", requireSubmitButton)
+    }
+
+    // 与清空同理：先用原生 select-all + insertText 完成“替换”，可信事件才能让
+    // 框架编辑器更新其内部模型；合成 beforeinput 只作兜底，提前派发会被框架按
+    // 自身选区处理成“追加”而非“替换”（Notion AI 上表现为旧内容残留）。
+    if (this.selectAllEditorContent(editor)) {
+      try {
+        editor.ownerDocument.execCommand("insertText", false, content)
+      } catch {
+        // Unsupported execCommand attempt continues to the synthetic event.
       }
       if (this.isEditorUpdateValid(editor, content, requireSubmitButton)) return true
     }
@@ -377,9 +472,17 @@ export class DeclarativeAdapter extends SiteAdapter {
     if (!this.selectAllEditorContent(editor)) return false
 
     try {
-      editor.ownerDocument.execCommand("insertText", false, content)
+      editor.dispatchEvent(
+        new InputEvent("beforeinput", {
+          bubbles: true,
+          cancelable: true,
+          composed: true,
+          data: content,
+          inputType: "insertText",
+        }),
+      )
     } catch {
-      return false
+      // Unsupported beforeinput construction; validation below reports failure.
     }
 
     return this.isEditorUpdateValid(editor, content, requireSubmitButton)
@@ -998,10 +1101,8 @@ export class DeclarativeAdapter extends SiteAdapter {
           : targetMode
 
       // system 未配置独立值时退化为解析值，避免站点读到不认识的模式值
-      const storageValue =
-        targetMode === "system"
-          ? config.values.system ?? config.values[resolvedMode]
-          : config.values[targetMode]
+      const resolveStorageValue = (values: SitePackThemeSyncConfig["values"]): string =>
+        targetMode === "system" ? values.system ?? values[resolvedMode] : values[targetMode]
 
       const previousValue = localStorage.getItem(config.storageKey)
       let nextValue: string
@@ -1018,12 +1119,40 @@ export class DeclarativeAdapter extends SiteAdapter {
             stored = {}
           }
         }
-        setNestedThemeValue(stored, config.valuePath, storageValue)
+        // 先合并固定字段、再刷新时间戳，最后写主题值，保证主题值不被覆盖
+        if (config.staticFields) {
+          for (const [field, fieldValue] of Object.entries(config.staticFields)) {
+            if (field === "__proto__" || field === "prototype" || field === "constructor") continue
+            stored[field] = fieldValue
+          }
+        }
+        if (config.timestampPath) {
+          setNestedThemeValue(stored, config.timestampPath, Date.now())
+        }
+        setNestedThemeValue(stored, config.valuePath, resolveStorageValue(config.values))
         nextValue = JSON.stringify(stored)
       } else {
+        const storageValue = resolveStorageValue(config.values)
         nextValue = config.valueFormat === "json" ? JSON.stringify(storageValue) : storageValue
       }
       localStorage.setItem(config.storageKey, nextValue)
+
+      // 额外扁平键（如站点另存的布尔主题标记），逐个写入并记录待派发事件
+      const writtenKeys: Array<{ key: string; oldValue: string | null; newValue: string }> = [
+        { key: config.storageKey, oldValue: previousValue, newValue: nextValue },
+      ]
+      for (const extra of config.extraKeys ?? []) {
+        const extraOldValue = localStorage.getItem(extra.storageKey)
+        const extraValue = resolveStorageValue(extra.values)
+        const extraNextValue =
+          extra.valueFormat === "json" ? JSON.stringify(extraValue) : extraValue
+        localStorage.setItem(extra.storageKey, extraNextValue)
+        writtenKeys.push({
+          key: extra.storageKey,
+          oldValue: extraOldValue,
+          newValue: extraNextValue,
+        })
+      }
 
       // 用 classList 精确替换，绝不像部分内置站点那样整体覆写 className
       // darkClass/lightClass 都缺省时不动 DOM 类，靠上面的 storage 事件让站点自行应用
@@ -1038,14 +1167,16 @@ export class DeclarativeAdapter extends SiteAdapter {
       html.style.colorScheme = resolvedMode
 
       // 手动派发的 storage 事件同标签页监听者也能收到，next-themes 类实现靠它同步状态
-      window.dispatchEvent(
-        new StorageEvent("storage", {
-          key: config.storageKey,
-          oldValue: previousValue,
-          newValue: nextValue,
-          storageArea: localStorage,
-        }),
-      )
+      for (const written of writtenKeys) {
+        window.dispatchEvent(
+          new StorageEvent("storage", {
+            key: written.key,
+            oldValue: written.oldValue,
+            newValue: written.newValue,
+            storageArea: localStorage,
+          }),
+        )
+      }
 
       return true
     } catch (error) {
