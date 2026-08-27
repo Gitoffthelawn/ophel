@@ -9,6 +9,14 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### 🚀 New Features
+
+- **Perplexity support** — The online adapter library now includes Perplexity (www.perplexity.ai); installing the pack enables outlines with user queries, basic export, chat width, Zen Mode, new chat, prompt insertion, and theme sync on conversation pages.
+
+### 🐛 Bug Fixes
+
+- **Claude Incognito chat adaptation** — Fixed conversation export and copy failing with "Conversation not found" in Claude Incognito chats (claude.ai/new?incognito=); the export file is titled from the first user message, and smart panel avoidance now works on Incognito pages. (#879)
+
 ---
 
 ## [1.2.5] - 2026-08-25

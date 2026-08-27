@@ -483,6 +483,15 @@ export abstract class SiteAdapter {
     return window.location.pathname.startsWith("/share/")
   }
 
+  /**
+   * 判断当前是否为不入库的临时会话页（如 Claude 隐身会话）。
+   * 临时会话不会改变 URL、也不能产生持久会话记录；
+   * 导出时只构建内存态会话元数据，不写入会话库。
+   */
+  isEphemeralConversationPage(): boolean {
+    return false
+  }
+
   /** 判断当前是否为用户自己的历史会话页 */
   isUserConversationPage(): boolean {
     const sessionId = this.getSessionId()?.trim()
@@ -675,6 +684,30 @@ export abstract class SiteAdapter {
    */
   hasCustomToggleTheme(): boolean {
     return this.toggleTheme !== SiteAdapter.prototype.toggleTheme
+  }
+
+  /**
+   * 检测宿主页当前主题模式（light/dark）。
+   * 返回 null 表示本适配器无法检测，ThemeManager 回退到通用 DOM 检测。
+   */
+  detectHostThemeMode(): "light" | "dark" | null {
+    return null
+  }
+
+  /**
+   * 检测宿主页当前主题偏好（含 system）。
+   * 返回 null 表示本适配器无法检测，ThemeManager 回退到站点特定/通用检测。
+   */
+  detectHostThemePreference(): "light" | "dark" | "system" | null {
+    return null
+  }
+
+  /**
+   * toggleTheme 是否接受 "system" 语义（由适配器自行解析/清除跟随系统状态）。
+   * 基类与仅接受 light/dark 的适配器保持 false。
+   */
+  acceptsSystemThemePreference(): boolean {
+    return false
   }
 
   /**

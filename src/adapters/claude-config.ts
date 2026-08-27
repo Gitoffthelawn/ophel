@@ -93,7 +93,7 @@ export interface ClaudeSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const CLAUDE_CONFIG_VERSION = 4
+export const CLAUDE_CONFIG_VERSION = 5
 
 const createClaudeConfig = (): ClaudeSiteConfig => {
   // dframe 布局中侧栏列表容器是 div#frame-peek-popover（不再是 nav），
@@ -114,12 +114,15 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
   const layoutScope = ':is(main[data-perf-region="main"], #main-content)'
   // 灰度后 data-autoscroll-container 不再是 page-header 的直接子节点，而是下移一层；
   // 用后代 has() 匹配新结构，同时保留直接子选择器兼容旧结构。
-  const chatColumnScope = [
+  // 用一次 :is() 合并常规会话列与隐身会话列，避免 panelScope 超过 500 字符校验上限。
+  const chatColumnScope = `${layoutScope} :is(${[
     // dframe 布局：page-header 更名为 chat-header
-    `${layoutScope} div:has(> [data-testid="chat-header"]):has([data-autoscroll-container="true"])`,
-    `${layoutScope} div:has(> [data-testid="page-header"]):has([data-autoscroll-container="true"])`,
-    `${layoutScope} div:has(> [data-testid="page-header"]):has(> [data-autoscroll-container="true"])`,
-  ].join(", ")
+    'div:has(> [data-testid="chat-header"]):has([data-autoscroll-container="true"])',
+    'div:has(> [data-testid="page-header"]):has([data-autoscroll-container="true"])',
+    'div:has(> [data-testid="page-header"]):has(> [data-autoscroll-container="true"])',
+    // 隐身会话页（/new?incognito=）没有 chat-header/page-header，直取聊天内容包裹层
+    '[data-testid="chat-column-body"]:has(> [data-autoscroll-container="true"])',
+  ].join(", ")})`
   const panelScope = [
     chatColumnScope,
     `${layoutScope}:not(:has([data-autoscroll-container="true"]))`,
