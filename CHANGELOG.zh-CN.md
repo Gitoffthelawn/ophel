@@ -8,9 +8,14 @@
 
 ## [Unreleased]
 
+---
+
+## [1.2.6] - 2026-08-28
+
 ### 🚀 新增功能
 
 - **Perplexity 支持** — 在线适配库新增 Perplexity（www.perplexity.ai），安装适配包后即可在对话页使用大纲（含用户提问）、基础导出、对话宽度、禅模式、新对话、提示词插入和主题切换功能。
+- **百度文心支持** — 在线适配库新增百度文心（wenxin.baidu.com），安装适配包后即可在对话页使用大纲（含用户提问）、基础导出、对话宽度、禅模式、新对话和提示词插入功能。
 
 ### 🐛 问题修复
 
@@ -1475,6 +1480,7 @@
 
 ---
 
+[1.2.6]: https://github.com/urzeye/ophel/releases/tag/v1.2.6
 [1.2.5]: https://github.com/urzeye/ophel/releases/tag/v1.2.5
 [1.2.4]: https://github.com/urzeye/ophel/releases/tag/v1.2.4
 [1.2.3]: https://github.com/urzeye/ophel/releases/tag/v1.2.3

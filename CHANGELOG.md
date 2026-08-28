@@ -9,9 +9,14 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.2.6] - 2026-08-28
+
 ### 🚀 New Features
 
 - **Perplexity support** — The online adapter library now includes Perplexity (www.perplexity.ai); installing the pack enables outlines with user queries, basic export, chat width, Zen Mode, new chat, prompt insertion, and theme sync on conversation pages.
+- **Baidu Wenxin support** — The online adapter library now includes Baidu Wenxin (wenxin.baidu.com); installing the pack enables outlines with user queries, basic export, chat width, Zen Mode, new chat, and prompt insertion on conversations page.
 
 ### 🐛 Bug Fixes
 
@@ -19,7 +24,7 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
-## [1.2.5] - 2026-08-25
+## [1.2.5][1.2.5] - 2026-08-25
 
 ### 🚀 New Features
 
@@ -1476,6 +1481,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.6]: https://github.com/urzeye/ophel/releases/tag/v1.2.6
 [1.2.5]: https://github.com/urzeye/ophel/releases/tag/v1.2.5
 [1.2.4]: https://github.com/urzeye/ophel/releases/tag/v1.2.4
 [1.2.3]: https://github.com/urzeye/ophel/releases/tag/v1.2.3
