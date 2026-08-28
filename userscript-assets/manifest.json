@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-08-25T14:15:44.124Z",
-  "version": "1.2.5",
+  "generatedAt": "2026-08-28T05:08:01.637Z",
+  "version": "1.2.6",
   "resources": {
     "ophelStyles": {
       "fileName": "ophel.user.75433aefbbb4.css",
@@ -93,22 +93,22 @@
   },
   "requires": {
     "geminiWatermarkRemover": {
-      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.2.5.js",
-      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.5.js",
+      "fileName": "ophel-gemini-watermark-remover-1.0.17-ophel-1.2.6.js",
+      "relativePath": "userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.6.js",
       "version": "1.0.17"
     },
     "markdownVendor": {
-      "fileName": "ophel-markdown-vendor-ophel-1.2.5.js",
-      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.2.5.js"
+      "fileName": "ophel-markdown-vendor-ophel-1.2.6.js",
+      "relativePath": "userscript-assets/ophel-markdown-vendor-ophel-1.2.6.js"
     },
     "adaptersVendor": {
-      "fileName": "ophel-adapters-vendor-ophel-1.2.5.js",
-      "relativePath": "userscript-assets/ophel-adapters-vendor-ophel-1.2.5.js"
+      "fileName": "ophel-adapters-vendor-ophel-1.2.6.js",
+      "relativePath": "userscript-assets/ophel-adapters-vendor-ophel-1.2.6.js"
     }
   },
   "requireUrls": {
-    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@c68e5b7d05f0554a03598c29a82c9b4e6330526c/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.5.js",
-    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@c68e5b7d05f0554a03598c29a82c9b4e6330526c/userscript-assets/ophel-markdown-vendor-ophel-1.2.5.js",
-    "adaptersVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@c68e5b7d05f0554a03598c29a82c9b4e6330526c/userscript-assets/ophel-adapters-vendor-ophel-1.2.5.js"
+    "geminiWatermarkRemover": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-gemini-watermark-remover-1.0.17-ophel-1.2.6.js",
+    "markdownVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-markdown-vendor-ophel-1.2.6.js",
+    "adaptersVendor": "https://cdn.jsdelivr.net/gh/urzeye/ophel@userscript-assets/userscript-assets/ophel-adapters-vendor-ophel-1.2.6.js"
   }
 }
