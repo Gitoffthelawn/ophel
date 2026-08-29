@@ -295,7 +295,7 @@
 </p>
 
 <p align="center">
-  <strong>传播也是一种力量：</strong>期待你将使用体验分享至 <strong>Linux.do、X、小红书、Bilibili</strong> 及更多平台。每一份反馈与口碑，都在帮助 Ophel 成长！
+  <strong>传播也是一种力量：</strong>期待你将使用体验分享至 <strong><a href="https://linux.do/">Linux.do</a>、X、小红书、Bilibili</strong> 及更多平台。每一份反馈与口碑，都在帮助 Ophel 成长！
 </p>
 
 <br>

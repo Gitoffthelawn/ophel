@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from "react"
+import React, { useCallback, useEffect, useId, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { ReactNode } from "react"
 
@@ -7,6 +7,12 @@ const DEFAULT_TOOLTIP_DELAY_MS = 300
 const DEFAULT_TOOLTIP_MAX_WIDTH = 260
 const DEFAULT_TOOLTIP_GAP = 8
 const DEFAULT_VIEWPORT_PADDING = 10
+const SKIP_DELAY_WINDOW_MS = 300
+const FOCUSABLE_SELECTOR = 'button, a[href], input, [tabindex], [role="button"]'
+
+// 连续悬停免延迟：一个 tooltip 刚关闭的短窗口内，相邻触发器立即显示。
+// 模块级共享，等价于 Radix 的 skipDelayDuration，天然覆盖同组按钮互扫场景。
+let lastTooltipHiddenAt = 0
 
 // 切换标签页/窗口回来时浏览器会自动恢复焦点到上次聚焦的元素，
 // 触发 onFocus → showTooltip，导致 tooltip 凭空出现。
@@ -34,26 +40,26 @@ function isFocusFromWindowRestoration(): boolean {
 
 export const GLOBAL_TOOLTIP_STYLE_TEXT = `
   .ophel-tooltip {
-    background-color: rgba(30, 30, 35, 0.95);
+    background-color: rgba(24, 24, 28, 0.94);
     color: #ffffff;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    line-height: 1.5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    line-height: 1.35;
     z-index: 2147483647;
     pointer-events: none;
     white-space: pre-wrap;
     word-wrap: break-word;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(4px);
-    animation: tooltip-fade-in 0.15s ease-out;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(6px);
+    animation: tooltip-fade-in 0.12s ease-out;
   }
 
   @keyframes tooltip-fade-in {
     from {
       opacity: 0;
-      transform: scale(0.95);
+      transform: scale(0.96);
     }
     to {
       opacity: 1;
@@ -62,7 +68,7 @@ export const GLOBAL_TOOLTIP_STYLE_TEXT = `
   }
 `
 
-export type TooltipPlacement = "top" | "bottom"
+export type TooltipPlacement = "top" | "bottom" | "left" | "right" | "auto"
 
 export interface TooltipPositionOptions {
   preferredPlacement?: TooltipPlacement
@@ -90,12 +96,27 @@ export interface DomTooltipOptions extends TooltipPositionOptions {
 export interface TooltipProps {
   content: string | ReactNode
   children: ReactNode
+  placement?: TooltipPlacement
   maxWidth?: number | string
   delay?: number
+  /** 仅当触发器内文本被截断（ellipsis/line-clamp）时才显示，用于列表项全文预览 */
+  showOnlyWhenTruncated?: boolean
   className?: string
   triggerClassName?: string
   triggerStyle?: React.CSSProperties
   disabled?: boolean
+}
+
+// 文本截断检测：比较 scroll/client 尺寸，同时覆盖单行 ellipsis 与多行 line-clamp
+function hasTruncatedText(root: HTMLElement): boolean {
+  const isOverflowing = (el: Element): boolean =>
+    el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1
+
+  if (isOverflowing(root)) return true
+  for (const el of Array.from(root.querySelectorAll("*"))) {
+    if (isOverflowing(el)) return true
+  }
+  return false
 }
 
 function resolveDisabled(disabled: DomTooltipOptions["disabled"]): boolean {
@@ -138,42 +159,112 @@ export function calculateTooltipPosition(
   options: TooltipPositionOptions = {},
 ): TooltipCoordinates {
   const {
-    preferredPlacement = "bottom",
+    preferredPlacement = "auto",
     gap = DEFAULT_TOOLTIP_GAP,
     viewportPadding = DEFAULT_VIEWPORT_PADDING,
   } = options
 
-  const preferredTop =
-    preferredPlacement === "top"
-      ? triggerRect.top - tooltipRect.height - gap
-      : triggerRect.bottom + gap
-  const fallbackTop =
-    preferredPlacement === "top"
-      ? triggerRect.bottom + gap
-      : triggerRect.top - tooltipRect.height - gap
-
-  let top = preferredTop
-
-  if (top < viewportPadding || top + tooltipRect.height > window.innerHeight - viewportPadding) {
-    top = fallbackTop
+  if (typeof window === "undefined") {
+    return { top: 0, left: 0 }
   }
 
-  if (top < viewportPadding) {
-    top = viewportPadding
+  const spaceTop = triggerRect.top - viewportPadding
+  const spaceBottom = window.innerHeight - triggerRect.bottom - viewportPadding
+  const spaceLeft = triggerRect.left - viewportPadding
+  const spaceRight = window.innerWidth - triggerRect.right - viewportPadding
+
+  const neededHeight = tooltipRect.height + gap
+  const neededWidth = tooltipRect.width + gap
+
+  let resolvedPlacement: "top" | "bottom" | "left" | "right" = "bottom"
+
+  if (preferredPlacement === "top") {
+    if (spaceTop >= neededHeight) {
+      resolvedPlacement = "top"
+    } else if (spaceBottom >= neededHeight) {
+      resolvedPlacement = "bottom"
+    } else {
+      resolvedPlacement = spaceTop >= spaceBottom ? "top" : "bottom"
+    }
+  } else if (preferredPlacement === "bottom") {
+    if (spaceBottom >= neededHeight) {
+      resolvedPlacement = "bottom"
+    } else if (spaceTop >= neededHeight) {
+      resolvedPlacement = "top"
+    } else {
+      resolvedPlacement = spaceBottom >= spaceTop ? "bottom" : "top"
+    }
+  } else if (preferredPlacement === "left") {
+    if (spaceLeft >= neededWidth) {
+      resolvedPlacement = "left"
+    } else if (spaceRight >= neededWidth) {
+      resolvedPlacement = "right"
+    } else {
+      resolvedPlacement = spaceLeft >= spaceRight ? "left" : "right"
+    }
+  } else if (preferredPlacement === "right") {
+    if (spaceRight >= neededWidth) {
+      resolvedPlacement = "right"
+    } else if (spaceLeft >= neededWidth) {
+      resolvedPlacement = "left"
+    } else {
+      resolvedPlacement = spaceRight >= spaceLeft ? "right" : "left"
+    }
+  } else {
+    // "auto": vertical first if space suffices, prefer bottom unless bottom is too tight
+    if (spaceBottom >= neededHeight) {
+      resolvedPlacement = "bottom"
+    } else if (spaceTop >= neededHeight) {
+      resolvedPlacement = "top"
+    } else if (spaceLeft >= neededWidth) {
+      resolvedPlacement = "left"
+    } else if (spaceRight >= neededWidth) {
+      resolvedPlacement = "right"
+    } else {
+      resolvedPlacement = spaceBottom >= spaceTop ? "bottom" : "top"
+    }
   }
 
-  if (top + tooltipRect.height > window.innerHeight - viewportPadding) {
-    top = Math.max(viewportPadding, window.innerHeight - tooltipRect.height - viewportPadding)
-  }
+  let top = 0
+  let left = 0
 
-  let left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2
+  if (resolvedPlacement === "top" || resolvedPlacement === "bottom") {
+    top =
+      resolvedPlacement === "top"
+        ? triggerRect.top - tooltipRect.height - gap
+        : triggerRect.bottom + gap
 
-  if (left < viewportPadding) {
-    left = viewportPadding
-  }
+    // Clamp top to viewport bounds
+    top = Math.max(
+      viewportPadding,
+      Math.min(window.innerHeight - tooltipRect.height - viewportPadding, top),
+    )
 
-  if (left + tooltipRect.width > window.innerWidth - viewportPadding) {
-    left = window.innerWidth - tooltipRect.width - viewportPadding
+    // Center horizontally and clamp to viewport bounds
+    left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2
+    left = Math.max(
+      viewportPadding,
+      Math.min(window.innerWidth - tooltipRect.width - viewportPadding, left),
+    )
+  } else {
+    // "left" or "right"
+    left =
+      resolvedPlacement === "left"
+        ? triggerRect.left - tooltipRect.width - gap
+        : triggerRect.right + gap
+
+    // Clamp left to viewport bounds
+    left = Math.max(
+      viewportPadding,
+      Math.min(window.innerWidth - tooltipRect.width - viewportPadding, left),
+    )
+
+    // Center vertically and clamp to viewport bounds
+    top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2
+    top = Math.max(
+      viewportPadding,
+      Math.min(window.innerHeight - tooltipRect.height - viewportPadding, top),
+    )
   }
 
   return { top, left }
@@ -196,6 +287,16 @@ class DomTooltipManager {
     if (document.hidden) {
       this.hide()
     }
+  }
+
+  private readonly handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      this.hide()
+    }
+  }
+
+  shouldSkipDelay(): boolean {
+    return Date.now() - lastTooltipHiddenAt < SKIP_DELAY_WINDOW_MS
   }
 
   show(
@@ -238,6 +339,7 @@ class DomTooltipManager {
 
     if (this.activeTrigger) {
       this.activeTrigger.removeAttribute("aria-describedby")
+      lastTooltipHiddenAt = Date.now()
     }
 
     this.activeTrigger = null
@@ -287,6 +389,7 @@ class DomTooltipManager {
     window.addEventListener("scroll", this.handleWindowChange, true)
     window.addEventListener("resize", this.handleWindowChange)
     window.addEventListener("blur", this.handleWindowBlur)
+    window.addEventListener("keydown", this.handleKeyDown)
     document.addEventListener("visibilitychange", this.handleVisibilityChange)
   }
 
@@ -294,6 +397,7 @@ class DomTooltipManager {
     window.removeEventListener("scroll", this.handleWindowChange, true)
     window.removeEventListener("resize", this.handleWindowChange)
     window.removeEventListener("blur", this.handleWindowBlur)
+    window.removeEventListener("keydown", this.handleKeyDown)
     document.removeEventListener("visibilitychange", this.handleVisibilityChange)
   }
 }
@@ -322,6 +426,10 @@ export function bindDomTooltip(
     clearTimer()
     if (resolveDisabled(options.disabled)) return
 
+    const effectiveDelay = domTooltipManager.shouldSkipDelay()
+      ? 0
+      : options.delay ?? DEFAULT_TOOLTIP_DELAY_MS
+
     timerId = setTimeout(() => {
       if (!trigger.isConnected) return
       const content = options.getContent()
@@ -331,7 +439,7 @@ export function bindDomTooltip(
         options.maxWidth ?? DEFAULT_TOOLTIP_MAX_WIDTH,
         options,
       )
-    }, options.delay ?? DEFAULT_TOOLTIP_DELAY_MS)
+    }, effectiveDelay)
   }
 
   trigger.addEventListener("mouseenter", show)
@@ -358,8 +466,10 @@ export function bindDomTooltip(
 export const Tooltip: React.FC<TooltipProps> = ({
   content,
   children,
+  placement = "auto",
   maxWidth = DEFAULT_TOOLTIP_MAX_WIDTH,
   delay = DEFAULT_TOOLTIP_DELAY_MS,
+  showOnlyWhenTruncated = false,
   className = "",
   triggerClassName = "",
   triggerStyle = {},
@@ -375,9 +485,16 @@ export const Tooltip: React.FC<TooltipProps> = ({
   const tooltipRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isHoveringRef = useRef(false)
+  const isVisibleRef = useRef(false)
+  const tooltipId = useId()
 
   const hideTooltip = useCallback(() => {
     isHoveringRef.current = false
+    // 只在 tooltip 真实显示过时记录关闭时间，避免未显示的 hover 污染免延迟窗口
+    if (isVisibleRef.current) {
+      isVisibleRef.current = false
+      lastTooltipHiddenAt = Date.now()
+    }
     if (timerRef.current) {
       clearTimeout(timerRef.current)
       timerRef.current = null
@@ -387,9 +504,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
     setHasPendingTimer(false)
   }, [])
 
-  const showTooltip = useCallback(() => {
-    isHoveringRef.current = true
-    if (disabled) return
+  const scheduleShow = useCallback(() => {
+    const effectiveDelay = Date.now() - lastTooltipHiddenAt < SKIP_DELAY_WINDOW_MS ? 0 : delay
     if (timerRef.current) {
       clearTimeout(timerRef.current)
     }
@@ -399,11 +515,26 @@ export const Tooltip: React.FC<TooltipProps> = ({
       setHasPendingTimer(false)
       // 二次检查：timer 到期时确认页面仍在前台且仍在 hover/focus 状态
       if (!document.hidden && isHoveringRef.current) {
+        isVisibleRef.current = true
         setIsVisible(true)
         setIsMeasuring(true)
       }
-    }, delay)
-  }, [delay, disabled])
+    }, effectiveDelay)
+  }, [delay])
+
+  // 截断门控：文本完整可见时 tooltip 没有增量信息，不显示
+  const passesTruncationGate = useCallback((): boolean => {
+    if (!showOnlyWhenTruncated) return true
+    const trigger = triggerRef.current
+    return trigger !== null && hasTruncatedText(trigger)
+  }, [showOnlyWhenTruncated])
+
+  const showTooltip = useCallback(() => {
+    isHoveringRef.current = true
+    if (disabled) return
+    if (!passesTruncationGate()) return
+    scheduleShow()
+  }, [disabled, passesTruncationGate, scheduleShow])
 
   // 针对切标签页/窗口回来时浏览器自动恢复焦点的场景，
   // 屏蔽由页面恢复焦点触发的 showTooltip（非用户主动键盘导航）
@@ -418,9 +549,9 @@ export const Tooltip: React.FC<TooltipProps> = ({
     if (!triggerRect || !tooltipRect) return
 
     setPosition(
-      calculateTooltipPosition(triggerRect, tooltipRect, { preferredPlacement: "bottom" }),
+      calculateTooltipPosition(triggerRect, tooltipRect, { preferredPlacement: placement }),
     )
-  }, [])
+  }, [placement])
 
   useEffect(() => {
     if (triggerRef.current) {
@@ -465,11 +596,19 @@ export const Tooltip: React.FC<TooltipProps> = ({
       }
     }
 
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        hideTooltip()
+      }
+    }
+
     window.addEventListener("blur", hideTooltip)
+    window.addEventListener("keydown", handleKeyDown)
     document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
       window.removeEventListener("blur", hideTooltip)
+      window.removeEventListener("keydown", handleKeyDown)
       document.removeEventListener("visibilitychange", handleVisibilityChange)
     }
   }, [hasPendingTimer, hideTooltip, isMeasuring, isVisible])
@@ -480,24 +619,35 @@ export const Tooltip: React.FC<TooltipProps> = ({
     }
   }, [])
 
+  // 与 DOM tooltip 路径对齐：可见时把浮层 id 关联到实际可聚焦元素，
+  // 让读屏器能感知提示内容；不可见时移除，避免悬空引用
+  useEffect(() => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+
+    const focusable = trigger.matches(FOCUSABLE_SELECTOR)
+      ? trigger
+      : trigger.querySelector<HTMLElement>(FOCUSABLE_SELECTOR)
+    const target = focusable ?? trigger
+
+    if (isVisible) {
+      target.setAttribute("aria-describedby", tooltipId)
+    } else {
+      target.removeAttribute("aria-describedby")
+    }
+
+    return () => {
+      target.removeAttribute("aria-describedby")
+    }
+  }, [isVisible, tooltipId])
+
   useEffect(() => {
     if (disabled) {
       hideTooltip()
-    } else if (isHoveringRef.current) {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current)
-      }
-      setHasPendingTimer(true)
-      timerRef.current = setTimeout(() => {
-        timerRef.current = null
-        setHasPendingTimer(false)
-        if (!document.hidden && isHoveringRef.current) {
-          setIsVisible(true)
-          setIsMeasuring(true)
-        }
-      }, delay)
+    } else if (isHoveringRef.current && passesTruncationGate()) {
+      scheduleShow()
     }
-  }, [delay, disabled, hideTooltip])
+  }, [disabled, hideTooltip, passesTruncationGate, scheduleShow])
 
   return (
     <div
@@ -507,6 +657,8 @@ export const Tooltip: React.FC<TooltipProps> = ({
       onMouseLeave={hideTooltip}
       onFocus={showTooltipFromFocus}
       onBlur={hideTooltip}
+      onClick={hideTooltip}
+      onPointerDown={hideTooltip}
       style={{ display: "inline-flex", ...triggerStyle }}>
       {children}
       {isVisible &&
@@ -515,6 +667,7 @@ export const Tooltip: React.FC<TooltipProps> = ({
         createPortal(
           <div
             ref={tooltipRef}
+            id={tooltipId}
             className="ophel-tooltip"
             style={{
               position: "fixed",

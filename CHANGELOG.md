@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Tooltip display** — Tooltips are lighter, flip automatically near screen edges, and dismiss immediately on click or Esc; sweeping across neighboring buttons now shows hints instantly without the hover delay; quick action button hints open toward the center of the screen, and list hints (outline, conversations, folders, prompt chains) only appear when the title is truncated, so hovering no longer covers neighboring items. (#885)
+
 ---
 
 ## [1.2.6] - 2026-08-28

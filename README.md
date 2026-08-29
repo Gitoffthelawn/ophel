@@ -284,7 +284,7 @@ Reload each target site after saving. Prefer manager-side custom rules over edit
 </p>
 
 <p align="center">
-  <strong>Sharing is just as powerful:</strong> We'd be thrilled if you shared your experience on <strong>Linux.do, Reddit, X, or YouTube</strong>. Every piece of feedback and every shoutout helps Ophel grow!
+  <strong>Sharing is just as powerful:</strong> We'd be thrilled if you shared your experience on <strong><a href="https://linux.do/">Linux.do</a>, Reddit, X, or YouTube</strong>. Every piece of feedback and every shoutout helps Ophel grow!
 </p>
 
 <p align="center">

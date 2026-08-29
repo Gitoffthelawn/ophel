@@ -279,7 +279,7 @@
 </p>
 
 <p align="center">
-  <strong>シェアも同じくらい力になります：</strong><strong>Linux.do、Reddit、X、YouTube</strong> などで体験を共有していただけると嫌しいです。すべてのフィードバックと応援が Ophel の成長を支えています！
+  <strong>シェアも同じくらい力になります：</strong><strong><a href="https://linux.do/">Linux.do</a>、Reddit、X、YouTube</strong> などで体験を共有していただけると嫌しいです。すべてのフィードバックと応援が Ophel の成長を支えています！
 </p>
 
 <p align="center">

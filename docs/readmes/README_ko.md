@@ -279,7 +279,7 @@
 </p>
 
 <p align="center">
-  <strong>공유도 마찬가지로 강력합니다:</strong> <strong>Linux.do, Reddit, X, YouTube</strong>에서 경험을 공유해 주시면 정말 기쁠 것 같습니다. 모든 피드백과 응원이 Ophel의 성장을 돕습니다!
+  <strong>공유도 마찬가지로 강력합니다:</strong> <strong><a href="https://linux.do/">Linux.do</a>, Reddit, X, YouTube</strong>에서 경험을 공유해 주시면 정말 기쁠 것 같습니다. 모든 피드백과 응원이 Ophel의 성장을 돕습니다!
 </p>
 
 <p align="center">

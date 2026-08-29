@@ -273,7 +273,7 @@
 </p>
 
 <p align="center">
-  <strong>Compartir es igual de poderoso:</strong> Nos encantaría que compartieras tu experiencia en <strong>Linux.do, Reddit, X o YouTube</strong>. ¡Cada comentario y cada mención ayuda a Ophel a crecer!
+  <strong>Compartir es igual de poderoso:</strong> Nos encantaría que compartieras tu experiencia en <strong><a href="https://linux.do/">Linux.do</a>, Reddit, X o YouTube</strong>. ¡Cada comentario y cada mención ayuda a Ophel a crecer!
 </p>
 
 <p align="center">

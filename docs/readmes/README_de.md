@@ -273,7 +273,7 @@
 </p>
 
 <p align="center">
-  <strong>Teilen ist ebenso wertvoll:</strong> Wir würden uns freuen, wenn du deine Erfahrungen auf <strong>Linux.do, Reddit, X oder YouTube</strong> teilst. Jedes Feedback und jede Empfehlung helfen Ophel zu wachsen!
+  <strong>Teilen ist ebenso wertvoll:</strong> Wir würden uns freuen, wenn du deine Erfahrungen auf <strong><a href="https://linux.do/">Linux.do</a>, Reddit, X oder YouTube</strong> teilst. Jedes Feedback und jede Empfehlung helfen Ophel zu wachsen!
 </p>
 
 <p align="center">

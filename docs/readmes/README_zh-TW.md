@@ -279,7 +279,7 @@
 </p>
 
 <p align="center">
-  <strong>傳播也是一種力量：</strong>期待你將使用體驗分享至 <strong>Linux.do、X、小紅書、Bilibili</strong> 及更多平台。每一份回饋與口碑，都在幫助 Ophel 成長！
+  <strong>傳播也是一種力量：</strong>期待你將使用體驗分享至 <strong><a href="https://linux.do/">Linux.do</a>、X、小紅書、Bilibili</strong> 及更多平台。每一份回饋與口碑，都在幫助 Ophel 成長！
 </p>
 
 <p align="center">
