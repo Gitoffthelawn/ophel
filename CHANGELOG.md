@@ -11,9 +11,9 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### 🐛 Bug Fixes
 
-- **ChatGPT redesigned pages adaptation** — Fixed page width, Zen Mode, outline, theme switching, and conversation export on ChatGPT's redesigned pages.
-- **Export no longer jumps to the top on DeepSeek, Claude, Grok, and AI Studio** — Exporting a conversation on these sites no longer scrolls the page to the top first; the complete conversation is fetched directly.
-- **DeepSeek outline entry jumping to top** — Fixed an issue on DeepSeek where, after sending several messages without refreshing the page, clicking a message in the outline could suddenly move it to the top of the outline list.
+- **ChatGPT redesigned pages adaptation** — Fixed page width, Zen Mode, outline, theme switching, and conversation export on ChatGPT's redesigned pages. (#971, @urzeye, @mrpops2ko)
+- **DeepSeek outline entry jumping to top** — Fixed an issue on DeepSeek where, after sending several messages without refreshing the page, clicking a message in the outline could suddenly move it to the top of the outline list. (#972)
+- **Export jumping to the top** — Fixed an issue where exporting a conversation on DeepSeek, Claude, Grok, or AI Studio scrolled the page to the top first; the complete conversation is now fetched directly without moving the page. (#973)
 
 ---
 
