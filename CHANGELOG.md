@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.2.12][1.2.12] - 2026-10-12
+
 **⚠️ Notice — Our GitHub account is still suspended and the appeal is ongoing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
 
 **📢 Notice — ChatGPT's redesigned web interface is now rolling out alongside the old version and is gradually replacing it. This release already adapts to the redesigned pages, but the new interface itself is not yet feature-complete, so in some cases the extension may be unable to retrieve the full conversation outline. If you notice anything off, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
@@ -1614,6 +1618,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
 [1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
 [1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10
 [1.2.9]: https://github.com/urzeye/ophel/releases/tag/v1.2.9

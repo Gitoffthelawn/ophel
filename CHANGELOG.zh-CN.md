@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.2.12][1.2.12] - 2026-10-12
+
 **⚠️ 公告 — 我们的 GitHub 账号仍处于封禁状态，申诉仍在进行中。恢复之前，GitHub 仓库、问题反馈页面以及适配中心的在线适配库可能暂时无法访问。如遇到任何问题，请前往 [Discord](https://discord.gg/rmPzb6Cx9u) 反馈。**
 
 **📢 公告 — ChatGPT 新版网页界面正与旧版并行灰度，并逐步取代旧版。本版本已适配新版界面，但新版页面自身功能尚不完善，插件可能无法获取完整的对话大纲。**
@@ -1615,6 +1619,7 @@
 
 ---
 
+[1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
 [1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
 [1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10
 [1.2.9]: https://github.com/urzeye/ophel/releases/tag/v1.2.9
