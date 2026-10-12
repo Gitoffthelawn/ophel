@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+**⚠️ Notice — Our GitHub account is still suspended and the appeal is ongoing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+**📢 Notice — ChatGPT's redesigned web interface is now rolling out alongside the old version and is gradually replacing it. This release already adapts to the redesigned pages, but the new interface itself is not yet feature-complete, so in some cases the extension may be unable to retrieve the full conversation outline. If you notice anything off, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
 ### 🐛 Bug Fixes
 
 - **ChatGPT redesigned pages adaptation** — Fixed page width, Zen Mode, outline, theme switching, and conversation export on ChatGPT's redesigned pages. (#971, @urzeye, @mrpops2ko)
