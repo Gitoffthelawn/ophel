@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+---
+
+## [1.2.13][1.2.13] - 2026-10-21
+
 ### ✨ Improvements
 
 - **Gemini unified layout adaptation** — Adapted to Gemini's unified layout so task (formerly Spark) conversations sync into chat management normally, and restored auto-hide input on redesigned conversation pages. (#977)
@@ -1629,6 +1633,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.13]: https://github.com/urzeye/ophel/releases/tag/v1.2.13
 [1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
 [1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
 [1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10

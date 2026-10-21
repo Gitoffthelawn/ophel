@@ -8,6 +8,10 @@
 
 ## [Unreleased]
 
+---
+
+## [1.2.13][1.2.13] - 2026-10-21
+
 ### ✨ 功能优化
 
 - **Gemini 新版界面适配** — 适配 Gemini 统一后的新版界面，任务（原 Spark）对话现可正常同步至对话管理，并修复新对话页输入框自动隐藏失效的问题。 (#977)
@@ -1630,6 +1634,7 @@
 
 ---
 
+[1.2.13]: https://github.com/urzeye/ophel/releases/tag/v1.2.13
 [1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
 [1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
 [1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10
