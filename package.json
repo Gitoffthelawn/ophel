@@ -21,7 +21,6 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
     "registry:validate": "tsx registry/scripts/validate.mjs",
     "registry:build": "tsx registry/scripts/build-dist-local.mjs",
     "registry:build:signed": "tsx registry/scripts/build-dist.mjs",

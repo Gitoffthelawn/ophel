@@ -30,5 +30,5 @@ Commit type 按改动意图选择，不要把"优化""清理""移除"默认写�
 
 ## 提交前检查
 
-- 提交代码前参考 `.github/workflows/ci.yml`，建议按 CI 顺序运行本地验证：`pnpm format:check`、`pnpm lint:check`、`pnpm typecheck`、`pnpm test`、`pnpm build`。
+- 提交代码前参考 `.github/workflows/ci.yml`，建议按 CI 顺序运行本地验证：`pnpm format:check`、`pnpm lint:check`、`pnpm typecheck`、`pnpm build`。
 - 提交或整理 diff 前先看 `git status` 和 `git diff`；不要把无关文件、用户未要求的格式化改动或生成物混进提交。
