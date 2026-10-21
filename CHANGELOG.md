@@ -11,15 +11,14 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ### ✨ Improvements
 
-- **Gemini unified layout adaptation** — Adapted to Gemini's unified layout: task (formerly Spark) conversations now sync into conversation management like regular chats, auto-hide input works again on conversation pages, and outdated special handling for the old standalone Spark interface was removed.
-- **Z.ai adaptation updates** — The extension now recognizes Z.ai's new domain zchat.z.ai, so outline, export, Zen Mode, and other Z.ai features work on both chat.z.ai and zchat.z.ai; also fixed an issue where enabling panel avoidance squeezed the input box on the new chat page, making it much narrower than normal.
-- **Current site domain in popup** — The popup's current-site card now shows the exact domain you're on (like chat.z.ai), and for sites with multiple domains (Kimi, Z.ai) you can click the domain to switch to another entry without leaving the popup.
-- **Popup quick access polish** — Tiles for multi-entry sites (like Kimi and Z.ai) no longer show an extra domain line, so icons and names in the same row are neatly aligned; the active entry domain now appears when hovering the tile instead. Clicking an adapter pack with no bound domain (like DeepSeek Harness) opens the Adapter Center's Installed tab and highlights that pack, and jumping to a tall section now lands at the top of the section instead of scrolling to its bottom. (#982)
+- **Gemini unified layout adaptation** — Adapted to Gemini's unified layout so task (formerly Spark) conversations sync into chat management normally, and restored auto-hide input on redesigned conversation pages. (#977)
+- **Z.ai new domain and input width fix** — Added support for Z.ai's new domain `zchat.z.ai`, and fixed an issue where enabling panel avoidance squeezed the input box on new chat pages. (#979)
+- **Popup quick access and site pack navigation** — The popup now supports multi-entry domain switching with cleaner tile alignment, and clicking unbound site packs jumps directly to the corresponding settings card. (#979, #982)
 
 ### 🐛 Bug Fixes
 
-- **Grok page layout update adaptation** — Fixed issues caused by Grok's page update: the outline no longer generated, the panel covered the chat area instead of making room for it, and the panel's scroll-to-top/bottom buttons scrolled the sidebar instead of the conversation.
-- **Missing questions in Doubao long-chat outline** — Fixed an issue in long Doubao conversations where the outline only kept recently viewed questions and earlier ones went missing; the outline now fills in every question using Doubao's own conversation index, and clicking an entry jumps to it correctly.
+- **Grok page layout update adaptation** — Fixed issues after Grok's page update where the outline failed to generate, panel avoidance covered the chat area, and scroll-to-top/bottom buttons scrolled the sidebar instead of the conversation. (#980)
+- **Missing questions in Doubao long-chat outline** — Fixed an issue in long Doubao conversations where earlier questions went missing from the outline and could not be jumped to. (#981)
 
 ---
 
