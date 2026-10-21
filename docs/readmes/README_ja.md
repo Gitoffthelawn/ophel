@@ -244,7 +244,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
+      <img src="https://github.com/user-attachments/assets/369f1bbd-c66b-4b97-8007-d7e669e46b31" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -260,7 +260,7 @@
       <sub><b>anonymous</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <img src="https://github.com/user-attachments/assets/f9d63951-0ba6-4e27-b5c9-da5e0e1228ac" width="84px;" alt="**然" /><br />
       <sub><b>**然</b></sub>
     </td>
   </tr>
