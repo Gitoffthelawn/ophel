@@ -15,7 +15,12 @@ import { SettingsIcon } from "~components/icons/SettingsIcon"
 import { StarIcon } from "~components/icons/StarIcon"
 import { TimeIcon } from "~components/icons/TimeIcon"
 import { Tooltip } from "~components/ui/Tooltip"
-import { ABOUT_SPONSOR_SETTING_ID, NAV_IDS } from "~constants"
+import {
+  ABOUT_SPONSOR_SETTING_ID,
+  NAV_IDS,
+  SITE_PACKS_TAB_IDS,
+  sitePackInstalledSettingId,
+} from "~constants"
 import type { SupportedAiPlatform } from "~constants/defaults"
 import {
   buildQuickAccessSites,
@@ -319,9 +324,10 @@ function IndexPopup() {
     }
   }
 
-  const openOptionsPage = (page?: string, settingId?: string) => {
+  const openOptionsPage = (page?: string, settingId?: string, subTab?: string) => {
     const params = new URLSearchParams()
     if (page) params.set("page", page)
+    if (subTab) params.set("subTab", subTab)
     if (settingId) params.set("settingId", settingId)
     const query = params.toString()
     // Use tabs.create as fallback for popup context
@@ -355,7 +361,17 @@ function IndexPopup() {
   const openQuickAccessSite = (site: QuickAccessSite) => {
     const url = resolveQuickAccessUrl(site, lastEntryUrls)
     if (!url) {
-      openOptionsPage("sitePacks")
+      // 未绑定域名的适配包：直接定位到适配中心「已安装」里对应的包卡片
+      const packId = site.platform.id.startsWith("pack:") ? site.platform.id.slice(5) : null
+      if (packId) {
+        openOptionsPage(
+          NAV_IDS.SITE_PACKS,
+          sitePackInstalledSettingId(packId),
+          SITE_PACKS_TAB_IDS.INSTALLED,
+        )
+      } else {
+        openOptionsPage(NAV_IDS.SITE_PACKS)
+      }
       return
     }
     // 单入口平台的打开目标可由 urls[0] 推导，无需落盘
@@ -559,13 +575,6 @@ function IndexPopup() {
                 const resolvedUrl = resolveQuickAccessUrl(site, lastEntryUrls)
                 // 停用的内置站点：保留导航能力，弱化展示并标注状态
                 const tileDisabled = isQuickAccessTileDisabled(site.platform, disabledSites)
-                const subtitle = tileDisabled
-                  ? t("popupSiteDisabled")
-                  : site.urls.length === 0
-                    ? t("popupSitePackUnbound")
-                    : site.urls.length > 1 && resolvedUrl
-                      ? hostOf(resolvedUrl)
-                      : null
                 return (
                   <div className="popup-site-tile" key={site.key}>
                     <Tooltip
@@ -586,7 +595,6 @@ function IndexPopup() {
                           fallbackClassName="popup-site-emoji"
                         />
                         <span className="popup-site-title">{site.platform.name}</span>
-                        {subtitle && <span className="popup-site-subtitle">{subtitle}</span>}
                       </button>
                     </Tooltip>
                     {site.urls.length > 1 && (
