@@ -9,6 +9,10 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Gemini unified layout adaptation** — Adapted to Gemini's unified layout: task (formerly Spark) conversations now sync into conversation management like regular chats, auto-hide input works again on conversation pages, and outdated special handling for the old standalone Spark interface was removed.
+
 ---
 
 ## [1.2.12][1.2.12] - 2026-10-12
