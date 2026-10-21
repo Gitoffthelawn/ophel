@@ -210,10 +210,11 @@ jobs:
             build/userscript/ophel.user.js \
             build/userscript/userscript-assets/manifest.json
 
-      - name: Verify userscript assets on jsDelivr
-        run: |
-          node scripts/verify-userscript-assets.mjs \
-            ${{ steps.userscript_assets_final.outputs.commit }}
+      # 暂时停用：jsDelivr 缓存生效慢，该步骤轮询耗时过长，占用过多 Actions 额度
+      # - name: Verify userscript assets on jsDelivr
+      #   run: |
+      #     node scripts/verify-userscript-assets.mjs \
+      #       ${{ steps.userscript_assets_final.outputs.commit }}
 
       - name: Rename artifacts for release
         run: |
