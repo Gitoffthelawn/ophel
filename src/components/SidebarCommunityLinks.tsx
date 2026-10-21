@@ -1,17 +1,30 @@
-import React, { useMemo } from "react"
+import React, { useMemo, useSyncExternalStore } from "react"
 import { DiscordIcon } from "~components/icons/DiscordIcon"
 import { GithubIcon } from "~components/icons/GithubIcon"
 import { KofiIcon } from "~components/icons/KofiIcon"
 import { ScriptCatIcon } from "~components/icons/StoreIcons"
 import { Tooltip } from "~components/ui/Tooltip"
+import { ABOUT_SPONSOR_SETTING_ID, NAV_IDS } from "~constants"
 import { STORE_LINKS } from "~constants/store-links"
 import { isScriptCatUserscriptManager } from "~platform/utils"
+import { GITHUB_REPO_URL, getDonateChannels } from "~utils/donate-channels"
 import { getStoreInfo } from "~utils/getStoreInfo"
-import { t } from "~utils/i18n"
+import { getCurrentLang, subscribeI18nChanges, t } from "~utils/i18n"
 
 export function SidebarCommunityLinks() {
   const storeInfo = useMemo(() => getStoreInfo(), [])
   const showScriptCat = useMemo(() => isScriptCatUserscriptManager(), [])
+  const language = useSyncExternalStore(subscribeI18nChanges, getCurrentLang, getCurrentLang)
+  const donateChannels = getDonateChannels(language)
+
+  // zh-CN 下赞助入口跳“关于-赞助支持”扫码区块，其余语言外链 Ko-fi
+  const openSponsor = () => {
+    window.dispatchEvent(
+      new CustomEvent("ophel:navigateSettingsPage", {
+        detail: { page: NAV_IDS.ABOUT, settingId: ABOUT_SPONSOR_SETTING_ID },
+      }),
+    )
+  }
 
   return (
     <div className="sidebar-community-links">
@@ -41,7 +54,7 @@ export function SidebarCommunityLinks() {
 
       <Tooltip content={t("giveStar")}>
         <a
-          href="https://github.com/urzeye/ophel"
+          href={GITHUB_REPO_URL}
           target="_blank"
           rel="noopener noreferrer"
           aria-label={t("giveStar")}
@@ -51,22 +64,32 @@ export function SidebarCommunityLinks() {
       </Tooltip>
 
       <Tooltip content={t("kofiSupport")}>
-        <a
-          href="https://ko-fi.com/urzeye"
-          target="_blank"
-          rel="noopener noreferrer"
-          aria-label={t("kofiSupport")}
-          className="sidebar-social-btn kofi-btn">
-          <KofiIcon size={18} />
-        </a>
+        {donateChannels.kind === "zh-CN" ? (
+          <button
+            type="button"
+            aria-label={t("kofiSupport")}
+            className="sidebar-social-btn kofi-btn"
+            onClick={openSponsor}>
+            <KofiIcon size={18} />
+          </button>
+        ) : (
+          <a
+            href={donateChannels.primaryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label={t("kofiSupport")}
+            className="sidebar-social-btn kofi-btn">
+            <KofiIcon size={18} />
+          </a>
+        )}
       </Tooltip>
 
-      <Tooltip content={t("discordCommunity")}>
+      <Tooltip content={t("joinDiscordCommunity")}>
         <a
           href="https://discord.gg/rmPzb6Cx9u"
           target="_blank"
           rel="noopener noreferrer"
-          aria-label={t("discordCommunity")}
+          aria-label={t("joinDiscordCommunity")}
           className="sidebar-social-btn discord-btn">
           <DiscordIcon size={18} />
         </a>

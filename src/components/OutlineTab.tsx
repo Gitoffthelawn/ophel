@@ -1,3 +1,4 @@
+import { isIgnoredMutation } from "~utils/dom-mutations"
 import { MagicCodex } from "~components/MagicCodex"
 import { isMacOS } from "~constants/shortcuts"
 import { buildStructuredTips } from "~utils/build-structured-tips"
@@ -9,18 +10,21 @@ import {
   ClearIcon,
   CollapseAllIcon,
   CopyIcon,
-  CopyOutlineIcon,
   ExpandAllIcon,
+  ExportIcon,
   LocateIcon,
   OutlineDocumentIcon,
   ScrollBottomIcon,
   ScrollTopIcon,
   SearchIcon,
+  SparkleIcon,
   StarIcon,
   UserQueryIcon,
 } from "~components/icons"
 import { Tooltip } from "~components/ui/Tooltip"
 import type { ConversationManager } from "~core/conversation-manager"
+import { markExportDiscoveredQuiet, useExportDiscovered } from "~hooks/useExportDiscovered"
+import { useHasUnseenReleaseNotes } from "~hooks/useHasUnseenReleaseNotes"
 import { signalReadingHistoryUserNavigation } from "~utils/reading-history-navigation"
 import type { OutlineManager, OutlineNode } from "~core/outline-manager"
 import type { OutlineSource } from "~adapters/base"
@@ -29,7 +33,10 @@ import {
   createOutlineTextFromExportMessages,
   createOutlineTextFromOutlineTree,
 } from "~utils/export-outline"
+import { buildVisibilityMaps } from "~utils/outline-visibility"
+import { cleanOutlineTitle } from "~utils/outline-text"
 import { t, getCurrentLang } from "~utils/i18n"
+import { APP_VERSION } from "~utils/config"
 import { formatWordCount } from "~utils/format"
 import { showToast } from "~utils/toast"
 
@@ -91,124 +98,6 @@ const writeClipboardText = async (text: string): Promise<void> => {
   }
 }
 
-const buildVisibilityMaps = (
-  tree: OutlineNode[],
-  displayLevel: number,
-  minRelativeLevel: number,
-  searchQuery: string,
-  searchLevelManual: boolean,
-  bookmarkMode: boolean,
-) => {
-  const parentMap: Record<number, number | null> = {}
-  const parentNodeMap = new WeakMap<OutlineNode, OutlineNode | null>()
-  const visibleNodeSet = new WeakSet<OutlineNode>()
-  const visibleMap: Record<number, boolean> = {}
-  const bookmarkMemo = new Map<number, boolean>()
-
-  const hasBookmarkInSubtree = (node: OutlineNode): boolean => {
-    const cached = bookmarkMemo.get(node.index)
-    if (cached !== undefined) return cached
-    let has = !!node.isBookmarked
-    if (!has && node.children && node.children.length > 0) {
-      for (const child of node.children) {
-        if (hasBookmarkInSubtree(child)) {
-          has = true
-          break
-        }
-      }
-    }
-    bookmarkMemo.set(node.index, has)
-    return has
-  }
-
-  const hasBookmarkInDescendants = (node: OutlineNode): boolean => {
-    if (!node.children || node.children.length === 0) return false
-    return node.children.some(hasBookmarkInSubtree)
-  }
-
-  const traverse = (
-    node: OutlineNode,
-    parentIndex: number | null,
-    parentNode: OutlineNode | null,
-    parentCollapsed: boolean,
-    parentForceExpanded: boolean,
-    ancestorHasBookmark: boolean,
-  ) => {
-    parentMap[node.index] = parentIndex
-    parentNodeMap.set(node, parentNode)
-
-    const nodeHasBookmark = hasBookmarkInSubtree(node)
-    const isBookmarkRelevant = nodeHasBookmark || ancestorHasBookmark
-
-    let shouldShow: boolean
-    if (bookmarkMode) {
-      if (isBookmarkRelevant) {
-        const isSearchMatch = !searchQuery || node.isMatch || node.hasMatchedDescendant
-        shouldShow = !parentCollapsed && isSearchMatch
-      } else {
-        shouldShow = false
-      }
-    } else {
-      const isRootNode = node.relativeLevel === minRelativeLevel
-      const isLevelAllowed = node.relativeLevel <= displayLevel || parentForceExpanded
-
-      if (isRootNode) {
-        if (searchQuery) {
-          shouldShow = node.isMatch || node.hasMatchedDescendant
-        } else {
-          shouldShow = true
-        }
-      } else {
-        const isRelevant =
-          !searchQuery || node.isMatch || node.hasMatchedDescendant || parentForceExpanded
-
-        if (searchQuery && !searchLevelManual) {
-          shouldShow = isRelevant && !parentCollapsed
-        } else if (searchQuery && searchLevelManual) {
-          shouldShow = isRelevant && isLevelAllowed && !parentCollapsed
-        } else {
-          shouldShow = isLevelAllowed && !parentCollapsed
-        }
-      }
-
-      if (parentCollapsed) {
-        shouldShow = false
-      }
-    }
-
-    if (node.forceVisible) {
-      shouldShow = true
-    }
-
-    visibleMap[node.index] = shouldShow
-    if (shouldShow) {
-      visibleNodeSet.add(node)
-    }
-
-    const childParentCollapsed = node.collapsed || parentCollapsed
-    const childParentForceExpanded = node.forceExpanded || parentForceExpanded
-    const childAncestorHasBookmark =
-      ancestorHasBookmark || (node.isBookmarked && !hasBookmarkInDescendants(node))
-
-    if (node.children && node.children.length > 0) {
-      node.children.forEach((child) => {
-        traverse(
-          child,
-          node.index,
-          node,
-          childParentCollapsed,
-          childParentForceExpanded,
-          childAncestorHasBookmark,
-        )
-      })
-    }
-  }
-
-  tree.forEach((root) => traverse(root, null, null, false, false, false))
-
-  return { parentMap, parentNodeMap, visibleMap, visibleNodeSet }
-}
-
 const getConversationCopyHeadingLevel = (expandLevel: number, showUserQueries: boolean): number => {
   // When user queries are hidden and expandLevel is 0, we should still copy all visible headings
   // because the panel shows AI response headings even when expandLevel is 0
@@ -231,9 +120,7 @@ const OUTLINE_FALLBACK_VIEWPORT_HEIGHT = 420
 const OUTLINE_HEIGHT_DRIFT_TOLERANCE = 1
 const OUTLINE_LOCATE_HIGHLIGHT_MS = 3000
 const OUTLINE_LOCATE_RETRY_DELAY_MS = 50
-const OUTLINE_LOCATE_MAX_RETRIES = Math.ceil(
-  OUTLINE_LOCATE_HIGHLIGHT_MS / OUTLINE_LOCATE_RETRY_DELAY_MS,
-)
+const OUTLINE_LOCATE_MAX_RETRIES = 20
 
 type OutlineScrollBlock = "start" | "center" | "end" | "nearest"
 
@@ -392,9 +279,17 @@ const OutlineNodeView: React.FC<{
   extractUserQueryText,
 }) => {
   const hasChildren = node.children && node.children.length > 0
-  // Legacy: isExpanded 直接看 hasChildren 和 collapsed，不考虑搜索
-  // 箭头始终显示（只要有子节点），因为用户可能想手动展开查看不匹配的子节点
+  // 只要有子节点就显示箭头，允许手动展开查看不匹配的子节点
   const isExpanded = hasChildren && !node.collapsed
+
+  // ===== 展示文本（仅展示层清洗，node.text 始终保留原文供复制/书签/跳转匹配使用）=====
+  const cleanUserQueryTitles = useSettingsStore(
+    (s) => s.settings.content?.userQueryMarkdown ?? true,
+  )
+  const displayText = useMemo(
+    () => (node.isUserQuery && cleanUserQueryTitles ? cleanOutlineTitle(node.text) : node.text),
+    [node.isUserQuery, node.text, cleanUserQueryTitles],
+  )
 
   // ===== 复制处理 (阻止冒泡) =====
   const [copySuccess, setCopySuccess] = useState(false)
@@ -425,7 +320,7 @@ const OutlineNodeView: React.FC<{
       setCopySuccess(true)
       setTimeout(() => setCopySuccess(false), 1500)
     } catch (err) {
-      console.error("[DEBUG] Clipboard API failed, trying fallback:", err)
+      console.error("[OutlineTab] Clipboard API failed, trying fallback:", err)
       // 备用方案：使用 execCommand
       try {
         const textArea = document.createElement("textarea")
@@ -439,7 +334,7 @@ const OutlineNodeView: React.FC<{
         setCopySuccess(true)
         setTimeout(() => setCopySuccess(false), 1500)
       } catch (fallbackErr) {
-        console.error("[DEBUG] Fallback copy also failed:", fallbackErr)
+        console.error("[OutlineTab] Fallback copy also failed:", fallbackErr)
       }
     }
   }
@@ -447,7 +342,7 @@ const OutlineNodeView: React.FC<{
   // ===== 状态控制：鼠标悬停在操作按钮时不显示主 Tooltip =====
   const [isHoveringAction, setIsHoveringAction] = useState(false)
 
-  // ===== CSS 类名 (Legacy exact) =====
+  // ===== CSS 类名 =====
   const itemClassName = [
     "outline-item",
     `outline-level-${node.relativeLevel}`,
@@ -457,13 +352,13 @@ const OutlineNodeView: React.FC<{
     .filter(Boolean)
     .join(" ")
 
-  // ===== 搜索高亮处理 (Legacy: regex split) =====
+  // ===== 搜索高亮处理 =====
   const renderTextWithHighlight = () => {
     if (searchQuery && node.isMatch) {
       try {
         const escapedQuery = searchQuery.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
         const regex = new RegExp(`(${escapedQuery})`, "gi")
-        const parts = node.text.split(regex)
+        const parts = displayText.split(regex)
         return (
           <>
             {parts.map((part, i) =>
@@ -485,10 +380,10 @@ const OutlineNodeView: React.FC<{
           </>
         )
       } catch {
-        return node.text
+        return displayText
       }
     }
-    return node.text
+    return displayText
   }
 
   return (
@@ -497,13 +392,13 @@ const OutlineNodeView: React.FC<{
       content={
         node.wordCount && node.wordCount > 0 ? (
           <div>
-            {node.text}
+            {displayText}
             <div style={{ fontSize: "12px", opacity: 0.8, marginTop: "2px" }}>
               ({formatWordCount(node.wordCount, getCurrentLang())} {t("words")})
             </div>
           </div>
         ) : (
-          node.text
+          displayText
         )
       }
       disabled={isHoveringAction}
@@ -516,7 +411,7 @@ const OutlineNodeView: React.FC<{
         data-level={node.relativeLevel}
         ref={(el) => setItemRef(node.index, el)}
         onClick={() => onClick(node)}>
-        {/* 折叠箭头 (Legacy: ▸) - 使用 hasChildren 显示箭头，允许手动展开 */}
+        {/* 折叠箭头 - 使用 hasChildren 显示箭头，允许手动展开 */}
         <span
           className={`outline-item-toggle ${hasChildren ? (isExpanded ? "expanded" : "") : "invisible"}`}
           onClick={(e) => {
@@ -718,6 +613,16 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
   const isMac = React.useMemo(() => isMacOS(), [])
   const shortcutNotSetLabel = t("shortcutNotSet")
 
+  // 当前版本更新日志未读时，在主空态显示更新横幅
+  const hasUnseenReleaseNotes = useHasUnseenReleaseNotes()
+
+  // 导出按钮流光引导：仅在用户从未触发过导出时展示
+  const exportDiscovered = useExportDiscovered()
+
+  const openReleaseNotesFromBanner = useCallback(() => {
+    window.dispatchEvent(new CustomEvent("ophel:openReleaseNotes"))
+  }, [])
+
   const structuredTips = React.useMemo(
     () => buildStructuredTips(currentSettings.shortcuts?.keybindings, isMac, shortcutNotSetLabel),
     [currentSettings.shortcuts?.keybindings, currentSettings.language, isMac, shortcutNotSetLabel],
@@ -733,7 +638,6 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
   const [scrollState, setScrollState] = useState<"top" | "bottom">("bottom")
   const [expandLevel, setExpandLevel] = useState(initialState.expandLevel ?? 6)
   const [levelCounts, setLevelCounts] = useState<Record<number, number>>(initialState.levelCounts)
-  // New state for legacy parity
   const [displayLevel, setDisplayLevel] = useState(initialState.displayLevel)
   const [minRelativeLevel, setMinRelativeLevel] = useState(initialState.minRelativeLevel)
   const [searchLevelManual, setSearchLevelManual] = useState(initialState.searchLevelManual)
@@ -742,11 +646,8 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
   const [outlineSources, setOutlineSources] = useState<OutlineSource[]>(initialState.sources)
   const [activeSourceId, setActiveSourceId] = useState(initialState.activeSourceId)
   const [isCopyingFullOutline, setIsCopyingFullOutline] = useState(false)
-  const [fullOutlineCopySuccess, setFullOutlineCopySuccess] = useState(false)
   const [outlineScrollTop, setOutlineScrollTop] = useState(0)
   const [outlineViewportHeight, setOutlineViewportHeight] = useState(0)
-
-  // const { bookmarks } = useBookmarkStore() // Removed unused bookmarks
 
   const listRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -763,8 +664,9 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     itemIndexByNodeIndex: new Map(),
   })
   const jumpRequestIdRef = useRef(0)
-  const locateHighlightRef = useRef<{
-    element: Element
+  const activeLocateHighlightRef = useRef<{
+    index: number
+    requestId: number
     timer: ReturnType<typeof setTimeout>
   } | null>(null)
   const pendingLocateHighlightRef = useRef<{
@@ -772,6 +674,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     requestId: number
   } | null>(null)
   const locateHighlightRequestIdRef = useRef(0)
+  const locateRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const userScrollingOutlineRef = useRef(false)
   const userScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const outlineScrollFrameRef = useRef<number | null>(null)
@@ -830,15 +733,6 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
   // 订阅 Manager 更新
   useEffect(() => {
     const update = () => {
-      // 智能滚动：检测用户是否已在底部附近（更新前）
-      /*
-      let wasAtBottom = false
-      if (listRef.current) {
-        const { scrollTop, scrollHeight, clientHeight } = listRef.current
-        wasAtBottom = scrollTop + clientHeight >= scrollHeight - 50 // 50px 容差
-      }
-      */
-
       const state = manager.getState()
 
       const newTotalNodes = countOutlineNodes(state.tree)
@@ -1026,11 +920,34 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     [applySingleSyncHighlight],
   )
 
+  const cancelLocateRetry = useCallback(() => {
+    if (locateRetryTimerRef.current) {
+      clearTimeout(locateRetryTimerRef.current)
+      locateRetryTimerRef.current = null
+    }
+  }, [])
+
+  // 用户手动滚动中止定位时，清理未激活的 pending 高亮与 forceVisible，
+  // 避免目标行之后挂载时延迟触发高亮；已激活的高亮不受影响
+  const abortPendingLocate = useCallback(() => {
+    const pending = pendingLocateHighlightRef.current
+    if (!pending) return
+    if (activeLocateHighlightRef.current?.requestId === pending.requestId) return
+
+    locateHighlightRequestIdRef.current += 1
+    pendingLocateHighlightRef.current = null
+    manager.clearForceVisible()
+  }, [manager])
+
   const applyPendingLocateHighlight = useCallback(
     (index: number): boolean => {
       const pending = pendingLocateHighlightRef.current
-      if (!pending || pending.index !== index || locateHighlightRef.current) {
-        return false
+      if (!pending || pending.index !== index) {
+        return activeLocateHighlightRef.current?.index === index
+      }
+
+      if (activeLocateHighlightRef.current?.requestId === pending.requestId) {
+        return true
       }
 
       const outlineItem = itemRefMap.current.get(index)
@@ -1039,18 +956,20 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
       outlineItem.classList.add("highlight")
       const requestId = pending.requestId
       const timer = setTimeout(() => {
-        outlineItem.classList.remove("highlight")
+        removeOutlineItemClass("highlight")
+        if (activeLocateHighlightRef.current?.requestId === requestId) {
+          activeLocateHighlightRef.current = null
+        }
         if (pendingLocateHighlightRef.current?.requestId === requestId) {
           pendingLocateHighlightRef.current = null
         }
         manager.clearForceVisible()
-        locateHighlightRef.current = null
       }, OUTLINE_LOCATE_HIGHLIGHT_MS)
 
-      locateHighlightRef.current = { element: outlineItem, timer }
+      activeLocateHighlightRef.current = { index, requestId, timer }
       return true
     },
-    [manager],
+    [manager, removeOutlineItemClass],
   )
 
   const setItemRef = useCallback(
@@ -1065,23 +984,30 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
         if (index === visibleHighlightRef.current) {
           applySingleSyncHighlight(index)
         }
-        applyPendingLocateHighlight(index)
+        if (activeLocateHighlightRef.current?.index === index) {
+          el.classList.add("highlight")
+        } else if (pendingLocateHighlightRef.current?.index === index) {
+          if (applyPendingLocateHighlight(index)) {
+            cancelLocateRetry()
+          }
+        }
       } else {
         map.delete(index)
       }
     },
-    [applyPendingLocateHighlight, applySingleSyncHighlight],
+    [applyPendingLocateHighlight, applySingleSyncHighlight, cancelLocateRetry],
   )
 
   const clearLocateHighlight = useCallback(
     (options?: { clearForceVisible?: boolean }) => {
       locateHighlightRequestIdRef.current += 1
       pendingLocateHighlightRef.current = null
+      cancelLocateRetry()
 
-      const current = locateHighlightRef.current
+      const current = activeLocateHighlightRef.current
       if (current) {
         clearTimeout(current.timer)
-        locateHighlightRef.current = null
+        activeLocateHighlightRef.current = null
       }
 
       removeOutlineItemClass("highlight")
@@ -1090,7 +1016,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
         manager.clearForceVisible()
       }
     },
-    [manager, removeOutlineItemClass],
+    [cancelLocateRetry, manager, removeOutlineItemClass],
   )
 
   const getVisibleHighlightIndex = useCallback((idx: number | null): number | null => {
@@ -1178,18 +1104,67 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
 
   useEffect(() => {
     const activeNode = activeNodeRef.current
-    const nextVisible =
-      activeNode && isCurrentVisibilityNode(activeNode)
-        ? getVisibleHeadingHighlightIndex(activeNode)
-        : getVisibleHighlightIndex(activeIndexRef.current)
-    updateVisibleHighlightIndex(nextVisible)
+    const nodeIsCurrent = activeNode !== null && isCurrentVisibilityNode(activeNode)
+    const followMode = settings?.features?.outline?.followMode || "current"
+
+    // 树重建后旧节点对象与 index 一并失效（AI 回复标题并入会让同一 index
+    // 指向完全不同的条目，而根节点数不变不会触发滚动同步重跑）：跟随模式下
+    // 按页面当前阅读位置重算高亮，不能沿用旧 index，否则高亮停在错位条目上。
+    // 虚拟滚动回填场景节点对象按 index 复用（回填条目换成同 index 的挂载条目），
+    // 对象仍“有效”但高亮停在旧位置；且跳转换挂载的瞬时窗口内滚动间谍可能
+    // 已把高亮清成 null——这两种情况都按页面位置重算自愈。
+    // 普通站点 hasPositionlessOutlineNodes 恒为 false，行为不变
+    const hasPositionless = manager.hasPositionlessOutlineNodes()
+    if (
+      followMode === "current" &&
+      (activeIndexRef.current !== null || hasPositionless) &&
+      (!nodeIsCurrent || hasPositionless)
+    ) {
+      const container = manager.getScrollContainer()
+      const freshActive = container ? manager.findMountedActiveNode(container) : null
+      if (!freshActive && manager.holdsVirtualHighlight()) {
+        const retained = manager.findRetainedOutlineNode(activeNode)
+        if (retained) {
+          const retainedVisible = getVisibleHeadingHighlightIndex(retained)
+          const retainedChanged = retainedVisible !== visibleHighlightRef.current
+          updateActiveIndex(retained.index, retained)
+          updateVisibleHighlightIndex(retainedVisible)
+          if (retainedChanged && retainedVisible !== null && !userScrollingOutlineRef.current) {
+            scrollOutlineNodeIntoView(retainedVisible, "center")
+          }
+        } else {
+          updateActiveIndex(null, null)
+          updateVisibleHighlightIndex(null)
+        }
+        return
+      }
+      const freshVisible = getVisibleHeadingHighlightIndex(freshActive)
+      const visibleChanged = freshVisible !== visibleHighlightRef.current
+      updateActiveIndex(freshActive?.index ?? null, freshActive)
+      updateVisibleHighlightIndex(freshVisible)
+      if (visibleChanged && freshVisible !== null && !userScrollingOutlineRef.current) {
+        scrollOutlineNodeIntoView(freshVisible, "center")
+      }
+      return
+    }
+
+    if (nodeIsCurrent && activeNode) {
+      updateVisibleHighlightIndex(getVisibleHeadingHighlightIndex(activeNode))
+      return
+    }
+
+    updateVisibleHighlightIndex(getVisibleHighlightIndex(activeIndexRef.current))
   }, [
     parentMap,
     visibleMap,
     tree.length,
+    manager,
+    settings?.features?.outline?.followMode,
     isCurrentVisibilityNode,
     getVisibleHeadingHighlightIndex,
     getVisibleHighlightIndex,
+    scrollOutlineNodeIntoView,
+    updateActiveIndex,
     updateVisibleHighlightIndex,
   ])
 
@@ -1209,6 +1184,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     let resizeObserver: ResizeObserver | null = null
     let scrollSyncFrame: number | null = null
     let outlineAutoScrollFrame: number | null = null
+    let contentSyncTimer: ReturnType<typeof setTimeout> | null = null
     const mutationObservers = new Map<Node, MutationObserver>()
 
     const handleResize = () => {
@@ -1219,12 +1195,20 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     const observeRoot = (root: Node) => {
       if (mutationObservers.has(root)) return
 
-      const observer = new MutationObserver(() => {
-        manager.markScrollPositionsStale()
-        handleScroll()
+      const observer = new MutationObserver((mutations) => {
+        if (mutations.every((mutation) => isIgnoredMutation(mutation, ".gh-inline-bookmark")))
+          return
+        if (contentSyncTimer !== null) return
+
+        // 内容更新合批重测，真实滚动仍逐帧同步；不能每个 token 都重测整份大纲。
+        contentSyncTimer = setTimeout(() => {
+          contentSyncTimer = null
+          manager.markScrollPositionsStale()
+          handleScroll()
+        }, 100)
       })
 
-      observer.observe(root, { childList: true, subtree: true })
+      observer.observe(root, { childList: true, subtree: true, characterData: true })
       mutationObservers.set(root, observer)
     }
 
@@ -1275,6 +1259,8 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
       const idx = activeNode?.index ?? null
 
       if (idx === null) {
+        // 虚拟列表当前屏幕没有可测标题时保持上一次高亮，避免用离屏缓存跳到别的条目
+        if (manager.holdsVirtualHighlight()) return
         if (activeIndexRef.current !== null) {
           updateActiveIndex(null)
         }
@@ -1356,6 +1342,10 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
       }
       mutationObservers.forEach((observer) => observer.disconnect())
       mutationObservers.clear()
+      if (contentSyncTimer !== null) {
+        clearTimeout(contentSyncTimer)
+        contentSyncTimer = null
+      }
       if (resizeObserver) {
         resizeObserver.disconnect()
         resizeObserver = null
@@ -1411,23 +1401,34 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     syncOutlineScrollState(true)
   }, [syncOutlineScrollState, virtualMetrics.totalHeight])
 
-  // 用户手动滚动大纲面板时，暂停自动定位（修复 Firefox 滚轮事件传播导致的回弹）
+  // 用户手动滚动大纲面板时，暂停自动定位与跟随，并立即取消正在进行的定位重试，避免强制拉回造成抖动
   useEffect(() => {
     const el = listRef.current
     if (!el) return
-    const onWheel = () => {
+
+    const handleUserScroll = () => {
       userScrollingOutlineRef.current = true
+      cancelLocateRetry()
+      abortPendingLocate()
       if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current)
       userScrollTimerRef.current = setTimeout(() => {
         userScrollingOutlineRef.current = false
       }, 1500)
     }
-    el.addEventListener("wheel", onWheel, { passive: true })
+
+    el.addEventListener("wheel", handleUserScroll, { passive: true })
+    el.addEventListener("pointerdown", handleUserScroll, { passive: true })
+    el.addEventListener("touchstart", handleUserScroll, { passive: true })
+    el.addEventListener("touchmove", handleUserScroll, { passive: true })
+
     return () => {
-      el.removeEventListener("wheel", onWheel)
+      el.removeEventListener("wheel", handleUserScroll)
+      el.removeEventListener("pointerdown", handleUserScroll)
+      el.removeEventListener("touchstart", handleUserScroll)
+      el.removeEventListener("touchmove", handleUserScroll)
       if (userScrollTimerRef.current) clearTimeout(userScrollTimerRef.current)
     }
-  }, [])
+  }, [abortPendingLocate, cancelLocateRetry])
 
   const handleToggle = useCallback(
     (node: OutlineNode) => {
@@ -1547,9 +1548,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
       }
 
       await writeClipboardText(result.text)
-      setFullOutlineCopySuccess(true)
       showToast(t("outlineFullCopySuccess").replace("{count}", String(result.count)))
-      window.setTimeout(() => setFullOutlineCopySuccess(false), 1500)
     } catch (error) {
       console.error("[OutlineTab] Failed to copy outline:", error)
       showToast(t("copyFailed"))
@@ -1565,6 +1564,16 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     tree,
     visibleMap,
   ])
+
+  // 大纲 tab 挂载期间把"复制大纲"暴露给导出对话框（对话框在 App 层，tab 未挂载时隐藏该入口）
+  useEffect(() => {
+    window.__ophelCopyFullOutline = handleCopyFullOutline
+    return () => {
+      if (window.__ophelCopyFullOutline === handleCopyFullOutline) {
+        delete window.__ophelCopyFullOutline
+      }
+    }
+  }, [handleCopyFullOutline])
 
   // 用于提取完整用户提问文本（当显示被截断时）
   const extractUserQueryText = useCallback(
@@ -1617,10 +1626,17 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     }
   }, [scrollState])
 
-  // Legacy: locateCurrentPosition 完全复刻
+  // 定位当前阅读位置
   const handleLocateCurrent = useCallback(() => {
     const scrollContainer = manager.getScrollContainer()
     if (!scrollContainer) return
+
+    // 用户主动触发定位时解除手动滚动锁定，避免被 1.5s 抑制窗口静默拦截
+    userScrollingOutlineRef.current = false
+    if (userScrollTimerRef.current) {
+      clearTimeout(userScrollTimerRef.current)
+      userScrollTimerRef.current = null
+    }
 
     // 0. 如果在搜索模式，先清除搜索
     if (searchQuery) {
@@ -1647,40 +1663,53 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     const viewportTop = containerRect.top
     const viewportBottom = containerRect.bottom
 
-    const mountedActiveIndex = manager.findMountedActiveItemIndex(scrollContainer)
-    let currentItem =
-      mountedActiveIndex !== null
-        ? allItems.find((item) => item.index === mountedActiveIndex) || null
-        : null
+    const findCurrentItem = (items: typeof tree): (typeof tree)[number] | null => {
+      const mountedActiveIndex = manager.findMountedActiveItemIndex(scrollContainer)
+      let found =
+        mountedActiveIndex !== null
+          ? items.find((item) => item.index === mountedActiveIndex) || null
+          : null
 
-    if (!currentItem) {
-      for (const item of allItems) {
-        if (!item.element || !item.element.isConnected) continue
+      if (!found) {
+        for (const item of items) {
+          if (!item.element || !item.element.isConnected) continue
 
-        const rect = item.element.getBoundingClientRect()
-        if (rect.top >= viewportTop && rect.top < viewportBottom) {
-          currentItem = item
-          break
-        }
-        if (rect.top < viewportTop && rect.bottom > viewportTop) {
-          currentItem = item
-          break
+          const rect = item.element.getBoundingClientRect()
+          if (rect.top >= viewportTop && rect.top < viewportBottom) {
+            found = item
+            break
+          }
+          if (rect.top < viewportTop && rect.bottom > viewportTop) {
+            found = item
+            break
+          }
         }
       }
+
+      if (!found) {
+        // 找最接近视口顶部的元素
+        let minDistance = Infinity
+        for (const item of items) {
+          if (!item.element || !item.element.isConnected) continue
+          const rect = item.element.getBoundingClientRect()
+          const distance = Math.abs(rect.top - viewportTop)
+          if (distance < minDistance) {
+            minDistance = distance
+            found = item
+          }
+        }
+      }
+
+      return found
     }
 
-    if (!currentItem) {
-      // 找最接近视口顶部的元素
-      let minDistance = Infinity
-      for (const item of allItems) {
-        if (!item.element || !item.element.isConnected) continue
-        const rect = item.element.getBoundingClientRect()
-        const distance = Math.abs(rect.top - viewportTop)
-        if (distance < minDistance) {
-          minDistance = distance
-          currentItem = item
-        }
-      }
+    let currentItem = findCurrentItem(allItems)
+
+    if (!currentItem && manager.hasPositionlessOutlineNodes()) {
+      // 虚拟滚动回填站点：树可能冻结在跳转前的旧视口（元素全部卸载），
+      // 立即刷新后基于最新树重找一次
+      manager.refresh(undefined, true)
+      currentItem = findCurrentItem(flattenTree(manager.getState().tree))
     }
 
     if (!currentItem) return
@@ -1698,38 +1727,69 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
     // 4. 虚拟列表需要先滚动到目标行，等待该行挂载后再加高亮
     const tryScrollAndHighlight = (attempt: number) => {
       if (locateHighlightRequestId !== locateHighlightRequestIdRef.current) return
+      if (userScrollingOutlineRef.current) {
+        cancelLocateRetry()
+        abortPendingLocate()
+        return
+      }
+
+      // 如果高亮已经成功激活，说明目标已定位并展示，无需再滚动或重试
+      if (activeLocateHighlightRef.current?.requestId === locateHighlightRequestId) {
+        cancelLocateRetry()
+        return
+      }
 
       scrollOutlineNodeIntoView(currentItem!.index, "center")
 
       requestAnimationFrame(() => {
         if (locateHighlightRequestId !== locateHighlightRequestIdRef.current) return
+        if (userScrollingOutlineRef.current) {
+          cancelLocateRetry()
+          abortPendingLocate()
+          return
+        }
 
-        if (applyPendingLocateHighlight(currentItem!.index)) return
+        if (applyPendingLocateHighlight(currentItem!.index)) {
+          cancelLocateRetry()
+          return
+        }
 
         if (attempt < OUTLINE_LOCATE_MAX_RETRIES) {
-          setTimeout(() => tryScrollAndHighlight(attempt + 1), OUTLINE_LOCATE_RETRY_DELAY_MS)
-        } else if (pendingLocateHighlightRef.current?.requestId === locateHighlightRequestId) {
-          pendingLocateHighlightRef.current = null
-          manager.clearForceVisible()
+          locateRetryTimerRef.current = setTimeout(
+            () => tryScrollAndHighlight(attempt + 1),
+            OUTLINE_LOCATE_RETRY_DELAY_MS,
+          )
+        } else {
+          cancelLocateRetry()
+          if (pendingLocateHighlightRef.current?.requestId === locateHighlightRequestId) {
+            pendingLocateHighlightRef.current = null
+            manager.clearForceVisible()
+          }
         }
       })
     }
 
-    setTimeout(() => tryScrollAndHighlight(0), OUTLINE_LOCATE_RETRY_DELAY_MS)
+    locateRetryTimerRef.current = setTimeout(
+      () => tryScrollAndHighlight(0),
+      OUTLINE_LOCATE_RETRY_DELAY_MS,
+    )
   }, [
     tree,
     searchQuery,
     manager,
+    abortPendingLocate,
     applyPendingLocateHighlight,
+    cancelLocateRetry,
     clearLocateHighlight,
     scrollOutlineNodeIntoView,
   ])
 
   useEffect(
     () => () => {
+      cancelLocateRetry()
       clearLocateHighlight({ clearForceVisible: true })
     },
-    [clearLocateHighlight],
+    [cancelLocateRetry, clearLocateHighlight],
   )
 
   const handleLevelClick = useCallback(
@@ -1737,6 +1797,56 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
       manager.setLevel(level)
     },
     [manager],
+  )
+
+  // 层级滑块拖拽：拖动过程中只更新视觉预览（进度条与高亮点），
+  // 松手后才真正应用层级，避免快速拖过多个层级时反复重建大纲树
+  const [levelDragPreview, setLevelDragPreview] = useState<number | null>(null)
+  const levelDotsRef = useRef<HTMLDivElement>(null)
+  const sliderLevel = levelDragPreview ?? expandLevel
+
+  const getLevelFromClientX = useCallback((clientX: number): number => {
+    const el = levelDotsRef.current
+    if (!el) return 0
+    const rect = el.getBoundingClientRect()
+    // 圆点按 space-between 分布：首点中心在 dotSize/2，末点中心在 width - dotSize/2
+    const dotSize = 14
+    const usableWidth = rect.width - dotSize
+    if (usableWidth <= 0) return 0
+    const ratio = (clientX - rect.left - dotSize / 2) / usableWidth
+    return Math.min(6, Math.max(0, Math.round(ratio * 6)))
+  }, [])
+
+  const handleLevelPointerDown = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      // 只响应主键：右键/中键不应触发层级调整，也避免吞掉右键菜单
+      if (e.button !== 0) return
+      if (bookmarkMode) return
+      e.preventDefault()
+      e.currentTarget.setPointerCapture(e.pointerId)
+      setLevelDragPreview(getLevelFromClientX(e.clientX))
+    },
+    [bookmarkMode, getLevelFromClientX],
+  )
+
+  const handleLevelPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+      setLevelDragPreview(getLevelFromClientX(e.clientX))
+    },
+    [getLevelFromClientX],
+  )
+
+  const finishLevelDrag = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>, commit: boolean) => {
+      if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+      e.currentTarget.releasePointerCapture(e.pointerId)
+      if (commit) {
+        handleLevelClick(getLevelFromClientX(e.clientX))
+      }
+      setLevelDragPreview(null)
+    },
+    [getLevelFromClientX, handleLevelClick],
   )
 
   // 监听快捷键触发的定位事件
@@ -1820,27 +1930,8 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
                       ? t("outlineCollapseAll")
                       : t("outlineExpandAll")
                 }
-                className="outline-toolbar-btn">
+                className="outline-toolbar-btn outline-narrow-optional">
                 {isAllExpanded ? <CollapseAllIcon size={18} /> : <ExpandAllIcon size={18} />}
-              </button>
-            </Tooltip>
-
-            {/* Copy Outline */}
-            <Tooltip
-              content={isCopyingFullOutline ? t("outlineCopyFullRunning") : t("outlineCopyFull")}>
-              <button
-                type="button"
-                onClick={handleCopyFullOutline}
-                disabled={isCopyingFullOutline}
-                aria-label={
-                  isCopyingFullOutline ? t("outlineCopyFullRunning") : t("outlineCopyFull")
-                }
-                className={`outline-toolbar-btn ${isCopyingFullOutline ? "is-busy" : ""}`}>
-                {fullOutlineCopySuccess ? (
-                  <CheckIcon size={14} color="#10b981" />
-                ) : (
-                  <CopyOutlineIcon size={16} />
-                )}
               </button>
             </Tooltip>
 
@@ -1864,12 +1955,27 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
                 aria-label={
                   scrollState === "bottom" ? t("outlineScrollBottom") : t("outlineScrollTop")
                 }
-                className="outline-toolbar-btn">
+                className="outline-toolbar-btn outline-narrow-optional">
                 {scrollState === "bottom" ? (
                   <ScrollBottomIcon size={16} />
                 ) : (
                   <ScrollTopIcon size={16} />
                 )}
+              </button>
+            </Tooltip>
+
+            {/* Export Conversation: 复用全局导出入口，按设置弹出选项弹窗或一键直出 */}
+            <Tooltip content={t("exportConversationTitle")}>
+              <button
+                type="button"
+                onClick={() => {
+                  // 只有点击大纲工具栏的导出按钮才视为发现了该入口，停用流光引导
+                  markExportDiscoveredQuiet()
+                  window.dispatchEvent(new CustomEvent("ophel:openExportDialog"))
+                }}
+                aria-label={t("exportConversationTitle")}
+                className={`outline-toolbar-btn export-accent ${exportDiscovered ? "" : "export-shimmer"}`}>
+                <ExportIcon size={16} />
               </button>
             </Tooltip>
           </div>
@@ -1905,13 +2011,22 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
         <div className="outline-level-slider-container" style={{ padding: "0 4px" }}>
           {/* Level Dots */}
           <div
+            ref={levelDotsRef}
             className="outline-level-dots"
+            onPointerDown={handleLevelPointerDown}
+            onPointerMove={handleLevelPointerMove}
+            onPointerUp={(e) => {
+              // 拖拽中副键抬起不提交，等主键抬起再应用层级
+              if (e.button === 0) finishLevelDrag(e, true)
+            }}
+            onPointerCancel={(e) => finishLevelDrag(e, false)}
             style={{
               display: "flex",
               justifyContent: "space-between",
               position: "relative",
               padding: "6px 0",
               alignItems: "center",
+              touchAction: "none",
             }}>
             {/* Background Line */}
             <div
@@ -1941,7 +2056,7 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
                 zIndex: 0,
                 transform: "translateY(-50%)",
                 borderRadius: "2px",
-                width: `calc((${expandLevel} / 6) * (100% - 8px))`,
+                width: `calc((${sliderLevel} / 6) * (100% - 8px))`,
                 transition: "width 0.2s ease",
               }}></div>
 
@@ -1952,18 +2067,20 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
               if (bookmarkMode) {
                 title = t("bookmarkModeDisabled")
               } else if (lvl === 0) {
-                title = showUserQueries ? t("outlineUserQueryRoleLabel") : t("outlineCollapseAll")
+                title =
+                  showUserQueries && tree.some((node) => node.isUserQuery)
+                    ? t("outlineUserQueryRoleLabel")
+                    : t("outlineCollapseAll")
               } else {
                 title = `H${lvl}: ${levelCounts[lvl] || 0}`
               }
 
-              const isActive = lvl <= expandLevel
+              const isActive = lvl <= sliderLevel
               return (
                 <Tooltip key={lvl} content={title}>
                   <div
                     className={`outline-level-dot ${isActive ? "active" : ""} ${bookmarkMode ? "disabled" : ""}`}
                     data-level={lvl}
-                    onClick={bookmarkMode ? undefined : () => handleLevelClick(lvl)}
                     style={{
                       width: "14px",
                       height: "14px",
@@ -2052,8 +2169,9 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
           const hasVisibleBookmarks = hasBookmarkedNode(tree)
           const isTreeEmpty = tree.length === 0
           const isOutlineVisuallyEmpty = !searchQuery && (isTreeEmpty || !hasVisibleNodes)
+          const hasUserQueriesInTree = tree.some((node) => node.isUserQuery)
           const emptyDescription =
-            showUserQueries && displayLevel === 0
+            showUserQueries && hasUserQueriesInTree && displayLevel === 0
               ? t("outlineEmptyDescUserQueryOnly")
               : t("outlineEmptyDescDefault")
           const zhCommaIndex = emptyDescription.indexOf("，")
@@ -2115,6 +2233,16 @@ export const OutlineTab: React.FC<OutlineTabProps> = ({
                     </span>
                   )}
                 </div>
+
+                {hasUnseenReleaseNotes && (
+                  <button
+                    type="button"
+                    className="outline-release-banner gh-interactive"
+                    onClick={openReleaseNotesFromBanner}>
+                    <SparkleIcon size={13} color="currentColor" />
+                    <span>{t("outlineReleaseBanner", { version: APP_VERSION })}</span>
+                  </button>
+                )}
 
                 <div
                   style={{

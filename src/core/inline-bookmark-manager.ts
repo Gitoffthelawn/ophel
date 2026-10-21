@@ -10,6 +10,7 @@ import type { OutlineManager } from "~core/outline-manager"
 import { useBookmarkStore } from "~stores/bookmarks-store"
 
 import { DOMToolkit } from "~utils/dom-toolkit"
+import { isIgnoredMutation } from "~utils/dom-mutations"
 import { createSVGElement } from "~utils/icons"
 
 // 显示模式
@@ -71,11 +72,6 @@ export class InlineBookmarkManager {
     this.unsubscribeBookmarks = useBookmarkStore.subscribe(() => {
       this.updateAllIconStates()
     })
-
-    this.startDomObserver()
-
-    // 初始注入
-    this.injectBookmarkIcons()
   }
 
   /**
@@ -121,16 +117,8 @@ export class InlineBookmarkManager {
   private injectScopedStyles(root: Node) {
     if (this.injectedRoots.has(root)) return
 
-    // 如果是 Document，检查是否已存在（避免重复）
-    // 如果是 ShadowRoot，需要在该 Root 下查找
-    // const parent = root instanceof Document ? document.head : root
-
-    // 检查是否存在
+    // 如果是 Document，检查主文档是否已存在样式；如果是 ShadowRoot，检查内部是否已存在
     if (root instanceof Document) {
-      // Global styles handled separately, but scoped styles for main doc also needed?
-      // Actually injectGlobalStyles handles body classes.
-      // We need similar .gh-inline-bookmark rules in main document too if not shadow.
-      // Let's use a specific ID check for the root
       if (document.getElementById(SCOPED_STYLE_ID)) {
         this.injectedRoots.add(root)
         return
@@ -210,18 +198,20 @@ export class InlineBookmarkManager {
     document.body.classList.add(`gh-inline-bookmark-mode-${mode}`)
 
     if (mode === "hidden") {
+      this.stopDomObserver()
       this.removeInjectedIcons()
+      return
     }
+
+    this.startDomObserver()
+    this.injectBookmarkIcons()
   }
 
   /**
    * 注入收藏图标到所有标题元素
    */
   injectBookmarkIcons(options: { includeAdapterScan?: boolean } = {}) {
-    if (this.displayMode === "hidden") {
-      this.removeInjectedIcons()
-      return
-    }
+    if (this.displayMode === "hidden") return
 
     const candidates = this.getInlineBookmarkItems(options.includeAdapterScan ?? true)
     const bookmarkStore = useBookmarkStore.getState()
@@ -288,30 +278,40 @@ export class InlineBookmarkManager {
   }
 
   private startDomObserver() {
+    if (this.displayMode === "hidden" || this.observer) return
     const target = this.adapter.getObserveTarget() ?? document.body
     if (!target) return
 
     this.observer = new MutationObserver((mutations) => {
       if (this.hasRelevantMutation(mutations)) {
-        this.scheduleInjectBookmarkIcons({ includeAdapterScan: true })
+        this.scheduleInjectBookmarkIcons()
       }
     })
 
     this.observer.observe(target, {
       childList: true,
       subtree: true,
+      characterData: true,
+      // characterData 必须保留：React 系站点（ChatGPT/Gemini）对已有文本节点的
+      // 原地更新只产生 characterData；虚拟滚动复用节点同理。去掉会导致图标签名
+      // 陈旧（点击生成幽灵收藏）或图标缺失。
     })
   }
 
-  private scheduleInjectBookmarkIcons(options: { includeAdapterScan: boolean }) {
-    if (this.displayMode === "hidden") return
-    if (this.injectDebounceTimer) {
+  private stopDomObserver() {
+    this.observer?.disconnect()
+    this.observer = null
+    if (this.injectDebounceTimer !== null) {
       clearTimeout(this.injectDebounceTimer)
+      this.injectDebounceTimer = null
     }
+  }
 
+  private scheduleInjectBookmarkIcons() {
+    if (this.displayMode === "hidden" || this.injectDebounceTimer !== null) return
     this.injectDebounceTimer = setTimeout(() => {
       this.injectDebounceTimer = null
-      this.injectBookmarkIcons({ includeAdapterScan: options.includeAdapterScan })
+      this.injectBookmarkIcons()
     }, 120)
   }
 
@@ -320,6 +320,7 @@ export class InlineBookmarkManager {
     const contentChangeSelector = this.getInlineBookmarkContentChangeSelector()
 
     return mutations.some((mutation) => {
+      if (isIgnoredMutation(mutation, `.${ICON_CLASS}`)) return false
       if (this.nodeIsInsideInlineBookmarkContent(mutation.target, contentChangeSelector)) {
         return true
       }
@@ -396,7 +397,16 @@ export class InlineBookmarkManager {
     }
 
     if (includeAdapterScan) {
-      pushItems(this.adapter.getInlineBookmarkItems(), "conversation")
+      // 与 OutlineManager 的新对话页抑制保持一致：落地页欢迎内容命中的标题
+      // 不是真实对话结构，不给它们注入收藏图标，避免产生永不匹配的垃圾书签。
+      // URL 不跳转的临时对话（Claude 隐身、Gemini 临时对话）发消息后有用户提问，
+      // 此时不抑制。
+      const suppressLandingScan =
+        (this.adapter.isNewConversation?.() ?? false) &&
+        !(this.adapter.hasUserMessagesInDom?.() ?? false)
+      if (!suppressLandingScan) {
+        pushItems(this.adapter.getInlineBookmarkItems(), "conversation")
+      }
     }
     pushItems(this.outlineManager.getFlatItems(), this.outlineManager.getActiveSourceId())
 
@@ -459,16 +469,13 @@ export class InlineBookmarkManager {
    * 更新所有图标状态
    */
   updateAllIconStates() {
-    if (this.displayMode === "hidden") {
-      this.removeInjectedIcons()
-      return
-    }
+    if (this.displayMode === "hidden") return
 
     const bookmarkStore = useBookmarkStore.getState()
 
     const icons = DOMToolkit.query(`.${ICON_CLASS}`, {
       all: true,
-      shadow: true,
+      shadow: this.adapter.usesShadowDOM(),
     }) as Element[]
 
     icons.forEach((iconWrapper) => {
@@ -499,13 +506,13 @@ export class InlineBookmarkManager {
   private removeInjectedIcons() {
     const icons = DOMToolkit.query(`.${ICON_CLASS}`, {
       all: true,
-      shadow: true,
+      shadow: this.adapter.usesShadowDOM(),
     }) as Element[]
     icons.forEach((el) => el.remove())
 
     const containers = DOMToolkit.query(`[${MARKER_ATTRIBUTE}]`, {
       all: true,
-      shadow: true,
+      shadow: this.adapter.usesShadowDOM(),
     }) as Element[]
     containers.forEach((el) => {
       el.removeAttribute(MARKER_ATTRIBUTE)
@@ -557,14 +564,7 @@ export class InlineBookmarkManager {
       this.unsubscribeBookmarks()
       this.unsubscribeBookmarks = null
     }
-    if (this.observer) {
-      this.observer.disconnect()
-      this.observer = null
-    }
-    if (this.injectDebounceTimer) {
-      clearTimeout(this.injectDebounceTimer)
-      this.injectDebounceTimer = null
-    }
+    this.stopDomObserver()
 
     InlineBookmarkManager.cleanupInjectedArtifacts()
     this.injectedSignatures = new WeakMap()

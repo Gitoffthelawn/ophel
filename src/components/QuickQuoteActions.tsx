@@ -1,3 +1,4 @@
+import { collectChangedElements } from "~utils/dom-mutations"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { QuickQuoteSupportMode, SiteAdapter } from "~adapters/base"
@@ -340,7 +341,7 @@ const injectQuickQuoteHostStyles = (root: Document | ShadowRoot) => {
       border: 1px solid rgba(66, 133, 244, 0.28) !important;
       border-radius: 8px !important;
       background: rgba(66, 133, 244, 0.07) !important;
-      color: #2563eb !important;
+      color: var(--gh-primary, #2563eb) !important;
       font: 500 12px/1.35 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
       letter-spacing: 0 !important;
       vertical-align: baseline !important;
@@ -420,7 +421,10 @@ export const QuickQuoteRenderer: React.FC<{ adapter: SiteAdapter; enabled: boole
     if (!userQuerySelector) return
 
     const userMessages =
-      (DOMToolkit.query(userQuerySelector, { all: true, shadow: true }) as Element[]) || []
+      (DOMToolkit.query(userQuerySelector, {
+        all: true,
+        shadow: adapter.usesShadowDOM(),
+      }) as Element[]) || []
     userMessages.forEach((message) => {
       if (!(message instanceof HTMLElement)) return
       message.querySelectorAll(QUICK_QUOTE_CHIP_ROW_SELECTOR).forEach((row) => row.remove())
@@ -458,7 +462,10 @@ export const QuickQuoteRenderer: React.FC<{ adapter: SiteAdapter; enabled: boole
       injectQuickQuoteHostStyles(document)
 
       const userMessages =
-        (DOMToolkit.query(userQuerySelector, { all: true, shadow: true }) as Element[]) || []
+        (DOMToolkit.query(userQuerySelector, {
+          all: true,
+          shadow: adapter.usesShadowDOM(),
+        }) as Element[]) || []
       const knownElements = knownUserMessageElementsRef.current
       const knownKeys = knownUserMessageKeysRef.current
       const messageSnapshots: Array<{
@@ -586,9 +593,7 @@ export const QuickQuoteRenderer: React.FC<{ adapter: SiteAdapter; enabled: boole
 
   // 防抖渲染函数
   const debouncedRender = useCallback(() => {
-    if (renderTimeoutRef.current !== null) {
-      window.clearTimeout(renderTimeoutRef.current)
-    }
+    if (renderTimeoutRef.current !== null) return
     renderTimeoutRef.current = window.setTimeout(() => {
       renderTimeoutRef.current = null
       renderReferenceChips()
@@ -610,16 +615,14 @@ export const QuickQuoteRenderer: React.FC<{ adapter: SiteAdapter; enabled: boole
       (responseSelector ? document.querySelector(responseSelector) : null) ||
       document.body
 
-    // 使用 MutationObserver 监听 DOM 变化
+    const userQuerySelector = adapter.getUserQuerySelector()
+    if (!userQuerySelector) return
+
     const observer = new MutationObserver((mutations) => {
-      const shouldRender = mutations.some(
-        (mutation) =>
-          mutation.addedNodes.length > 0 ||
-          mutation.type === "characterData" ||
-          (mutation.type === "attributes" &&
-            ["class", "style", "href", "title"].includes(mutation.attributeName || "")),
-      )
-      if (shouldRender) {
+      // 引用标记只存在于用户消息，AI 逐字输出和我们自己的 chip 不需要重扫历史。
+      if (
+        collectChangedElements(mutations, userQuerySelector, QUICK_QUOTE_CHIP_ROW_SELECTOR).size > 0
+      ) {
         debouncedRender()
       }
     })
@@ -636,6 +639,7 @@ export const QuickQuoteRenderer: React.FC<{ adapter: SiteAdapter; enabled: boole
       observer.disconnect()
       if (renderTimeoutRef.current !== null) {
         window.clearTimeout(renderTimeoutRef.current)
+        renderTimeoutRef.current = null
       }
     }
   }, [adapter, debouncedRender, enabled, renderReferenceChips, resetRenderedState])

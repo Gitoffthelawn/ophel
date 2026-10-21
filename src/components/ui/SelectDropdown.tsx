@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 
 import { ChevronDownIcon } from "~components/icons"
 import { OPHEL_INTERACTION_LAYER_PROPS } from "~utils/dom-toolkit"
+import { t } from "~utils/i18n"
 
 export interface SelectDropdownOption {
   value: string
@@ -23,6 +24,8 @@ export interface SelectDropdownProps {
   menuClassName?: string
   optionClassName?: string
   ariaLabel?: string
+  /** 显式覆盖按钮的原生 title；传 null 可关闭（例如外层已有自定义 Tooltip 时避免双提示） */
+  buttonTitle?: string | null
   onOpenChange?: (open: boolean) => void
 }
 
@@ -47,6 +50,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
   menuClassName,
   optionClassName,
   ariaLabel,
+  buttonTitle,
   onOpenChange,
 }) => {
   const [open, setOpen] = useState(false)
@@ -246,7 +250,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
         aria-expanded={open}
         onClick={() => !disabled && setOpen((previous) => !previous)}
         onKeyDown={handleButtonKeyDown}
-        title={selectedOption?.title}
+        title={buttonTitle === undefined ? selectedOption?.title : buttonTitle || undefined}
         style={{
           width: "100%",
           display: "flex",
@@ -306,7 +310,7 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                 fontSize: "13px",
                 textAlign: "left",
               }}>
-              {emptyText || "No options"}
+              {emptyText || t("selectNoOptions")}
             </div>
           ) : (
             options.map((option, index) => {
@@ -342,7 +346,9 @@ export const SelectDropdown: React.FC<SelectDropdownProps> = ({
                       : isActive
                         ? "var(--gh-hover, #f3f4f6)"
                         : "transparent",
-                    color: isSelected ? "#ffffff" : "var(--gh-text, #1f2937)",
+                    color: isSelected
+                      ? "var(--gh-text-on-primary, #ffffff)"
+                      : "var(--gh-text, #1f2937)",
                     cursor: option.disabled ? "not-allowed" : "pointer",
                     display: "flex",
                     alignItems: "center",

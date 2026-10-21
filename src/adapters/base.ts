@@ -4,15 +4,17 @@
  * 每个支持的站点（Gemini/ChatGPT/Claude 等）需要继承此类并实现抽象方法
  */
 
-import { SITE_IDS } from "~constants/defaults"
 import type { MarkdownFixerConfig } from "~core/markdown-fixer"
 import { extractConversationTitleFromDocumentTitle } from "~utils/conversation-title"
 import { DOMToolkit } from "~utils/dom-toolkit"
 import { createExportAssetCollector, type ExportAssetCollector } from "~utils/export-assets"
 import type { ExportBundle, ExportFormat, ExportMessage } from "~utils/exporter"
+import { t } from "~utils/i18n"
 import { createSiteInstanceKey } from "~utils/site-identity"
 import type { ExportPackaging } from "~utils/storage"
+import type { VirtualOutlinePositionSnapshot } from "~utils/virtual-outline-position"
 
+import type { BuiltinSiteConfig, SiteTraits } from "./declarative/types"
 import { getBuiltinFeatureCapabilities, type SitePackCapability } from "./feature-capabilities"
 
 // ==================== 类型定义 ====================
@@ -103,6 +105,14 @@ export interface ExportLifecycleContext {
   format: ExportFormat
   includeThoughts: boolean
   packaging: ExportPackaging
+  /**
+   * 导出前是否已完成 DOM 历史预加载（滚顶收敛）。接口导出优先的站点
+   * （traits.apiFirstExport）会跳过预加载，此时为 false：适配器的 DOM
+   * 回退路径若依赖预加载才完整，应返回 null，由导出流程补做预加载后
+   * 置 true 重试；回退路径能自行覆盖全量历史（如全幅扫屏）的站点可直接采集。
+   * 缺省 undefined 视为未跳过预加载，保持旧行为。
+   */
+  domHistoryPreloaded?: boolean
 }
 
 /**
@@ -131,9 +141,15 @@ export interface ConversationObserverConfig {
 }
 
 export interface AnchorData {
-  type: "selector" | "index"
+  type: "selector" | "index" | "virtual-row"
   selector?: string
   index?: number
+  /**
+   * virtual-row：虚拟行的稳定身份。
+   * Claude 为 data-rs-index 全对话序号，DeepSeek 为服务端 message_id，
+   * Grok 为 responseId（uuid 字符串）。
+   */
+  rowKey?: number | string
   offset: number
   textSignature?: string
 }
@@ -159,7 +175,33 @@ export interface ZenModeRootClassConfig {
 
 export interface ZenModeConfig {
   hide?: string[]
+  /** 仅在视觉上隐藏但完整保留物理占位与间距（如底部免责声明），避免输入框贴底 */
+  preserveFlow?: string[]
   rootClass?: ZenModeRootClassConfig
+  styles?: ZenModeStyleRule[]
+}
+
+/** 输入框自动隐藏的声明式配置；站点差异全部收敛到此结构，机制由 LayoutManager 统一实现。 */
+export interface AutoHideInputConfig {
+  /** 输入区域整体容器选择器；应自带"活跃输入"判定（如 Gemini 排除新对话页的零态居中输入） */
+  container: string
+  /**
+   * 滚动容器选择器（可逗号列表），用于以 ::after 伪元素在滚动末尾占位。
+   * 伪元素不是 DOM 节点：不进站点的 children/ reconcile 范围、不触发 MutationObserver，
+   * 对虚拟滚动列表安全。缺省表示该站点不需要占位（功能不受影响）。
+   */
+  scrollContainer?: string
+  /** 滚动容器内占位 spacer 高度 px，缺省 33 */
+  spacerHeight?: number
+  /** 指针距视口底部 <= 该值时显示输入框，缺省 210 */
+  revealDistancePx?: number
+  /** 指针距视口底部 >= 该值时隐藏输入框，须大于 revealDistancePx 形成迟滞，缺省 revealDistancePx + 180 */
+  hideDistancePx?: number
+  /** 隐藏态在容器自身高度之外额外下移的偏移 px，缺省 28 */
+  hiddenOffsetPx?: number
+  /** 浮层 z-index，缺省 30 */
+  zIndex?: number
+  /** 站点附加样式规则（如释放会话容器 min-height、关闭底部渐变遮罩） */
   styles?: ZenModeStyleRule[]
 }
 
@@ -183,6 +225,8 @@ export interface PanelAvoidanceInsetConfig {
   applySide?: "both" | "left" | "right"
   /** centered 会包含内容居中余量；edge 只使用避让面板所需的边缘余量。 */
   insetMode?: "centered" | "edge"
+  /** 该 inset 独立的最小安全区宽度，用于原生侧栏与 Ophel 面板同时占位时防止正文被压垮。 */
+  minSafeWidth?: number
   leftProperty?: string
   rightProperty?: string
   extraCss?: string
@@ -191,6 +235,8 @@ export interface PanelAvoidanceInsetConfig {
 export interface PanelAvoidanceConfig {
   /** 用于计算安全区的宿主页内容容器；未设置时按整个 viewport 计算。 */
   scopeSelector?: string
+  /** 可选：为每个可见的普通 DOM scope 独立计算和限定避让样式。 */
+  scopeEachMatch?: boolean
   /** 宿主页面自己打开的右侧/左侧面板；存在时和 Ophel 面板一起扣除安全区。 */
   obstacleSelectors?: string[]
   /** 需要按扣除 Ophel 面板后的安全区域重算宽度的站点选择器。 */
@@ -353,14 +399,17 @@ function resolveAssistantMermaidBlockElement(candidate: HTMLElement): HTMLElemen
   return candidate
 }
 
-export function findAssistantMermaidBlocks(root: ParentNode): AssistantMermaidBlock[] {
+export function findAssistantMermaidBlocks(
+  root: ParentNode,
+  shadow = false,
+): AssistantMermaidBlock[] {
   const candidates =
     (DOMToolkit.query(
       "code-block, ms-code-block, pre, pre code, [data-language], [data-test-language], [data-test-id='code-content'], .cm-content, #code-block-viewer",
       {
         parent: root as Node,
         all: true,
-        shadow: true,
+        shadow,
       },
     ) as Element[]) || []
 
@@ -391,7 +440,11 @@ export function findAssistantMermaidBlocks(root: ParentNode): AssistantMermaidBl
 
 export abstract class SiteAdapter {
   protected textarea: HTMLElement | null = null
-  protected _cachedFlutterScrollContainer: HTMLElement | null = null
+  /**
+   * 站点配置；内置站点在子类中声明并赋默认值，站点包适配器不经过该字段
+   * （其特征声明来自 manifest，见 DeclarativeAdapter.getSiteTraits）。
+   */
+  protected config?: BuiltinSiteConfig
   private networkGenerationActive = false
 
   // ==================== 必须实现的方法 ====================
@@ -438,9 +491,9 @@ export abstract class SiteAdapter {
     return true
   }
 
-  // ==================== 会话相关 ====================
+  // ==================== 对话相关 ====================
 
-  /** 获取当前会话 ID */
+  /** 获取当前对话 ID */
   getSessionId(): string {
     const urlWithoutQuery = window.location.href.split("?")[0]
     const parts = urlWithoutQuery.split("/").filter((p) => p)
@@ -469,12 +522,24 @@ export abstract class SiteAdapter {
     })
   }
 
-  /** 获取当前侧边栏选中会话的标题 */
+  /** 获取当前侧边栏选中对话的标题 */
   abstract getConversationTitle(): string | null
 
   /** 判断当前是否处于新对话页面 */
   isNewConversation(): boolean {
     return false
+  }
+
+  /**
+   * 当前页面是否已渲染用户提问消息（运行时 DOM 查询）。
+   * 用于区分新对话落地页与 URL 不跳转的临时对话（如 Claude 隐身、Gemini 临时对话）：
+   * 前者没有真实消息，后者发消息后 URL 不变但 DOM 中已有用户提问。
+   * 不使用 DOMToolkit 缓存，避免路由切换后读到残留的命中元素。
+   */
+  hasUserMessagesInDom(): boolean {
+    const selector = this.getUserQuerySelector()
+    if (!selector) return false
+    return Boolean(DOMToolkit.query(selector, { shadow: this.usesShadowDOM(), useCache: false }))
   }
 
   /** 检测是否为分享页面（只读） */
@@ -484,15 +549,15 @@ export abstract class SiteAdapter {
   }
 
   /**
-   * 判断当前是否为不入库的临时会话页（如 Claude 隐身会话）。
-   * 临时会话不会改变 URL、也不能产生持久会话记录；
-   * 导出时只构建内存态会话元数据，不写入会话库。
+   * 判断当前是否为不入库的临时对话页（如 Claude 隐身对话）。
+   * 临时对话不会改变 URL、也不能产生持久对话记录；
+   * 导出时只构建内存态对话元数据，不写入对话库。
    */
   isEphemeralConversationPage(): boolean {
     return false
   }
 
-  /** 判断当前是否为用户自己的历史会话页 */
+  /** 判断当前是否为用户自己的历史对话页 */
   isUserConversationPage(): boolean {
     const sessionId = this.getSessionId()?.trim()
     return (
@@ -504,7 +569,7 @@ export abstract class SiteAdapter {
   }
 
   /**
-   * 获取当前团队 ID（用于会话隔离）
+   * 获取当前团队 ID（用于对话隔离）
    * 仅在支持多团队的站点（如 Gemini Enterprise）中实现
    * @returns 团队 ID 或 null（无团队/默认团队）
    */
@@ -512,17 +577,26 @@ export abstract class SiteAdapter {
     return null
   }
 
-  /** 获取侧边栏会话列表 */
+  /** 获取侧边栏对话列表 */
   getConversationList(): ConversationInfo[] {
     return []
   }
 
-  /** 获取已加载的会话数量，用于判断滚动加载是否稳定 */
+  /**
+   * 删除同步范围：返回 null 表示当前对话列表即完整集合（默认）；
+   * 返回函数时，只有判定为 true 的已存对话参与删除同步。
+   * 用于同站点存在多个互不相交对话列表的场景（如 Gemini 的 /app 侧边栏与 Spark 任务列表）。
+   */
+  getConversationDeletionScope(): ((conv: ConversationInfo) => boolean) | null {
+    return null
+  }
+
+  /** 获取已加载的对话数量，用于判断滚动加载是否稳定 */
   protected getLoadedConversationCount(): number {
     return this.getConversationList().length
   }
 
-  /** 获取当前页面会话的基础元数据 */
+  /** 获取当前页面对话的基础元数据 */
   getCurrentConversationInfo(): ConversationInfo | null {
     const id = this.getSessionId()
     if (!id || id === "default" || this.isNewConversation()) {
@@ -542,16 +616,25 @@ export abstract class SiteAdapter {
     return null
   }
 
-  /** 获取会话观察器配置 */
+  /**
+   * 对话观察器绑定的根节点。默认复用侧边栏滚动容器；
+   * 若对话列表位于会随 SPA 路由销毁重建的容器内（如 Gemini Spark 的 task-list），
+   * 应覆盖此方法返回更稳定的节点，返回 null 时调用方回退到 document 根。
+   */
+  getConversationObserverContainer(): Element | null {
+    return this.getSidebarScrollContainer()
+  }
+
+  /** 获取对话观察器配置 */
   getConversationObserverConfig(): ConversationObserverConfig | null {
     return null
   }
 
   /**
-   * 导航到指定会话（SPA 导航，不刷新页面）
+   * 导航到指定对话（SPA 导航，不刷新页面）
    * 各站点适配器应覆盖此方法实现站点特定的导航逻辑
-   * @param _id 会话 ID
-   * @param url 会话 URL（用于降级硬刷新）
+   * @param _id 对话 ID
+   * @param url 对话 URL（用于降级硬刷新）
    * @returns 是否成功导航
    */
   navigateToConversation(_id: string, url?: string): boolean {
@@ -563,7 +646,39 @@ export abstract class SiteAdapter {
     return false
   }
 
-  /** 滚动加载全部会话 */
+  /**
+   * 通过 pushState + popstate 触发站点 SPA 路由切换，避免整页刷新。
+   * 主流前端路由（React Router / Vue Router / Next.js / Angular 等）都会响应
+   * popstate；仅对同源且与当前路径不同的 URL 生效，失败时返回 false 由调用方降级。
+   * 注意：站点是否真正响应需逐站实测，未验证的站点不要盲目接入。
+   */
+  protected navigateViaHistory(url: string): boolean {
+    let target: URL
+    try {
+      target = new URL(url, window.location.origin)
+    } catch {
+      return false
+    }
+    if (target.origin !== window.location.origin) return false
+
+    const targetPath = `${target.pathname}${target.search}${target.hash}`
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`
+    if (targetPath === currentPath) return true
+
+    try {
+      window.history.pushState(window.history.state, "", targetPath)
+      const event =
+        typeof PopStateEvent === "function"
+          ? new PopStateEvent("popstate", { state: window.history.state })
+          : new Event("popstate")
+      window.dispatchEvent(event)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** 滚动加载全部对话 */
   async deleteConversationOnSite(
     target: ConversationDeleteTarget,
   ): Promise<SiteDeleteConversationResult> {
@@ -681,6 +796,8 @@ export abstract class SiteAdapter {
   /**
    * 是否由子类提供了站点专用主题切换逻辑。
    * 用于避免在自定义切换后再次套用通用 fallback，造成宿主页面状态冲突。
+   * 注意：这是“子类是否覆写了 toggleTheme”的静态派生判断，不是运行时状态查询；
+   * 前缀 has 仅因方法名冻结保留，新代码不要仿照此前缀声明静态特征。
    */
   hasCustomToggleTheme(): boolean {
     return this.toggleTheme !== SiteAdapter.prototype.toggleTheme
@@ -761,6 +878,11 @@ export abstract class SiteAdapter {
     return null
   }
 
+  /** 返回输入框自动隐藏配置；默认 null = 不支持，由站点验证后逐步 opt-in。 */
+  getAutoHideInputConfig(): AutoHideInputConfig | null {
+    return null
+  }
+
   /** 获取 Markdown 修复器配置（子类可覆盖） */
   getMarkdownFixerConfig(): MarkdownFixerConfig | null {
     return null
@@ -776,7 +898,7 @@ export abstract class SiteAdapter {
    * 子类可覆盖以适配非标准代码块结构。
    */
   getAssistantMermaidBlocks(root: ParentNode): AssistantMermaidBlock[] {
-    return findAssistantMermaidBlocks(root)
+    return findAssistantMermaidBlocks(root, this.usesShadowDOM())
   }
 
   // ==================== 输入框操作 ====================
@@ -856,6 +978,20 @@ export abstract class SiteAdapter {
     return this.findTextarea()
   }
 
+  /**
+   * 页面编辑器是否已有草稿（明确的输入意图，驱动自动隐藏输入框立即唤出）。
+   * 默认按编辑器文本非空判定；编辑器有预填内容或占位文本残留的站点应覆写本方法，
+   * 否则会永不隐藏。
+   */
+  hasInputDraft(): boolean {
+    const editor = this.getTextareaElement()
+    if (!editor) return false
+    if (editor instanceof HTMLTextAreaElement || editor instanceof HTMLInputElement) {
+      return editor.value.trim().length > 0
+    }
+    return (editor.textContent || "").trim().length > 0
+  }
+
   // ==================== 滚动控制 ====================
 
   /** 获取滚动容器 */
@@ -873,41 +1009,42 @@ export abstract class SiteAdapter {
     for (const selector of selectors) {
       const container = document.querySelector(selector) as HTMLElement
       if (container && container.scrollHeight > container.clientHeight) {
-        this._cachedFlutterScrollContainer = null
         return container
       }
     }
 
-    // 检查缓存的 Flutter 容器是否仍然有效
-    if (this._cachedFlutterScrollContainer && this._cachedFlutterScrollContainer.isConnected) {
-      return this._cachedFlutterScrollContainer
-    }
-
-    // 尝试在 iframe 中查找（Gemini 图文并茂模式专用）
-    // 只在 Gemini 普通版站点遍历 iframe，其他站点跳过以避免跨域警告
-    if (this.getSiteId() === SITE_IDS.GEMINI) {
-      const iframes = document.querySelectorAll('iframe[sandbox*="allow-same-origin"]')
-      for (const iframe of Array.from(iframes)) {
-        try {
-          const iframeDoc =
-            (iframe as HTMLIFrameElement).contentDocument ||
-            (iframe as HTMLIFrameElement).contentWindow?.document
-          if (iframeDoc) {
-            const scrollContainer = iframeDoc.querySelector(
-              'flt-semantics[style*="overflow-y: scroll"]:not([style*="overflow-x: scroll"])',
-            ) as HTMLElement
-            if (scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight) {
-              this._cachedFlutterScrollContainer = scrollContainer
-              return scrollContainer
-            }
-          }
-        } catch (e) {
-          console.warn("[Ophel] Failed to access iframe:", (e as Error).message)
-        }
-      }
-    }
-
     return null
+  }
+
+  /**
+   * 站点静态结构/加载特征声明（`*-config.ts` 的 `traits` 字段；站点包为
+   * `manifest.traits`）。新增特征优先扩展 SiteTraits，不再新增布尔方法。
+   */
+  protected getSiteTraits(): SiteTraits {
+    return this.config?.traits ?? {}
+  }
+
+  /**
+   * 会话历史是否随向上滚动从服务端懒加载（Gemini、千问、Qwen Studio 等）。
+   *
+   * 全量渲染或仅前端虚拟滚动的站点在 config `traits.historyLazyLoad` 声明
+   * false：去顶部/阅读恢复可直接滚动到位，跳过 HistoryLoader 的固定轮询
+   * 等待（每轮约 1.2s）。缺省 true 保持保守：未确认的站点维持原有加载
+   * 行为，避免去顶部停在未加载的历史中段。
+   */
+  needsHistoryLazyLoad(): boolean {
+    return this.getSiteTraits().historyLazyLoad ?? true
+  }
+
+  /**
+   * 本次导出能否跳过 DOM 历史预加载（滚顶等收敛）。
+   * 静态能力在 config `traits.apiFirstExport` 声明；运行时才可判定的站点
+   * （如 ChatGPT 仅新版会话页可走接口导出）覆写本方法收窄。
+   * 跳过后接口路径失败回退 DOM 采集时，导出流程会补做预加载再重试一次。
+   * 缺省 false：维持导出前滚顶预加载的保守行为。
+   */
+  canSkipExportHistoryPreload(): boolean {
+    return this.getSiteTraits().apiFirstExport ?? false
   }
 
   /** 获取当前视口中可见的锚点元素信息 */
@@ -1018,12 +1155,20 @@ export abstract class SiteAdapter {
     return document.querySelector(selector)
   }
 
-  /** 获取聊天内容元素的选择器列表 */
+  /**
+   * 获取聊天内容元素的选择器列表。
+   * 约束：返回值只允许随 location.pathname 变化——LayoutManager 的避让
+   * mutation 选择器按 pathname 缓存失效；若需要依赖 search/hash/DOM 状态，
+   * 必须同步更新 LayoutManager 的缓存失效逻辑。
+   */
   getChatContentSelectors(): string[] {
     return []
   }
 
-  /** 获取用户提问元素的选择器 */
+  /**
+   * 获取用户提问元素的选择器。
+   * 约束同 getChatContentSelectors：只允许随 location.pathname 变化。
+   */
   getUserQuerySelector(): string | null {
     return null
   }
@@ -1147,6 +1292,18 @@ export abstract class SiteAdapter {
   ): number {
     if (!startEl) return 0
     try {
+      // 边界元素必须真实位于起始元素之后，且在回退容器内；
+      // 否则 Range 会跨消息块统计（字数虚高）或直接抛异常
+      if (endEl) {
+        const followsStart = Boolean(
+          startEl.compareDocumentPosition(endEl) & Node.DOCUMENT_POSITION_FOLLOWING,
+        )
+        const withinContainer = fallbackContainer ? fallbackContainer.contains(endEl) : true
+        if (!followsStart || !withinContainer) {
+          endEl = null
+        }
+      }
+
       const range = document.createRange()
       range.setStartAfter(startEl)
       if (endEl) {
@@ -1216,7 +1373,7 @@ export abstract class SiteAdapter {
    * 用于决定是否需要延迟处理（等待 Shadow DOM 渲染）
    */
   usesShadowDOM(): boolean {
-    return false
+    return this.getSiteTraits().shadowDOM ?? false
   }
 
   /** 从页面提取大纲 */
@@ -1229,7 +1386,14 @@ export abstract class SiteAdapter {
   }
 
   getOutlineSources(): OutlineSource[] {
-    return [{ id: "conversation", kind: "conversation", label: "对话", available: true }]
+    return [
+      {
+        id: "conversation",
+        kind: "conversation",
+        label: t("outlineSourceConversation"),
+        available: true,
+      },
+    ]
   }
 
   supportsDynamicOutlineSources(): boolean {
@@ -1240,9 +1404,72 @@ export abstract class SiteAdapter {
    * Some virtualized/lazy-mounted conversation views do not reliably emit DOM
    * mutations when distant messages mount. Opt in only for sites that need a
    * periodic outline refresh fallback while the outline is active.
+   * 静态站点在 config `traits.periodicOutlineRefresh` 声明；运行时才可判定的
+   * 站点（如 Claude）保留方法覆写。
    */
   usesPeriodicOutlineRefreshFallback(): boolean {
+    return this.getSiteTraits().periodicOutlineRefresh ?? false
+  }
+
+  /**
+   * 大纲是否含虚拟滚动场景下的无位置回填条目（config `traits.virtualOutlineFill`
+   * 声明）。仅这类站点需要在程序化跳转后立即刷新大纲并按页面位置重算高亮；
+   * 其他站点的缓存回填条目（ChatGPT/Claude/豆包）不声明，行为保持不变。
+   */
+  usesVirtualOutlineFill(): boolean {
+    return this.getSiteTraits().virtualOutlineFill ?? false
+  }
+
+  /**
+   * 虚拟列表把滚动位置写上之后，对应消息可能还没挂进视口。
+   * 只有声明了 virtualOutlineFill 的站点覆写等待；默认视为已经到位。
+   */
+  async waitForVirtualListEdge(_edge: "start" | "end", _signal?: AbortSignal): Promise<boolean> {
+    return true
+  }
+
+  /**
+   * 当前会话是否为虚拟滚动渲染（运行时动态判定，如 Claude 长对话、DeepSeek 消息
+   * 列表）。区别于站点级 traits.virtualOutlineFill：同一站点短对话可能不虚拟化。
+   * 阅读历史据此决定保存稳定行身份还是普通内容锚点。默认 false。
+   */
+  isVirtualScrollConversation(): boolean {
     return false
+  }
+
+  /**
+   * 虚拟滚动会话中，返回视口上沿行的稳定锚点（type 为 "virtual-row"）。
+   * 非虚拟会话或暂时不可用时返回 null。
+   */
+  getVirtualAnchorElement(): AnchorData | null {
+    return null
+  }
+
+  /**
+   * 按虚拟锚点把目标行挂载出来并对齐保存时的行内偏移。
+   * 失败（行不存在、文本签名不符、超时）返回 false；调用方不得回退像素恢复，
+   * 否则虚拟列表里同一像素会落到另一段对话上。
+   */
+  async restoreVirtualAnchor(_anchor: AnchorData, _signal?: AbortSignal): Promise<boolean> {
+    return false
+  }
+
+  /**
+   * 虚拟滚动会话的大纲高亮估算快照：当前挂载窗口的内容坐标锚点 + 完整列表边界。
+   * 大纲树冻结在旧挂载窗口时（自动更新关闭、跳转后尚未刷新），树内元素引用
+   * 整体失效，高亮需要靠估算兜底。仅 virtualOutlineFill 站点覆写；快照不可用
+   * （非虚拟会话、缺少总行数、无挂载行）返回 null，高亮保持上一次结果。
+   */
+  getVirtualOutlinePositionSnapshot(): VirtualOutlinePositionSnapshot | null {
+    return null
+  }
+
+  /**
+   * 大纲条目归属的虚拟行序号（与快照 anchors 的 index 同一坐标系）。
+   * 无法归属（缺少分支数据、非虚拟行内元素）返回 null，该条目不参与估算。
+   */
+  getVirtualOutlineRowIndex(_item: OutlineItem): number | null {
+    return null
   }
 
   getOutlineSourcesSignature(): string {
@@ -1289,40 +1516,50 @@ export abstract class SiteAdapter {
   }
 
   /**
+   * 获取当前激活的大纲项 ID（可选实现）。
+   */
+  findActiveOutlineItemId(): string | null {
+    return null
+  }
+
+  /**
    * 根据 queryIndex 和文本查找用户提问元素
    * 用于大纲跳转时元素失效后的重新查找
    * @param queryIndex 用户提问的序号（从 1 开始）
    * @param text 用户提问文本（用于验证和回退搜索）
    * @returns 匹配的元素，未找到返回 null
    */
-  findActiveOutlineItemId(): string | null {
-    return null
-  }
-
   findUserQueryElement(queryIndex: number, text: string): Element | null {
     const selector = this.getUserQuerySelector()
     if (!selector) return null
 
-    const elements = DOMToolkit.query(selector, { all: true, shadow: true }) as Element[]
+    const elements = DOMToolkit.query(selector, {
+      all: true,
+      shadow: this.usesShadowDOM(),
+    }) as Element[]
     if (!elements || elements.length === 0) return null
 
     // 1. 尝试按索引查找并验证文本
     if (elements.length >= queryIndex) {
       const candidate = elements[queryIndex - 1]
       const candidateText = this.extractUserQueryText(candidate)
+      // 无文本可验证（如纯图片提问）：只能按索引返回
+      if (!text) return candidate
       // 验证：文本匹配或包含关系（大纲可能显示截断的文本）
       if (
-        candidateText === text ||
-        candidateText.startsWith(text) ||
-        text.startsWith(candidateText)
+        candidateText &&
+        (candidateText === text || candidateText.startsWith(text) || text.startsWith(candidateText))
       ) {
         return candidate
       }
     }
 
     // 2. 回退：按文本内容搜索所有用户提问
+    if (!text) return null
     for (const el of elements) {
       const elText = this.extractUserQueryText(el)
+      // 空文本提问必须跳过：startsWith("") 恒真会把任何搜索都匹配到它身上
+      if (!elText) continue
       if (elText === text || elText.startsWith(text) || text.startsWith(elText)) {
         return el
       }
@@ -1388,9 +1625,11 @@ export abstract class SiteAdapter {
    * Whether the site renders messages in reverse DOM order (e.g.
    * flex-col-reverse). When true, the export pipeline reverses turn
    * order so exported messages follow visual (oldest-first) order.
+   * 声明字段为 config 顶层 `outlineReverse`（名词式，与站点包 JSON 一致）；
+   * 站点包适配器经 DeclarativeAdapter 覆写读取 manifest 同名字段。
    */
   isExportReversed(): boolean {
-    return false
+    return this.config?.outlineReverse ?? false
   }
 
   /**
@@ -1797,7 +2036,7 @@ export abstract class SiteAdapter {
     return (
       (DOMToolkit.query(selector, {
         all: true,
-        shadow: true,
+        shadow: this.usesShadowDOM(),
         filter: (el) => this.isElementVisible(el),
       }) as Element[]) || []
     )
@@ -1807,7 +2046,9 @@ export abstract class SiteAdapter {
     const menuId = anchor.getAttribute("aria-controls") || anchor.getAttribute("aria-owns")
     if (!menuId) return null
     const selector = `#${this.escapeSelector(menuId)}`
-    const container = DOMToolkit.query(selector, { shadow: true }) as Element | null
+    const container = DOMToolkit.query(selector, {
+      shadow: this.usesShadowDOM(),
+    }) as Element | null
     if (container && this.isElementVisible(container)) return container
     return null
   }
@@ -1951,14 +2192,21 @@ export abstract class SiteAdapter {
     }
   }
 
-  /** 通过选择器列表查找单个元素（支持 Shadow DOM 穿透） */
+  /** 通过选择器列表查找单个元素（Shadow DOM 站点自动穿透） */
   findElementBySelectors(selectors: string[]): HTMLElement | null {
-    return DOMToolkit.query(selectors, { shadow: true }) as HTMLElement | null
+    return DOMToolkit.query(selectors, {
+      shadow: this.usesShadowDOM(),
+    }) as HTMLElement | null
   }
 
-  /** 通过选择器查找所有元素（支持 Shadow DOM 穿透） */
+  /** 通过选择器查找所有元素（Shadow DOM 站点自动穿透） */
   findAllElementsBySelector(selector: string): Element[] {
-    return (DOMToolkit.query(selector, { all: true, shadow: true }) as Element[]) || []
+    return (
+      (DOMToolkit.query(selector, {
+        all: true,
+        shadow: this.usesShadowDOM(),
+      }) as Element[]) || []
+    )
   }
 
   // ==================== 生命周期 ====================
@@ -1993,7 +2241,7 @@ export abstract class SiteAdapter {
 
     const matched = DOMToolkit.query(selectors, {
       all: true,
-      shadow: true,
+      shadow: this.usesShadowDOM(),
       filter: (element) => this.isElementVisible(element),
     }) as Element[]
 
@@ -2033,7 +2281,7 @@ export abstract class SiteAdapter {
       (DOMToolkit.query("pre code, pre, pre.code-block, .code-block code", {
         parent: root as Node,
         all: true,
-        shadow: true,
+        shadow: this.usesShadowDOM(),
         filter: (element) => this.shouldIncludeCodeElement(element),
       }) as Element[]) || []
 
@@ -2067,7 +2315,7 @@ export abstract class SiteAdapter {
       (DOMToolkit.query(config.assistantResponseSelector, {
         parent: this.getPrimaryCodeSearchRoot() as Node,
         all: true,
-        shadow: true,
+        shadow: this.usesShadowDOM(),
         filter: (element) => this.shouldIncludeAssistantResponseElement(element),
       }) as Element[]) || []
     )
@@ -2076,7 +2324,9 @@ export abstract class SiteAdapter {
   protected getPrimaryCodeSearchRoot(): ParentNode {
     const containerSelector = this.getResponseContainerSelector()
     if (containerSelector) {
-      const container = DOMToolkit.query(containerSelector, { shadow: true }) as ParentNode | null
+      const container = DOMToolkit.query(containerSelector, {
+        shadow: this.usesShadowDOM(),
+      }) as ParentNode | null
       if (container) {
         return container
       }

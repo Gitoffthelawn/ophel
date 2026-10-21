@@ -87,7 +87,7 @@ interface YuanbaoAssistantImage {
 }
 
 export class YuanbaoAdapter extends SiteAdapter {
-  private config: YuanbaoSiteConfig = YUANBAO_CONFIG
+  protected config: YuanbaoSiteConfig = YUANBAO_CONFIG
   private exportIncludeThoughtsOverride: boolean | null = null
 
   match(): boolean {
@@ -277,7 +277,7 @@ export class YuanbaoAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // 自有会话：/chat/ID    分享会话：/s/ID
+    // 自有对话：/chat/ID    分享对话：/s/ID
     return window.location.pathname.startsWith("/s/")
   }
 
@@ -394,13 +394,20 @@ export class YuanbaoAdapter extends SiteAdapter {
       this.simulateClick(clickable)
       window.setTimeout(() => {
         if (!this.hasConversationNavigationChanged(beforeState)) {
-          super.navigateToConversation(id, url || this.buildConversationUrl(id))
+          // 点击未生效时优先 history 导航免刷新（路由响应 popstate，已实测）
+          const targetUrl = url || this.buildConversationUrl(id)
+          if (!this.navigateViaHistory(targetUrl)) {
+            super.navigateToConversation(id, targetUrl)
+          }
         }
       }, 800)
       return true
     }
 
-    return super.navigateToConversation(id, url || this.buildConversationUrl(id))
+    // 降级：优先 history 导航免刷新，失败再整页刷新
+    const targetUrl = url || this.buildConversationUrl(id)
+    if (this.navigateViaHistory(targetUrl)) return true
+    return super.navigateToConversation(id, targetUrl)
   }
 
   async deleteConversationOnSite(
@@ -744,18 +751,20 @@ export class YuanbaoAdapter extends SiteAdapter {
   }
 
   getZenModeConfig() {
-    const { hide, rootClass, styles } = this.config.zenMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.zenMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }
   }
 
   getCleanModeConfig() {
-    const { hide, rootClass, styles } = this.config.cleanMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.cleanMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }

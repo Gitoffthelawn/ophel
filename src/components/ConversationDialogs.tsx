@@ -31,6 +31,11 @@ const DIALOG_STYLES = `
     max-width: min(480px, calc(100vw - 40px));
     box-shadow: var(--gh-shadow-lg, 0 10px 40px rgba(0,0,0,0.2));
   }
+  /* 弹窗 portal 到宿主页面，宿主（如 ChatGPT 新版）对 input 全局 appearance:none
+     会把原生勾选框剥成透明盒子；这里恢复原生渲染 */
+  .conversations-dialog-overlay input[type="checkbox"] {
+    appearance: auto;
+  }
   .conversations-dialog-title {
     font-size: 16px;
     font-weight: 600;
@@ -88,6 +93,38 @@ const DIALOG_STYLES = `
   .conversations-folder-select-highlight {
     animation: gh-highlight-fade 2s ease-out;
   }
+  .conversations-batch-tag-list {
+    max-height: 240px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 12px;
+  }
+  .conversations-batch-tag-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--gh-text, #1f2937);
+  }
+  .conversations-batch-tag-item:hover {
+    background: var(--gh-hover, #f3f4f6);
+  }
+  .conversations-batch-tag-item .conversations-batch-tag-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .conversations-batch-tag-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
 `
 
 // 样式注入状态
@@ -96,7 +133,8 @@ let dialogStyleInjected = false
 const injectDialogStyles = () => {
   if (dialogStyleInjected) return
   const style = document.createElement("style")
-  style.id = "gh-dialog-styles"
+  // 与 ui/Dialog.tsx 的 gh-dialog-styles 区分，避免同 ID 重复注入
+  style.id = "gh-conversation-dialog-styles"
   style.textContent = DIALOG_STYLES
   document.head.appendChild(style)
   dialogStyleInjected = true
@@ -196,6 +234,85 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
         </Button>
         <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
           {confirmText || t("confirm")}
+        </Button>
+      </div>
+    </DialogOverlay>
+  )
+}
+
+// ==================== 批量标签对话框 ====================
+
+interface BatchTagDialogProps {
+  tags: Tag[]
+  selectedCount: number
+  onApply: (tagIds: string[], mode: "add" | "remove") => void
+  onCancel: () => void
+}
+
+/**
+ * 批量打标签 / 批量移除标签
+ * 勾选标签后选择“添加”或“移除”，一次作用于所有选中的对话
+ */
+export const BatchTagDialog: React.FC<BatchTagDialogProps> = ({
+  tags,
+  selectedCount,
+  onApply,
+  onCancel,
+}) => {
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
+
+  const toggleTag = (tagId: string) => {
+    setCheckedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(tagId)) next.delete(tagId)
+      else next.add(tagId)
+      return next
+    })
+  }
+
+  const apply = (mode: "add" | "remove") => {
+    if (checkedIds.size === 0) return
+    onApply(Array.from(checkedIds), mode)
+  }
+
+  return (
+    <DialogOverlay onClose={onCancel}>
+      <div className="conversations-dialog-title">{t("batchTagDialogTitle")}</div>
+      <div className="conversations-dialog-message">
+        {t("batchSelected").replace("{n}", String(selectedCount))}
+      </div>
+      {tags.length === 0 ? (
+        <div className="conversations-dialog-message">{t("conversationsNoTags")}</div>
+      ) : (
+        <div className="conversations-batch-tag-list">
+          {tags.map((tag) => (
+            <label key={tag.id} className="conversations-batch-tag-item">
+              <input
+                type="checkbox"
+                checked={checkedIds.has(tag.id)}
+                onChange={() => toggleTag(tag.id)}
+              />
+              <span
+                className="conversations-batch-tag-dot"
+                style={{ backgroundColor: tag.color }}
+              />
+              <span className="conversations-batch-tag-name">{tag.name}</span>
+            </label>
+          ))}
+        </div>
+      )}
+      <div className="conversations-dialog-buttons">
+        <Button variant="secondary" onClick={onCancel}>
+          {t("cancel")}
+        </Button>
+        <Button
+          variant="secondary"
+          disabled={checkedIds.size === 0}
+          onClick={() => apply("remove")}>
+          {t("batchTagRemove")}
+        </Button>
+        <Button variant="primary" disabled={checkedIds.size === 0} onClick={() => apply("add")}>
+          {t("batchTagAdd")}
         </Button>
       </div>
     </DialogOverlay>
@@ -371,7 +488,7 @@ export const FolderDialog: React.FC<FolderDialogProps> = ({ folder, onConfirm, o
   )
 }
 
-// ==================== 重命名会话对话框 ====================
+// ==================== 重命名对话弹窗 ====================
 
 interface RenameDialogProps {
   title: string
@@ -543,7 +660,7 @@ export const FolderSelectDialog: React.FC<FolderSelectDialogProps> = ({
 
 interface TagManagerDialogProps {
   tags: Tag[]
-  conv?: Conversation | null // 可选的会话上下文
+  conv?: Conversation | null // 可选的对话上下文
   onCancel: () => void
   onCreateTag: (name: string, color: string) => Promise<Tag | null>
   onUpdateTag: (tagId: string, name: string, color: string) => Promise<Tag | null>
@@ -571,7 +688,7 @@ export const TagManagerDialog: React.FC<TagManagerDialogProps> = ({
   const [loading, setLoading] = useState(false)
   const [colorExpanded, setColorExpanded] = useState(false) // 颜色选择器折叠状态
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null) // 待删除的标签 ID
-  // 本地状态跟踪当前会话已选标签，确保 UI 反映最新状态
+  // 本地状态跟踪当前对话已选标签，确保 UI 反映最新状态
   const [selectedTagIds, setSelectedTagIds] = useState<Set<string>>(new Set(conv?.tagIds || []))
 
   const nameInputRef = useRef<HTMLInputElement>(null)
@@ -657,7 +774,7 @@ export const TagManagerDialog: React.FC<TagManagerDialogProps> = ({
     onRefresh()
   }
 
-  // 切换会话标签
+  // 切换对话标签
   const handleToggleConvTag = async (tagId: string, checked: boolean) => {
     if (!conv || !onSetConversationTags) return
 

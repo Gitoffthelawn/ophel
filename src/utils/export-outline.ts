@@ -1,4 +1,5 @@
 import type { ExportMessage } from "~utils/exporter"
+import { cleanOutlineTitle } from "~utils/outline-text"
 
 export interface ExportMessagesOutlineOptions {
   includeUserQueries: boolean
@@ -30,35 +31,14 @@ export interface OutlineTextTreeOptions {
 
 const MAX_MARKDOWN_HEADING_LEVEL = 6
 const USER_QUERY_HEADING_LEVEL = 1
-const MAX_USER_QUERY_PREVIEW_LENGTH = 120
 
 function clampHeadingLevel(level: number | undefined): number {
   if (typeof level !== "number" || !Number.isFinite(level)) return MAX_MARKDOWN_HEADING_LEVEL
   return Math.min(MAX_MARKDOWN_HEADING_LEVEL, Math.max(0, Math.floor(level)))
 }
 
-function stripBlockquoteMarkers(value: string): string {
-  return value.replace(/(^|\n)\s*>+\s?/g, "$1")
-}
-
-function stripInlineMarkdown(value: string): string {
-  return stripBlockquoteMarkers(value)
-    .replace(/^\s{0,3}#{1,6}\s+/, "")
-    .replace(/!\[([^\]]*)\]\([^)]+\)/g, "$1")
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\\([\\`*_[\]{}()#+\-.!|>])/g, "$1")
-    .replace(/[`*_~]/g, "")
-    .replace(/⁣/g, "") // Remove invisible separator character (used in quick quote markers)
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function normalizeOutlineText(value: string, maxLength?: number): string {
-  const normalized = stripInlineMarkdown(
-    stripBlockquoteMarkers(value.replace(/\r\n?/g, "\n")).replace(/\n+/g, " "),
-  )
-  if (!maxLength || normalized.length <= maxLength) return normalized
-  return `${normalized.slice(0, maxLength).trim()}...`
+function normalizeOutlineText(value: string): string {
+  return cleanOutlineTitle(value)
 }
 
 function extractMarkdownHeadings(content: string): ExportOutlineItem[] {
@@ -126,7 +106,7 @@ export function createOutlineTextFromExportMessages(
     if (role === "user") {
       if (!options.includeUserQueries) continue
 
-      const text = normalizeOutlineText(message.content, MAX_USER_QUERY_PREVIEW_LENGTH)
+      const text = normalizeOutlineText(message.content)
       // Skip empty or whitespace-only content (including invisible unicode characters)
       if (text && text.replace(/[\s⁣]/g, "").length > 0) {
         userQueryCount += 1
@@ -160,10 +140,7 @@ export function createOutlineTextFromOutlineTree(
     const included = options.isIncluded ? options.isIncluded(node) : true
 
     if (included) {
-      const text = normalizeOutlineText(
-        node.text,
-        node.isUserQuery ? MAX_USER_QUERY_PREVIEW_LENGTH : undefined,
-      )
+      const text = normalizeOutlineText(node.text)
 
       if (text) {
         if (node.isUserQuery) {

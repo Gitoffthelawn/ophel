@@ -751,7 +751,11 @@ export class UsageCounterManager {
     for (const selector of this.adapter.getTextareaSelectors()) {
       let nodes: Element[] = []
       try {
-        nodes = (DOMToolkit.query(selector, { all: true, shadow: true }) as Element[]) || []
+        nodes =
+          (DOMToolkit.query(selector, {
+            all: true,
+            shadow: this.adapter.usesShadowDOM(),
+          }) as Element[]) || []
       } catch {
         continue
       }
@@ -1163,7 +1167,11 @@ export class UsageCounterManager {
     if (!selector) return 0
 
     try {
-      const nodes = (DOMToolkit.query(selector, { all: true, shadow: true }) as Element[]) || []
+      const nodes =
+        (DOMToolkit.query(selector, {
+          all: true,
+          shadow: this.adapter.usesShadowDOM(),
+        }) as Element[]) || []
       return nodes.filter((node) => node instanceof HTMLElement && node.isConnected).length
     } catch {
       return 0
@@ -1229,7 +1237,11 @@ export class UsageCounterManager {
 
     let nodes: Element[] = []
     try {
-      nodes = (DOMToolkit.query(selectors, { all: true, shadow: true }) as Element[]) || []
+      nodes =
+        (DOMToolkit.query(selectors, {
+          all: true,
+          shadow: this.adapter.usesShadowDOM(),
+        }) as Element[]) || []
     } catch {
       nodes = []
     }
@@ -1249,7 +1261,7 @@ export class UsageCounterManager {
     const conversationChunks: string[] = []
     const outputChunks: string[] = []
 
-    // 这里只统计当前页面 DOM 中“已经加载出来”的会话内容。
+    // 这里只统计当前页面 DOM 中“已经加载出来”的对话内容。
     // 如果站点做了懒加载或折叠隐藏，未出现在 DOM 中的历史内容不会被计入。
     uniqueNodes.forEach((node) => {
       const isUser = userSelector ? this.matchesSelector(node, userSelector) : false

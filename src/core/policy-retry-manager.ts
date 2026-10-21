@@ -168,8 +168,6 @@ export class PolicyRetryManager {
       if (found) return found
     }
 
-    // 3. 检查子节点 (如果不是 Shadow Host 或者即使是也要查 slot?)
-    // 通常只需查 Shadow Root，但为了保险起见...
     return null
   }
 
@@ -209,7 +207,9 @@ export class PolicyRetryManager {
     // 2. 点击提交
     // 使用 adapter 的 helper 或者自己查找
     const btnSelectors = this.adapter.getSubmitButtonSelectors()
-    const submitBtn = DOMToolkit.query(btnSelectors, { shadow: true }) as HTMLElement
+    const submitBtn = DOMToolkit.query(btnSelectors, {
+      shadow: this.adapter.usesShadowDOM(),
+    }) as HTMLElement
 
     if (submitBtn) {
       submitBtn.click()

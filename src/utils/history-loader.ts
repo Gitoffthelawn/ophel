@@ -1,17 +1,12 @@
 /**
  * History Loader - 统一的懒加载历史工具
  *
- * 用于加载 Gemini 对话的懒加载历史内容
+ * 用于加载对话的懒加载历史内容
  * 供"去顶部"和"阅读记录恢复"功能复用
  */
 
 import type { SiteAdapter } from "~adapters/base"
-import {
-  getScrollInfo,
-  getTopScrollPosition,
-  isFlutterProxy,
-  smartScrollToTop,
-} from "~utils/scroll-helper"
+import { getTopScrollPosition, smartScrollToTop } from "~utils/scroll-helper"
 
 // ==================== 类型定义 ====================
 
@@ -43,9 +38,7 @@ export interface LoadHistoryResult {
   heightAdded: number
   /** 加载前的滚动位置 */
   previousScrollTop: number
-  /** 是否处于 Flutter 模式 */
-  isFlutterMode: boolean
-  /** 是否静默完成（短会话） */
+  /** 是否静默完成（短对话） */
   silent: boolean
 }
 
@@ -100,24 +93,37 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
   } = options
 
   // 获取初始滚动信息并滚动到顶部
-  let { previousScrollTop, container } = await smartScrollToTop(adapter, {
+  let { previousScrollTop, container, virtualEdgeSettled } = await smartScrollToTop(adapter, {
     preserveReadingHistoryRestore,
     restoreToken,
     signal,
   })
 
-  // 检测 Flutter 模式
-  const isFlutterMode = isFlutterProxy(container)
-
-  // Flutter 模式下，滚动已由 Main World 处理，直接返回
-  if (isFlutterMode) {
-    const info = await getScrollInfo(adapter)
+  // 站点无服务端历史懒加载（全量渲染或纯前端虚拟滚动）：
+  // 上面的 smartScrollToTop 已滚动到位，跳过固定轮询等待（每轮约 1.2s）
+  // 内容尚未就绪（页面刚打开仍在渲染）时不短路，保留下方循环的等待行为，
+  // 避免阅读位置恢复在内容渲染完成前跳转被钳制到错误位置
+  if (
+    adapter &&
+    !adapter.needsHistoryLazyLoad() &&
+    container.scrollHeight > container.clientHeight + 100
+  ) {
+    // 普通免懒加载站点：scrollTop 到位即可返回。
+    // DeepSeek / Claude 是否真的到顶，由 smartScrollToTop 的虚拟列表等待给出。
+    if (adapter.usesVirtualOutlineFill() && !virtualEdgeSettled) {
+      return {
+        success: false,
+        finalHeight: container.scrollHeight,
+        heightAdded: 0,
+        previousScrollTop,
+        silent: false,
+      }
+    }
     return {
       success: true,
-      finalHeight: info.scrollHeight,
+      finalHeight: container.scrollHeight,
       heightAdded: 0,
       previousScrollTop,
-      isFlutterMode: true,
       silent: true,
     }
   }
@@ -137,7 +143,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
         finalHeight: container.scrollHeight,
         heightAdded: container.scrollHeight - initialHeight,
         previousScrollTop,
-        isFlutterMode: false,
         silent: false,
       }
     }
@@ -151,7 +156,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
         finalHeight: container.scrollHeight,
         heightAdded: container.scrollHeight - initialHeight,
         previousScrollTop,
-        isFlutterMode: false,
         silent: false,
       }
     }
@@ -170,7 +174,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
         finalHeight: container.scrollHeight,
         heightAdded: container.scrollHeight - initialHeight,
         previousScrollTop,
-        isFlutterMode: false,
         silent: false,
       }
     }
@@ -203,7 +206,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
         finalHeight: currentHeight,
         heightAdded: currentHeight - initialHeight,
         previousScrollTop,
-        isFlutterMode: false,
         silent: false,
       }
     }
@@ -227,7 +229,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
           finalHeight: currentHeight,
           heightAdded: 0,
           previousScrollTop,
-          isFlutterMode: false,
           silent: true,
         }
       }
@@ -239,7 +240,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
           finalHeight: currentHeight,
           heightAdded: 0,
           previousScrollTop,
-          isFlutterMode: false,
           silent: true,
         }
       }
@@ -256,7 +256,6 @@ export async function loadHistoryUntil(options: LoadHistoryOptions): Promise<Loa
           finalHeight: currentHeight,
           heightAdded: currentHeight - initialHeight,
           previousScrollTop,
-          isFlutterMode: false,
           silent: false,
         }
       }

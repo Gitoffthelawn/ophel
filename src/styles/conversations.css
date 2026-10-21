@@ -1,6 +1,5 @@
 /**
- * 会话 Tab 样式
- * 从油猴脚本 geminiHelper.user.js 11608~12124 行原封不动迁移
+ * 对话 Tab 样式
  */
 
 /* ========== 主面板内容区滚动条隐藏 ========== */
@@ -26,7 +25,7 @@
   border-top: none !important;
 }
 
-/* ========== 会话面板样式 ========== */
+/* ========== 对话面板样式 ========== */
 .conversations-content {
   display: flex;
   flex-direction: column;
@@ -36,7 +35,7 @@
   overflow-y: auto;
 }
 
-/* 拖拽进行中时禁止文本选择，避免拖拽会话时误选文字 */
+/* 拖拽进行中时禁止文本选择，避免拖拽对话时误选文字 */
 .conversations-content.is-dragging-any {
   user-select: none;
 }
@@ -152,7 +151,12 @@
   height: 0;
 } /* Chrome */
 
-/* 会话 Tab 主容器隐藏滚动条 */
+/* 批量模式下禁用文本选择，避免 Shift 连选时触发原生文本高亮 */
+.conversations-folder-list.is-batch-mode {
+  user-select: none;
+}
+
+/* 对话 Tab 主容器隐藏滚动条 */
 .conversations-content {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE/Edge */
@@ -277,7 +281,7 @@ html[data-theme="dark"] .conversations-unsupported-icon {
 }
 
 .conversations-folder-item.expanded {
-  /* background 由组件内联样式控制，移除此处的 !important */
+  /* background 由组件内联样式控制 */
   border: 2px solid var(--gh-border-active);
   box-shadow: 0 2px 8px var(--gh-shadow-sm);
   border-radius: 8px 8px 0 0;
@@ -507,6 +511,47 @@ html[data-theme="dark"] .conversations-unsupported-icon {
 
 .conversations-result-bar.visible {
   display: block;
+}
+
+/* 活动筛选胶囊（可单独移除） */
+.conversations-filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.conversations-filter-chips:empty {
+  display: none;
+}
+
+.conversations-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--gh-border, #e5e7eb);
+  background: var(--gh-bg-secondary, #f9fafb);
+  color: var(--gh-text, #374151);
+  font-size: 11px;
+  line-height: 1.4;
+  font-family: inherit;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  max-width: 160px;
+}
+
+.conversations-filter-chip:hover {
+  border-color: var(--gh-primary, #4285f4);
+  color: var(--gh-primary, #4285f4);
+}
+
+.conversations-filter-chip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* 标签样式 */
@@ -800,7 +845,7 @@ html[data-theme="dark"] .conversations-unsupported-icon {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
-/* 会话列表样式 */
+/* 对话列表样式 */
 .conversations-list {
   width: calc(100% - 8px);
   margin-left: 4px;
@@ -1097,6 +1142,7 @@ html[data-theme="dark"] .conversations-unsupported-icon {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   border-radius: 8px;
   margin-top: 8px;
   border: 1px solid var(--gh-border, #e5e7eb);
@@ -1107,15 +1153,22 @@ html[data-theme="dark"] .conversations-unsupported-icon {
   color: var(--gh-text, #374151);
   font-size: 13px;
   font-weight: 500;
+  /* 长文案语言下计数不换行、不被压缩，按钮区不足时整体换行 */
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .conversations-batch-btns {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px 6px;
+  min-width: 0;
 }
 
 .conversations-batch-btn {
-  padding: 4px 10px;
+  padding: 4px 6px;
+  min-width: auto;
   border: 1px solid var(--gh-input-border, #d1d5db);
   border-radius: 6px;
   font-size: 12px;
@@ -1156,7 +1209,7 @@ html[data-theme="dark"] .conversations-unsupported-icon {
   border: none;
 }
 
-/* 会话对话框样式 */
+/* 对话弹窗样式 */
 .conversations-dialog-overlay {
   position: fixed;
   top: 0;

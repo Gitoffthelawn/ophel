@@ -52,7 +52,7 @@
 ## 3. 页面组件分工
 
 - `GeneralPage`：语言、面板行为、快捷按钮、工具箱菜单。
-- `FeaturesPage`：大纲、会话、提示词、标签页行为、提醒、内容增强、阅读历史和用量统计。
+- `FeaturesPage`：大纲、对话、提示词、标签页行为、提醒、内容增强、阅读历史和用量统计。
 - `SiteSettingsPage`：页面布局、模型锁定、Gemini/AI Studio/ChatGPT/Claude 等站点专属设置。
 - `SitePacksPage`：按 `SITE_PACKS_TAB_IDS` 分为三个 tab——已安装（启停/卸载/检查更新）、自定义站点（自定义 origin、自动识别、油猴 @match 补充）、获取与更新（自动更新、检查更新、内置配置补丁与回滚、在线适配库、本地 JSON 导入）。两处“检查更新”是同一操作（全量检查并同步所有在线适配库包，检查即更新）；不设单包刷新按钮——它实际也是全量检查，语义有误导。适配配置更新原先位于基本设置，已并入此页。
 - `GlobalSearchPage`：全局搜索触发方式、模糊搜索和提示词回车行为。
@@ -89,7 +89,7 @@
 
 - 扩展端和油猴端共享大部分设置 UI，但权限、通知、跨域请求和默认开关可能不同。
 - 油猴端保存 SitePack 自定义域名后，会根据 `GM_info` 的有效匹配规则列出尚未覆盖的 origin，并引导用户在脚本管理器中添加持久化的用户匹配；扩展端继续走权限申请与动态注册。
-- `watermarkRemoval`、通知和部分 AI Studio 内容增强默认值会根据 `isUserscriptPlatform()` 分支确定。
+- 通知和部分 AI Studio 内容增强默认值会根据 `isUserscriptPlatform()` 分支确定。
 - 文档中的 `settings-schema.json` 以扩展端默认值为静态示例；油猴端差异以源码中的 `DEFAULT_SETTINGS` 平台分支为准。
 
 ## 8. 修改清单

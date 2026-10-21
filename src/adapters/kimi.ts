@@ -1,5 +1,5 @@
 /**
- * Kimi 适配器（www.kimi.com）
+ * Kimi 适配器（www.kimi.com / www.kimi.ai 国际版）
  *
  * 选择器策略：
  * - 优先使用语义化 class（如 .chat-info-item、.chat-input-editor、.segment-assistant）
@@ -62,6 +62,8 @@ const KIMI_TOKEN_FIELD_KEYS = [
 ]
 const JWT_TOKEN_REGEX = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/
 const TOKEN_KEYWORD_REGEX = /(token|auth|jwt|tea)/i
+// 裸域名均 302 到 www 子域，content script 注入链路也只匹配 www，无需覆盖裸域名
+const KIMI_HOSTS = new Set(["www.kimi.com", "www.kimi.ai"])
 
 const THEME_STORAGE_KEY = "CUSTOM_THEME"
 const FULL_LIST_SNAPSHOT_TTL_MS = 15_000
@@ -74,7 +76,7 @@ const KIMI_DELETE_REASON = {
 } as const
 
 export class KimiAdapter extends SiteAdapter {
-  private config: KimiSiteConfig = KIMI_CONFIG
+  protected config: KimiSiteConfig = KIMI_CONFIG
   private deleteReloadScheduled = false
   private loggedMissingDeleteToken = false
   private fullListSnapshot: ConversationInfo[] = []
@@ -83,7 +85,7 @@ export class KimiAdapter extends SiteAdapter {
   private exportIncludeThoughts: boolean | undefined = undefined
 
   match(): boolean {
-    const matched = window.location.hostname === "www.kimi.com"
+    const matched = KIMI_HOSTS.has(window.location.hostname)
     if (matched) {
       this.normalizeThemeStorageValue()
     }
@@ -123,7 +125,7 @@ export class KimiAdapter extends SiteAdapter {
   }
 
   getNewTabUrl(): string {
-    return "https://www.kimi.com/"
+    return `${window.location.origin}/`
   }
 
   getSessionId(): string {
@@ -153,7 +155,7 @@ export class KimiAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // 自有会话：/chat/ID    分享会话：/share/ID 或 /kimiplus/ID
+    // 自有对话：/chat/ID    分享对话：/share/ID 或 /kimiplus/ID
     return (
       window.location.pathname.startsWith("/share/") ||
       window.location.pathname.startsWith("/kimiplus/")
@@ -1011,9 +1013,10 @@ export class KimiAdapter extends SiteAdapter {
   }
 
   getCleanModeConfig() {
-    const { hide, rootClass, styles } = this.config.cleanMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.cleanMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }

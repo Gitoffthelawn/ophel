@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process"
+import { execFileSync, spawnSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 
@@ -18,7 +18,7 @@ const RELEASE_BRANCH = "main"
 const REPO_RELEASE_URL = "https://github.com/urzeye/ophel/releases/tag"
 
 const USAGE = `Usage:
-  pnpm release [version] [--dry-run] [--no-push]
+  pnpm release [version] [--dry-run] [--no-push] [--skip-checks]
   pnpm release:redo <version> [--yes] [--dry-run] [--skip-github-release]
 
 Examples:
@@ -27,6 +27,7 @@ Examples:
   pnpm release v1.0.52
   pnpm release -- --dry-run
   pnpm release 1.0.52 -- --no-push
+  pnpm release -- --skip-checks
   pnpm release:redo v1.0.52 -- --dry-run
   pnpm release:redo v1.0.52 -- --yes
 `
@@ -45,6 +46,7 @@ function parseReleaseArgs(argv) {
     command: "release",
     dryRun: false,
     noPush: false,
+    skipChecks: false,
     help: false,
   }
   const values = []
@@ -54,6 +56,8 @@ function parseReleaseArgs(argv) {
       options.dryRun = true
     } else if (arg === "--no-push") {
       options.noPush = true
+    } else if (arg === "--skip-checks") {
+      options.skipChecks = true
     } else if (arg === "--help" || arg === "-h") {
       options.help = true
     } else if (arg.startsWith("-")) {
@@ -230,7 +234,8 @@ function updateChangelog(fileName, version, date) {
     fail(`${fileName} has no unreleased content to release`)
   }
 
-  const heading = `## [${version}] - ${date}`
+  // 与现有 changelog 的链接引用标题格式保持一致（底部引用由 addReleaseReference 补充）
+  const heading = `## [${version}][${version}] - ${date}`
   const updated =
     original.slice(0, sections.afterUnreleased) +
     `\n\n---\n\n${heading}\n\n${unreleasedBody}\n\n---\n\n` +
@@ -312,21 +317,28 @@ function assertGitState(options) {
   git(["rev-parse", "--is-inside-work-tree"])
 
   const branch = git(["branch", "--show-current"])
-  if (branch !== RELEASE_BRANCH) {
-    fail(`Release must run on ${RELEASE_BRANCH}; current branch is ${branch}`)
-  }
-
   if (!options.dryRun) {
+    if (branch !== RELEASE_BRANCH) {
+      fail(`Release must run on ${RELEASE_BRANCH}; current branch is ${branch}`)
+    }
+
     const status = git(["status", "--porcelain"])
     if (status) {
       fail("Working tree must be clean before running a release")
     }
+  } else if (branch && branch !== RELEASE_BRANCH) {
+    console.log(`Dry run on branch ${branch} (production releases run on ${RELEASE_BRANCH}).`)
   }
 }
 
-function assertTagDoesNotExist(tagName) {
+function assertTagDoesNotExist(tagName, { dryRun = false } = {}) {
   const existing = git(["tag", "--list", tagName])
   if (existing) {
+    // dry-run 不改动任何状态，已存在的同名 tag 仅提示，不阻断预览
+    if (dryRun) {
+      console.log(`Dry run: tag ${tagName} already exists locally; a real run would stop here.`)
+      return
+    }
     fail(`Tag already exists locally: ${tagName}`)
   }
 }
@@ -356,6 +368,28 @@ function writeReleaseFiles(updates) {
     fs.mkdirSync(path.dirname(filePath), { recursive: true })
     fs.writeFileSync(filePath, content)
   }
+}
+
+function runPnpm(args) {
+  const result = spawnSync("pnpm", args, {
+    cwd: PROJECT_ROOT,
+    stdio: "inherit",
+    shell: process.platform === "win32",
+  })
+
+  if (result.error) {
+    fail(result.error.message)
+  }
+
+  if (result.status !== 0) {
+    fail(`pnpm ${args.join(" ")} failed with exit code ${result.status ?? 1}`)
+  }
+}
+
+function runQualityChecks() {
+  console.log("Running pre-release checks: typecheck, test")
+  runPnpm(["typecheck"])
+  runPnpm(["test"])
 }
 
 async function runRelease(version, options) {
@@ -509,11 +543,17 @@ if (options.command === "redo") {
 } else {
   assertGitState(options)
 
+  if (options.skipChecks) {
+    console.log("Skipping pre-release checks (--skip-checks).")
+  } else {
+    runQualityChecks()
+  }
+
   const packageJson = readPackageJson()
   const version = options.requestedVersion
     ? normalizeVersion(options.requestedVersion)
     : bumpPatch(packageJson.version)
 
-  assertTagDoesNotExist(`v${version}`)
+  assertTagDoesNotExist(`v${version}`, { dryRun: options.dryRun })
   await runRelease(version, options)
 }

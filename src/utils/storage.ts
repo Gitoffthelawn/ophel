@@ -26,6 +26,7 @@ export type {
   ExportFormatSetting,
   ExportPackaging,
   ExportSettings,
+  ExportStyle,
   FormulaCopyFormat,
   ModelLockConfig,
   PageWidthConfig,
@@ -106,6 +107,7 @@ export interface ClaudeSessionKeysState {
 // ==================== 工具函数 ====================
 
 export {
+  getSiteAutoHideInput,
   getSiteCleanMode,
   getSiteModelLock,
   getSitePageWidth,
@@ -113,6 +115,7 @@ export {
   getSiteTheme,
   getSiteUserQueryWidth,
   getSiteZenMode,
+  isBuiltinSiteDisabled,
 } from "~utils/settings-selectors"
 export {
   createSiteInstanceKey,

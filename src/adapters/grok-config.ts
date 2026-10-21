@@ -45,6 +45,7 @@ type GrokPrivateSelectors = SitePrivateSelectors & {
   sidebarMenuItem: string
   sidebarMenu: string
   sidebarIcon: string
+  sidebarTrigger: string
   actionDialog: string
   cmdkRoot: string
   actionIconNodes: string
@@ -79,15 +80,18 @@ export interface GrokSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const GROK_CONFIG_VERSION = 2
+export const GROK_CONFIG_VERSION = 6
 
 const createGrokConfig = (): GrokSiteConfig => {
   const sidebarScrollContainer = '[data-sidebar="content"]'
   const conversationItem = 'a[href^="/c/"]'
   const cmdkItem = "[cmdk-item]"
   const messageBubble = ".message-bubble"
-  const userQuery = `${messageBubble}.rounded-br-lg`
-  const assistantResponse = `${messageBubble}:not(.rounded-br-lg)`
+  // 新版页面用 data-testid 区分用户/AI 消息；保留 rounded-br-lg 兼容未改版页面
+  const userQuery = `[data-testid="user-message"], ${messageBubble}.rounded-br-lg`
+  // 新版用户气泡已无 rounded-br-lg，旧反选必须额外排除用户气泡，
+  // 否则会把用户消息误判为 AI 回复
+  const assistantResponse = `[data-testid="assistant-message"], ${messageBubble}:not(.rounded-br-lg):not([data-testid="user-message"])`
   const responseMarkdown = ".response-content-markdown"
   const stopButton = ['button[aria-label*="停止"]', 'button[aria-label*="Stop"]']
   const appLayoutScope = "#grok-app-root"
@@ -97,6 +101,11 @@ const createGrokConfig = (): GrokSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.GROK]],
+    // virtualOutlineFill：长对话虚拟滚动，离屏轮次的提问与回答标题由
+    // response-node / load-responses 接口回填
+    // apiFirstExport：response-node / load-responses 接口可导出全量历史，
+    // 不依赖 DOM 历史预加载；接口失败回退 DOM 时由导出流程补做预加载
+    traits: { historyLazyLoad: false, virtualOutlineFill: true, apiFirstExport: true },
     selectors: {
       textarea: [
         ".tiptap.ProseMirror[contenteditable='true']",
@@ -128,7 +137,6 @@ const createGrokConfig = (): GrokSiteConfig => {
       titleSelector: "span.flex-1, span.truncate, span",
       urlTemplate: "/c/{id}",
       activeMatch: ".bg-button-ghost-hover",
-      navigationStrategy: "location",
       shadow: false,
     },
     generating: {
@@ -148,7 +156,9 @@ const createGrokConfig = (): GrokSiteConfig => {
     },
     export: {
       userQuerySelector: userQuery,
-      assistantResponseSelector: `${assistantResponse} ${responseMarkdown}`,
+      // assistantResponse 是逗号并集，必须用 :is() 包裹，
+      // 否则后代组合器只作用于最后一个分支
+      assistantResponseSelector: `:is(${assistantResponse}) ${responseMarkdown}`,
       turnSelector: null,
       useShadowDOM: false,
     },
@@ -168,9 +178,10 @@ const createGrokConfig = (): GrokSiteConfig => {
         ".absolute.bg-surface-l2.p-1.rounded-full button",
       ],
       sidebarScrollContainer,
-      // 新版聊天滚动容器为 overflow-y-auto + px-gutter；保留 overflow-auto 兼容旧结构
+      // 新版聊天滚动容器带 data-testid（px-gutter 已移至内部行元素）；
+      // 保留 overflow-y-auto + px-gutter 与 overflow-auto 兼容旧结构
       mainScrollContainer:
-        '[class*="overflow-y-auto"][class*="px-gutter"], [class*="overflow-auto"]',
+        '[data-testid="chat-transcript-scroller"], [class*="overflow-y-auto"][class*="px-gutter"], [class*="overflow-auto"]',
       fallbackScrollContainers: '[class*="overflow-y-auto"], [class*="overflow-auto"]',
       viewAllButton: "button.w-full.justify-start.text-xs.text-secondary.font-semibold",
       cmdkList: '[cmdk-list-sizer=""], [cmdk-list]',
@@ -184,6 +195,7 @@ const createGrokConfig = (): GrokSiteConfig => {
       sidebarMenuItem: '[data-sidebar="menu-item"]',
       sidebarMenu: '[data-sidebar="menu"]',
       sidebarIcon: '[data-sidebar="icon"] svg',
+      sidebarTrigger: 'button[data-sidebar="trigger"]',
       actionDialog: '[role="dialog"]',
       cmdkRoot: "[cmdk-root]",
       actionIconNodes: "svg, path, use, [data-icon], [class*='icon'], [aria-label]",
@@ -198,7 +210,7 @@ const createGrokConfig = (): GrokSiteConfig => {
       modelName: ".font-semibold",
       appLayoutScope,
       panelAvoidanceScope,
-      chatSafeArea: `${panelAvoidanceScope} [class*="overflow-y-auto"][class*="px-gutter"]`,
+      chatSafeArea: `${panelAvoidanceScope} [data-testid="chat-transcript-scroller"], ${panelAvoidanceScope} [class*="overflow-y-auto"][class*="px-gutter"]`,
       newChatLogoSafeArea: `${panelAvoidanceScope} .flex.flex-col.items-center.justify-center.w-full.max-w-breakout:has(svg[variant="hero"])`,
       inputSafeArea: `${panelAvoidanceScope} .absolute.inset-x-0.bottom-0.mx-auto.max-w-breakout`,
       canvasSafeArea: `${appLayoutScope} aside:has(iframe.w-full.flex-1)`,

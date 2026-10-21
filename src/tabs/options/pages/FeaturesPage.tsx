@@ -1,6 +1,6 @@
 /**
  * 功能模块页面
- * 包含：标签页、提醒、内容处理、大纲、会话、模型锁定、阅读历史
+ * 包含：标签页、提醒、内容处理、大纲、对话、模型锁定、阅读历史
  * 使用顶部 Tab 切换
  */
 import React, { useCallback, useEffect, useState } from "react"
@@ -13,7 +13,12 @@ import { platform } from "~platform"
 import { useSettingsStore } from "~stores/settings-store"
 import { t } from "~utils/i18n"
 import { MSG_CHECK_PERMISSIONS, MSG_REQUEST_PERMISSIONS, sendToBackground } from "~utils/messaging"
-import type { ExportFormatSetting, ExportPackaging, FormulaCopyFormat } from "~utils/storage"
+import type {
+  ExportFormatSetting,
+  ExportPackaging,
+  ExportStyle,
+  FormulaCopyFormat,
+} from "~utils/storage"
 import {
   aggregateUsageEvents,
   getUsageEvents,
@@ -663,6 +668,11 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
     { value: "txt", label: t("exportToTXT") },
     { value: "html", label: t("exportToHTML") },
   ]
+  const exportStyle = settings.export?.exportStyle === "clean" ? "clean" : "standard"
+  const exportStyleOptions = [
+    { value: "standard", label: t("exportStyleStandard") },
+    { value: "clean", label: t("exportStyleClean") },
+  ]
   const formulaCopyFormat = settings.content?.formulaCopyFormat === "mathml" ? "mathml" : "latex"
   const formulaCopyFormatOptions = [
     { value: "latex", label: t("formulaCopyFormatLatex") },
@@ -726,7 +736,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
     })
   }
   const notificationSettingsCard = (
-    <SettingCard title={t("notificationSettings")}>
+    <SettingCard title={t("notificationSettings")} settingId="notification-settings-card">
       <ToggleRow
         label={t("showNotificationLabel")}
         description={t("showNotificationDesc")}
@@ -904,7 +914,10 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
     </SettingCard>
   )
   const usageMonitorCard = (
-    <SettingCard title={t("usageMonitorSettingsTitle")} description={t("usageMonitorSettingsDesc")}>
+    <SettingCard
+      title={t("usageMonitorSettingsTitle")}
+      description={t("usageMonitorSettingsDesc")}
+      settingId="usage-monitor-card">
       <div
         style={{
           marginBottom: "12px",
@@ -994,7 +1007,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       {activeTab === FEATURES_TAB_IDS.TAB_SETTINGS && (
         <>
           {/* 标签页行为卡片 */}
-          <SettingCard title={t("tabBehaviorTitle")}>
+          <SettingCard title={t("tabBehaviorTitle")} settingId="tab-behavior-card">
             <ToggleRow
               label={t("openNewTabLabel")}
               description={t("openNewTabDesc")}
@@ -1071,7 +1084,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
           </SettingCard>
 
           {/* 隐私模式卡片 */}
-          <SettingCard title={t("privacyModeTitle")}>
+          <SettingCard title={t("privacyModeTitle")} settingId="tab-privacy-card">
             <ToggleRow
               label={t("privacyModeLabel")}
               description={t("privacyModeDesc")}
@@ -1110,7 +1123,10 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       {/* ========== 大纲 Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.OUTLINE && (
         <>
-          <SettingCard title={t("outlineSettings")} description={t("outlineSettingsDesc")}>
+          <SettingCard
+            title={t("outlineSettings")}
+            description={t("outlineSettingsDesc")}
+            settingId="outline-settings-card">
             <ToggleRow
               label={t("outlineAutoUpdateLabel")}
               description={t("outlineAutoUpdateDesc")}
@@ -1184,7 +1200,10 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
           </SettingCard>
 
           {/* 收藏图标设置卡片 */}
-          <SettingCard title={t("bookmarkSettings")} description={t("bookmarkSettingsDesc")}>
+          <SettingCard
+            title={t("bookmarkSettings")}
+            description={t("bookmarkSettingsDesc")}
+            settingId="bookmark-settings-card">
             <SettingRow
               label={t("inlineBookmarkModeLabel")}
               description={t("inlineBookmarkModeDesc")}
@@ -1229,7 +1248,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
           </SettingCard>
 
           {/* 滚动设置卡片 */}
-          <SettingCard title={t("scrollSettings")}>
+          <SettingCard title={t("scrollSettings")} settingId="scroll-settings-card">
             <ToggleRow
               label={t("preventAutoScrollLabel")}
               description={t("preventAutoScrollDesc")}
@@ -1247,12 +1266,159 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
         </>
       )}
 
-      {/* ========== 会话 Tab ========== */}
+      {/* ========== 对话 Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.CONVERSATIONS && (
         <>
+          {/* 导出设置卡片 */}
+          <SettingCard title={t("exportSettings")} settingId="export-settings-card">
+            <ToggleRow
+              label={t("exportShowDialogLabel")}
+              description={t("exportShowDialogDesc")}
+              settingId="export-show-dialog"
+              checked={settings.export?.exportShowDialog ?? true}
+              onChange={() =>
+                updateNestedSetting(
+                  "export",
+                  "exportShowDialog",
+                  !(settings.export?.exportShowDialog ?? true),
+                )
+              }
+            />
+
+            <SettingRow
+              label={t("exportDefaultFormatLabel")}
+              description={t("exportDefaultFormatDesc")}
+              settingId="export-default-format">
+              <SelectDropdown
+                className="settings-select-dropdown"
+                buttonClassName="settings-select"
+                options={defaultExportFormatOptions}
+                value={defaultExportFormat}
+                ariaLabel={t("exportDefaultFormatLabel")}
+                onChange={(value) =>
+                  updateNestedSetting("export", "defaultExportFormat", value as ExportFormatSetting)
+                }
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("exportPackagingLabel")}
+              description={t("exportPackagingDesc")}
+              settingId="export-packaging">
+              <SelectDropdown
+                className="settings-select-dropdown"
+                buttonClassName="settings-select"
+                options={exportPackagingOptions}
+                value={exportPackaging}
+                ariaLabel={t("exportPackagingLabel")}
+                onChange={(value) =>
+                  updateNestedSetting("export", "packaging", value as ExportPackaging)
+                }
+              />
+            </SettingRow>
+
+            <ToggleRow
+              label={t("exportIncludeThoughtsLabel")}
+              description={t("exportIncludeThoughtsDesc")}
+              settingId="export-include-thoughts"
+              checked={settings.export?.includeThoughts ?? true}
+              onChange={() =>
+                updateNestedSetting(
+                  "export",
+                  "includeThoughts",
+                  !(settings.export?.includeThoughts ?? true),
+                )
+              }
+            />
+
+            <ToggleRow
+              label={t("exportShowIndexLabel")}
+              description={t("exportShowIndexDesc")}
+              settingId="export-show-index"
+              checked={settings.export?.exportShowIndex ?? false}
+              onChange={() =>
+                updateNestedSetting(
+                  "export",
+                  "exportShowIndex",
+                  !(settings.export?.exportShowIndex ?? false),
+                )
+              }
+            />
+
+            <ToggleRow
+              label={t("exportFilenameTimestamp")}
+              description={t("exportFilenameTimestampDesc")}
+              settingId="export-filename-timestamp"
+              checked={settings.export?.exportFilenameTimestamp ?? false}
+              onChange={() =>
+                updateNestedSetting(
+                  "export",
+                  "exportFilenameTimestamp",
+                  !settings.export?.exportFilenameTimestamp,
+                )
+              }
+            />
+
+            <SettingRow
+              label={t("exportMarkdownDividerLabel")}
+              description={t("exportMarkdownDividerDesc")}
+              settingId="export-markdown-divider">
+              <LazyInput
+                className="settings-input"
+                value={settings.export?.exportMarkdownDivider ?? "---"}
+                onChange={(val) => updateNestedSetting("export", "exportMarkdownDivider", val)}
+                placeholder="---"
+                style={{ width: "180px" }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("exportCustomUserName")}
+              description={t("exportCustomUserNameDesc")}
+              settingId="export-custom-user-name">
+              <LazyInput
+                className="settings-input"
+                value={settings.export?.customUserName || ""}
+                onChange={(val) => updateNestedSetting("export", "customUserName", val)}
+                placeholder="User"
+                style={{ width: "180px" }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("exportCustomModelName")}
+              description={t("exportCustomModelNameDesc")}
+              settingId="export-custom-model-name">
+              <LazyInput
+                className="settings-input"
+                value={settings.export?.customModelName || ""}
+                onChange={(val) => updateNestedSetting("export", "customModelName", val)}
+                placeholder="Site Name"
+                style={{ width: "180px" }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              label={t("exportStyleLabel")}
+              description={t("exportStyleDesc")}
+              settingId="export-style">
+              <SelectDropdown
+                className="settings-select-dropdown"
+                buttonClassName="settings-select"
+                options={exportStyleOptions}
+                value={exportStyle}
+                ariaLabel={t("exportStyleLabel")}
+                onChange={(value) =>
+                  updateNestedSetting("export", "exportStyle", value as ExportStyle)
+                }
+              />
+            </SettingRow>
+          </SettingCard>
+
           <SettingCard
             title={t("conversationsSettingsTitle")}
-            description={t("conversationsSettingsDesc")}>
+            description={t("conversationsSettingsDesc")}
+            settingId="conversations-settings-card">
             <ToggleRow
               label={t("folderRainbowLabel")}
               description={t("folderRainbowDesc")}
@@ -1297,142 +1463,15 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
               }
             />
           </SettingCard>
-
-          {/* 导出设置卡片 */}
-          <SettingCard title={t("exportSettings")}>
-            <SettingRow
-              label={t("exportDefaultFormatLabel")}
-              description={t("exportDefaultFormatDesc")}
-              settingId="export-default-format">
-              <SelectDropdown
-                className="settings-select-dropdown"
-                buttonClassName="settings-select"
-                options={defaultExportFormatOptions}
-                value={defaultExportFormat}
-                ariaLabel={t("exportDefaultFormatLabel")}
-                onChange={(value) =>
-                  updateNestedSetting("export", "defaultExportFormat", value as ExportFormatSetting)
-                }
-              />
-            </SettingRow>
-
-            <SettingRow
-              label={t("exportPackagingLabel")}
-              description={t("exportPackagingDesc")}
-              settingId="export-packaging">
-              <SelectDropdown
-                className="settings-select-dropdown"
-                buttonClassName="settings-select"
-                options={exportPackagingOptions}
-                value={exportPackaging}
-                ariaLabel={t("exportPackagingLabel")}
-                onChange={(value) =>
-                  updateNestedSetting("export", "packaging", value as ExportPackaging)
-                }
-              />
-            </SettingRow>
-
-            <ToggleRow
-              label={t("exportFilenameTimestamp")}
-              description={t("exportFilenameTimestampDesc")}
-              settingId="export-filename-timestamp"
-              checked={settings.export?.exportFilenameTimestamp ?? false}
-              onChange={() =>
-                updateNestedSetting(
-                  "export",
-                  "exportFilenameTimestamp",
-                  !settings.export?.exportFilenameTimestamp,
-                )
-              }
-            />
-
-            <ToggleRow
-              label={t("exportIncludeThoughtsLabel")}
-              description={t("exportIncludeThoughtsDesc")}
-              settingId="export-include-thoughts"
-              checked={settings.export?.includeThoughts ?? true}
-              onChange={() =>
-                updateNestedSetting(
-                  "export",
-                  "includeThoughts",
-                  !(settings.export?.includeThoughts ?? true),
-                )
-              }
-            />
-
-            <ToggleRow
-              label={t("exportShowIndexLabel")}
-              description={t("exportShowIndexDesc")}
-              settingId="export-show-index"
-              checked={settings.export?.exportShowIndex ?? false}
-              onChange={() =>
-                updateNestedSetting(
-                  "export",
-                  "exportShowIndex",
-                  !(settings.export?.exportShowIndex ?? false),
-                )
-              }
-            />
-
-            <ToggleRow
-              label={t("exportShowDialogLabel")}
-              description={t("exportShowDialogDesc")}
-              settingId="export-show-dialog"
-              checked={settings.export?.exportShowDialog ?? true}
-              onChange={() =>
-                updateNestedSetting(
-                  "export",
-                  "exportShowDialog",
-                  !(settings.export?.exportShowDialog ?? true),
-                )
-              }
-            />
-
-            <SettingRow
-              label={t("exportMarkdownDividerLabel")}
-              description={t("exportMarkdownDividerDesc")}
-              settingId="export-markdown-divider">
-              <LazyInput
-                className="settings-input"
-                value={settings.export?.exportMarkdownDivider ?? "---"}
-                onChange={(val) => updateNestedSetting("export", "exportMarkdownDivider", val)}
-                placeholder="---"
-                style={{ width: "180px" }}
-              />
-            </SettingRow>
-
-            <SettingRow
-              label={t("exportCustomUserName")}
-              description={t("exportCustomUserNameDesc")}
-              settingId="export-custom-user-name">
-              <LazyInput
-                className="settings-input"
-                value={settings.export?.customUserName || ""}
-                onChange={(val) => updateNestedSetting("export", "customUserName", val)}
-                placeholder="User"
-                style={{ width: "180px" }}
-              />
-            </SettingRow>
-
-            <SettingRow
-              label={t("exportCustomModelName")}
-              description={t("exportCustomModelNameDesc")}
-              settingId="export-custom-model-name">
-              <LazyInput
-                className="settings-input"
-                value={settings.export?.customModelName || ""}
-                onChange={(val) => updateNestedSetting("export", "customModelName", val)}
-                placeholder="Site Name"
-                style={{ width: "180px" }}
-              />
-            </SettingRow>
-          </SettingCard>
         </>
       )}
       {/* ========== Prompt Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.PROMPTS && (
         <>
-          <SettingCard title={t("promptSettingsTitle")} description={t("promptSettingsDesc")}>
+          <SettingCard
+            title={t("promptSettingsTitle")}
+            description={t("promptSettingsDesc")}
+            settingId="prompts-settings-card">
             <ToggleRow
               label={t("promptDoubleClickSendLabel")}
               description={t("promptDoubleClickSendDesc")}
@@ -1481,7 +1520,8 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
           <SettingCard
             title={t("quickQuoteSettingsTitle")}
-            description={t("quickQuoteSettingsDesc")}>
+            description={t("quickQuoteSettingsDesc")}
+            settingId="quick-quote-settings-card">
             <ToggleRow
               label={t("quickQuoteEnabledLabel")}
               description={t("quickQuoteEnabledDesc")}
@@ -1502,17 +1542,20 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
       {/* ========== Reading History Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.READING_HISTORY && (
-        <SettingCard title={t("readingHistoryTitle")} description={t("readingHistoryDesc")}>
+        <SettingCard
+          title={t("readingHistoryTitle")}
+          description={t("readingHistoryDesc")}
+          settingId="reading-history-card">
           <ToggleRow
             label={t("readingHistoryPersistenceLabel")}
             description={t("readingHistoryPersistenceDesc")}
             settingId="reading-history-persistence"
-            checked={settings.readingHistory?.persistence ?? true}
+            checked={settings.readingHistory?.persistence ?? false}
             onChange={() =>
               updateNestedSetting(
                 "readingHistory",
                 "persistence",
-                !settings.readingHistory?.persistence,
+                !(settings.readingHistory?.persistence ?? false),
               )
             }
           />
@@ -1558,17 +1601,20 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
       {/* ========== 内容交互 Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.CONTENT && (
-        <SettingCard title={t("interactionEnhance")} description={t("interactionEnhanceDesc")}>
+        <SettingCard
+          title={t("interactionEnhance")}
+          description={t("interactionEnhanceDesc")}
+          settingId="content-interaction-card">
           <ToggleRow
             label={t("assistantMermaidLabel")}
             description={t("assistantMermaidDesc")}
             settingId="content-assistant-mermaid"
-            checked={settings.content?.assistantMermaid ?? true}
+            checked={settings.content?.assistantMermaid ?? false}
             onChange={() =>
               updateNestedSetting(
                 "content",
                 "assistantMermaid",
-                !(settings.content?.assistantMermaid ?? true),
+                !(settings.content?.assistantMermaid ?? false),
               )
             }
           />

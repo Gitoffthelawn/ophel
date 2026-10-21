@@ -72,6 +72,7 @@ describe("Z.ai built-in config", () => {
     })
     expect(adapter.getWidthSelectors()).toEqual(ZAI_CONFIG.widthSelectors)
     expect(adapter.getZenModeConfig()).toEqual(ZAI_CONFIG.zenMode)
+    expect(adapter.getCleanModeConfig()).toEqual(ZAI_CONFIG.cleanMode)
     expect(adapter.getUserQueryWidthSelectors()).toEqual([
       {
         selector: ZAI_CONFIG.sitePrivateSelectors.userQueryWidth,
@@ -103,6 +104,7 @@ describe("Z.ai built-in config", () => {
     adapter.getStopButtonSelectors().push("button[data-mutated]")
     adapter.getWidthSelectors()[0].selector = "main[data-mutated]"
     adapter.getZenModeConfig().hide?.push("aside[data-mutated]")
+    adapter.getCleanModeConfig().preserveFlow?.push("footer[data-mutated]")
     adapter.getModelSwitcherConfig("target")!.selectorButtonSelectors.push("button[data-mutated]")
     adapter.getPanelAvoidanceConfig().widthSelectors[0].selector = "main[data-mutated]"
     adapter.getUserQueryWidthSelectors()[0].selector = "article[data-mutated]"
@@ -113,6 +115,7 @@ describe("Z.ai built-in config", () => {
     expect(adapter.getStopButtonSelectors()).toEqual(ZAI_CONFIG.selectors.stopButton)
     expect(adapter.getWidthSelectors()).toEqual(ZAI_CONFIG.widthSelectors)
     expect(adapter.getZenModeConfig()).toEqual(ZAI_CONFIG.zenMode)
+    expect(adapter.getCleanModeConfig()).toEqual(ZAI_CONFIG.cleanMode)
     expect(adapter.getModelSwitcherConfig("target")?.selectorButtonSelectors).toEqual(
       ZAI_CONFIG.modelSwitcher.selectorButtonSelectors,
     )
@@ -223,6 +226,13 @@ describe("Z.ai built-in config", () => {
     expect(adapter.getUserQueryWidthSelectors()).toEqual([
       { selector: "article[data-user-width]", property: "max-width", noCenter: true },
     ])
+  })
+
+  it("configures cleanMode with safe preserveFlow selector preventing overseas chat blanking", () => {
+    const selector = ZAI_CONFIG.cleanMode.preserveFlow?.[0]
+    expect(selector).toBeDefined()
+    expect(selector).toContain(":not(:has(#messages-container, textarea, [data-pane-id]))")
+    expect(selector).toContain("beian.miit.gov.cn")
   })
 
   it("keeps every private selector allowlist key connected to a runtime consumer", () => {

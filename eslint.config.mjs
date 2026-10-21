@@ -16,9 +16,9 @@ export default [
       "docs/site/.vitepress/cache/**",
       "docs/site/.vitepress/dist/**",
       "assets/assistant-mermaid-vendor.js",
-      ".spec-workflow/**",
       ".claude/**",
       "CLAUDE.md",
+      "output/**",
     ],
   },
   {

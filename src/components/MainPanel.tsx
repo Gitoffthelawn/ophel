@@ -23,7 +23,6 @@ import {
   NewTabIcon,
   OutlineIcon,
   PromptIcon,
-  // RefreshIcon, (刷新按钮已注释掉)
   ScrollBottomIcon,
   ScrollTopIcon,
   SettingsIcon,
@@ -32,7 +31,7 @@ import {
   ThemeLightIcon,
 } from "~components/icons"
 import { SparkleIcon } from "~components/icons/SparkleIcon"
-import { TAB_IDS, isBuiltinSiteId } from "~constants"
+import { TAB_DEFINITIONS, TAB_IDS, type TabId, isBuiltinSiteId } from "~constants"
 import { isMacOS } from "~constants/shortcuts"
 import type { ConversationManager } from "~core/conversation-manager"
 import type { OutlineManager } from "~core/outline-manager"
@@ -47,7 +46,6 @@ import { t } from "~utils/i18n"
 import { getScrollInfo, smartScrollTo, smartScrollToBottom } from "~utils/scroll-helper"
 import { DEFAULT_SETTINGS, getSiteTheme, type Prompt } from "~utils/storage"
 import { showToast } from "~utils/toast"
-import { OPHEL_FONT_FAMILY_CSS_VAR } from "~utils/font"
 import { anchorStore, withAnchorOp } from "~stores/anchor-store"
 
 import { ConversationsTab } from "./ConversationsTab"
@@ -80,8 +78,6 @@ interface MainPanelProps {
   hoverWidthReleaseToken?: number
   hasUnseenReleaseNotes?: boolean
   onOpenReleaseNotes?: () => void
-  releaseNotesTitleText?: string
-  releaseNotesPreview?: string
   onMouseEnter?: React.MouseEventHandler<HTMLDivElement>
   onMouseLeave?: React.MouseEventHandler<HTMLDivElement>
 }
@@ -136,6 +132,8 @@ const PANEL_DEFAULT_WIDTH = 320
 const PANEL_DEFAULT_HOVER_WIDTH = 520
 const HOVER_WIDTH_POINTER_QUERY = "(hover: hover) and (pointer: fine)"
 const HOVER_WIDTH_RELEASE_DELAY_MS = 160
+const HEADER_PRESS_HINT_DELAY_MS = 450
+const HEADER_PRESS_HINT_MOVE_TOLERANCE = 6
 
 const PANEL_TAB_CAPABILITIES: Partial<Record<string, SitePackCapability>> = {
   [TAB_IDS.PROMPTS]: "prompt-insert",
@@ -170,8 +168,6 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   hoverWidthReleaseToken = 0,
   hasUnseenReleaseNotes = false,
   onOpenReleaseNotes,
-  releaseNotesTitleText,
-  releaseNotesPreview,
   onMouseEnter,
   onMouseLeave,
 }) => {
@@ -199,7 +195,9 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   const visibleTabs = useMemo(
     () =>
       tabOrder.filter((tabId) => {
-        if (tabId === TAB_IDS.SETTINGS) return false
+        if (!TAB_DEFINITIONS[tabId as TabId]) {
+          return false
+        }
         if (tabId === TAB_IDS.PROMPTS && currentSettings.features?.prompts?.enabled === false) {
           return false
         }
@@ -745,6 +743,16 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       : { left: "", right: "" }
 
   const [isHeaderPressed, setIsHeaderPressed] = useState(false)
+  const headerPressHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const headerPressStartRef = useRef<{ x: number; y: number } | null>(null)
+
+  const clearHeaderPressHintTimer = useCallback(() => {
+    if (headerPressHintTimerRef.current) {
+      clearTimeout(headerPressHintTimerRef.current)
+      headerPressHintTimerRef.current = null
+    }
+  }, [])
+
   const shouldShowHeaderPressHint = useCallback((target: EventTarget | null) => {
     if (!(target instanceof Element)) {
       return true
@@ -754,8 +762,12 @@ export const MainPanel: React.FC<MainPanelProps> = ({
   }, [])
 
   const resetHeaderPressHint = useCallback(() => {
+    clearHeaderPressHintTimer()
+    headerPressStartRef.current = null
     setIsHeaderPressed(false)
-  }, [])
+  }, [clearHeaderPressHintTimer])
+
+  useEffect(() => () => clearHeaderPressHintTimer(), [clearHeaderPressHintTimer])
 
   const handleHeaderPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
@@ -764,39 +776,69 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         return
       }
 
-      setIsHeaderPressed(true)
+      // 按住顶栏停留片刻才展示提示，避免点击、双击或拖拽时闪过遮挡
+      headerPressStartRef.current = { x: event.clientX, y: event.clientY }
+      clearHeaderPressHintTimer()
+      headerPressHintTimerRef.current = setTimeout(() => {
+        headerPressHintTimerRef.current = null
+        setIsHeaderPressed(true)
+      }, HEADER_PRESS_HINT_DELAY_MS)
     },
-    [resetHeaderPressHint, shouldShowHeaderPressHint],
+    [clearHeaderPressHintTimer, resetHeaderPressHint, shouldShowHeaderPressHint],
   )
 
-  // 品牌区（logo）交互：未读更新日志时悬停短暂停留展示轻量预览，点击才打开完整更新日志
+  const handleHeaderPointerMove = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      const start = headerPressStartRef.current
+      if (!start) return
+
+      const distance = Math.hypot(event.clientX - start.x, event.clientY - start.y)
+      if (distance > HEADER_PRESS_HINT_MOVE_TOLERANCE) {
+        resetHeaderPressHint()
+      }
+    },
+    [resetHeaderPressHint],
+  )
+
+  // 品牌区（logo）交互：未读更新日志时悬停短暂停留直接打开完整更新日志（打开即已读），
+  // 已读后悬停无行为、点击打开
   const brandHoverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [isBrandPopoverOpen, setIsBrandPopoverOpen] = useState(false)
+
+  const clearBrandHoverTimer = useCallback(() => {
+    if (brandHoverTimerRef.current) {
+      clearTimeout(brandHoverTimerRef.current)
+      brandHoverTimerRef.current = null
+    }
+  }, [])
 
   const handleBrandMouseEnter = useCallback(() => {
     if (!hasUnseenReleaseNotes || !onOpenReleaseNotes) return
-    if (brandHoverTimerRef.current) clearTimeout(brandHoverTimerRef.current)
+    clearBrandHoverTimer()
     brandHoverTimerRef.current = setTimeout(() => {
-      setIsBrandPopoverOpen(true)
-    }, 300)
-  }, [hasUnseenReleaseNotes, onOpenReleaseNotes])
-
-  const handleBrandMouseLeave = useCallback(() => {
-    if (brandHoverTimerRef.current) {
-      clearTimeout(brandHoverTimerRef.current)
       brandHoverTimerRef.current = null
-    }
-    setIsBrandPopoverOpen(false)
-  }, [])
+      onOpenReleaseNotes()
+    }, 350)
+  }, [clearBrandHoverTimer, hasUnseenReleaseNotes, onOpenReleaseNotes])
+
+  const handleBrandMouseLeave = clearBrandHoverTimer
 
   const handleBrandClick = useCallback(() => {
-    if (brandHoverTimerRef.current) {
-      clearTimeout(brandHoverTimerRef.current)
-      brandHoverTimerRef.current = null
-    }
-    setIsBrandPopoverOpen(false)
+    clearBrandHoverTimer()
     onOpenReleaseNotes?.()
-  }, [onOpenReleaseNotes])
+  }, [clearBrandHoverTimer, onOpenReleaseNotes])
+
+  // 卸载时清理悬停定时器，避免组件销毁后回调触发
+  useEffect(() => clearBrandHoverTimer, [clearBrandHoverTimer])
+
+  const handleBrandKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault()
+        handleBrandClick()
+      }
+    },
+    [handleBrandClick],
+  )
 
   // Double click to toggle panel mode
   const handleHeaderDoubleClick = useCallback(
@@ -917,13 +959,14 @@ export const MainPanel: React.FC<MainPanelProps> = ({
 
   // 滚动到顶部（自动记录当前位置为锚点，使用 HistoryLoader 加载全部历史）
   const scrollToTop = useCallback(async () => {
-    await withAnchorOp(async () => {
+    await withAnchorOp(async (signal) => {
       // 遮罩延迟显示
       const OVERLAY_DELAY_MS = 1600
       abortLoadingRef.current = false
 
-      // 创建 AbortController 用于中断
+      // 创建 AbortController 用于中断；锁被新锚点操作抢占时同步中断加载
       const abortController = new AbortController()
+      signal.addEventListener("abort", () => abortController.abort(), { once: true })
       const checkAbort = () => {
         if (abortLoadingRef.current) {
           abortController.abort()
@@ -931,13 +974,17 @@ export const MainPanel: React.FC<MainPanelProps> = ({
       }
       const abortCheckInterval = setInterval(checkAbort, 100)
 
-      // 延迟显示遮罩的定时器
-      let overlayTimer: ReturnType<typeof setTimeout> | null = setTimeout(() => {
-        if (!abortLoadingRef.current) {
-          setIsLoadingHistory(true)
-          setLoadingText(t("loadingHistory"))
-        }
-      }, OVERLAY_DELAY_MS)
+      // 延迟显示遮罩的定时器。DeepSeek / Claude 没有服务端历史加载，
+      // 去顶部只是在等虚拟列表换窗口，不能弹出「正在加载历史记录」。
+      let overlayTimer: ReturnType<typeof setTimeout> | null = null
+      if (!adapter?.usesVirtualOutlineFill?.()) {
+        overlayTimer = setTimeout(() => {
+          if (!abortLoadingRef.current) {
+            setIsLoadingHistory(true)
+            setLoadingText(t("loadingHistory"))
+          }
+        }, OVERLAY_DELAY_MS)
+      }
 
       try {
         const result = await loadHistoryUntil({
@@ -1321,6 +1368,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         data-panel-hover-width-active={isHoverWidthPreviewActive ? "true" : undefined}
         data-panel-base-width={basePanelWidth}
         data-panel-anchor-side={panelAnchorSide}
+        data-panel-narrow={panelWidth < 280 ? "true" : undefined}
         style={
           {
             position: "fixed",
@@ -1334,20 +1382,8 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             height: `${panelHeightVh}vh`,
             "--panel-width": `${panelWidth}px`,
             "--panel-base-width": `${basePanelWidth}px`,
-            minHeight: "500px",
-            backgroundColor: "var(--gh-bg, #ffffff)",
-            backgroundImage: "var(--gh-bg-image, none)",
-            backgroundBlendMode: "overlay",
-            animation: "var(--gh-bg-animation, none)",
-            borderRadius: "12px",
-            boxShadow: "var(--gh-shadow, 0 10px 40px rgba(0,0,0,0.15))",
-            display: "flex",
-            flexDirection: "column",
-            overflow: "hidden",
-            border: "1px solid var(--gh-border, #e5e7eb)",
-            zIndex: 9999,
-            fontFamily: OPHEL_FONT_FAMILY_CSS_VAR,
-            // 位置现在由 useDraggable 通过直接 DOM 操作控制，不再通过 React state
+            // 静态展示属性（圆角/阴影/边框/背景/层叠等）在 .gh-main-panel 类中定义
+            // 面板定位由 useDraggable 通过直接 DOM 写入控制
           } as React.CSSProperties
         }>
         {/* 自定义 CSS 注入：根据当前站点的样式 ID 查找自定义样式 */}
@@ -1372,6 +1408,7 @@ export const MainPanel: React.FC<MainPanelProps> = ({
         <div
           ref={headerRef}
           onPointerDown={handleHeaderPointerDown}
+          onPointerMove={handleHeaderPointerMove}
           onPointerUp={resetHeaderPressHint}
           onPointerLeave={resetHeaderPressHint}
           onPointerCancel={resetHeaderPressHint}
@@ -1384,18 +1421,13 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             onMouseLeave={handleBrandMouseLeave}>
             <div
               className="gh-interactive gh-panel-brand-trigger"
-              role="button"
-              tabIndex={0}
-              aria-label={t("releaseNotesOpen")}
+              role={onOpenReleaseNotes ? "button" : undefined}
+              tabIndex={onOpenReleaseNotes ? 0 : undefined}
+              aria-label={onOpenReleaseNotes ? t("releaseNotesOpen") : undefined}
               data-tip-target="header-title"
               data-no-header-press-hint="true"
-              onClick={handleBrandClick}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault()
-                  handleBrandClick()
-                }
-              }}>
+              onClick={onOpenReleaseNotes ? handleBrandClick : undefined}
+              onKeyDown={onOpenReleaseNotes ? handleBrandKeyDown : undefined}>
               <div className="gh-panel-brand-mark">
                 <SparkleIcon size={18} color={panelSparkleColor} />
                 {hasUnseenReleaseNotes && (
@@ -1404,16 +1436,6 @@ export const MainPanel: React.FC<MainPanelProps> = ({
               </div>
               <span className="gh-panel-brand-title">{t("panelTitle")}</span>
             </div>
-
-            {isBrandPopoverOpen && hasUnseenReleaseNotes && releaseNotesTitleText ? (
-              <div className="gh-brand-release-popover" role="status">
-                <div className="gh-brand-release-popover-title">{releaseNotesTitleText}</div>
-                {releaseNotesPreview ? (
-                  <p className="gh-brand-release-popover-preview">{releaseNotesPreview}</p>
-                ) : null}
-                <div className="gh-brand-release-popover-hint">{t("releaseNotesViewFull")}</div>
-              </div>
-            ) : null}
           </div>
 
           {/* 右侧：按钮组 - 需要 gh-panel-controls 以排除拖拽 */}
@@ -1493,32 +1515,6 @@ export const MainPanel: React.FC<MainPanelProps> = ({
               </button>
             </Tooltip>
 
-            {/* 刷新按钮 - 暂时隐藏，数据已是响应式自动更新 */}
-            {/* <Tooltip
-              content={
-                activeTab === TAB_IDS.OUTLINE
-                  ? t("refreshOutline")
-                  : activeTab === TAB_IDS.PROMPTS
-                    ? t("refreshPrompts")
-                    : activeTab === TAB_IDS.CONVERSATIONS
-                      ? t("refreshConversations")
-                      : t("refresh")
-              }>
-              <button
-                onClick={() => {
-                  if (activeTab === TAB_IDS.OUTLINE) {
-                    outlineManager?.refresh()
-                  } else if (activeTab === TAB_IDS.PROMPTS) {
-                    promptManager?.init()
-                  } else if (activeTab === TAB_IDS.CONVERSATIONS) {
-                    conversationManager?.notifyDataChange()
-                  }
-                }}
-                className="gh-header-icon-btn">
-                <RefreshIcon size={14} />
-              </button>
-            </Tooltip> */}
-
             {/* 折叠按钮（收起面板） */}
             <Tooltip content={t("collapse")}>
               <button
@@ -1541,53 +1537,58 @@ export const MainPanel: React.FC<MainPanelProps> = ({
             {t("tip1", { modifier: isMacOS() ? "⌘ Cmd" : "Ctrl" })}
           </span>
         </div>
-        <div className="gh-panel-tabs" role="tablist" aria-label={t("panelTitle")}>
-          {visibleTabs.map((tab) => {
-            let IconComp: React.FC<{ size?: number }> | null = null
-            if (tab === TAB_IDS.OUTLINE) IconComp = OutlineIcon
-            else if (tab === TAB_IDS.PROMPTS) IconComp = PromptIcon
-            else if (tab === TAB_IDS.CONVERSATIONS) IconComp = ConversationIcon
+        {/* 仅在有多个功能 Tab 时展示切换栏；单功能时自动隐藏以节省垂直空间 */}
+        {visibleTabs.length > 1 && (
+          <div className="gh-panel-tabs" role="tablist" aria-label={t("panelTitle")}>
+            {visibleTabs.map((tab) => {
+              let IconComp: React.FC<{ size?: number }> | null = null
+              if (tab === TAB_IDS.OUTLINE) IconComp = OutlineIcon
+              else if (tab === TAB_IDS.PROMPTS) IconComp = PromptIcon
+              else if (tab === TAB_IDS.CONVERSATIONS) IconComp = ConversationIcon
 
-            return (
-              <button
-                type="button"
-                key={tab}
-                id={`gh-panel-tab-${tab}`}
-                role="tab"
-                draggable={canDragPanelTabs}
-                aria-selected={activeTab === tab}
-                aria-controls={`gh-panel-tabpanel-${tab}`}
-                aria-grabbed={draggedPanelTab === tab}
-                className={`gh-panel-tab-btn ${activeTab === tab ? "active" : ""} ${canDragPanelTabs ? "is-draggable" : ""} ${draggedPanelTab === tab ? "is-dragging" : ""} ${dragOverPanelTab === tab ? "is-drag-over" : ""}`}
-                data-tip-target={
-                  tab === TAB_IDS.OUTLINE
-                    ? "outline-tab"
-                    : tab === TAB_IDS.CONVERSATIONS
-                      ? "conversations-tab"
-                      : tab === TAB_IDS.PROMPTS
-                        ? "prompts-tab"
-                        : undefined
-                }
-                onClick={() => handlePanelTabClick(tab)}
-                onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}
-                onDragStart={(event) => handlePanelTabDragStart(event, tab)}
-                onDragOver={(event) => handlePanelTabDragOver(event, tab)}
-                onDragEnter={(event) => handlePanelTabDragOver(event, tab)}
-                onDragLeave={() => {
-                  if (dragOverPanelTab === tab) {
-                    setDragOverPanelTab(null)
+              return (
+                <button
+                  type="button"
+                  key={tab}
+                  id={`gh-panel-tab-${tab}`}
+                  role="tab"
+                  draggable={canDragPanelTabs}
+                  aria-selected={activeTab === tab}
+                  aria-controls={`gh-panel-tabpanel-${tab}`}
+                  aria-grabbed={draggedPanelTab === tab}
+                  className={`gh-panel-tab-btn ${activeTab === tab ? "active" : ""} ${canDragPanelTabs ? "is-draggable" : ""} ${draggedPanelTab === tab ? "is-dragging" : ""} ${dragOverPanelTab === tab ? "is-drag-over" : ""}`}
+                  data-tip-target={
+                    tab === TAB_IDS.OUTLINE
+                      ? "outline-tab"
+                      : tab === TAB_IDS.CONVERSATIONS
+                        ? "conversations-tab"
+                        : tab === TAB_IDS.PROMPTS
+                          ? "prompts-tab"
+                          : undefined
                   }
-                }}
-                onDrop={(event) => handlePanelTabDrop(event, tab)}
-                onDragEnd={resetPanelTabDragState}>
-                <span className="gh-panel-tab-btn-icon">{IconComp && <IconComp size={16} />}</span>
-                <span className="gh-panel-tab-btn-label">
-                  {t(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+                  onClick={() => handlePanelTabClick(tab)}
+                  onKeyDown={(event) => handlePanelTabKeyDown(event, tab)}
+                  onDragStart={(event) => handlePanelTabDragStart(event, tab)}
+                  onDragOver={(event) => handlePanelTabDragOver(event, tab)}
+                  onDragEnter={(event) => handlePanelTabDragOver(event, tab)}
+                  onDragLeave={() => {
+                    if (dragOverPanelTab === tab) {
+                      setDragOverPanelTab(null)
+                    }
+                  }}
+                  onDrop={(event) => handlePanelTabDrop(event, tab)}
+                  onDragEnd={resetPanelTabDragState}>
+                  <span className="gh-panel-tab-btn-icon">
+                    {IconComp && <IconComp size={16} />}
+                  </span>
+                  <span className="gh-panel-tab-btn-label">
+                    {t(`tab${tab.charAt(0).toUpperCase() + tab.slice(1)}`)}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
+        )}
 
         {/* Content - 内容区 */}
         {visibleTabs.includes(activeTab) && (

@@ -21,7 +21,7 @@
   
   <p align="center" style="font-size: 12px; color: #555;">👇 デモ：「無限スクロールのチャット履歴」から「ナビ可能なAIドキュメント」へ</p>
 
-![Ophel Demo](../media/demo/outline.gif)
+<img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
 
   <p>
     <strong><em>AIチャットを初めて「整理可能なワークフロー」にします</em></strong><br/>
@@ -72,7 +72,6 @@
 </p>
 
 <p align="center">
-  <a href="#-デモ">デモ</a> •
   <a href="#-主な機能">主な機能</a> •
   <a href="#-今すぐ始める">今すぐ始める</a> •
   <a href="#-ophel-atlas-をサポート">Ophel Atlas をサポート</a> •
@@ -82,12 +81,6 @@
 <p align="center">
   🌐 <a href="../../README.md">English</a> | <a href="../../README_zh-CN.md">简体中文</a> | <a href="./README_zh-TW.md">繁體中文</a> | <strong>日本語</strong> | <a href="./README_ko.md">한국어</a> | <a href="./README_de.md">Deutsch</a> | <a href="./README_fr.md">Français</a> | <a href="./README_es.md">Español</a> | <a href="./README_pt-BR.md">Português</a> | <a href="./README_ru.md">Русский</a>
 </p>
-
-## 📹 デモ
-
-|                                                        大綱 Outline                                                        |                                                     会話 Conversations                                                     |                                                       機能 Features                                                        |
-| :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: |
-| <video src="https://github.com/user-attachments/assets/a40eb655-295e-4f9c-b432-9313c9242c9d" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/a249baeb-2e82-4677-847c-2ff584c3f56b" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/6dfca20d-2f88-4844-b3bb-c48321100ff4" width="280" controls></video> |
 
 ## ✨ 主な機能
 
@@ -251,7 +244,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://pic1.afdiancdn.com/default/avatar/avatar-orange.png?imageView2/1/w/120/h/120" width="84px;" alt="Will" /><br />
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -265,6 +258,10 @@
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <sub><b>**然</b></sub>
     </td>
   </tr>
   </tbody>

@@ -16,7 +16,7 @@ interface GlobalSearchResultItemViewProps {
     reply: string
   }
   matchReasonLabels: Record<GlobalSearchMatchReason, string>
-  /** 站外会话结果站点名旁的"站外"标注文案 */
+  /** 站外对话结果站点名旁的"站外"标注文案 */
   offsiteConversationLabel: string
   onMouseMove: () => void
   onMouseEnter: (event: React.MouseEvent<HTMLDivElement>) => void
@@ -158,19 +158,21 @@ export const GlobalSearchResultItemView = React.memo(
                 {renderSearchHighlightedParts(item.title, "default", fuzzyTitleIndexes)}
               </span>
             </div>
-          ) : isConversationItem && item.offsiteSite ? (
+          ) : isConversationItem && item.sourceSite ? (
             <div className="settings-search-conversation-head">
               <PlatformIcon
-                platform={item.offsiteSite}
+                platform={item.sourceSite}
                 size={14}
-                className="settings-search-offsite-site-icon"
+                className="settings-search-conversation-site-icon"
               />
               <span className="settings-search-item-title-text">
                 {renderSearchHighlightedParts(item.title, "default", fuzzyTitleIndexes)}
               </span>
-              <span className="settings-search-offsite-badge" title={item.offsiteSite.name}>
-                {offsiteConversationLabel}
-              </span>
+              {item.sourceSite.isOffsite ? (
+                <span className="settings-search-offsite-badge" title={item.sourceSite.name}>
+                  {offsiteConversationLabel}
+                </span>
+              ) : null}
             </div>
           ) : (
             <span className="settings-search-item-title-text">

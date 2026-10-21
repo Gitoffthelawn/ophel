@@ -11,8 +11,8 @@ import {
   getFeatureCapabilitiesSignature,
   type SitePackCapability,
 } from "~adapters/feature-capabilities"
-import { PageContentIcon as LayoutIcon } from "~components/icons"
-import { NumberInput, Slider } from "~components/ui"
+import { PageContentIcon as LayoutIcon, PowerIcon } from "~components/icons"
+import { ConfirmDialog, NumberInput, Slider, Tooltip } from "~components/ui"
 import { LAYOUT_CONFIG, SITE_IDS, SITE_SETTINGS_TAB_IDS, isBuiltinSiteId } from "~constants"
 import { platform } from "~platform"
 import { useSettingsStore } from "~stores/settings-store"
@@ -20,6 +20,7 @@ import { getCurrentLang, subscribeI18nChanges, t } from "~utils/i18n"
 import { MSG_CHECK_PERMISSIONS, MSG_REQUEST_PERMISSIONS, sendToBackground } from "~utils/messaging"
 import {
   getSiteCleanMode,
+  getSiteAutoHideInput,
   getSitePageWidth,
   getSitePanelAvoidance,
   getSiteUserQueryWidth,
@@ -69,6 +70,9 @@ const PANEL_AVOIDANCE_SUPPORTED_SITE_IDS = new Set<string>([
   SITE_IDS.ZAI,
 ])
 
+// 自动隐藏输入框首发站点白名单；其余站点验证后逐步加入
+const AUTO_HIDE_INPUT_SUPPORTED_SITE_IDS = new Set<string>([SITE_IDS.GEMINI])
+
 const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
   siteId,
   siteInstanceKey = siteId,
@@ -100,6 +104,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
   const [activeTab, setActiveTab] = useState<string>(
     normalizeSiteSettingsTab(initialTab, availableTabs),
   )
+  const [showDisableSiteConfirm, setShowDisableSiteConfirm] = useState(false)
   const currentLanguage = useSyncExternalStore(subscribeI18nChanges, getCurrentLang, getCurrentLang)
 
   useEffect(() => {
@@ -121,6 +126,19 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
     (supportsPageWidth && (adapter?.getUserQueryWidthSelectors().length ?? 0) > 0)
   const supportsZenMode = supportsFeature("zen")
   const supportsCleanMode = supportsFeature("clean")
+  const supportsAutoHideInput =
+    AUTO_HIDE_INPUT_SUPPORTED_SITE_IDS.has(siteId) || Boolean(adapter?.getAutoHideInputConfig())
+  // 仅在面板内（有适配器上下文）且为内置站点时提供"在此站点停用"入口
+  const canDisableCurrentSite = Boolean(adapter) && isBuiltinSiteId(siteId)
+  const handleDisableCurrentSite = () => {
+    const current = settings?.disabledSites ?? []
+    if (!current.includes(siteId)) {
+      setSettings({ disabledSites: [...current, siteId] })
+    }
+    // persist 写入 chrome.storage 是异步 IPC，立即刷新可能中断写入；
+    // 留出持久化缓冲后再刷新（主世界注入脚本无法随设置卸载，需刷新彻底停用）
+    setTimeout(() => window.location.reload(), 300)
+  }
   // 宽度布局相关状态
   const currentPageWidth = settings ? getSitePageWidth(settings, siteInstanceKey) : undefined
   const currentUserQueryWidth = settings
@@ -132,12 +150,21 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
   const currentCleanMode = settings
     ? getSiteCleanMode(settings, siteInstanceKey)
     : { enabled: true }
+  const currentAutoHideInput = settings
+    ? getSiteAutoHideInput(settings, siteInstanceKey)
+    : { enabled: false }
   const currentPanelAvoidance = settings
     ? getSitePanelAvoidance(settings, siteInstanceKey)
     : { enabled: true }
   const panelAvoidanceTitle = (
     <span className="settings-card-title-with-badge">
       <span>{t("panelAvoidanceTitle")}</span>
+      <span className="settings-beta-badge">{t("betaBadge")}</span>
+    </span>
+  )
+  const autoHideInputTitle = (
+    <span className="settings-card-title-with-badge">
+      <span>{t("autoHideInputTitle")}</span>
       <span className="settings-beta-badge">{t("betaBadge")}</span>
     </span>
   )
@@ -213,7 +240,23 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
   return (
     <div>
-      <PageTitle title={t("navSiteSettings")} Icon={LayoutIcon} />
+      <PageTitle
+        title={t("navSiteSettings")}
+        Icon={LayoutIcon}
+        action={
+          canDisableCurrentSite ? (
+            <Tooltip content={t("disableSiteEntryLabel")}>
+              <button
+                type="button"
+                className="settings-site-disable-icon-btn"
+                aria-label={t("disableSiteEntryLabel")}
+                onClick={() => setShowDisableSiteConfirm(true)}>
+                <PowerIcon size={16} />
+              </button>
+            </Tooltip>
+          ) : undefined
+        }
+      />
       {isCommunitySitePack && (
         <div className="settings-site-pack-notice" role="note">
           <span className="settings-site-pack-badge">{t("communitySitePackBadge")}</span>
@@ -235,7 +278,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
       {activeTab === SITE_SETTINGS_TAB_IDS.LAYOUT && (
         <>
           {supportsPanelAvoidance && (
-            <SettingCard title={panelAvoidanceTitle}>
+            <SettingCard title={panelAvoidanceTitle} settingId="layout-panel-avoidance-card">
               <ToggleRow
                 label={t("panelAvoidanceLabel")}
                 description={t("panelAvoidanceDesc")}
@@ -261,7 +304,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
           {/* 页面宽度卡片 */}
           {supportsPageWidth && (
-            <SettingCard title={t("layoutSettingsTitle")}>
+            <SettingCard title={t("layoutSettingsTitle")} settingId="layout-page-width-card">
               <ToggleRow
                 label={t("enablePageWidth")}
                 description={t("pageWidthDesc")}
@@ -306,7 +349,9 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
           {/* 用户问题宽度卡片 */}
           {supportsUserQueryWidth && (
-            <SettingCard title={t("userQueryWidthSettings")}>
+            <SettingCard
+              title={t("userQueryWidthSettings")}
+              settingId="layout-user-query-width-card">
               <ToggleRow
                 label={t("enableUserQueryWidth")}
                 description={t("userQueryWidthDesc")}
@@ -355,7 +400,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
           {/* 禅模式 (Zen Mode) 卡片 */}
           {supportsZenMode && (
-            <SettingCard title={t("zenModeTitle")}>
+            <SettingCard title={t("zenModeTitle")} settingId="layout-zen-mode-card">
               <ToggleRow
                 label={t("zenModeLabel")}
                 description={t("zenModeDesc")}
@@ -372,13 +417,6 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
                         enabled: newZenEnabled,
                       },
                     },
-                  }
-                  // 开启禅模式时自动开启净化模式
-                  if (newZenEnabled && supportsCleanMode) {
-                    updatedLayout.cleanMode = {
-                      ...settings.layout?.cleanMode,
-                      [siteInstanceKey]: { enabled: true },
-                    }
                   }
                   setSettings({ layout: updatedLayout })
                 }}
@@ -408,7 +446,7 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
           {/* 净化模式 (Clean Mode) 卡片 */}
           {supportsCleanMode && (
-            <SettingCard title={t("cleanModeTitle")}>
+            <SettingCard title={t("cleanModeTitle")} settingId="layout-clean-mode-card">
               <ToggleRow
                 label={t("cleanModeLabel")}
                 description={t("cleanModeDesc")}
@@ -431,6 +469,32 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
               />
             </SettingCard>
           )}
+
+          {/* 自动隐藏输入框 (Auto Hide Input) 卡片 */}
+          {supportsAutoHideInput && (
+            <SettingCard title={autoHideInputTitle} settingId="layout-auto-hide-input-card">
+              <ToggleRow
+                label={t("autoHideInputLabel")}
+                description={t("autoHideInputDesc")}
+                settingId="layout-auto-hide-input-enabled"
+                checked={currentAutoHideInput.enabled}
+                onChange={() => {
+                  setSettings({
+                    layout: {
+                      ...settings.layout,
+                      autoHideInput: {
+                        ...settings.layout?.autoHideInput,
+                        [siteInstanceKey]: {
+                          ...currentAutoHideInput,
+                          enabled: !currentAutoHideInput.enabled,
+                        },
+                      },
+                    },
+                  })
+                }}
+              />
+            </SettingCard>
+          )}
         </>
       )}
 
@@ -438,7 +502,10 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
       {/* ========== Gemini 专属 Tab ========== */}
       {activeTab === "gemini" && (
-        <SettingCard title={t("geminiSettingsTab")} description={t("contentProcessingDesc")}>
+        <SettingCard
+          title={t("geminiSettingsTab")}
+          description={t("contentProcessingDesc")}
+          settingId="gemini-settings-card">
           <ToggleRow
             label={t("markdownFixLabel")}
             description={t("markdownFixDesc")}
@@ -557,7 +624,10 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
       {/* ========== AI Studio 专属 Tab ========== */}
       {activeTab === SITE_IDS.AISTUDIO && (
-        <SettingCard title={t("aistudioSettingsTitle")} description={t("aistudioSettingsDesc")}>
+        <SettingCard
+          title={t("aistudioSettingsTitle")}
+          description={t("aistudioSettingsDesc")}
+          settingId="aistudio-settings-card">
           {/* 界面状态开关 */}
           <ToggleRow
             label={t("aistudioCollapseNavbar")}
@@ -672,7 +742,10 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
 
       {/* ========== ChatGPT 专属 Tab ========== */}
       {activeTab === SITE_IDS.CHATGPT && (
-        <SettingCard title={t("chatgptSettingsTitle")} description={t("chatgptSettingsDesc")}>
+        <SettingCard
+          title={t("chatgptSettingsTitle")}
+          description={t("chatgptSettingsDesc")}
+          settingId="chatgpt-settings-card">
           <ToggleRow
             label={t("chatgptMarkdownFixLabel")}
             description={t("chatgptMarkdownFixDesc")}
@@ -733,6 +806,17 @@ const SiteSettingsPage: React.FC<SiteSettingsPageProps> = ({
             }
           />
         </SettingCard>
+      )}
+
+      {showDisableSiteConfirm && (
+        <ConfirmDialog
+          title={t("disableSiteConfirmTitle", { site: adapter?.getName() ?? siteId })}
+          message={t("disableSiteConfirmDesc", { site: adapter?.getName() ?? siteId })}
+          confirmText={t("disableSiteConfirmAction")}
+          danger
+          onConfirm={handleDisableCurrentSite}
+          onCancel={() => setShowDisableSiteConfirm(false)}
+        />
       )}
     </div>
   )

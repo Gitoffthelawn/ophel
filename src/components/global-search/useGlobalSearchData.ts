@@ -1,7 +1,11 @@
 import { useMemo } from "react"
 import fuzzysort from "fuzzysort"
 
-import { SETTING_ID_ALIASES, type SettingsSearchItem } from "~constants"
+import {
+  SETTING_CARD_LEVEL_SEARCH_IDS,
+  SETTING_ID_ALIASES,
+  type SettingsSearchItem,
+} from "~constants"
 import { FEATURE_TIPS } from "~constants/feature-tips"
 import type { Conversation, ConversationManager } from "~core/conversation-manager"
 import type { OutlineManager, OutlineNode } from "~core/outline-manager"
@@ -18,13 +22,13 @@ import {
   toGlobalSearchTokens,
   type GlobalSearchSyntaxFilter,
 } from "./syntax"
+import { resolveConversationSourceSite } from "./conversation-source-site"
 import type {
   GlobalSearchCategoryId,
   GlobalSearchFuzzyMatchMeta,
   GlobalSearchGroupedResult,
   GlobalSearchHighlightField,
   GlobalSearchMatchReason,
-  GlobalSearchOffsiteSite,
   GlobalSearchResultCategory,
   GlobalSearchResultItem,
   GlobalSearchTagBadge,
@@ -876,12 +880,20 @@ export const useGlobalSearchData = ({
     return settingsSearchResults.map((item, index) => {
       const title = resolveSettingSearchTitle(item)
       const breadcrumb = getSettingsBreadcrumb(item.settingId)
+      const isPageItem = item.settingId.startsWith("page-")
+      const isSubTabItem = item.settingId.startsWith("subtab-")
+      const isCardItem = SETTING_CARD_LEVEL_SEARCH_IDS.has(item.settingId)
+
+      const titleExactWeight = isPageItem ? 260 : isSubTabItem ? 240 : isCardItem ? 230 : 220
+      const titlePrefixWeight = isPageItem ? 160 : isSubTabItem ? 150 : isCardItem ? 145 : 140
+      const titleIncludesWeight = isPageItem ? 110 : isSubTabItem ? 105 : isCardItem ? 102 : 100
+
       const fields: GlobalSearchScoreField[] = [
         {
           value: normalizeGlobalSearchValue(title),
-          exact: 220,
-          prefix: 140,
-          includes: 100,
+          exact: titleExactWeight,
+          prefix: titlePrefixWeight,
+          includes: titleIncludesWeight,
           tokenPrefix: 24,
           tokenIncludes: 12,
           matchReason: "title",
@@ -895,6 +907,16 @@ export const useGlobalSearchData = ({
           tokenPrefix: 0,
           tokenIncludes: 8,
           matchReason: "keyword",
+        },
+        {
+          value: normalizeGlobalSearchValue(breadcrumb),
+          exact: 0,
+          prefix: 0,
+          includes: 36,
+          tokenPrefix: 10,
+          tokenIncludes: 6,
+          matchReason: "keyword",
+          highlightField: "breadcrumb",
         },
         {
           value: normalizeGlobalSearchValue(item.settingId),
@@ -965,11 +987,20 @@ export const useGlobalSearchData = ({
       fallback: "Untitled conversation",
     })
 
+    const currentSiteInstanceKey = conversationManager.getSiteInstanceKey()
+    const platformBySiteId = new Map(
+      getSupportedAiPlatforms().map((platform) => [platform.id, platform]),
+    )
+
     const buildConversationEntry = (
       conversation: Conversation,
       index: number,
-      offsiteSite?: GlobalSearchOffsiteSite,
     ): GlobalSearchIndexEntry => {
+      const sourceSite = resolveConversationSourceSite({
+        conversation,
+        currentSiteInstanceKey,
+        platformBySiteId,
+      })
       const title = conversation.title?.trim() || untitledConversation
       const folder = folderMap.get(conversation.folderId)
       const folderLabel = folder
@@ -1019,10 +1050,10 @@ export const useGlobalSearchData = ({
         },
       ]
 
-      if (offsiteSite) {
+      if (sourceSite.isOffsite) {
         // 站点名参与匹配但不打 badge，命中时高亮 breadcrumb 中的站点名
         fields.push({
-          value: normalizeGlobalSearchValue(offsiteSite.name),
+          value: normalizeGlobalSearchValue(sourceSite.name),
           exact: 0,
           prefix: 0,
           includes: 56,
@@ -1036,18 +1067,18 @@ export const useGlobalSearchData = ({
         index,
         fields,
         recency: conversation.updatedAt || 0,
-        // 站外会话在分数相近时排在站内结果之后
-        scoreBoost: (conversation.pinned ? 6 : 0) - (offsiteSite ? 10 : 0),
+        // 站外对话在分数相近时排在站内结果之后
+        scoreBoost: (conversation.pinned ? 6 : 0) - (sourceSite.isOffsite ? 10 : 0),
         createItem: (scoreMeta) => ({
-          id: offsiteSite
+          id: sourceSite.isOffsite
             ? `conversations:${resolvePersistedSiteInstanceKey(conversation) ?? conversation.siteId}:${conversation.id}`
             : `conversations:${conversation.id}`,
           title,
-          breadcrumb: offsiteSite ? `${offsiteSite.name} · ${folderLabel}` : folderLabel,
+          breadcrumb: sourceSite.isOffsite ? `${sourceSite.name} · ${folderLabel}` : folderLabel,
           category: "conversations" as const,
           conversationId: conversation.id,
           conversationUrl: conversation.url,
-          offsiteSite,
+          sourceSite,
           tagBadges,
           folderName: folderLabel,
           tagNames: tagBadges.map((tag) => tag.name),
@@ -1063,49 +1094,13 @@ export const useGlobalSearchData = ({
       buildConversationEntry(conversation, index),
     )
 
-    // 站外会话标题搜索：会话元数据 store 含所有站点，按站点实例 key 过滤出非当前站点
-    const currentSiteInstanceKey = conversationManager.getSiteInstanceKey()
-    const platformBySiteId = new Map(
-      getSupportedAiPlatforms().map((platform) => [platform.id, platform]),
-    )
-
-    const resolveOffsiteSite = (conversation: Conversation): GlobalSearchOffsiteSite => {
-      const platformInfo = platformBySiteId.get(conversation.siteId)
-      if (platformInfo) {
-        return {
-          name: platformInfo.name,
-          icon: platformInfo.icon,
-          faviconUrl: platformInfo.faviconUrl,
-        }
-      }
-
-      // 适配包已卸载等目录缺失场景：从实例 key 的 origin 回退出站点名与 favicon
-      const instanceKey = resolvePersistedSiteInstanceKey(conversation) ?? conversation.siteId
-      const origin = instanceKey.includes("@")
-        ? instanceKey.slice(instanceKey.indexOf("@") + 1)
-        : null
-      if (origin) {
-        try {
-          return { name: new URL(origin).hostname, faviconUrl: `${origin}/favicon.ico` }
-        } catch {
-          // origin 非法时落到 siteId 兜底
-        }
-      }
-      return { name: conversation.siteId.replace(/^pack:/, "") }
-    }
-
+    // 站外对话标题搜索：对话元数据 store 含所有站点，按站点实例 key 过滤出非当前站点
     const offsiteConversations = Object.values(getConversationsStore().conversations).filter(
       (conversation) => resolvePersistedSiteInstanceKey(conversation) !== currentSiteInstanceKey,
     )
 
     offsiteConversations.forEach((conversation, offset) => {
-      entries.push(
-        buildConversationEntry(
-          conversation,
-          conversations.length + offset,
-          resolveOffsiteSite(conversation),
-        ),
-      )
+      entries.push(buildConversationEntry(conversation, conversations.length + offset))
     })
 
     return entries

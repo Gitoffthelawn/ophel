@@ -60,7 +60,7 @@ const GEMINI_ENTERPRISE_CANCEL_KEYWORDS = [
 ]
 
 export class GeminiEnterpriseAdapter extends SiteAdapter {
-  private config: GeminiEnterpriseSiteConfig = GEMINI_ENTERPRISE_CONFIG
+  protected config: GeminiEnterpriseSiteConfig = GEMINI_ENTERPRISE_CONFIG
   // 存储 clearOnInit 配置
   private clearOnInit = false
 
@@ -175,7 +175,7 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
     return cidMatch ? cidMatch[1] : ""
   }
 
-  // ==================== 会话管理 ====================
+  // ==================== 对话管理 ====================
 
   getSessionName(): string | null {
     const conversations = DOMToolkit.query(this.config.conversation.itemSelector, {
@@ -330,7 +330,7 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
   }
 
   navigateToConversation(id: string, url?: string): boolean {
-    // 通过菜单按钮 ID 查找侧边栏会话元素
+    // 通过菜单按钮 ID 查找侧边栏对话元素
     const conversations = DOMToolkit.query(this.config.conversation.itemSelector, {
       all: true,
       shadow: this.config.conversation.shadow ?? true,
@@ -346,7 +346,8 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
         }
       }
     }
-    // 降级：页面刷新
+    // 降级：优先 history 导航免刷新（路由响应 popstate，已实测），失败再整页刷新
+    if (url && this.navigateViaHistory(url)) return true
     return super.navigateToConversation(id, url)
   }
 
@@ -838,9 +839,10 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
   }
 
   private cloneZenModeConfig(config: ZenModeConfig): ZenModeConfig {
-    const { hide, rootClass, styles } = config
+    const { hide, preserveFlow, rootClass, styles } = config
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }
@@ -1208,13 +1210,6 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
   }
 
   /**
-   * Gemini Enterprise 使用 Shadow DOM 渲染用户提问
-   */
-  usesShadowDOM(): boolean {
-    return true
-  }
-
-  /**
    * 从 ucs-summary 元素中提取可用于 htmlToMarkdown 的 DOM 元素
    * Gemini Enterprise 使用多层 Shadow DOM，需要递归查找
    */
@@ -1524,8 +1519,8 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
 
     const markdownDoc = this.extractSummaryContent(summaryRoot)
     return markdownDoc
-      ? findAssistantMermaidBlocks(markdownDoc)
-      : findAssistantMermaidBlocks(summaryRoot)
+      ? findAssistantMermaidBlocks(markdownDoc, true)
+      : findAssistantMermaidBlocks(summaryRoot, true)
   }
 
   // ==================== 生成状态检测 ====================
@@ -1638,11 +1633,6 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
     }
   }
 
-  /** 覆盖基类：处理锁定后的清理（已废弃的清空逻辑已移除）*/
-  lockModel(keyword: string, onSuccess: (() => void) | null = null): void {
-    super.lockModel(keyword, onSuccess ?? undefined)
-  }
-
   /** 排除侧边栏及 Ophel 容器中的 Shadow DOM 样式注入 */
   shouldInjectIntoShadow(host: Element): boolean {
     if (!super.shouldInjectIntoShadow(host)) return false
@@ -1651,7 +1641,7 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
     )
   }
 
-  /** 覆盖基类：通过点击“展开”按钮加载更多会话 */
+  /** 覆盖基类：通过点击“展开”按钮加载更多对话 */
   async loadAllConversations(): Promise<void> {
     const maxIterations = 20 // 防止无限循环
 
@@ -1679,7 +1669,7 @@ export class GeminiEnterpriseAdapter extends SiteAdapter {
         ;(btn as HTMLElement).click()
       }
 
-      // 等待会话加载
+      // 等待对话加载
       await new Promise((r) => setTimeout(r, 300))
     }
   }

@@ -81,6 +81,18 @@
   transform: translateY(-1px) scale(1.03);
 }
 
+.settings-sidebar-logo span,
+#ophel-settings-modal-title {
+  outline: none;
+}
+
+.settings-sidebar-logo span:focus,
+.settings-sidebar-logo span:focus-visible,
+#ophel-settings-modal-title:focus,
+#ophel-settings-modal-title:focus-visible {
+  outline: none;
+}
+
 .settings-sidebar-nav {
   flex: 1;
   padding: 12px 10px;
@@ -109,6 +121,9 @@
   justify-content: center;
   width: 34px;
   height: 34px;
+  /* zh-CN 赞助入口为 button 元素：清掉 UA 默认 padding 并补齐指针手势 */
+  padding: 0;
+  cursor: pointer;
   border-radius: 10px;
   color: var(--gh-text-tertiary, #9ca3af);
   text-decoration: none;
@@ -145,6 +160,29 @@
   transform: translateY(-2px);
 }
 
+/* GreasyFork 图标（油猴平台）：圆形跟随文字色、叉形跟随 dock 背景色，深浅主题自动反相 */
+.sidebar-social-btn.review-btn .greasyfork-icon {
+  color: var(--gh-text, #1f2328);
+}
+.sidebar-social-btn.review-btn .greasyfork-icon .greasyfork-fork {
+  fill: var(--gh-bg-secondary, #f3f4f6);
+}
+.sidebar-social-btn.review-btn:hover .greasyfork-icon {
+  color: #4285f4;
+}
+.sidebar-social-btn.review-btn:hover .greasyfork-icon .greasyfork-fork {
+  fill: #ffffff;
+}
+
+/* 纯黑透明底的站点 logo（如 ChatGPT）在深色主题下反白 */
+html[data-theme="dark"] .platform-icon-dark-invert {
+  filter: invert(1);
+}
+/* Shadow DOM 面板：用 :host([data-theme]) 而非 :host-context([data-gh-mode])，后者 Firefox 不支持且会连累整条规则失效 */
+:host([data-theme="dark"]) .platform-icon-dark-invert {
+  filter: invert(1);
+}
+
 /* 2. ScriptCat */
 .sidebar-social-btn.scriptcat-btn {
   color: #1296db;
@@ -164,7 +202,7 @@
   --pulse-bg: rgba(36, 41, 47, 0.05);
   --pulse-bg-hover: rgba(36, 41, 47, 0.1);
 }
-:host-context([data-gh-mode="dark"]) .sidebar-social-btn.github-btn {
+:host([data-theme="dark"]) .sidebar-social-btn.github-btn {
   color: #ffffff;
   --pulse-bg: rgba(255, 255, 255, 0.08);
   --pulse-bg-hover: rgba(255, 255, 255, 0.15);
@@ -175,7 +213,7 @@
   box-shadow: 0 4px 10px rgba(36, 41, 47, 0.25);
   transform: translateY(-2px);
 }
-:host-context([data-gh-mode="dark"]) .sidebar-social-btn.github-btn:hover {
+:host([data-theme="dark"]) .sidebar-social-btn.github-btn:hover {
   background: #ffffff !important;
   color: #000000 !important;
   box-shadow: 0 4px 10px rgba(255, 255, 255, 0.25);
@@ -238,7 +276,7 @@
   );
   opacity: 0.6;
 }
-:host-context([data-gh-mode="dark"]) .settings-sidebar-footer::before {
+:host([data-theme="dark"]) .settings-sidebar-footer::before {
   background: linear-gradient(
     to right,
     transparent,
@@ -263,7 +301,7 @@
   transition: background 0.3s ease;
 }
 
-:host-context([data-gh-mode="dark"]) .settings-theme-segmented {
+:host([data-theme="dark"]) .settings-theme-segmented {
   background: rgba(255, 255, 255, 0.04);
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.15);
 }
@@ -281,6 +319,9 @@
   background: transparent;
   color: var(--gh-text-secondary, #6b7280);
   font-size: 13px;
+  /* 固定行高与图标同高：line-height: normal 下 CJK 字体的行盒比拉丁字体高，
+     会导致同一控件在不同语言下高度不一致 */
+  line-height: 16px;
   cursor: pointer;
   transition:
     background 0.25s cubic-bezier(0.4, 0, 0.2, 1),
@@ -310,7 +351,9 @@
 
 .settings-theme-segmented.is-compact .settings-theme-segment {
   gap: 4px;
-  padding: 4px 2px;
+  /* 紧凑档只收窄横向间距和字号，垂直 padding 与 normal 保持一致，
+     避免语言切换触发密度降级时整个分段块变矮 */
+  padding: 6px 2px;
   font-size: 12px;
 }
 
@@ -339,13 +382,13 @@
 }
 
 /* 深色模式下的 Theme Segment Active */
-:host-context([data-gh-mode="dark"]) .settings-theme-segment {
+:host([data-theme="dark"]) .settings-theme-segment {
   color: #9ca3af;
 }
-:host-context([data-gh-mode="dark"]) .settings-theme-segment:hover {
+:host([data-theme="dark"]) .settings-theme-segment:hover {
   color: #e5e7eb;
 }
-:host-context([data-gh-mode="dark"]) .settings-theme-segment.active {
+:host([data-theme="dark"]) .settings-theme-segment.active {
   background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
   box-shadow:
@@ -514,6 +557,30 @@
   flex: 0 1 auto;
 }
 
+/* 导航项未读红点（如“关于”有新版更新日志时），与面板 logo 红点同色 */
+.settings-nav-unread-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--gh-danger, #ef4444);
+  vertical-align: middle;
+  animation: gh-unread-dot-pulse 2s infinite;
+}
+
+@keyframes gh-unread-dot-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.8;
+  }
+}
+
 /* 导航项内的 beta 徽标使用更紧凑的尺寸，避免挤压菜单文字 */
 .settings-nav-item .settings-beta-badge {
   height: 16px;
@@ -586,11 +653,64 @@
   scrollbar-color: var(--gh-border, #d1d5db) transparent;
 }
 
+.settings-page-header {
+  margin-bottom: 8px;
+}
+
+.settings-page-title-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .settings-page-title {
+  margin: 0 0 8px;
   font-size: 24px;
+  line-height: 1.25;
   font-weight: 600;
   color: var(--gh-text, #1f2937);
-  margin-bottom: 8px;
+}
+
+.settings-page-header .settings-page-title {
+  margin: 0;
+}
+
+.settings-page-header-action {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+}
+
+.settings-site-disable-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 8px;
+  border: 1px solid var(--gh-border, #e5e7eb);
+  background: var(--gh-card-bg, #ffffff);
+  color: var(--gh-text-secondary, #6b7280);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.settings-site-disable-icon-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--gh-danger, #ef4444) 38%, transparent);
+  background: color-mix(in srgb, var(--gh-danger, #ef4444) 8%, var(--gh-card-bg, #ffffff));
+  color: var(--gh-text-danger, #ef4444);
+  transform: translateY(-1px);
+}
+
+.settings-site-disable-icon-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.settings-site-disable-icon-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-danger, #ef4444) 42%, transparent);
+  outline-offset: 2px;
 }
 
 .settings-page-desc {
@@ -1268,7 +1388,8 @@
   line-height: 1.2;
 }
 
-.settings-pack-badge.success {
+.settings-pack-badge.success,
+.settings-pack-badge.current {
   border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 28%, transparent);
   background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-card-bg, #ffffff));
   color: var(--gh-primary, #4285f4);
@@ -2106,6 +2227,8 @@
   .about-link-card,
   .about-link-btn,
   .about-star-btn,
+  .about-sponsor-afdian-card,
+  .about-sponsor-qr,
   .settings-search-category {
     transition: none !important;
   }
@@ -3237,6 +3360,12 @@
     max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
+}
+
+.settings-modal-container:focus,
+.settings-modal-container:focus-visible {
+  outline: none;
 }
 
 .settings-modal-container.maximized {
@@ -3607,6 +3736,11 @@ html[data-theme="dark"] .about-link-card {
   flex-shrink: 0;
 }
 
+/* GreasyFork 图标：圆形跟随标题文字色（currentColor），叉形跟随卡片背景色，深浅主题自动反相 */
+.about-link-header .greasyfork-icon .greasyfork-fork {
+  fill: var(--gh-card-bg, #ffffff);
+}
+
 .about-link-desc {
   font-size: 13px;
   line-height: 1.5;
@@ -3638,12 +3772,18 @@ html[data-theme="dark"] .about-link-card {
   letter-spacing: 0.2px;
 }
 
-html[data-theme="dark"] .about-link-card:not(.discord-card):not(.kofi-card) .about-link-btn {
-  /* Override default dark text color on specific cards so it's readable in dark mode */
+html[data-theme="dark"]
+  .community-grid
+  .about-link-card:not(.discord-card):not(.kofi-card)
+  .about-link-btn {
+  /* Override default dark text color on community cards so it's readable in dark mode */
   color: var(--gh-text);
   border-color: var(--gh-border);
 }
-html[data-theme="dark"] .about-link-card:not(.discord-card):not(.kofi-card):hover .about-link-btn {
+html[data-theme="dark"]
+  .community-grid
+  .about-link-card:not(.discord-card):not(.kofi-card):hover
+  .about-link-btn {
   color: #111827;
 }
 
@@ -3801,6 +3941,10 @@ html[data-theme="dark"] .about-privacy-banner {
   .about-platforms-header {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .about-links-grid.community-grid-triple {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -4557,8 +4701,10 @@ html[data-theme="dark"] .about-privacy-banner {
   min-width: 0;
 }
 
-.settings-search-offsite-site-icon {
+.settings-search-conversation-site-icon {
   flex-shrink: 0;
+  width: 14px;
+  height: 14px;
 }
 
 .settings-search-offsite-badge {
@@ -5316,12 +5462,236 @@ html[data-theme="dark"] .about-privacy-banner {
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
 }
 
+.about-links-grid.community-grid-triple {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .about-community-motto {
   font-size: 13px;
   color: var(--gh-text-secondary, #6b7280);
   margin-bottom: 16px;
   font-style: italic;
   text-align: center;
+}
+
+.about-sponsor-block {
+  margin-bottom: 32px;
+}
+
+.about-sponsor-desc {
+  margin: 0 0 16px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--gh-text-secondary, #6b7280);
+}
+
+.about-sponsor-channels {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-inline: auto;
+  gap: 16px;
+}
+
+.about-sponsor-afdian-card,
+.about-sponsor-qr {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 170px;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 10px;
+  border: 1px solid var(--gh-border, #e5e7eb);
+  border-radius: 12px;
+  background: var(--gh-card-bg, #fff);
+  color: inherit;
+  font: inherit;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.about-sponsor-qr {
+  cursor: zoom-in;
+}
+
+.about-sponsor-qrs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 16px;
+}
+
+.about-sponsor-qr figcaption,
+.about-sponsor-qr-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gh-text, #1f2937);
+}
+
+/* 赞助卡片悬浮动效与品牌色反馈（爱发电紫、微信绿、支付宝蓝） */
+.about-sponsor-afdian-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(148, 108, 230, 0.45);
+  box-shadow: 0 8px 24px rgba(148, 108, 230, 0.14);
+}
+
+.about-sponsor-qr-wechat:hover {
+  transform: translateY(-2px);
+  border-color: rgba(7, 193, 96, 0.45);
+  box-shadow: 0 8px 24px rgba(7, 193, 96, 0.14);
+}
+
+.about-sponsor-qr-alipay:hover {
+  transform: translateY(-2px);
+  border-color: rgba(22, 119, 255, 0.45);
+  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.14);
+}
+
+.about-sponsor-afdian-card:focus-visible,
+.about-sponsor-qr:focus-visible,
+.about-sponsor-qr-zoom:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 38%, transparent);
+  outline-offset: 2px;
+}
+
+/* 视觉区与二维码图同尺寸，卡片本体与扫码卡保持一致；
+   品牌紫由图标单层承载，底色只留极淡提示避免区域显得空 */
+.about-sponsor-afdian-visual {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  background: linear-gradient(165deg, rgba(148, 108, 230, 0.08), rgba(148, 108, 230, 0.02));
+}
+
+.about-sponsor-afdian-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  /* 淡紫底 + 品牌紫 Logo，避免实色圆标在卡片视觉区显得过重 */
+  background: rgba(148, 108, 230, 0.12);
+  color: #946ce6;
+}
+
+.about-sponsor-afdian-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gh-text, #1f2937);
+}
+
+.about-sponsor-afdian-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: center;
+  color: var(--gh-text-secondary, #6b7280);
+}
+
+.about-sponsor-afdian-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #946ce6;
+}
+
+:host([data-theme="dark"]) .about-sponsor-afdian-icon,
+html[data-theme="dark"] .about-sponsor-afdian-icon {
+  background: rgba(148, 108, 230, 0.22);
+  color: #c9b3f5;
+}
+
+:host([data-theme="dark"]) .about-sponsor-afdian-cta,
+html[data-theme="dark"] .about-sponsor-afdian-cta {
+  color: #c9b3f5;
+}
+
+:host([data-theme="dark"]) .about-sponsor-afdian-card:hover,
+html[data-theme="dark"] .about-sponsor-afdian-card:hover {
+  border-color: rgba(148, 108, 230, 0.55);
+  box-shadow: 0 8px 24px rgba(148, 108, 230, 0.2);
+}
+
+:host([data-theme="dark"]) .about-sponsor-qr-wechat:hover,
+html[data-theme="dark"] .about-sponsor-qr-wechat:hover {
+  border-color: rgba(7, 193, 96, 0.55);
+  box-shadow: 0 8px 24px rgba(7, 193, 96, 0.2);
+}
+
+:host([data-theme="dark"]) .about-sponsor-qr-alipay:hover,
+html[data-theme="dark"] .about-sponsor-qr-alipay:hover {
+  border-color: rgba(22, 119, 255, 0.55);
+  box-shadow: 0 8px 24px rgba(22, 119, 255, 0.2);
+}
+
+.about-sponsor-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000012;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 28px;
+  background: rgba(15, 23, 42, 0.72);
+  cursor: zoom-out;
+}
+
+.about-sponsor-lightbox img {
+  max-width: min(92vw, 420px);
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 24px 72px rgba(0, 0, 0, 0.42);
+}
+
+.about-sponsor-lightbox-close {
+  /* 遮罩固定为深色，关闭按钮跟随遮罩而不是主题变量 */
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.about-sponsor-lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.about-sponsor-lightbox-close:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.about-sponsor-qr-img {
+  display: block;
+  width: 150px;
+  height: 150px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 8px;
 }
 
 .about-btn-inner {

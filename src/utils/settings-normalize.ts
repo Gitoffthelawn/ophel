@@ -1,4 +1,4 @@
-import { LAYOUT_CONFIG } from "~constants"
+import { LAYOUT_CONFIG, isBuiltinSiteId } from "~constants"
 import { normalizeShortcutsSettings } from "~constants/shortcuts"
 import { DEFAULT_QUICK_BUTTONS_SETTINGS, DEFAULT_SETTINGS } from "~constants/default-settings"
 import type {
@@ -21,6 +21,35 @@ type LegacyQuickButtonsSettings = {
 export type SettingsInput = Omit<Partial<Settings>, "quickButtons"> & {
   quickButtons?: Partial<Settings["quickButtons"]>
 } & LegacyQuickButtonsSettings
+
+// 停用列表只保留合法的内置站点 ID，过滤掉脏数据与已下线的站点
+const normalizeDisabledSites = (value: SettingsInput["disabledSites"]): string[] => {
+  if (!Array.isArray(value)) return []
+  return [
+    ...new Set(value.filter((id): id is string => typeof id === "string" && isBuiltinSiteId(id))),
+  ]
+}
+
+// 功能 Tab 排序归一化：过滤废弃项（如历史 settings）与脏数据，去重并补齐缺失的功能项，避免 Tab 丢失或排序错位
+const normalizeFeaturesOrder = (value: unknown): string[] => {
+  const rawOrder = Array.isArray(value) ? value : DEFAULT_SETTINGS.features.order
+  const validTabs = new Set<string>(DEFAULT_SETTINGS.features.order)
+  const order: string[] = []
+
+  for (const id of rawOrder) {
+    if (typeof id === "string" && validTabs.has(id) && !order.includes(id)) {
+      order.push(id)
+    }
+  }
+
+  for (const defaultTab of DEFAULT_SETTINGS.features.order) {
+    if (!order.includes(defaultTab)) {
+      order.push(defaultTab)
+    }
+  }
+
+  return order
+}
 
 const ensureQuickButton = (
   buttons: QuickButtonConfig[],
@@ -141,6 +170,11 @@ export const migrateLegacySiteSettings = (
     legacySiteId,
     siteInstanceKey,
   )
+  const autoHideInput = migrateSiteRecordKey(
+    settings.layout.autoHideInput,
+    legacySiteId,
+    siteInstanceKey,
+  )
   const modelLock = migrateSiteRecordKey(settings.modelLock, legacySiteId, siteInstanceKey)
   const changed =
     themeSites.changed ||
@@ -149,6 +183,7 @@ export const migrateLegacySiteSettings = (
     zenMode.changed ||
     cleanMode.changed ||
     panelAvoidance.changed ||
+    autoHideInput.changed ||
     modelLock.changed
 
   if (!changed) return settings
@@ -166,6 +201,7 @@ export const migrateLegacySiteSettings = (
       zenMode: zenMode.record,
       cleanMode: cleanMode.record,
       panelAvoidance: panelAvoidance.record,
+      autoHideInput: autoHideInput.record,
     },
     modelLock: modelLock.record ?? settings.modelLock,
   })
@@ -302,6 +338,10 @@ const normalizeExportSettings = (
     typeof exportSettings?.exportShowDialog === "boolean"
       ? exportSettings.exportShowDialog
       : defaults.exportShowDialog
+  const exportStyle =
+    exportSettings?.exportStyle === "clean" || exportSettings?.exportStyle === "standard"
+      ? exportSettings.exportStyle
+      : defaults.exportStyle
 
   return {
     ...defaults,
@@ -309,6 +349,7 @@ const normalizeExportSettings = (
     exportShowIndex,
     exportMarkdownDivider,
     exportShowDialog,
+    exportStyle,
     packaging,
     defaultExportFormat,
   }
@@ -349,6 +390,7 @@ export const normalizeSettings = (settings: SettingsInput): Settings => {
   return {
     ...DEFAULT_SETTINGS,
     ...rest,
+    disabledSites: normalizeDisabledSites(settings.disabledSites),
     remoteConfig: {
       ...DEFAULT_SETTINGS.remoteConfig,
       ...settings.remoteConfig,
@@ -383,6 +425,10 @@ export const normalizeSettings = (settings: SettingsInput): Settings => {
         settings.layout?.panelAvoidance,
         DEFAULT_SETTINGS.layout.panelAvoidance,
       ),
+      autoHideInput: normalizeSiteConfigRecord(
+        settings.layout?.autoHideInput,
+        DEFAULT_SETTINGS.layout.autoHideInput,
+      ),
     },
     modelLock: normalizeSiteConfigRecord(settings.modelLock, DEFAULT_SETTINGS.modelLock),
     globalSearch: {
@@ -396,6 +442,7 @@ export const normalizeSettings = (settings: SettingsInput): Settings => {
     features: {
       ...DEFAULT_SETTINGS.features,
       ...settings.features,
+      order: normalizeFeaturesOrder(settings.features?.order),
       outline: {
         ...DEFAULT_SETTINGS.features.outline,
         ...settings.features?.outline,

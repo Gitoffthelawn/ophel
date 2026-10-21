@@ -13,7 +13,7 @@ import {
   getFeatureCapabilitiesSignature,
   type SitePackCapability,
 } from "~adapters/feature-capabilities"
-import { getAdapter } from "~adapters/index"
+import type { SiteAdapter } from "~adapters/base"
 import { ThemeDarkIcon, ThemeLightIcon, EyeClosedIcon } from "~components/icons"
 import { LoadingOverlay } from "~components/LoadingOverlay"
 import { Tooltip } from "~components/ui/Tooltip"
@@ -32,15 +32,9 @@ import { useSettingsStore } from "~stores/settings-store"
 import { loadHistoryUntil } from "~utils/history-loader"
 import { OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
 import { t } from "~utils/i18n"
-import {
-  getScrollInfo,
-  isFlutterProxy,
-  smartScrollTo,
-  smartScrollToBottom,
-} from "~utils/scroll-helper"
+import { getScrollInfo, smartScrollTo, smartScrollToBottom } from "~utils/scroll-helper"
 import {
   DEFAULT_SETTINGS,
-  getSiteCleanMode,
   getSiteTheme,
   getSiteZenMode,
   type QuickButtonsPosition,
@@ -48,6 +42,8 @@ import {
 import { showToast } from "~utils/toast"
 
 interface QuickButtonsProps {
+  /** 当前生效的站点适配器（内置站点停用后可能是接管它的社区 SitePack） */
+  adapter?: SiteAdapter | null
   isPanelExpanded: boolean
   /** 有未读更新日志时在面板开关按钮上镜像红点，保证面板收起时也可见 */
   hasUnseenReleaseNotes?: boolean
@@ -66,9 +62,6 @@ interface QuickButtonsProps {
   onGlobalSearch?: () => void
   scrollLocked?: boolean
   // 新增功能
-  onCopyMarkdown?: () => void
-  onExportHTML?: () => void
-  onSegmentedExport?: () => void
   onModelLockToggle?: () => void
   isModelLocked?: boolean
   onOpenSettings?: () => void
@@ -119,9 +112,6 @@ const COLLAPSED_BUTTON_CAPABILITY_REQUIREMENTS: Partial<Record<string, SitePackC
 
 const TOOLS_MENU_CAPABILITY_REQUIREMENTS: Partial<Record<ToolsMenuId, SitePackCapability>> = {
   [TOOLS_MENU_IDS.EXPORT]: "export-basic",
-  [TOOLS_MENU_IDS.SEGMENTED_EXPORT]: "export-basic",
-  [TOOLS_MENU_IDS.EXPORT_HTML]: "export-basic",
-  [TOOLS_MENU_IDS.COPY_MARKDOWN]: "export-basic",
   [TOOLS_MENU_IDS.MOVE]: "conversation-list",
   [TOOLS_MENU_IDS.SET_TAG]: "conversation-list",
   [TOOLS_MENU_IDS.MODEL_LOCK]: "model-lock",
@@ -129,6 +119,7 @@ const TOOLS_MENU_CAPABILITY_REQUIREMENTS: Partial<Record<ToolsMenuId, SitePackCa
 }
 
 export const QuickButtons: React.FC<QuickButtonsProps> = ({
+  adapter,
   isPanelExpanded,
   hasUnseenReleaseNotes = false,
   onPanelToggle,
@@ -144,9 +135,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
   onCleanup,
   onGlobalSearch,
   scrollLocked,
-  onCopyMarkdown,
-  onExportHTML,
-  onSegmentedExport,
   onModelLockToggle,
   isModelLocked,
   onOpenSettings,
@@ -162,7 +150,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
 
   const { settings, updateNestedSetting } = useSettingsStore()
   const currentSettings = settings || DEFAULT_SETTINGS
-  const adapter = getAdapter()
   const quickButtonsSettings = currentSettings.quickButtons || DEFAULT_SETTINGS.quickButtons
   const collapsedButtonsOrder = useMemo(
     () => quickButtonsSettings.collapsed || [],
@@ -382,8 +369,12 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     // 液态折叠态必然包含 panel logo（且 isLiquidCollapsed 隐含 !isPanelExpanded），不隐藏
     if (isLiquidCollapsed) return false
 
-    // 用户明确开启"面板展开时隐藏快捷按钮组"设置
-    if ((quickButtonsSettings.hideWhenPanelOpen ?? false) && isPanelExpanded) return true
+    // 用户开启"面板展开时隐藏快捷按钮组"设置（默认开启）
+    if (
+      (quickButtonsSettings.hideWhenPanelOpen ?? DEFAULT_SETTINGS.quickButtons.hideWhenPanelOpen) &&
+      isPanelExpanded
+    )
+      return true
 
     // 兜底：当所有按钮均不可见时，自动隐藏空容器
     const isFloatingOpen =
@@ -415,9 +406,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     isCollapsedButtonSupported,
     quickButtonsSettings.hideWhenPanelOpen,
   ])
-
-  // 跟踪是否处于 Flutter 模式（图文并茂）
-  const [_isFlutterMode, setIsFlutterMode] = useState(false)
 
   // 加载状态
   const [isLoadingHistory, setIsLoadingHistory] = useState(false)
@@ -627,15 +615,16 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     }
   }, [clampPixelGroupPosition, syncViewportSizeState, toLogicalGroupPosition])
 
-  // 滚动到顶部（支持图文并茂模式）
+  // 滚动到顶部
   const scrollToTop = useCallback(async () => {
-    await withAnchorOp(async () => {
+    await withAnchorOp(async (signal) => {
       // 遮罩延迟显示
       const OVERLAY_DELAY_MS = 1600
       abortLoadingRef.current = false
 
-      // 创建 AbortController 用于中断
+      // 创建 AbortController 用于中断；锁被新锚点操作抢占时同步中断加载
       const abortController = new AbortController()
+      signal.addEventListener("abort", () => abortController.abort(), { once: true })
       const checkAbort = () => {
         if (abortLoadingRef.current) {
           abortController.abort()
@@ -643,13 +632,17 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
       }
       const abortCheckInterval = setInterval(checkAbort, 100)
 
-      // 延迟显示遮罩的定时器
-      let overlayTimer: ReturnType<typeof window.setTimeout> | null = setTimeout(() => {
-        if (!abortLoadingRef.current) {
-          setIsLoadingHistory(true)
-          setLoadingText(t("loadingHistory"))
-        }
-      }, OVERLAY_DELAY_MS)
+      // 延迟显示遮罩的定时器。DeepSeek / Claude 没有服务端历史加载，
+      // 去顶部只是在等虚拟列表换窗口，不能弹出「正在加载历史记录」。
+      let overlayTimer: ReturnType<typeof window.setTimeout> | null = null
+      if (!adapter?.usesVirtualOutlineFill?.()) {
+        overlayTimer = setTimeout(() => {
+          if (!abortLoadingRef.current) {
+            setIsLoadingHistory(true)
+            setLoadingText(t("loadingHistory"))
+          }
+        }, OVERLAY_DELAY_MS)
+      }
 
       try {
         // 使用公共 HistoryLoader
@@ -666,7 +659,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
         // 保存锚点到全局存储
         // 已在顶部时不覆盖锚点，避免重复点击丢失原位置
         if (result.previousScrollTop >= 4) anchorStore.set(result.previousScrollTop)
-        setIsFlutterMode(result.isFlutterMode)
 
         // 清理遮罩
         if (overlayTimer) {
@@ -694,7 +686,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     abortLoadingRef.current = true
   }, [])
 
-  // 滚动到底部（支持图文并茂模式）
+  // 滚动到底部
   const scrollToBottom = useCallback(async () => {
     await withAnchorOp(async () => {
       const { previousScrollTop, container } = await smartScrollToBottom(adapter)
@@ -705,13 +697,10 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
       if (container.clientHeight <= 0 || maxScroll - previousScrollTop >= 4) {
         anchorStore.set(previousScrollTop)
       }
-
-      // 检测是否处于 Flutter 模式
-      setIsFlutterMode(isFlutterProxy(container))
     })
   }, [adapter])
 
-  // 锚点跳转（双向，支持图文并茂模式）
+  // 锚点跳转（双向）
   const handleAnchorClick = useCallback(async () => {
     await withAnchorOp(async () => {
       const savedAnchor = anchorStore.get()
@@ -732,12 +721,11 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
     })
   }, [adapter])
 
-  // 手动锚点：设置（支持图文并茂模式）
+  // 手动锚点：设置
   const setAnchorManually = useCallback(async () => {
     await withAnchorOp(async () => {
       const scrollInfo = await getScrollInfo(adapter)
       anchorStore.set(scrollInfo.scrollTop)
-      setIsFlutterMode(scrollInfo.isFlutterMode)
     })
   }, [adapter])
 
@@ -801,14 +789,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
         ...(settings?.layout?.zenMode ?? {}),
         [siteInstanceKey]: { ...currentZenMode, enabled: newZenEnabled },
       })
-      // 开启禅模式时自动开启净化模式，关闭禅模式时不变净化模式
-      if (newZenEnabled && supportsCapability("clean")) {
-        const currentCleanMode = getSiteCleanMode(settings || DEFAULT_SETTINGS, siteInstanceKey)
-        updateNestedSetting("layout", "cleanMode", {
-          ...(settings?.layout?.cleanMode ?? {}),
-          [siteInstanceKey]: { ...currentCleanMode, enabled: true },
-        })
-      }
     },
     settings: (e) => {
       e?.stopPropagation()
@@ -1014,9 +994,6 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
   // 工具菜单按钮点击处理器映射
   const toolsMenuActions: Record<string, () => void> = {
     [TOOLS_MENU_IDS.EXPORT]: () => onExport?.(),
-    [TOOLS_MENU_IDS.SEGMENTED_EXPORT]: () => onSegmentedExport?.(),
-    [TOOLS_MENU_IDS.EXPORT_HTML]: () => onExportHTML?.(),
-    [TOOLS_MENU_IDS.COPY_MARKDOWN]: () => onCopyMarkdown?.(),
     [TOOLS_MENU_IDS.MOVE]: () => onMove?.(),
     [TOOLS_MENU_IDS.SET_TAG]: () => onSetTag?.(),
     [TOOLS_MENU_IDS.SCROLL_LOCK]: () => onScrollLock?.(!scrollLocked),
@@ -1298,7 +1275,7 @@ export const QuickButtons: React.FC<QuickButtonsProps> = ({
       <LoadingOverlay isVisible={isLoadingHistory} text={loadingText} onStop={stopLoading} />
       <div
         ref={groupRef}
-        className={`quick-btn-group gh-interactive ${!isPanelExpanded ? "collapsed" : ""} ${isDragging ? "dragging" : ""} ${isPressing ? "pressing" : ""} ${isScrolling ? "scroll-hidden" : ""} ${isLiquidCollapsed ? "liquid-collapsed" : ""} ${isGroupHidden ? "group-hidden" : ""}`}
+        className={`quick-btn-group gh-interactive ${!isPanelExpanded ? "collapsed" : ""} ${isDragging ? "dragging" : ""} ${isPressing ? "pressing" : ""} ${isScrolling ? "scroll-hidden" : ""} ${isLiquidCollapsed ? "liquid-collapsed" : ""} ${isGroupHidden ? "group-hidden" : ""} ${isToolsMenuOpen ? "menu-open" : ""}`}
         aria-hidden={isGroupHidden}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

@@ -24,6 +24,7 @@ import ModelLockSettingsContent from "~components/ModelLockSettingsContent"
 import { Tooltip } from "~components/ui/Tooltip"
 import { SidebarCommunityLinks } from "~components/SidebarCommunityLinks"
 import { NAV_IDS, resolveSettingsNavigateDetail, type SettingsNavigateDetail } from "~constants"
+import { useHasUnseenReleaseNotes } from "~hooks/useHasUnseenReleaseNotes"
 import { platform } from "~platform"
 import { useSettingsHydrated, useSettingsStore } from "~stores/settings-store"
 import { SidebarFooter } from "~tabs/options/components/SidebarFooter"
@@ -89,43 +90,43 @@ const NAV_ITEMS: Array<{
     id: NAV_IDS.GENERAL,
     Icon: GeneralIcon,
     labelKey: "navGeneral",
-    label: "基本设置",
+    label: "General",
   },
   {
     id: NAV_IDS.APPEARANCE,
     Icon: AppearanceIcon,
     labelKey: "navAppearance",
-    label: "外观主题",
+    label: "Appearance",
   },
-  { id: NAV_IDS.FEATURES, Icon: FeaturesIcon, labelKey: "navFeatures", label: "功能模块" },
+  { id: NAV_IDS.FEATURES, Icon: FeaturesIcon, labelKey: "navFeatures", label: "Features" },
   {
     id: NAV_IDS.SITE_SETTINGS,
     Icon: PageContentIcon,
     labelKey: "navSiteSettings",
-    label: "站点设置",
+    label: "Site Settings",
   },
   {
     id: NAV_IDS.SITE_PACKS,
     Icon: SitePacksIcon,
     labelKey: "navSitePacks",
-    label: "适配中心",
+    label: "Site Packs",
     beta: true,
   },
   {
     id: NAV_IDS.GLOBAL_SEARCH,
     Icon: SearchIcon,
     labelKey: "navGlobalSearch",
-    label: "全局搜索",
+    label: "Global Search",
   },
-  { id: NAV_IDS.SHORTCUTS, Icon: KeyboardIcon, labelKey: "navShortcuts", label: "快捷键位" },
-  { id: NAV_IDS.BACKUP, Icon: BackupIcon, labelKey: "navBackup", label: "数据管理" },
+  { id: NAV_IDS.SHORTCUTS, Icon: KeyboardIcon, labelKey: "navShortcuts", label: "Shortcuts" },
+  { id: NAV_IDS.BACKUP, Icon: BackupIcon, labelKey: "navBackup", label: "Backup & Data" },
   {
     id: NAV_IDS.PERMISSIONS,
     Icon: PermissionsIcon,
     labelKey: "navPermissions",
-    label: "权限管理",
+    label: "Permissions",
   },
-  { id: NAV_IDS.ABOUT, Icon: AboutIcon, labelKey: "navAbout", label: "关于" },
+  { id: NAV_IDS.ABOUT, Icon: AboutIcon, labelKey: "navAbout", label: "About" },
 ]
 
 interface SettingsModalProps {
@@ -146,6 +147,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const siteId = adapter.getSiteId()
   const siteInstanceKey = adapter.getSiteInstanceKey()
   const [activePage, setActivePage] = useState<string>(NAV_IDS.GENERAL)
+  const hasUnseenReleaseNotes = useHasUnseenReleaseNotes()
   const [initialSubTab, setInitialSubTab] = useState<string | undefined>(undefined)
   const [locateRequest, setLocateRequest] = useState<{ settingId: string; token: number } | null>(
     null,
@@ -504,6 +506,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </span>
                 <span className={`settings-nav-item-label${item.beta ? " has-badge" : ""}`}>
                   {getLocalizedLabel(item.labelKey, item.label)}
+                  {item.id === NAV_IDS.ABOUT && hasUnseenReleaseNotes ? (
+                    <span className="settings-nav-unread-dot" aria-hidden="true" />
+                  ) : null}
                 </span>
                 {item.beta && (
                   <span className="settings-beta-badge">

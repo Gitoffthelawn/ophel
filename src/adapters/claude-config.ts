@@ -72,6 +72,7 @@ type ClaudePrivateSelectors = SitePrivateSelectors & {
   panelScrollSafeArea: string
   panelNewChatSafeArea: string
   panelCanvasScope: string
+  panelFilePreviewScope: string
   userQueryWidth: string
 }
 
@@ -93,7 +94,7 @@ export interface ClaudeSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const CLAUDE_CONFIG_VERSION = 5
+export const CLAUDE_CONFIG_VERSION = 8
 
 const createClaudeConfig = (): ClaudeSiteConfig => {
   // dframe 布局中侧栏列表容器是 div#frame-peek-popover（不再是 nav），
@@ -114,23 +115,40 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
   const layoutScope = ':is(main[data-perf-region="main"], #main-content)'
   // 灰度后 data-autoscroll-container 不再是 page-header 的直接子节点，而是下移一层；
   // 用后代 has() 匹配新结构，同时保留直接子选择器兼容旧结构。
-  // 用一次 :is() 合并常规会话列与隐身会话列，避免 panelScope 超过 500 字符校验上限。
+  // 用一次 :is() 合并常规对话列与隐身对话列，避免 panelScope 超过 500 字符校验上限。
   const chatColumnScope = `${layoutScope} :is(${[
     // dframe 布局：page-header 更名为 chat-header
     'div:has(> [data-testid="chat-header"]):has([data-autoscroll-container="true"])',
     'div:has(> [data-testid="page-header"]):has([data-autoscroll-container="true"])',
     'div:has(> [data-testid="page-header"]):has(> [data-autoscroll-container="true"])',
-    // 隐身会话页（/new?incognito=）没有 chat-header/page-header，直取聊天内容包裹层
+    // 隐身对话页（/new?incognito=）没有 chat-header/page-header，直取聊天内容包裹层
     '[data-testid="chat-column-body"]:has(> [data-autoscroll-container="true"])',
   ].join(", ")})`
   const panelScope = [
     chatColumnScope,
     `${layoutScope}:not(:has([data-autoscroll-container="true"]))`,
   ].join(", ")
-  const panelCanvasScope = [
-    `${layoutScope} [data-testid="chat-stale-nav-frame"] > div > div:not([aria-hidden="true"]):has([data-skill-file-viewer="true"])`,
-    `${layoutScope} [data-testid="chat-stale-nav-inert"] > div > div:not([aria-hidden="true"]):has([data-skill-file-viewer="true"])`,
+  // 右侧面板打开态：skill 文件查看器、Artifacts 文件侧栏（可见时包裹层不带 inert，
+  // 被预览面板压住或收起时标记 inert）。打开时给聊天行容器加右 padding，整行左移
+  // 为 Ophel 面板让出空间。
+  const panelRowRightPaneOpen = [
+    '[data-skill-file-viewer="true"]',
+    "> div.contents > div:not([inert])",
   ].join(", ")
+  const panelCanvasScope = ["chat-stale-nav-frame", "chat-stale-nav-inert"]
+    .map(
+      (host) =>
+        `${layoutScope} [data-testid="${host}"] > div > div:not([aria-hidden="true"]):has(${panelRowRightPaneOpen})`,
+    )
+    .join(", ")
+  // 文档/文件预览面板（打开时头部带 close-file-preview 关闭按钮）打开后 Artifacts
+  // 侧栏会被藏在视口右侧，整行左移会把它带回来，所以只给预览面板自身加右 padding。
+  const panelFilePreviewScope = ["chat-stale-nav-frame", "chat-stale-nav-inert"]
+    .map(
+      (host) =>
+        `${layoutScope} [data-testid="${host}"] > div > div > div:has([data-testid="close-file-preview"])`,
+    )
+    .join(", ")
   const panelObstacle = [
     documentRoot,
     '[data-testid="artifact-panel"]',
@@ -139,6 +157,10 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.CLAUDE]],
+    // virtualOutlineFill：长对话虚拟滚动，离屏标题由会话接口回填
+    // apiFirstExport：会话接口可导出全量历史，不依赖 DOM 历史预加载；
+    // 接口失败时的 DOM 回退会自行全量扫屏（收集不全直接抛错），无需补预加载
+    traits: { historyLazyLoad: false, virtualOutlineFill: true, apiFirstExport: true },
     selectors: {
       textarea: ['[contenteditable="true"]', ".ProseMirror", 'div[role="textbox"]'],
       submitButton: [
@@ -234,7 +256,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       ],
     },
     cleanMode: {
-      hide: ['[data-disclaimer="true"]'],
+      preserveFlow: ['[data-disclaimer="true"]'],
     },
     mermaidSupport: "native",
     quickQuote: "native",
@@ -291,6 +313,7 @@ const createClaudeConfig = (): ClaudeSiteConfig => {
       panelScrollSafeArea: `${layoutScope} [data-autoscroll-container="true"]`,
       panelNewChatSafeArea: `${layoutScope}:has(.ProseMirror):not(:has([data-autoscroll-container="true"]))`,
       panelCanvasScope,
+      panelFilePreviewScope,
       userQueryWidth: userQuery,
     },
   }

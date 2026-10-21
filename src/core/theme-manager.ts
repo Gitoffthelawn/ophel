@@ -7,6 +7,7 @@
 
 import type { SiteAdapter } from "~adapters/base"
 import { SITE_IDS } from "~constants/defaults"
+import { ensureChatGPTThemeToggleStyle } from "~styles/native-theme-adapters/chatgpt"
 import { DOMToolkit } from "~utils/dom-toolkit"
 import type { CustomStyle } from "~utils/storage"
 import { getPreset, themeVariablesToCSS, type ThemeVariables } from "~utils/themes"
@@ -56,6 +57,7 @@ export class ThemeManager {
   private lightPresetId: string
   private darkPresetId: string
   private hostThemeObserver: MutationObserver | null = null
+  private storageListener: ((event: StorageEvent) => void) | null = null
   private onModeChange?: ThemeModeChangeCallback
   private adapter?: SiteAdapter | null
   private nativeThemeOverrideEnabled: boolean
@@ -176,7 +178,16 @@ export class ThemeManager {
       switch (siteId) {
         case SITE_IDS.CHATGPT: {
           localStorage.setItem("theme", "system")
-          document.documentElement.className = targetMode
+          // [CHATGPT-APP-SHELL]: 新版主题由 html 的 data-theme / data-appearance-theme
+          // 属性驱动（class 固定为 chatgpt-theme）；旧版用 html.dark / html.light class
+          const root = document.documentElement
+          if (root.hasAttribute("data-appearance-theme")) {
+            ensureChatGPTThemeToggleStyle()
+            root.setAttribute("data-theme", targetMode)
+            root.setAttribute("data-appearance-theme", targetMode)
+          } else {
+            root.className = targetMode
+          }
           window.dispatchEvent(
             new StorageEvent("storage", {
               key: "theme",
@@ -351,9 +362,19 @@ export class ThemeManager {
           }
           return false
         }
-        case SITE_IDS.DOUBAO:
-          // 豆包不支持深色模式
+        case SITE_IDS.DOUBAO: {
+          if (this.adapter && typeof this.adapter.toggleTheme === "function") {
+            ;(
+              this.adapter as SiteAdapter & {
+                toggleTheme: (targetMode: "light" | "dark" | "system") => Promise<boolean>
+              }
+            )
+              .toggleTheme("system")
+              .catch(() => {})
+            return true
+          }
           return false
+        }
         case SITE_IDS.YUANBAO: {
           localStorage.setItem("yb_web_theme_mode", "system")
           window.dispatchEvent(
@@ -650,8 +671,13 @@ export class ThemeManager {
           if (selected.icon === "dark_mode") return "dark"
           return "light"
         }
-        case SITE_IDS.DOUBAO:
-          return "light"
+        case SITE_IDS.DOUBAO: {
+          const storedTheme = localStorage.getItem("dbx-web-theme")
+          if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
+            return storedTheme
+          }
+          return null
+        }
         case SITE_IDS.YUANBAO: {
           const storedTheme = localStorage.getItem("yb_web_theme_mode")
           if (storedTheme === "light" || storedTheme === "dark" || storedTheme === "system") {
@@ -901,6 +927,22 @@ ${cssVars}
         attributeFilter: ["class", "data-theme", "yb-theme-mode"],
       })
     }
+
+    // 豆包主题偏好写在 localStorage，跨标签或同页合成 storage 事件时 DOM 可能不变。
+    // 仅在豆包上监听 dbx-web-theme，避免 ChatGPT/Grok/元宝多一次全站 reconcile。
+    if (
+      !this.storageListener &&
+      this.adapter?.getSiteId() === SITE_IDS.DOUBAO &&
+      typeof window !== "undefined" &&
+      typeof window.addEventListener === "function"
+    ) {
+      this.storageListener = (event: StorageEvent) => {
+        if (event.key === "dbx-web-theme") {
+          reconcileObservedTheme()
+        }
+      }
+      window.addEventListener("storage", this.storageListener)
+    }
   }
 
   /**
@@ -910,6 +952,14 @@ ${cssVars}
     if (this.hostThemeObserver) {
       this.hostThemeObserver.disconnect()
       this.hostThemeObserver = null
+    }
+    if (
+      this.storageListener &&
+      typeof window !== "undefined" &&
+      typeof window.removeEventListener === "function"
+    ) {
+      window.removeEventListener("storage", this.storageListener)
+      this.storageListener = null
     }
   }
 
@@ -1210,7 +1260,9 @@ ${cssVars}
       return { mode: resolved, animated }
     }
 
-    const currentMode = this.isHostThemeSyncActive() ? this.detectHostThemeMode() : this.mode
+    const currentMode = this.isHostThemeSyncActive()
+      ? this.adapter?.detectHostThemeMode() ?? this.detectHostThemeMode()
+      : this.mode
 
     // 如果已经是目标模式，仅更新偏好
     if (currentMode === normalizedPreference) {
@@ -1274,6 +1326,15 @@ ${cssVars}
   destroy() {
     this.stopThemeMonitoring()
     this.listeners.clear()
+    // 注销系统主题偏好监听，避免实例销毁后回调仍持有引用
+    if (this.systemMediaQuery) {
+      if (typeof this.systemMediaQuery.removeEventListener === "function") {
+        this.systemMediaQuery.removeEventListener("change", this.handleSystemChange)
+      } else if (typeof this.systemMediaQuery.removeListener === "function") {
+        this.systemMediaQuery.removeListener(this.handleSystemChange)
+      }
+      this.systemMediaQuery = null
+    }
   }
 }
 

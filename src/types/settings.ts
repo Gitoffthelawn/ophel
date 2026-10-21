@@ -8,6 +8,8 @@ export type SiteId = string
 export type ThemeMode = "light" | "dark" | "system"
 export type ExportPackaging = "markdown" | "zip"
 
+export type ExportStyle = "standard" | "clean"
+
 // 站点主题配置
 export interface SiteThemeConfig {
   mode: ThemeMode
@@ -57,6 +59,7 @@ export interface ExportSettings {
   exportShowDialog?: boolean // 点击导出按钮时显示选项弹窗（关闭则按默认格式直接导出）
   packaging?: ExportPackaging // 导出打包方式
   defaultExportFormat?: ExportFormatSetting // 快捷键与一键导出的默认格式
+  exportStyle?: ExportStyle // 导出样式：standard 保留装饰，clean 去除装饰 emoji
 }
 
 export type ExportFormatSetting = "markdown" | "json" | "txt" | "html"
@@ -86,9 +89,9 @@ export interface AIStudioSettings {
 // ChatGPT 设置
 export interface ChatGPTSettings {
   markdownFix?: boolean // 修复响应中未渲染的加粗文本
-  codeBlockBatchMount?: boolean // 代码编辑器批量挂载，减少打开/切换长会话时的页面卡顿
+  codeBlockBatchMount?: boolean // 代码编辑器批量挂载，减少打开/切换长对话时的页面卡顿
   streamingRenderOptimize?: boolean // 生成回答期间暂停消息区域动画，降低渲染开销
-  disableBackdropBlur?: boolean // 禁用页面毛玻璃效果，减少长会话滚动掉帧
+  disableBackdropBlur?: boolean // 禁用页面毛玻璃效果，减少长对话滚动掉帧
 }
 
 export interface UsageMonitorSettings {
@@ -126,6 +129,9 @@ export type FormulaCopyFormat = "latex" | "mathml"
 export interface Settings {
   language: string
   hasAgreedToTerms: boolean // 用户是否同意免责声明
+
+  // 已停用的内置站点 ID 列表（SITE_IDS 值）；停用后该站点不再初始化任何功能
+  disabledSites: string[]
 
   // 适配配置远程更新
   remoteConfig: {
@@ -185,6 +191,7 @@ export interface Settings {
     zenMode?: Record<string, ZenModeConfig>
     cleanMode?: Record<string, ZenModeConfig>
     panelAvoidance?: Record<string, PanelAvoidanceSettings>
+    autoHideInput?: Record<string, ZenModeConfig>
   }
 
   // 模型锁定（按站点独立）

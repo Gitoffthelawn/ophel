@@ -9,22 +9,146 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-### 🚀 New Features
+---
 
-- **Cross-site conversation search** — Global search now also matches conversation titles from other supported sites; results from other sites carry the site icon and an "External" badge, and clicking one opens the conversation in a new tab. (#888)
+## [1.2.12][1.2.12] - 2026-10-12
 
-### ✨ Improvements
+**⚠️ Notice — Our GitHub account is still suspended and the appeal is ongoing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
 
-- **Tooltip display** — Tooltips are lighter, flip automatically near screen edges, and dismiss immediately on click or Esc; sweeping across neighboring buttons now shows hints instantly without the hover delay; quick action button hints open toward the center of the screen, and list hints (outline, conversations, folders, prompt chains) only appear when the title is truncated, so hovering no longer covers neighboring items. (#885)
-- **Update notifications** — The full-screen "What's New" dialog no longer pops up automatically after each update. Instead, a one-time corner toast announces the new version, and an unread red dot appears on the panel logo and on the quick panel button while the panel is collapsed: hovering the logo previews the highlights, clicking opens the full notes, and the dot clears once read. The Settings → About entry remains available. (#887)
+**📢 Notice — ChatGPT's redesigned web interface is now rolling out alongside the old version and is gradually replacing it. This release already adapts to the redesigned pages, but the new interface itself is not yet feature-complete, so in some cases the extension may be unable to retrieve the full conversation outline. If you notice anything off, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
 
 ### 🐛 Bug Fixes
 
-- **ChatGPT in-page bookmark icons** — Fixed the bookmark star feature repeatedly expanding ChatGPT's native prompt navigation text layer in the background on every sent message and content update, regardless of the "Show user queries" and "Auto-update outline during conversation" switches; in long conversations this could drive up tab memory usage. (#889)
+- **ChatGPT redesigned pages adaptation** — Fixed page width, Zen Mode, outline, theme switching, and conversation export on ChatGPT's redesigned pages. (#971, @urzeye, @mrpops2ko)
+- **DeepSeek outline entry jumping to top** — Fixed an issue on DeepSeek where, after sending several messages without refreshing the page, clicking a message in the outline could suddenly move it to the top of the outline list. (#972)
+- **Export jumping to the top** — Fixed an issue where exporting a conversation on DeepSeek, Claude, Grok, or AI Studio scrolled the page to the top first; the complete conversation is now fetched directly without moving the page. (#973)
 
 ---
 
-## [1.2.6] - 2026-08-28
+## [1.2.11][1.2.11] - 2026-09-30
+
+**⚠️ Notice — Our GitHub account has been temporarily suspended in error, and we are actively appealing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+**📢 Notice — ChatGPT is currently rolling out a major web redesign to select accounts, significantly restructuring the sidebar history, composer, and chat layout, which causes the extension's existing selectors to stop functioning. As none of our developer accounts have received this rollout yet, dynamic interactions cannot be tested and full adaptation is temporarily blocked until our accounts receive the update, ChatGPT rolls it out globally, or a community member can grant temporary account access for debugging. If you have a test account on the new interface and are willing to assist, please reach out to us on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+### ✨ Improvements
+
+- **Chats tab improvements** — Improved filters, search, batch actions, and drag-and-drop reordering in conversation management. (#965)
+- **Outline tab improvements** — The level slider now supports drag adjustment, the toolbar automatically compacts on narrow panels, row alignment is improved, and the export button shimmer stops after the first click. (#966)
+- **Prompts tab improvements** — Improved category filtering, variable tags, and empty-state guidance for prompts. (#967)
+
+### 🐛 Bug Fixes
+
+- **Attachment-only questions missing from outline and export** — Fixed an issue where questions containing only images or files were missing from the outline on DeepSeek and Claude, or omitted from AI Studio exports; the outline now shows the attachment file name and exports include the attachments. (#970)
+
+---
+
+## [1.2.10][1.2.10] - 2026-09-28
+
+**⚠️ Notice — Our GitHub account has been temporarily suspended in error, and we are actively appealing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+**📢 Notice — ChatGPT is currently rolling out a major web redesign to select accounts, significantly restructuring the sidebar history, composer, and chat layout, which causes the extension's existing selectors to stop functioning. As none of our developer accounts have received this rollout yet, dynamic interactions cannot be tested and full adaptation is temporarily blocked until our accounts receive the update, ChatGPT rolls it out globally, or a community member can grant temporary account access for debugging. If you have a test account on the new interface and are willing to assist, please reach out to us on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+### ✨ Improvements
+
+- **AI Studio and Grok long conversation outline, export, and reading history** — Outline headings in long conversations now stay complete while scrolling and jump accurately when clicked; exporting captures the full conversation at once without scrolling, keeping reasoning, attachments, and images; refreshing returns you to where you left off reading. (#962, #963)
+- **Switch conversations without reloading** — Switching between conversations from the Chats tab now happens in place instead of reloading the entire page, jumping faster while keeping your reading state. (#960)
+- **Hide quick buttons when panel is open** — "Hide quick buttons when panel is open" is now enabled by default, automatically hiding the floating button group when the main panel expands to keep the screen uncluttered and restoring them when collapsed. (#964)
+
+### 🐛 Bug Fixes
+
+- **Grok user questions missing** — Adapted to Grok's redesigned conversation page; user questions appear in the outline again, and copying outline or exporting conversations includes complete questions and replies. (#961)
+- **Grok sync with collapsed sidebar** — Fixed an issue where syncing conversations while Grok's sidebar was collapsed reported no conversations detected; the sidebar is now automatically expanded during sync. (#963)
+- **Gemini auto-hide input** — Adapted to Gemini's new page structure; the "Auto-hide Input" feature is restored, collapsing the input box when idle and bringing it back when the cursor nears the bottom or the input is focused. (#959)
+
+---
+
+## [1.2.9][1.2.9] - 2026-09-24
+
+### ✨ Improvements
+
+- **Claude, DeepSeek outline, export and reading history** — Reply headings in long conversations stay complete while scrolling and jump accurately when clicked, exporting no longer requires scrolling page-by-page while keeping reasoning, formulas, and code intact, and refreshing now returns to where you left off reading. (#953, #954)
+- **Long conversation and streaming performance** — Reduced background scans and repeated calculations during long conversations and live AI replies across all sites, easing stutter when scrolling and typing. (#947)
+- **Claude document canvas and Artifacts panel avoidance** — When a document canvas preview or the Artifacts file panel is open on Claude, the Ophel panel no longer covers them; content now shifts aside so titles, close buttons, and file lists stay fully visible and clickable. (#956)
+- **DeepSeek document preview and Canvas avoidance** — When a document preview or Canvas preview panel is open on DeepSeek, the Ophel panel no longer covers it; preview content now shifts aside so the title, close button, and content stay fully visible and clickable. (#958)
+- **Scroll to top and quick jumps** — On sites where conversations are already fully loaded locally (e.g. DeepSeek, Doubao, Claude), "Scroll to Top" now finishes immediately without unnecessary history checks; clicking "Return to Anchor" or "Scroll to Bottom" right after "Scroll to Top" also responds immediately instead of ignoring the click. (#948)
+
+### 🐛 Bug Fixes
+
+- **"Show User Queries" toggle** — Fixed an issue on pages without user questions where the toggle showed an incorrect state and appeared unresponsive; it now always reflects its true state and updates immediately. (#951)
+- **Outline stuck expanded after locate** — Fixed an issue where temporarily expanding the outline via "Locate Current" remained stuck open; it now reliably returns to its collapsed state once highlighting ends. (#952)
+- **Z.ai clean mode overseas** — Fixed an issue where enabling clean mode or zen mode on Z.ai from outside China caused the chat area to disappear, leaving a blank page; page content now displays normally. (#955)
+
+---
+
+## [1.2.8][1.2.8] - 2026-09-21
+
+**⚠️ Notice — Our GitHub account has been temporarily suspended in error, and we are actively appealing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+**📢 Notice — ChatGPT is currently rolling out a major web redesign to select accounts, significantly restructuring the sidebar history, composer, and chat layout, which causes the extension's existing selectors to stop functioning. As none of our developer accounts have received this rollout yet, dynamic interactions cannot be tested and full adaptation is temporarily blocked until our accounts receive the update, ChatGPT rolls it out globally, or a community member can grant temporary account access for debugging. If you have a test account on the new interface and are willing to assist, please reach out to us on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+### 🚀 New Features
+
+- **Auto-hide input (Gemini)** — Added an "Auto-hide Input" toggle under Site Settings for Gemini. The chat input box floats as an overlay and slides away when idle, letting conversations use the freed space; it reappears when the pointer approaches the bottom, on prompt insertion, or via the focus shortcut (`Alt + I`). (#930)
+- **Doubao page theme sync** — Doubao now supports bidirectional theme synchronization with Ophel and native page theme switches across light, dark, and system appearance preferences, keeping the page, input box, and panel in full sync. (#932)
+
+### ✨ Improvements
+
+- **Export button in the outline tab** — The outline toolbar now includes a highlighted Export button that opens the export dialog in one click, instead of going through the toolbox or a conversation's menu; Copy Outline now lives inside the export dialog next to Copy Markdown. (#936)
+- **Full user questions in Copy Outline** — Copy Outline now copies the complete text of every user question instead of a truncated preview, so long questions are no longer cut off and the result matches copying a single outline item. (#939)
+- **Auto Snap panel accidental triggers and flickering at screen edges** — The panel now slides out only after the pointer pauses briefly on the edge handle or trigger zone, so quick sweeps across the edge or over to another monitor no longer pop it open; when the pointer leaves the window on the snapped side, the panel also stays open briefly instead of repeatedly popping out and collapsing. (#937)
+- **Tools menu covered by the panel** — Fixed Auto Snap panel mode making the panel slide out and cover the quick toolbar's tools menu when clicking its icon; the menu now also stays above the expanded panel while open, so it remains clickable at any toolbar position. (#934)
+- **Single tab display and layout protection** — The panel now automatically hides the top tab bar when only a single feature is enabled (such as outline-only mode or capability-restricted sites), reclaiming ~38px of vertical space; the layout settings also require at least one tab to remain enabled, preventing empty panel states. (#940)
+- **Clean Mode bottom spacing** — In Clean Mode, AI generation and legal disclaimers under the input box are now hidden while preserving their native DOM flow spacing, keeping the input area at the site's original intended height instead of sticking to the bottom edge. (#929)
+- **ChatGPT outline performance in long conversations** — Optimized heading sync and index calculation during long conversations, eliminating repeated full-tree DOM queries and reducing main thread lag during outline refreshes. (#935)
+- **Prompt insert and clear performance in long conversations** — Optimized routine background checks on long-conversation pages such as ChatGPT, eliminating repeated full-page scans; inserting and clearing prompts now respond instantly instead of stalling for seconds. (#942)
+
+### 🐛 Bug Fixes
+
+- **ChatGPT outline order in long chats** — Fixed an issue where scrolling through long ChatGPT conversations could cause reply headings to be grouped under the wrong question or jump out of order in the outline. (#935)
+- **Zen Mode and Clean Mode state isolation** — Fixed an issue where enabling Zen Mode automatically enabled Clean Mode and left it active after exiting, now preserving your original Clean Mode preference. (#926)
+- **Pinned conversations on Doubao and DeepSeek** — Fixed pinned chats no longer being recognized after both sites redesigned their sidebars, so pinned status syncs correctly in Conversation Manager again. (#933)
+- **Gemini Canvas and Deep Research export** — Adapted to Gemini's new inline Canvas preview and Deep Research layout, resolving issues where Canvas export could fail on first attempt, misalign versions across multi-turn chats, or extract empty code. (#941)
+- **ChatGPT conversations disappearing in the Conversations tab** — Fixed an issue where conversations could disappear and show empty folders after switching tabs or pinning a chat on ChatGPT, and resolved active sync failing to restore the list. (#943)
+
+---
+
+## [1.2.7][1.2.7] - 2026-09-13
+
+**⚠️ Notice — Our GitHub account has been temporarily suspended in error, and we are actively appealing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
+
+### 🚀 New Features
+
+- **Site toggle** — You can now individually disable any built-in site or site pack from the Adapter Center, on-page settings, or extension popup to stop Ophel from loading on that site. (#908)
+- **Cross-site conversation search** — Global search now also matches conversations from other supported sites; results show the site icon and an "External" badge, and clicking one opens it in a new tab. (#888)
+- **Gemini Spark conversation sync** — Task threads in Gemini Spark (gemini.google.com/spark) now sync into Conversation Manager, including pinned state; clicking a synced thread opens it. (#902)
+
+### ✨ Improvements
+
+- **Long conversation and streaming performance** — Optimized background calculations and DOM scanning across Gemini and other supported sites during long conversations, continuous streaming responses, and scrolling, reducing stutter and frame drops.
+- **Export style** — New "Export Style" setting (also selectable per export in the export dialog) with a Clean option that removes decorative emojis from exported files; Prompt Queue and export text now fully follow the selected interface language.
+- **Update notifications** — Version updates no longer pop up the full-screen changelog. A one-time corner toast appears instead, and a red dot on the panel logo previews highlights on hover and opens the full notes on click. (#887)
+- **Tooltips** — Tooltips now flip near screen edges and dismiss on click or Esc; list-item hints only appear when the title is truncated, so they no longer cover neighboring content. (#885)
+- **Popup Quick Access for multi-entry sites** — Sites with multiple domains (like Kimi's kimi.com and kimi.ai) now take a single tile in the popup Quick Access grid; you can switch entries, and the last choice is remembered. (#895)
+- **Site Packs entry in feature tips** — "Site Packs" in the outline feature tips is now a clickable link that opens Settings → Site Packs on the online library.
+- **Header drag hint** — The passthrough-mode hint now appears only after holding the header, so it no longer flashes over the title when clicking or dragging the panel.
+- **Claude Key switching** — Switching Session Keys now only reloads the requesting Claude tab rather than all open Claude tabs, preserving active drafts and sessions in other tabs.
+
+### 🐛 Bug Fixes
+
+- **Gemini sidebar adaptation** — Adapted to Gemini's new sidebar structure, so the conversation list loads again in Conversation Manager and Global Search.
+- **Prompt Queue overlay covering site dialogs** — Fixed the floating queue capsule and panel covering sites' own dialogs and popups; the overlay now hides while a native dialog is open and reappears once it closes.
+- **ChatGPT in-page bookmark icons** — Fixed in-page bookmarks repeatedly expanding ChatGPT question text in long conversations, which could drive up tab memory usage. (#889)
+- **Kimi international site** — The extension now recognizes kimi.ai, so outline, export, Zen Mode, and other Kimi features work on both kimi.ai and kimi.com. (#890)
+- **Popup language setting** — Fixed the extension popup always showing the browser language; it now follows the interface language in Settings. (#897)
+- **DeepSeek thinking block outline** — Fixed issue where DeepSeek R1 reasoning/thinking blocks during streaming were incorrectly recognized as user queries, causing outline flickering.
+- **Outline word count overflow** — Fixed issue across ChatGPT, Claude, Gemini, Grok, and Z.ai where section word counts incorrectly accumulated across subsequent conversation turns.
+- **Grok prompt insertion** — Fixed issue where prompts containing `<`, `>`, or `&` were parsed as raw HTML or discarded, and preserved multiline paragraph formatting in Grok.
+- **Prompt drag sorting** — Fixed drag sorting being unavailable in the prompt library; reordering now works under any platform filter, and stays disabled only in the "Recent" view and during search.
+
+---
+
+## [1.2.6][1.2.6] - 2026-08-28
 
 ### 🚀 New Features
 
@@ -1494,6 +1618,12 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
+[1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
+[1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10
+[1.2.9]: https://github.com/urzeye/ophel/releases/tag/v1.2.9
+[1.2.8]: https://github.com/urzeye/ophel/releases/tag/v1.2.8
+[1.2.7]: https://github.com/urzeye/ophel/releases/tag/v1.2.7
 [1.2.6]: https://github.com/urzeye/ophel/releases/tag/v1.2.6
 [1.2.5]: https://github.com/urzeye/ophel/releases/tag/v1.2.5
 [1.2.4]: https://github.com/urzeye/ophel/releases/tag/v1.2.4

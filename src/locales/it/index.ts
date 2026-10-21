@@ -11,6 +11,11 @@ export const it = {
   communityMotto: "Se vuoi andare veloce, vai da solo. Se vuoi andare lontano, andiamo insieme.",
   welcomeJoin: "Benvenuto a",
   agreeButton: "Capisco e sono d'accordo",
+  disclaimerAffiliation:
+    "Questa estensione non è affiliata ufficialmente né approvata dai siti supportati; tutti i marchi e i nomi appartengono ai rispettivi proprietari.",
+  disclaimerAgreeNote:
+    "Facendo clic sul pulsante qui sopra, dichiari di aver letto, compreso e accettato quanto sopra.",
+  disclaimerContribute: "Contribuisci",
 
   tabPrompts: "Suggerimenti",
   tabSettings: "Impostazioni",
@@ -45,6 +50,19 @@ export const it = {
   sitePacksRegistrySearchPlaceholder: "Cerca pacchetti",
   sitePacksRegistryNoMatch: "Nessun pacchetto corrispondente",
   sitePacksOpenSite: "Apri sito",
+  sitePacksTabBuiltin: "Siti integrati",
+  builtinSitesDesc:
+    "Gestisci dove Ophel è attivo sui siti AI integrati. Una volta disattivato, il pannello e tutte le funzionalità non vengono più caricati su quel sito; ricarica le pagine aperte per applicare completamente la modifica",
+  builtinSiteBadge: "Integrato",
+  builtinSiteCurrentBadge: "Sito attuale",
+  builtinSiteEnabledToast: "{site} riattivato",
+  builtinSiteDisabledToast:
+    "Ophel disattivato su {site}; ricarica le pagine aperte per applicare completamente la modifica",
+  disableSiteEntryLabel: "Disattiva Ophel su questo sito",
+  disableSiteConfirmTitle: "Disattivare Ophel su {site}?",
+  disableSiteConfirmDesc:
+    "Rimuove il pannello e tutti i monitor in background da questa pagina e la ricarica per applicare completamente la modifica. Per riattivare, vai su Centro adattatori → Siti integrati",
+  disableSiteConfirmAction: "Disattiva e ricarica",
   sitePacksTabInstalled: "Installati",
   sitePacksTabOrigins: "Siti personalizzati",
   sitePacksTabUpdates: "Catalogo e aggiornamenti",
@@ -162,8 +180,6 @@ export const it = {
   allowRecommended: "Consenti (consigliato)",
   required: "Obbligatorio",
   // Optional permissions
-  // permissionAllUrls: "All Sites Access", // Deprecated
-  // permissionAllUrlsDesc: "Allow the extension to run on all websites to support more AI platforms.", // Deprecated
   permissionWebdavAccess: "Accesso alle funzionalità avanzate",
   permissionWebdavAccessDesc:
     "Accesso a tutti i siti web. Richiesto per la sincronizzazione WebDAV, la rimozione della filigrana dell'immagine AI e l'esecuzione dei Site Pack installati sui loro siti target senza richieste per singolo sito.",
@@ -250,7 +266,7 @@ export const it = {
   // ======== About Page ========
   version: "Versione",
   aboutDescription:
-    "{appName} è un'estensione del browser progettata per piattaforme AI come Gemini, ChatGPT, Claude, AI Studio e Grok. Potenzia il tuo flusso di lavoro con gestione delle conversazioni, strutture intelligenti e una libreria di prompt, offrendo al contempo utilità come ripristino della cronologia di lettura, ancoraggi bidirezionali, rimozione della filigrana, correzioni di formattazione e blocco dei modelli. Con opzioni di personalizzazione complete per temi e interfaccia utente, {appName} garantisce un'esperienza di interazione IA più fluida ed efficiente.",
+    "{appName} è un'estensione del browser per piattaforme AI come ChatGPT, Claude, Gemini, DeepSeek e Doubao, espandibile ad altri siti tramite pacchetti di adattatori (regole JSON). Offre gestione delle conversazioni, esportazione multi-formato, outline intelligenti, ricerca globale e code di prompt, oltre a ripristino del progresso di lettura, rendering e copia delle formule, avvisi di completamento, blocco del modello e regolazione del layout. Con temi, modalità Zen e sincronizzazione WebDAV, rende le tue interazioni con l'IA più fluide e piacevoli.",
   aboutSupportedPlatforms: "Piattaforme supportate",
   aboutSupportedPlatformsDesc:
     "Attualmente copre le piattaforme AI {count}, mantenute sincronizzate con il rilevamento dei popup e l'accesso rapido.",
@@ -267,7 +283,7 @@ export const it = {
   scriptCat: "ScriptCat",
   reviewBtn: "Recensione",
   starBtn: "Stella",
-  githubDesc: "Visualizza il codice sorgente, segnala problemi o contribuisci",
+  githubDesc: "Metti una stella al repository per sostenere lo sviluppo",
   giveStar: "Stella su GitHub",
   projectWebsite: "Sito ufficiale",
   websiteDesc: "Visualizza documentazione, guide e altro ancora",
@@ -372,9 +388,11 @@ export const it = {
   snapToEdge: "Aggancia al bordo",
   tip1: "Premi a lungo {modifier} per accedere alla modalità passthrough e interagire con i contenuti sotto il pannello",
 
-  tip3: "Premi {shortcut} per visualizzare tutte le scorciatoie da tastiera",
-  tip4: "{shortcut} apre la ricerca globale con la sintassi folder: tag: level:",
-  tip5: "Installa i pacchetti sito per usare Ophel su più siti di IA",
+  tip3: "Premi {shortcut} per visualizzare {link}",
+  tip4: "{shortcut} apre {link} per trovare qualsiasi contenuto",
+  tipGlobalSearchLink: "la ricerca globale",
+  tipShortcutsLink: "tutte le scorciatoie da tastiera",
+  tip5: "Installa pacchetti in {sitePacks} per usare Ophel su più siti di IA",
   tip6: "{shortcut} per passare da un titolo all'altro",
   edit: "Modifica",
   delete: "Elimina",
@@ -458,6 +476,7 @@ export const it = {
   promptMerge: "Unisci",
   promptOverwrite: "Sovrascrivi",
   promptMergeSuccess: "Unificato: {updated} aggiornato, {added} aggiunto",
+  promptDeleteConfirm: "Questo prompt verrà eliminato definitivamente.",
   promptSettingsTitle: "Impostazioni dei suggerimenti",
   promptSettingsDesc: "Configura le interazioni nella scheda dei prompt",
   promptSubmitShortcutLabel: "Invia scorciatoia",
@@ -495,7 +514,7 @@ export const it = {
   chainNoPromptsDescription:
     "Le catene vengono create da prompt esistenti e necessitano di almeno un prompt.",
   chainDuplicated: "Catena duplicata",
-  chainDeleteConfirm: "Eliminare questa catena?",
+  chainDeleteConfirm: "Questa catena verrà eliminata definitivamente.",
   chainAdd: "Aggiungi catena",
   chainEditorEditTitle: "Modifica catena",
   chainEditorNewTitle: "Nuova catena",
@@ -636,6 +655,7 @@ export const it = {
   categoryManage: "Gestione delle categorie",
   categoryEmpty:
     "Nessuna categoria ancora. Le categorie vengono create quando si aggiungono prompt.",
+  promptsEmpty: "Nessun prompt",
   rename: "Rinominare",
   newCategoryName: "Inserisci il nuovo nome della categoria:",
   categoryRenamed: "Categoria rinominata",
@@ -752,6 +772,12 @@ export const it = {
   exportShowIndexLabel: "Mostra numerazione messaggi nell'esportazione",
   exportShowIndexDesc:
     "Aggiunge un numero progressivo alle intestazioni dei messaggi per una ricerca più rapida",
+  exportStyleLabel: "Stile di esportazione",
+  exportStyleDesc: "Lo stile pulito rimuove gli emoji decorativi dai file esportati",
+  exportStyleStandard: "Standard",
+  exportStyleClean: "Pulito",
+  exportStyleCleanOption: "Usa stile pulito (senza emoji decorativi)",
+  exportImageAlt: "Immagine",
   exportShowIndexJsonUnsupported: "La numerazione non è supportata nell'esportazione JSON",
   exportMarkdownDividerLabel: "Separatore Markdown",
   exportMarkdownDividerDesc:
@@ -865,12 +891,12 @@ export const it = {
   notificationBody: "Fare clic per visualizzare i risultati",
   tabOutline: "Contorno",
   outlineEmpty: "Nessun contenuto di contorno",
+  outlineReleaseBanner: "Aggiornato alla v{version} — scopri le novità",
   outlineEmptyDescDefault:
     "Gli elementi della struttura appariranno man mano che la conversazione cresce.",
   outlineEmptyDescUserQueryOnly:
     "Al momento vengono visualizzate solo le query degli utenti. Invia un messaggio per generare elementi della struttura.",
   outlineCopyFull: "Copia contorno",
-  outlineCopyFullRunning: "Copia contorno...",
   outlineFullCopySuccess: "Elementi dello schema {count} copiati",
   outlineRefresh: "Aggiorna",
   outlineSettings: "Impostazioni del contorno",
@@ -919,6 +945,7 @@ export const it = {
   tabOrderSettings: "Disposizione dell'interfaccia",
   tabOrderDesc:
     "Regola l'ordine di visualizzazione delle schede del pannello (trascina la maniglia per riordinare)",
+  tabOrderAtLeastOne: "Almeno una scheda di funzionalità deve rimanere abilitata",
   moveUp: "Spostati in alto",
   moveDown: "Sposta giù",
   // Reading Navigation Settings
@@ -1042,7 +1069,7 @@ export const it = {
   togglePrompts: "Attiva/disattiva i suggerimenti",
   toggleConversations: "Attiva/disattiva conversazioni",
   // Conversations
-  tabConversations: "Conversazioni",
+  tabConversations: "Chat",
   conversationsEmpty: "Nessuna conversazione ancora",
   conversationsEmptyHint:
     "Fai clic sul pulsante di sincronizzazione in alto per importare dalla barra laterale",
@@ -1086,6 +1113,7 @@ export const it = {
   hoursAgo: "ora fa",
   daysAgo: "giorni fa",
   conversationsSelectFolder: "Seleziona Sincronizza cartella",
+  conversationsSelectAllFolder: "Seleziona tutto in questa cartella",
   conversationsMoveTo: "Sposta conversazione",
   conversationsSetTag: "Imposta etichetta",
   conversationsMoved: "Trasferito a",
@@ -1111,6 +1139,14 @@ export const it = {
   batchSelected: "{n} selezionato",
   batchMove: "Muoviti",
   batchDelete: "Elimina",
+  batchTag: "Tag",
+  batchTagDialogTitle: "Modifica tag in batch",
+  batchTagAdd: "Aggiungi tag selezionati",
+  batchTagRemove: "Rimuovi tag selezionati",
+  batchPin: "Spilla",
+  batchUnpin: "Sblocca",
+  conversationsBatchDeletePartial:
+    "{local} eliminati in locale; {failed} non è stato possibile eliminarli dal cloud",
   batchExit: "Esci",
   batchExport: "Esporta",
   exportToMarkdown: "Markdown",
@@ -1132,7 +1168,6 @@ export const it = {
   exportNotSupported: "Esportazione non supportata su questo sito",
   exportToTXT: "TXT",
   exportToHTML: "HTML",
-  exportToHTMLMenu: "Esporta HTML",
   exportMetaUrl: "URL",
   exportUntitled: "Senza titolo",
   exportToClipboard: "Copia Markdown",
@@ -1400,8 +1435,7 @@ export const it = {
   resetShortcutsConfirm:
     "Sei sicuro di voler reimpostare tutte le scorciatoie sui valori predefiniti?",
   pressAnyKey: "Premere un tasto qualsiasi...",
-  shortcutConflictWith: "Conflitti con",
-  shortcutConflict: "",
+  shortcutConflict: 'Conflitti con "{name}"',
   globalShortcutsTitle: "Scorciatoie globali",
   globalShortcutsDesc:
     "Lavora su qualsiasi pagina del browser. Configurali nelle impostazioni dell'estensione del browser.",
@@ -1630,8 +1664,19 @@ export const it = {
   popupSupported: "Attivo",
   popupUnsupported: "Non supportato",
   popupNewChat: "Nuova chiacchierata",
+  popupSiteDisabled: "Disattivato",
+  popupEnableOnThisSite: "Attiva su questo sito",
+  popupToggleOphelOnSite: "Attiva o disattiva Ophel su questo sito",
+  popupSiteDisabledHint: "Le funzionalità di Ophel sono disattivate su questo sito",
+  popupSiteDisabledToast: "Disattivato. Ricarica la pagina per applicare completamente",
+  popupSiteEnabledToast: "Attivato",
+  popupPackEnabledToast: "Pacchetto sito {site} attivato; ricarica le pagine aperte per applicare",
+  popupPackDisabledToast:
+    "Pacchetto sito {site} disattivato; ricarica le pagine aperte per applicare",
+  popupSiteTileDisabledTooltip: "Ophel è disattivato su questo sito; clicca per aprirlo comunque",
   popupQuickAccess: "Accesso rapido",
   popupSitePackUnbound: "Nessun sito aggiunto",
+  popupSwitchSiteEntry: "Cambia punto di accesso al sito",
   popupRecentUsed: "Recente",
   popupNoRecentPrompts: "Nessuna richiesta recente",
   popupCopied: "Copiato",
@@ -1766,11 +1811,13 @@ export const it = {
   queueTitle: "Coda di richiesta",
   queueQuickAsk: "Coda di richiesta",
   queueInQueue: "In coda ({count})",
-  queueEmpty: "La coda è vuota. Digita e premi Enter per inviare o accodare.",
+  queueEmpty: "La coda è vuota. Digita e premi {key} per inviare o accodare.",
+  selectNoOptions: "Nessuna opzione",
+  activeSearchFilters: "Filtri di ricerca attivi",
   queueClearAll: "Cancella coda",
   queueRemove: "Rimuovi",
-  queuePlaceholderIdle: "Digita un messaggio, Enter per inviare...",
-  queuePlaceholderBusy: "L'IA sta generando, premi Enter per accodare...",
+  queuePlaceholderIdle: "Digita un messaggio, {key} per inviare...",
+  queuePlaceholderBusy: "L'IA sta generando, premi {key} per accodare...",
   queueStatusIdle: "IA inattiva",
   queueStatusBusy: "IA in generazione",
   queueSettingLabel: "Coda di richiesta",
@@ -1780,6 +1827,7 @@ export const it = {
   queueEdit: "Modifica",
   queueEditSave: "Salva",
   queueEditCancel: "Annulla",
+  queueEditedNotSent: "Contenuto dell'editor modificato; l'elemento in coda non è stato inviato",
   queueForceSend: "Forza l'invio",
   queueBatchImport: "Aggiunta batch",
   queueBatchImportTitle: "Aggiungi batch alla coda",
@@ -1822,6 +1870,10 @@ export const it = {
   cleanModeLabel: "Abilita la modalità pulita",
   cleanModeDesc:
     "Nascondi disclaimer, annunci, pulsanti di download e altri elementi inutili per un'interfaccia più pulita (configurata in modo indipendente per ciascun sito)",
+  autoHideInputTitle: "Nascondi automaticamente l'input",
+  autoHideInputLabel: "Comprimi automaticamente l'input quando inattivo",
+  autoHideInputDesc:
+    "Comprime e nasconde la casella di input quando il cursore si allontana e non c'è testo in bozza; si espande al passaggio del mouse o al focus (configurato per sito)",
   extensionUpdateNoticeKicker: "Estensione aggiornata",
   extensionUpdateNotice:
     "Ophel Atlas è stato aggiornato. Ricarica questa pagina per continuare a utilizzare la versione più recente.",
@@ -1959,7 +2011,14 @@ export const it = {
   discordDesc:
     "Unisciti alla nostra community per chattare con altri utenti, fornire feedback e ricevere gli ultimi aggiornamenti",
   joinDiscord: "Unisciti a Discord",
+  joinDiscordCommunity: "Unisciti a Discord",
   kofiSupport: "Comprami un caffè",
   kofiDesc: "Se Ophel ti è utile, considera l'acquisto di un caffè per supportare lo sviluppatore",
   kofiBtn: "Supporto su Ko-fi",
+  sponsorSupport: "Sostieni il progetto",
+  sponsorDesc: "Se Ophel ti è utile, considera di sostenere lo sviluppo",
+  wechatPay: "WeChat Pay",
+  alipayPay: "Alipay",
+  afdianSupport: "Afdian",
+  afdianCardDesc: "Sostieni lo sviluppo continuo",
 }

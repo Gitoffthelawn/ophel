@@ -92,7 +92,7 @@ export interface KimiSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const KIMI_CONFIG_VERSION = 1
+export const KIMI_CONFIG_VERSION = 3
 
 const createKimiConfig = (): KimiSiteConfig => {
   const sidebarConversation = "a.chat-info-item, a.next-sidebar-history-item__link"
@@ -151,6 +151,7 @@ const createKimiConfig = (): KimiSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.KIMI]],
+    traits: { historyLazyLoad: false },
     selectors: {
       textarea: [
         '.chat-input-editor[data-lexical-editor="true"]',
@@ -166,6 +167,7 @@ const createKimiConfig = (): KimiSiteConfig => {
         "a.new-chat-btn",
         'a.new-chat-btn[href="/"]',
         'a.new-chat-btn[href="https://www.kimi.com/"]',
+        'a.new-chat-btn[href="https://www.kimi.ai/"]',
       ],
       stopButton: [activeStopButton, `${submitButtonContainer}:has(svg[name="stop"])`],
     },
@@ -244,12 +246,8 @@ const createKimiConfig = (): KimiSiteConfig => {
       ],
     },
     cleanMode: {
-      hide: [
-        ".chat-bottom .legal-footer, .legal-footer",
-        ".membership-upgrade",
-        ".download-app-btn",
-        ".activity-area",
-      ],
+      preserveFlow: [".chat-bottom .legal-footer, .legal-footer"],
+      hide: [".membership-upgrade", ".download-app-btn", ".activity-area"],
     },
     sitePrivateSelectors: {
       sidebarConversation,

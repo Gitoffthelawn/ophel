@@ -5,10 +5,11 @@ import settingsCssText from "data-text:~styles/settings.css"
 import type { PlasmoCSConfig, PlasmoMountShadowHost } from "plasmo"
 import React from "react"
 
-import { getAdapter, registryReady } from "~adapters"
+import { getAdapter, getEffectiveAdapter, registryReady } from "~adapters"
 import type { SiteAdapter } from "~adapters/base"
 import { App } from "~components/App"
 import { startPageUrlChangeBroadcaster } from "~core/modules-init"
+import { useSettingsStore } from "~stores/settings-store"
 import { applyOphelPlatformFontClass } from "~utils/font"
 import { EVENT_PAGE_URL_CHANGE } from "~utils/messaging"
 
@@ -25,6 +26,7 @@ export const config: PlasmoCSConfig = {
     "https://ima.qq.com/*",
     "https://chat.deepseek.com/*",
     "https://www.kimi.com/*",
+    "https://www.kimi.ai/*",
     "https://chatglm.cn/*",
     "https://chat.qwen.ai/*",
     "https://www.qianwen.com/*",
@@ -124,6 +126,17 @@ export const mountShadowHost: PlasmoMountShadowHost = ({
       }
     })
     observer.observe(document.body, { childList: true, subtree: false })
+
+    // 挂载窗口结束后停止观察，避免长期监听 body 的 childList 变化。
+    // 若届时仍未挂载（异常情况），保留 observer 继续兜底。
+    setTimeout(
+      () => {
+        if (shadowHost.parentElement) {
+          observer.disconnect()
+        }
+      },
+      Math.max(...delays) + 2000,
+    )
   } else {
     // 其他站点直接挂载到 body
     doMount()
@@ -133,6 +146,10 @@ export const mountShadowHost: PlasmoMountShadowHost = ({
 const PlasmoApp = () => {
   const [isRegistryReady, setIsRegistryReady] = React.useState(false)
   const [adapter, setAdapter] = React.useState<SiteAdapter | null>(() => getAdapter())
+  const settingsHydrated = useSettingsStore((state) => state._hasHydrated)
+  const disabledSites = useSettingsStore((state) => state.settings.disabledSites)
+  // 内置适配器被停用时跳过，允许已安装的 SitePack 接管同站点
+  const effectiveAdapter = adapter && settingsHydrated ? getEffectiveAdapter(disabledSites) : null
 
   React.useEffect(() => {
     let mounted = true
@@ -170,8 +187,9 @@ const PlasmoApp = () => {
     }
   }, [])
 
-  if (!isRegistryReady || !adapter) return null
-  return <App key={adapter.getSiteInstanceKey()} adapter={adapter} />
+  // 设置 hydration 完成前不渲染，避免停用站点上面板闪现
+  if (!isRegistryReady || !settingsHydrated || !effectiveAdapter) return null
+  return <App key={effectiveAdapter.getSiteInstanceKey()} adapter={effectiveAdapter} />
 }
 
 export default PlasmoApp

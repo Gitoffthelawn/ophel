@@ -110,7 +110,7 @@ export interface AIStudioSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const AISTUDIO_CONFIG_VERSION = 1
+export const AISTUDIO_CONFIG_VERSION = 5
 
 const createAIStudioConfig = (): AIStudioSiteConfig => {
   const turn = "ms-chat-turn"
@@ -135,6 +135,11 @@ const createAIStudioConfig = (): AIStudioSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.AISTUDIO]],
+    // virtualOutlineFill：长对话虚拟滚动，离屏轮次的回答标题由
+    // ResolveDriveResource 接口回填（见 docs/developer/aistudio-api-outline-plan.md）
+    // apiFirstExport：ResolveDriveResource 接口可导出全量历史，不依赖 DOM 历史
+    // 预加载；接口失败时的 DOM 回退遍历全部 turn 自行 scrollIntoView，无需补预加载
+    traits: { historyLazyLoad: false, virtualOutlineFill: true, apiFirstExport: true },
     selectors: {
       textarea: [
         "textarea.textarea",
@@ -163,6 +168,7 @@ const createAIStudioConfig = (): AIStudioSiteConfig => {
         'button mat-icon[fonticon="stop"]',
       ],
       scrollContainer: [
+        "ms-autoscroll-container",
         ".chat-container",
         ".virtual-scroll-container",
         '[class*="scroll"]',

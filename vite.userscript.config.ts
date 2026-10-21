@@ -2,7 +2,6 @@
 import { createHash } from "crypto"
 import * as fs from "fs"
 import * as path from "path"
-import * as vm from "vm"
 import react from "@vitejs/plugin-react"
 import { build as viteBuild, defineConfig, type Plugin } from "vite"
 import monkey from "vite-plugin-monkey"
@@ -23,7 +22,10 @@ import {
   KATEX_CDN_JS_URL,
   KATEX_CSS_RESOURCE_NAME,
 } from "./src/platform/userscript/katex-cdn"
+import { SITE_ICONS } from "./src/constants/site-icons"
 import { resources as localeResources } from "./src/locales/resources"
+import { INLINE_HIGHLIGHT_STYLES } from "./src/styles/markdown-preview-inline"
+import { INLINE_USER_QUERY_MARKDOWN_STYLES } from "./src/styles/user-query-markdown-inline"
 
 const isUserscriptDevelopmentBuild =
   process.env.NODE_ENV === "development" || Boolean(process.env.USERSCRIPT_ASSET_BASE_URL)
@@ -77,9 +79,9 @@ const userscriptMetadata: UserscriptMetadata = {
     ru: "Ophel Atlas - Органайзер AI-чатов (Support Gemini, ChatGPT, Claude, Grok, AI Studio)",
   },
   description: {
-    "": "适用于 Gemini、Gemini Enterprise、AI Studio、ChatGPT、Claude、Grok、DeepSeek、QwenAI、豆包、Kimi、ChatGLM、Z.ai 的 AI 对话导航与整理工具，提供实时大纲、Search Everywhere 全局搜索、会话文件夹、置顶、提示词队列与提示词库、提示词变量、Markdown/JSON 导出、思维链导出控制、WebDAV 同步、禅模式、宽屏/全屏阅读、滚动锁定、主题切换、LaTeX/表格复制、标签页重命名、隐私模式、完成通知音、阅读历史恢复、快捷键与批量导入提示词队列，让长 AI 对话更易搜索、更易导航、更易沉淀、更易复用。",
+    "": "适用于 Gemini、Gemini Enterprise、AI Studio、ChatGPT、Claude、Grok、DeepSeek、QwenAI、豆包、Kimi、ChatGLM、Z.ai 的 AI 对话导航与整理工具，提供实时大纲、Search Everywhere 全局搜索、对话文件夹、置顶、提示词队列与提示词库、提示词变量、Markdown/JSON 导出、思维链导出控制、WebDAV 同步、禅模式、宽屏/全屏阅读、滚动锁定、主题切换、LaTeX/表格复制、标签页重命名、隐私模式、完成通知音、阅读历史恢复、快捷键与批量导入提示词队列，让长 AI 对话更易搜索、更易导航、更易沉淀、更易复用。",
     en: "AI chat navigator and organizer for Gemini, Gemini Enterprise, AI Studio, ChatGPT, Claude, Grok, DeepSeek, Kimi, QwenAI, Doubao, ChatGLM, and Z.ai. Adds real-time outlines, Search Everywhere, conversation folders, pinning, prompt queue, prompt library, Markdown/JSON export, WebDAV sync, Zen Mode, wide/full-screen reading, scroll lock, LaTeX/table copy, tab renaming, privacy mode, notifications, reading history restore, shortcuts, prompt variables, and theme tweaks. Sound presets. Batch import.",
-    "zh-CN": "适用于 Gemini、Gemini Enterprise、AI Studio、ChatGPT、Claude、Grok、DeepSeek、QwenAI、豆包、Kimi、ChatGLM、Z.ai 的 AI 对话导航与整理工具，提供实时大纲、Search Everywhere 全局搜索、会话文件夹、置顶、提示词队列与提示词库、提示词变量、Markdown/JSON 导出、思维链导出控制、WebDAV 同步、禅模式、宽屏/全屏阅读、滚动锁定、主题切换、LaTeX/表格复制、标签页重命名、隐私模式、完成通知音、阅读历史恢复、快捷键与批量导入提示词队列，让长 AI 对话更易搜索、更易导航、更易沉淀、更易复用。",
+    "zh-CN": "适用于 Gemini、Gemini Enterprise、AI Studio、ChatGPT、Claude、Grok、DeepSeek、QwenAI、豆包、Kimi、ChatGLM、Z.ai 的 AI 对话导航与整理工具，提供实时大纲、Search Everywhere 全局搜索、对话文件夹、置顶、提示词队列与提示词库、提示词变量、Markdown/JSON 导出、思维链导出控制、WebDAV 同步、禅模式、宽屏/全屏阅读、滚动锁定、主题切换、LaTeX/表格复制、标签页重命名、隐私模式、完成通知音、阅读历史恢复、快捷键与批量导入提示词队列，让长 AI 对话更易搜索、更易导航、更易沉淀、更易复用。",
     "zh-TW": "適用於 Gemini、Gemini Enterprise、AI Studio、ChatGPT、Claude、Grok、DeepSeek、QwenAI、豆包、Kimi、ChatGLM、Z.ai 的 AI 對話導覽與整理工具，提供即時大綱、Search Everywhere 全域搜尋、對話資料夾、置頂、提示詞佇列與提示詞庫、提示詞變數、Markdown/JSON 匯出、思維鏈匯出控制、WebDAV 同步、禪模式、寬螢幕/全螢幕閱讀、捲動鎖定、主題切換、LaTeX/表格複製、分頁重新命名、隱私模式、完成通知音、閱讀歷史恢復、快捷鍵與批量匯入提示詞佇列，讓長 AI 對話更易搜尋、更易導覽、更易沉澱、更易複用。",
     de: "KI-Chat-Navigator für Gemini, Gemini Enterprise, AI Studio, ChatGPT, Claude, Grok, DeepSeek, Kimi, QwenAI, Doubao, ChatGLM und Z.ai. Mit Echtzeit-Gliederung, Search Everywhere, Ordnern, Pinning, Prompt-Queue, Markdown/JSON-Export, WebDAV-Sync, Zen Mode, Scroll Lock, Tab-Umbenennung, Benachrichtigungen und Verlauf für lange, durchsuchbare AI-Chats.",
     es: "Navegador y organizador de chats con IA para Gemini, Gemini Enterprise, AI Studio, ChatGPT, Claude, Grok, DeepSeek, Kimi, QwenAI, Doubao, ChatGLM y Z.ai. Incluye esquemas en tiempo real, Search Everywhere, carpetas, fijado, cola y biblioteca de prompts, variables, exportación Markdown/JSON, sincronización WebDAV, Zen Mode, lectura amplia, bloqueo de desplazamiento, copia de LaTeX/tablas, renombrado de pestañas, privacidad, notificaciones e historial para chats largos y reutilizables.",
@@ -146,6 +148,8 @@ const userscriptAssetSources = {
     __dirname,
     "assets/userscript/ophel-watermark-bg-96.png",
   ),
+  wechatPay: path.resolve(__dirname, "assets/support/wechat-pay.jpg"),
+  alipay: path.resolve(__dirname, "assets/support/alipay.png"),
 } as const
 
 function buildUserscriptStyleBundle(): string {
@@ -190,37 +194,6 @@ function createHashedFileName(fileName: string, content: string | Buffer): strin
   return `${baseName}.${createContentHash(content)}${ext}`
 }
 
-function extractReturnedTemplateLiteral(sourceFile: string, functionName: string): string {
-  const source = fs.readFileSync(sourceFile, "utf-8")
-  const pattern = new RegExp(
-    `function\\s+${functionName}\\s*\\(\\)\\s*:\\s*string\\s*{\\s*return\\s+\`([\\s\\S]*?)\`\\s*}`,
-  )
-  const match = source.match(pattern)
-
-  if (!match) {
-    throw new Error(`Unable to extract ${functionName} from ${path.relative(__dirname, sourceFile)}`)
-  }
-
-  return match[1]
-}
-
-function buildUserscriptSiteIconsResource(): string {
-  const sourceFile = path.resolve(__dirname, "src/constants/site-icons.ts")
-  const source = fs.readFileSync(sourceFile, "utf-8")
-  const executableSource = source.replace(
-    /export\s+const\s+SITE_ICONS\s*:\s*Record<string,\s*string>\s*=/,
-    "module.exports =",
-  )
-  const sandbox = { module: { exports: {} } }
-
-  vm.runInNewContext(executableSource, sandbox, {
-    filename: sourceFile,
-    timeout: 1000,
-  })
-
-  return JSON.stringify(sandbox.module.exports)
-}
-
 function readUserscriptAssetContent(
   key: keyof typeof USERSCRIPT_RESOURCE_DEFINITIONS,
 ): string | Buffer {
@@ -229,21 +202,15 @@ function readUserscriptAssetContent(
   }
 
   if (key === "markdownPreviewStyles") {
-    return extractReturnedTemplateLiteral(
-      path.resolve(__dirname, "src/utils/markdown.ts"),
-      "getInlineHighlightStyles",
-    )
+    return INLINE_HIGHLIGHT_STYLES
   }
 
   if (key === "userQueryMarkdownStyles") {
-    return extractReturnedTemplateLiteral(
-      path.resolve(__dirname, "src/core/user-query-markdown.ts"),
-      "getInlineUserQueryMarkdownStyles",
-    )
+    return INLINE_USER_QUERY_MARKDOWN_STYLES
   }
 
   if (key === "siteIcons") {
-    return buildUserscriptSiteIconsResource()
+    return JSON.stringify(SITE_ICONS)
   }
 
   return fs.readFileSync(userscriptAssetSources[key])
@@ -295,6 +262,7 @@ async function buildMarkdownVendor(): Promise<void> {
           "src/platform/userscript/vendor-bridge/platform.ts",
         ),
         "~platform": path.resolve(__dirname, "src/platform"),
+        "~styles": path.resolve(__dirname, "src/styles"),
         "~": path.resolve(__dirname, "src"),
       },
     },

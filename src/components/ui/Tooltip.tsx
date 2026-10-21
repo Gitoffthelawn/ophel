@@ -40,8 +40,9 @@ function isFocusFromWindowRestoration(): boolean {
 
 export const GLOBAL_TOOLTIP_STYLE_TEXT = `
   .ophel-tooltip {
-    background-color: rgba(24, 24, 28, 0.94);
-    color: #ffffff;
+    /* 与 src/style.css 的 .ophel-tooltip 保持一致：反色派生，跟随主题变量 */
+    background-color: color-mix(in srgb, var(--gh-text, rgb(24, 24, 28)) 94%, transparent);
+    color: var(--gh-bg, #ffffff);
     padding: 4px 8px;
     border-radius: 4px;
     font-size: 12px;
@@ -51,7 +52,7 @@ export const GLOBAL_TOOLTIP_STYLE_TEXT = `
     white-space: pre-wrap;
     word-wrap: break-word;
     box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    border: 1px solid color-mix(in srgb, var(--gh-bg, rgb(255, 255, 255)) 12%, transparent);
     backdrop-filter: blur(6px);
     animation: tooltip-fade-in 0.12s ease-out;
   }
@@ -107,14 +108,23 @@ export interface TooltipProps {
   disabled?: boolean
 }
 
-// 文本截断检测：比较 scroll/client 尺寸，同时覆盖单行 ellipsis 与多行 line-clamp
+// 文本截断检测：只统计“具备文本裁剪能力”的元素（ellipsis / line-clamp），
+// 忽略徽章、图标等有意的视觉溢出（如大纲提问徽章绝对定位超出自身盒），
+// 同时覆盖单行 ellipsis 与多行 line-clamp 两种截断形式
 function hasTruncatedText(root: HTMLElement): boolean {
   const isOverflowing = (el: Element): boolean =>
     el.scrollWidth > el.clientWidth + 1 || el.scrollHeight > el.clientHeight + 1
 
-  if (isOverflowing(root)) return true
+  const canClipText = (el: Element): boolean => {
+    const style = window.getComputedStyle(el)
+    if (style.textOverflow === "ellipsis") return true
+    const lineClamp = style.webkitLineClamp
+    return lineClamp !== "" && lineClamp !== "none"
+  }
+
+  if (canClipText(root) && isOverflowing(root)) return true
   for (const el of Array.from(root.querySelectorAll("*"))) {
-    if (isOverflowing(el)) return true
+    if (canClipText(el) && isOverflowing(el)) return true
   }
   return false
 }
@@ -444,7 +454,13 @@ export function bindDomTooltip(
 
   trigger.addEventListener("mouseenter", show)
   trigger.addEventListener("mouseleave", hide)
-  trigger.addEventListener("focus", show)
+  // 仅在键盘导航聚焦（:focus-visible）时显示；
+  // 弹窗关闭后程序化恢复焦点不匹配 :focus-visible，避免 tooltip 凭空出现
+  const showFromFocus = () => {
+    if (!trigger.matches(":focus-visible")) return
+    show()
+  }
+  trigger.addEventListener("focus", showFromFocus)
   trigger.addEventListener("blur", hide)
   trigger.addEventListener("pointerdown", hide)
   trigger.addEventListener("click", hide)
@@ -454,7 +470,7 @@ export function bindDomTooltip(
     destroy: () => {
       trigger.removeEventListener("mouseenter", show)
       trigger.removeEventListener("mouseleave", hide)
-      trigger.removeEventListener("focus", show)
+      trigger.removeEventListener("focus", showFromFocus)
       trigger.removeEventListener("blur", hide)
       trigger.removeEventListener("pointerdown", hide)
       trigger.removeEventListener("click", hide)
@@ -538,10 +554,17 @@ export const Tooltip: React.FC<TooltipProps> = ({
 
   // 针对切标签页/窗口回来时浏览器自动恢复焦点的场景，
   // 屏蔽由页面恢复焦点触发的 showTooltip（非用户主动键盘导航）
-  const showTooltipFromFocus = useCallback(() => {
-    if (isFocusFromWindowRestoration()) return
-    showTooltip()
-  }, [showTooltip])
+  const showTooltipFromFocus = useCallback(
+    (event: React.FocusEvent) => {
+      if (isFocusFromWindowRestoration()) return
+      // 弹窗关闭后程序化恢复焦点（如设置弹窗把焦点还给设置按钮）不匹配
+      // :focus-visible；仅键盘导航聚焦时才通过 focus 显示 tooltip，
+      // 避免鼠标操作链路下 tooltip 凭空出现
+      if (!event.target.matches(":focus-visible")) return
+      showTooltip()
+    },
+    [showTooltip],
+  )
 
   const updatePosition = useCallback(() => {
     const triggerRect = triggerRef.current?.getBoundingClientRect()

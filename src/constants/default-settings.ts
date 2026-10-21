@@ -49,6 +49,11 @@ export const DEFAULT_CLEAN_MODE: ZenModeConfig = {
   enabled: true,
 }
 
+// 默认自动隐藏输入框配置（默认关闭，首发仅 Gemini 提供配置，其余站点走 _default）
+export const DEFAULT_AUTO_HIDE_INPUT: ZenModeConfig = {
+  enabled: false,
+}
+
 const DEFAULT_COLLAPSED_BUTTONS: QuickButtonConfig[] = [
   { id: "panel", enabled: true },
   { id: "floatingToolbar", enabled: true },
@@ -68,13 +73,15 @@ export const DEFAULT_QUICK_BUTTONS_SETTINGS: QuickButtonsSettings = {
   floatingToolbar: {
     open: true,
   },
-  hideWhenPanelOpen: false,
+  hideWhenPanelOpen: true,
   proximityRadius: 150,
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   language: "auto",
   hasAgreedToTerms: false,
+
+  disabledSites: [],
 
   remoteConfig: {
     autoUpdate: true,
@@ -103,10 +110,10 @@ export const DEFAULT_SETTINGS: Settings = {
   },
 
   content: {
-    assistantMermaid: true, // 默认开启，仅对非原生 Mermaid 站点生效
+    assistantMermaid: false, // 默认关闭，仅对非原生 Mermaid 站点生效
     markdownFix: false,
-    // 油猴脚本环境默认开启（GM_xmlhttpRequest 已通过 @grant 声明）
-    watermarkRemoval: isUserscript,
+    // 默认关闭：开启后会 hook 页面 fetch/XHR 并在流式期间监听图片 mutation，成本较高
+    watermarkRemoval: false,
     formulaCopy: true,
     formulaCopyFormat: "latex",
     formulaDelimiter: true,
@@ -124,6 +131,7 @@ export const DEFAULT_SETTINGS: Settings = {
     exportShowDialog: true,
     packaging: "markdown",
     defaultExportFormat: "markdown",
+    exportStyle: "standard",
   },
 
   theme: {
@@ -231,6 +239,10 @@ export const DEFAULT_SETTINGS: Settings = {
       zai: { ...DEFAULT_PANEL_AVOIDANCE },
       _default: { ...DEFAULT_PANEL_AVOIDANCE },
     },
+    autoHideInput: {
+      gemini: { ...DEFAULT_AUTO_HIDE_INPUT },
+      _default: { ...DEFAULT_AUTO_HIDE_INPUT },
+    },
   },
 
   modelLock: {
@@ -304,7 +316,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
 
   readingHistory: {
-    persistence: true,
+    persistence: false,
     autoRestore: true,
     cleanupDays: 3,
   },
@@ -340,6 +352,7 @@ export const DEFAULT_SETTINGS: Settings = {
     collapseNavbar: false,
     collapseTools: false,
     collapseAdvanced: false,
+    collapseRunSettings: false,
     enableSearch: true,
     defaultModel: "", // 空表示不覆盖
     // 油猴脚本环境默认开启
@@ -350,7 +363,7 @@ export const DEFAULT_SETTINGS: Settings = {
   chatgpt: {
     // 默认关闭
     markdownFix: false,
-    // 长会话渲染性能优化，默认开启（行为透明，仅改变挂载时机/动画开销）
+    // 长对话渲染性能优化，默认开启（行为透明，仅改变挂载时机/动画开销）
     codeBlockBatchMount: true,
     streamingRenderOptimize: true,
     // 改变页面视觉（关闭毛玻璃），默认关闭

@@ -6,6 +6,7 @@ import {
   type ExportConfig,
   type ModelSwitcherConfig,
   type NetworkMonitorConfig,
+  type AutoHideInputConfig,
   type OutlineItem,
   type OutlineSource,
   type PanelAvoidanceConfig,
@@ -20,11 +21,11 @@ import {
   findScrollableAncestor,
   scrollElementInContainer,
 } from "~core/outline/dom-outline"
-import { getCurrentLang } from "~utils/i18n"
+import { getCurrentLang, t } from "~utils/i18n"
 
 import { resolveSitePackName } from "./localization"
 import { siteMatchPatternMatchesUrl, siteMatchPatternOrigin } from "./match-pattern"
-import type { SitePackManifest, SitePackThemeSyncConfig } from "./types"
+import type { SitePackManifest, SitePackThemeSyncConfig, SiteTraits } from "./types"
 
 const DEFAULT_THEME_COLORS = {
   primary: "#2563eb",
@@ -132,9 +133,10 @@ const isInsideOphelContainer = (element: Element, boundary: Element): boolean =>
 }
 
 const cloneZenModeConfig = (config: ZenModeConfig): ZenModeConfig => {
-  const { hide, rootClass, styles } = config
+  const { hide, preserveFlow, rootClass, styles } = config
   return {
     ...(hide ? { hide: [...hide] } : {}),
+    ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
     ...(rootClass ? { rootClass: { ...rootClass } } : {}),
     ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
   }
@@ -189,6 +191,11 @@ export class DeclarativeAdapter extends SiteAdapter {
       ? this.manifest.session.newConversationPathPatterns.map((pattern) => new RegExp(pattern))
       : null
     this.textarea = null
+  }
+
+  /** 站点包的结构特征声明来自 manifest，而非内置站点的 config 字段。 */
+  protected getSiteTraits(): SiteTraits {
+    return this.manifest.traits ?? {}
   }
 
   getSitePackMetadata(): DeclarativeAdapterPackageMetadata {
@@ -664,7 +671,12 @@ export class DeclarativeAdapter extends SiteAdapter {
 
   getOutlineSources(): OutlineSource[] {
     const sources: OutlineSource[] = [
-      { id: "conversation", kind: "conversation", label: "对话", available: true },
+      {
+        id: "conversation",
+        kind: "conversation",
+        label: t("outlineSourceConversation"),
+        available: true,
+      },
     ]
 
     if (this.hasDocumentOutlineCapability()) {
@@ -756,13 +768,13 @@ export class DeclarativeAdapter extends SiteAdapter {
 
   private getDocumentOutlineLabel(): string {
     const config = this.manifest.documentOutline
-    if (!config) return "文档"
+    if (!config) return t("outlineSourceDocument")
     if (config.labelI18n) {
       const lang = getCurrentLang()
       const localized = config.labelI18n[lang]
       if (localized) return localized
     }
-    return config.label || "文档"
+    return config.label || t("outlineSourceDocument")
   }
 
   private isInsideDocumentOutlineExclude(element: Element): boolean {
@@ -1046,6 +1058,7 @@ export class DeclarativeAdapter extends SiteAdapter {
   }
 
   isExportReversed(): boolean {
+    // DeclarativeAdapter 不经 base.config，从 manifest 读取同名字段。
     return this.manifest.outlineReverse ?? false
   }
 
@@ -1081,6 +1094,16 @@ export class DeclarativeAdapter extends SiteAdapter {
 
   getCleanModeConfig(): ZenModeConfig | null {
     return this.manifest.cleanMode ? cloneZenModeConfig(this.manifest.cleanMode) : null
+  }
+
+  getAutoHideInputConfig(): AutoHideInputConfig | null {
+    const config = this.manifest.autoHideInput
+    if (!config) return null
+    // 顶层字段直接展开，新增标量配置项时无需同步此处；styles 需要逐条拷贝
+    return {
+      ...config,
+      ...(config.styles ? { styles: config.styles.map((style) => ({ ...style })) } : {}),
+    }
   }
 
   getSubmitKeyConfig(): { key: "Enter" | "Ctrl+Enter" } {

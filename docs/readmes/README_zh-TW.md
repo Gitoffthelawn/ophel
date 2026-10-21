@@ -12,7 +12,7 @@
     </br>
     用實時大綱釐清脈絡，
     </br>
-    用會話文件夾構築體系，
+    用對話文件夾構築體系，
     </br>
     用 Prompt 詞庫沉澱經驗，
     </br>
@@ -21,7 +21,7 @@
   
   <p align="center" style="font-size: 12px; color: #555;">👇 Demo: 從“無限滾動的聊天記錄”，到“可導航的 AI 文檔”</p>
 
-![Ophel Demo](../media/demo/outline.gif)
+<img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
 
   <p>
     <strong><em>它讓 AI 對話第一次成為可組織的工作流</em></strong><br/>
@@ -72,7 +72,6 @@
 </p>
 
 <p align="center">
-  <a href="#-功能演示">功能演示</a> •
   <a href="#-核心功能">核心功能</a> •
   <a href="#-快速開始">快速開始</a> •
   <a href="#-支持-ophel-atlas">支持 Ophel Atlas</a> •
@@ -82,12 +81,6 @@
 <p align="center">
   🌐 <a href="../../README.md">English</a> | <a href="../../README_zh-CN.md">简体中文</a> | <strong>繁體中文</strong> | <a href="./README_ja.md">日本語</a> | <a href="./README_ko.md">한국어</a> | <a href="./README_de.md">Deutsch</a> | <a href="./README_fr.md">Français</a> | <a href="./README_es.md">Español</a> | <a href="./README_pt-BR.md">Português</a> | <a href="./README_ru.md">Русский</a>
 </p>
-
-## 📹 功能演示
-
-|                                                        大綱 Outline                                                        |                                                     會話 Conversations                                                     |                                                       功能 Features                                                        |
-| :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: |
-| <video src="https://github.com/user-attachments/assets/a40eb655-295e-4f9c-b432-9313c9242c9d" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/a249baeb-2e82-4677-847c-2ff584c3f56b" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/6dfca20d-2f88-4844-b3bb-c48321100ff4" width="280" controls></video> |
 
 ## ✨ 核心功能
 
@@ -106,8 +99,8 @@
       <td>實時解析對話結構生成可導航目錄，支援層級折疊、搜尋跳轉、錨點定位、收藏書籤、大綱複製與字數統計</td>
     </tr>
     <tr>
-      <td>💬 <a href="https://ophel.app/docs/zh/features/conversations">會話管理</a></td>
-      <td>文件夾 + 標籤雙維度管理，自動同步源站會話，支援搜尋、批量操作與拖曳排序</td>
+      <td>💬 <a href="https://ophel.app/docs/zh/features/conversations">對話管理</a></td>
+      <td>文件夾 + 標籤雙維度管理，自動同步源站對話，支援搜尋、批量操作與拖曳排序</td>
     </tr>
     <tr>
       <td>📤 <a href="https://ophel.app/docs/zh/features/export">匯出功能</a></td>
@@ -123,7 +116,7 @@
     </tr>
     <tr>
       <td>🔍 <a href="https://ophel.app/docs/zh/features/global-search">全域搜尋</a></td>
-      <td>跨會話/大綱/提示詞/設定統一搜尋，支援 <code>folder:</code> <code>tag:</code> <code>date:</code> 等語法過濾與模糊匹配</td>
+      <td>跨對話/大綱/提示詞/設定統一搜尋，支援 <code>folder:</code> <code>tag:</code> <code>date:</code> 等語法過濾與模糊匹配</td>
     </tr>
     <tr>
       <td>📖 <a href="https://ophel.app/docs/zh/enhancements/content">閱讀增強</a></td>
@@ -150,7 +143,7 @@
 >
 > **Ophel Atlas** 以隱私優先為原則：預設本地儲存，你的資料由你掌控。
 >
-> - **預設本地儲存：** 設定、Prompt、會話管理資料等預設保存在瀏覽器本地
+> - **預設本地儲存：** 設定、Prompt、對話管理資料等預設保存在瀏覽器本地
 > - **無需註冊帳號：** 不需要建立任何帳號即可使用
 > - **按需授權：** 可選權限在需要時再授權，並可隨時撤銷（見擴充功能 Permissions 頁）
 > - **可選 WebDAV 同步：** 如需多裝置一致，可使用你自己的 WebDAV 服務同步（可控、可遷移）
@@ -251,7 +244,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://pic1.afdiancdn.com/default/avatar/avatar-orange.png?imageView2/1/w/120/h/120" width="84px;" alt="Will" /><br />
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -265,6 +258,10 @@
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <sub><b>**然</b></sub>
     </td>
   </tr>
   </tbody>

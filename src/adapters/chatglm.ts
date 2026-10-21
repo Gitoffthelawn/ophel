@@ -142,7 +142,7 @@ interface ChatGLMExportAttachment {
 }
 
 export class ChatGLMAdapter extends SiteAdapter {
-  private config: ChatGLMSiteConfig = CHATGLM_CONFIG
+  protected config: ChatGLMSiteConfig = CHATGLM_CONFIG
   private exportIncludeThoughtsOverride: boolean | null = null
   private exportApiMessages: ChatGLMApiMessage[] | null = null
 
@@ -383,7 +383,7 @@ export class ChatGLMAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // 自有会话：/chat/...    分享会话：/glmsShare?is_share=1&...
+    // 自有对话：/chat/...    分享对话：/glmsShare?is_share=1&...
     return (
       window.location.pathname.startsWith("/glmsShare") ||
       window.location.pathname.startsWith("/share/") ||
@@ -1472,18 +1472,20 @@ export class ChatGLMAdapter extends SiteAdapter {
   }
 
   getZenModeConfig() {
-    const { hide, rootClass, styles } = this.config.zenMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.zenMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }
   }
 
   getCleanModeConfig() {
-    const { hide, rootClass, styles } = this.config.cleanMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.cleanMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }

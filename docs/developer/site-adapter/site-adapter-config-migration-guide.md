@@ -78,11 +78,11 @@ applyMergedConfig(config: BuiltinSiteConfig): void {
 - `resolveSiteConfig` 能把合法 patch 应用到目标站点，错误站点、错误 `baseConfigVersion` 或不兼容应用版本会被跳过。
 - 未登记的 `sitePrivateSelectors` 键、删除必需私有键、删除内置 capability 或产生非法合并结果时会显式拒绝。
 - 数组是整体替换；对象递归合并；`null` 删除键，但不能使最终配置缺少必需字段。
-- 修改内置默认配置时递增 `XXX_CONFIG_VERSION`；旧 patch 自动因基线版本不匹配而失效。
+- 修改内置默认配置时，在当次发版周期内相对上个 release 版本递增 `XXX_CONFIG_VERSION`（+1）；旧 patch 自动因基线版本不匹配而失效。同一次发版内的多次 commit 无需重复累加。
 
 ## 6. 回归与交付
 
-每站至少覆盖其原有能力：站点匹配、输入与发送、新对话、生成检测与停止、模型锁定、消息识别、大纲、导出、附件、会话标题/侧栏、宽度、面板避让、Zen/净化模式，以及该站特有能力。扩展与油猴共享的高风险读取路径都要考虑。
+每站至少覆盖其原有能力：站点匹配、输入与发送、新对话、生成检测与停止、模型锁定、消息识别、大纲、导出、附件、对话标题/侧栏、宽度、面板避让、Zen/净化模式，以及该站特有能力。扩展与油猴共享的高风险读取路径都要考虑。
 
 推荐检查顺序：
 
@@ -96,6 +96,23 @@ git diff --check
 ```
 
 同时新增该站的热修覆盖矩阵，明确“可通过 patch 热修”和“仍需随应用发版”。真实站点回归未完成时，任务状态保持“进行中”，不要仅凭静态检查标记完成。
+
+## 特征与布尔命名约定
+
+适配器上的布尔语义分三层，前缀与语义层一一对应，不要跨层混用：
+
+- **静态结构/加载特征**：页面怎么渲染、怎么加载（Shadow DOM、历史懒加载、大纲轮询兜底等）。
+  统一声明在 config 的 `traits` 字段（`SiteTraits`，见 `src/adapters/declarative/types.ts`），
+  字段名词式命名（`shadowDOM`、`historyLazyLoad`、`periodicOutlineRefresh`）；
+  基类的 `usesShadowDOM()` / `needsHistoryLazyLoad()` / `usesPeriodicOutlineRefreshFallback()`
+  只是薄封装，方法名冻结不再改。新增特征只加 `SiteTraits` 字段，不再新增 `xxx()` 布尔方法。
+  倒序渲染沿用既有顶层字段 `outlineReverse`（同时驱动大纲与导出顺序反转），不进 `traits`。
+- **静态功能开关**：这个站点开不开某功能，用 `supports*` 方法
+  （如 `supportsFormulaCopy`、`supportsHostThemeSync`）。
+- **运行时状态查询**：回答“此刻是什么状态”，用 `has*` / `is*` 方法
+  （如 `hasUnloadedConversationHistory`、`hasInputDraft`）。静态特征禁止使用 `is*`/`has*` 前缀。
+
+运行时才可判定的特征（如 Claude 的大纲轮询兜底）保留方法覆写，并在覆写处注明动态原因。
 
 ## 迁移检查清单
 

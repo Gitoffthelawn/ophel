@@ -21,7 +21,7 @@
   
   <p align="center" style="font-size: 12px; color: #555;">👇 데모: "무한 스크롤 채팅 기록"에서 "탐색 가능한 AI 문서"로</p>
 
-![Ophel Demo](../media/demo/outline.gif)
+<img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
 
   <p>
     <strong><em>AI 채팅을 처음으로 정리 가능한 워크플로우로 만듭니다</em></strong><br/>
@@ -72,7 +72,6 @@
 </p>
 
 <p align="center">
-  <a href="#-기능-데모">기능 데모</a> •
   <a href="#-핵심-기능">핵심 기능</a> •
   <a href="#-시작하기">시작하기</a> •
   <a href="#-ophel-atlas-지원하기">Ophel Atlas 지원하기</a> •
@@ -82,12 +81,6 @@
 <p align="center">
   🌐 <a href="../../README.md">English</a> | <a href="../../README_zh-CN.md">简体中文</a> | <a href="./README_zh-TW.md">繁體中文</a> | <a href="./README_ja.md">日本語</a> | <strong>한국어</strong> | <a href="./README_de.md">Deutsch</a> | <a href="./README_fr.md">Français</a> | <a href="./README_es.md">Español</a> | <a href="./README_pt-BR.md">Português</a> | <a href="./README_ru.md">Русский</a>
 </p>
-
-## 📹 기능 데모
-
-|                                                        개요 Outline                                                        |                                                     대화 Conversations                                                     |                                                       기능 Features                                                        |
-| :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: |
-| <video src="https://github.com/user-attachments/assets/a40eb655-295e-4f9c-b432-9313c9242c9d" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/a249baeb-2e82-4677-847c-2ff584c3f56b" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/6dfca20d-2f88-4844-b3bb-c48321100ff4" width="280" controls></video> |
 
 ## ✨ 핵심 기능
 
@@ -251,7 +244,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://pic1.afdiancdn.com/default/avatar/avatar-orange.png?imageView2/1/w/120/h/120" width="84px;" alt="Will" /><br />
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -265,6 +258,10 @@
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <sub><b>**然</b></sub>
     </td>
   </tr>
   </tbody>

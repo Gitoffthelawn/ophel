@@ -155,8 +155,9 @@ export interface SupportedAiPlatform {
   matchPatterns: readonly string[]
   pattern: SiteUrlPatternMatcher
   /**
-   * 可直接打开的入口地址。内置站点恒为一条；适配包按静态 matches 与用户绑定域名展开，
-   * 未绑定任何域名时为空数组——消费方必须显式处理"没有入口"这种状态。
+   * 可直接打开的入口地址。内置站点可有一条或多条（如 Kimi 的 .com / .ai）；
+   * 适配包按静态 matches 与用户绑定域名展开，未绑定任何域名时为空数组——
+   * 消费方必须显式处理"没有入口"这种状态。
    */
   entryUrls: readonly string[]
   icon: string
@@ -263,8 +264,8 @@ export const SUPPORTED_AI_PLATFORMS: SupportedAiPlatform[] = [
   createSupportedAiPlatform({
     id: SITE_IDS.KIMI,
     name: "Kimi",
-    matchPatterns: ["https://www.kimi.com/*"],
-    entryUrls: ["https://www.kimi.com"],
+    matchPatterns: ["https://www.kimi.com/*", "https://www.kimi.ai/*"],
+    entryUrls: ["https://www.kimi.com", "https://www.kimi.ai"],
     icon: "🌙",
   }),
   createSupportedAiPlatform({

@@ -3,7 +3,7 @@
  *
  * 选择器策略：
  * - 优先使用 `ds-*` 语义类名
- * - 会话列表优先使用 `/a/chat/s/{id}` 路由结构
+ * - 对话列表优先使用 `/a/chat/s/{id}` 路由结构
  * - 对用户消息采用“消息容器内不存在 `.ds-markdown`”的结构判断
  *
  * 注意：DeepSeek 页面存在部分 CSS Modules 哈希类名，首版实现尽量避免依赖它们。
@@ -20,9 +20,12 @@ import {
 } from "~utils/export-assets"
 import { htmlToMarkdown, type ExportBundle } from "~utils/exporter"
 import { t } from "~utils/i18n"
+import { EVENT_OUTLINE_DATA_UPDATED } from "~utils/messaging"
+import { hashOutlineText, stripMarkdownInline } from "~utils/outline-heading-cache"
 
 import {
   SiteAdapter,
+  type AnchorData,
   type ConversationDeleteTarget,
   type ConversationInfo,
   type ConversationObserverConfig,
@@ -39,6 +42,26 @@ import {
   DEEPSEEK_CONFIG_VERSION,
   type DeepSeekSiteConfig,
 } from "./deepseek-config"
+import {
+  parseDeepSeekHistoryOutline,
+  type DeepSeekHistoryOutlineData,
+} from "./deepseek-history-outline"
+import {
+  isApiOutlineStale,
+  mergeByBranchMessageOrder,
+  shouldAttemptApiOutlineFetch,
+} from "~utils/outline-api-source"
+import { parseDeepSeekHistoryExport } from "./deepseek-history-export"
+import {
+  alignScrollTop,
+  isDeepSeekVirtualEdgeSettled,
+  settleVirtualScroll,
+  waitForVirtualScrollQuiet,
+} from "~utils/virtual-scroll-settle"
+import type {
+  VirtualOutlinePositionSnapshot,
+  VirtualPositionAnchor,
+} from "~utils/virtual-outline-position"
 import type { BuiltinSiteConfig } from "./declarative"
 
 const CHAT_PATH_PATTERN = /\/a\/chat\/s\/([a-z0-9-]+)/i
@@ -48,6 +71,23 @@ const THEME_STORAGE_KEY = "__appKit_@deepseek/chat_themePreference"
 const USER_TOKEN_STORAGE_KEY = "userToken"
 const OUTLINE_HEADING_SELECTOR = "h1, h2, h3, h4, h5, h6"
 const CHAT_DELETE_API_PATH = "/api/v0/chat_session/delete"
+const CHAT_HISTORY_API_PATH = "/api/v0/chat/history_messages"
+/**
+ * history_messages 接口按请求头返回两种数据形态：不带 x-client-version 时
+ * fragments 整体为空，思考链只有 thinking_content（其中混入"已浏览网页。"等
+ * 本地化工具状态行），图片附件的 FILE 片段也拿不到；带上后 fragments 完整
+ * （THINK/FILE/TOOL_* 齐全），thinking_content 为空。版本号过期时服务端只会
+ * 退回旧形态，不会报错。
+ */
+const DEEPSEEK_CLIENT_VERSION = "2.5.0"
+/** 历史消息接口拉取冷却间隔（含失败与 version 未变的成功重拉），避免每次 extractOutline 都重试 */
+const API_OUTLINE_FETCH_BACKOFF_MS = 10_000
+/** 尾部删除复合判定中的贴底容差（约一行高度） */
+const API_OUTLINE_BOTTOM_TOLERANCE_PX = 100
+/** 直接滚动探测虚拟列表的最大尝试次数（闭环收敛，通常 1-3 次） */
+const VIRTUAL_ROW_PROBE_MAX_ATTEMPTS = 8
+/** 挂载窗口无变化时的短等待（给异步重挂载一帧时间） */
+const VIRTUAL_ROW_PROBE_SETTLE_MS = 60
 const DEEPSEEK_HOME_URL = "https://chat.deepseek.com/"
 const DELETE_REFRESH_STORAGE_KEY = "gh.deepseek.delete.refresh"
 const DEEPSEEK_EXPORT_ROOT_ATTR = "data-gh-deepseek-export-root"
@@ -93,9 +133,18 @@ interface DeepSeekUserAttachment {
 }
 
 export class DeepSeekAdapter extends SiteAdapter {
-  private config: DeepSeekSiteConfig = DEEPSEEK_CONFIG
+  protected config: DeepSeekSiteConfig = DEEPSEEK_CONFIG
   private nativeOutlineCache: DeepSeekNativeOutlineCache | null = null
   private nativeOutlineRevealRequestId = 0
+  private apiOutlineData: DeepSeekHistoryOutlineData | null = null
+  private apiOutlineFetchPromise: Promise<void> | null = null
+  private apiOutlineLastFetchAt = 0
+  private apiOutlineParseFailures = 0
+  private apiOutlineSessionId = ""
+  private apiBranchIndexCache: {
+    data: DeepSeekHistoryOutlineData
+    map: Map<number, number>
+  } | null = null
   private exportSnapshotRoot: HTMLElement | null = null
   private exportSnapshotActive = false
   private exportIncludeThoughtsOverride: boolean | null = null
@@ -205,7 +254,7 @@ export class DeepSeekAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // 自有会话：/a/chat/s/ID    分享会话：/share/ID
+    // 自有对话：/a/chat/s/ID    分享对话：/share/ID
     return window.location.pathname.startsWith("/share/")
   }
 
@@ -374,7 +423,10 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
 
     const path = this.config.conversation.urlTemplate.replace("{id}", encodeURIComponent(id))
-    return super.navigateToConversation(id, url || new URL(path, DEEPSEEK_HOME_URL).toString())
+    const targetUrl = url || new URL(path, DEEPSEEK_HOME_URL).toString()
+    // 降级：优先 history 导航免刷新（路由响应 popstate，已实测），失败再整页刷新
+    if (this.navigateViaHistory(targetUrl)) return true
+    return super.navigateToConversation(id, targetUrl)
   }
 
   getSidebarScrollContainer(): Element | null {
@@ -392,9 +444,10 @@ export class DeepSeekAdapter extends SiteAdapter {
   }
 
   getCleanModeConfig(): ZenModeConfig | null {
-    const { hide, rootClass, styles } = this.config.cleanMode
+    const { hide, preserveFlow, rootClass, styles } = this.config.cleanMode
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }
@@ -416,6 +469,301 @@ export class DeepSeekAdapter extends SiteAdapter {
       ),
     ).filter((element) => !element.closest(".gh-root, .gh-table-container"))
     return this.pickBestScrollableAncestor(fallbackRoots)
+  }
+
+  override async waitForVirtualListEdge(
+    edge: "start" | "end",
+    signal?: AbortSignal,
+  ): Promise<boolean> {
+    return settleVirtualScroll(
+      () => this.getScrollContainer(),
+      (container) => isDeepSeekVirtualEdgeSettled(container, edge),
+      (container) => alignScrollTop(container, edge === "start" ? 0 : container.scrollHeight),
+      signal,
+    )
+  }
+
+  override isVirtualScrollConversation(): boolean {
+    const container = this.getScrollContainer()
+    if (!container) return false
+    return container.querySelector("[data-virtual-list-item-key]") !== null
+  }
+
+  override getVirtualAnchorElement(): AnchorData | null {
+    if (!this.isVirtualScrollConversation()) return null
+    const container = this.getScrollContainer()
+    if (!container) return null
+    const rows = this.readMountedVirtualRows(container)
+    if (!rows.length) return null
+
+    // 视口上沿那条已挂载的行；readMountedVirtualRows 的 top 是视口坐标，
+    // translateY 位移已包含在内
+    const containerRect = container.getBoundingClientRect()
+    const viewportLine = containerRect.top + 100
+    let best: { key: number; top: number } | null = null
+    for (const row of rows) {
+      if (row.top <= viewportLine && (!best || row.top > best.top)) {
+        best = row
+      }
+    }
+    if (!best) best = rows[0]
+
+    const element = container.querySelector(`[data-virtual-list-item-key="${best.key}"]`)
+    if (!element) return null
+
+    const rowTop = best.top - containerRect.top + container.scrollTop
+    return {
+      type: "virtual-row",
+      rowKey: best.key,
+      offset: container.scrollTop - rowTop,
+      textSignature: (element.textContent || "").trim().substring(0, 50),
+    }
+  }
+
+  override async restoreVirtualAnchor(anchor: AnchorData, signal?: AbortSignal): Promise<boolean> {
+    if (anchor.type !== "virtual-row" || typeof anchor.rowKey !== "number") return false
+    const rowKey = anchor.rowKey
+    const offset = anchor.offset || 0
+
+    // 虚拟窗口的挂载晚于会话 id 就绪，冷加载可能要数秒，有界等待其出现；
+    // 期间用户主动滚动会通过 signal 中止等待
+    const deadline = Date.now() + 10000
+    while (!this.isVirtualScrollConversation()) {
+      if (signal?.aborted) return false
+      if (Date.now() >= deadline) {
+        console.warn("[Ophel] Reading history restore skipped: DeepSeek message list not ready")
+        return false
+      }
+      await this.sleep(100)
+    }
+
+    const container = this.getScrollContainer()
+    if (!container) return false
+
+    // 等站点自己的开场滚动（自动去底部、渲染引发的调整）安静下来再动手，
+    // 否则恢复期间会被站点反复拽走，永远无法落定
+    const quiet = await waitForVirtualScrollQuiet(() => this.getScrollContainer(), signal)
+    if (signal?.aborted) return false
+    if (!quiet) {
+      console.warn("[Ophel] Reading history restore skipped: DeepSeek page kept scrolling")
+      return false
+    }
+
+    // 复用大纲跳转的探测闭环：按 message_id 把目标行挂出来；
+    // 有大纲接口缓存数据时传入，分支序号距离比 id 差值更准
+    const apiData = this.apiOutlineData
+    const outlineData = apiData && apiData.sessionId === this.getSessionId() ? apiData : null
+    const row = await this.probeMountVirtualRow(rowKey, container, outlineData, null, signal)
+    if (signal?.aborted) return false
+    if (!row) {
+      console.warn("[Ophel] Reading history restore skipped: DeepSeek message not found", rowKey)
+      return false
+    }
+
+    // key 是服务端 message_id，天然稳定；文本签名兜底防极端错位
+    if (anchor.textSignature) {
+      const current = (row.textContent || "").trim().substring(0, 50)
+      if (current !== anchor.textSignature) {
+        console.warn(
+          "[Ophel] Reading history restore skipped: DeepSeek message content changed",
+          rowKey,
+        )
+        return false
+      }
+    }
+
+    const findRow = (c: HTMLElement) => c.querySelector(`[data-virtual-list-item-key="${rowKey}"]`)
+    const docTop = (c: HTMLElement, el: Element) => {
+      const cRect = c.getBoundingClientRect()
+      const rRect = el.getBoundingClientRect()
+      return rRect.top - cRect.top + c.scrollTop
+    }
+
+    // 落定判定用「行相对容器顶部的视觉位置」而不是 scrollTop 像素：刷新后页面仍在
+    // 渲染，文档高度在漂，像素值几秒内稳定不下来；视觉位置才是保存 offset 的本义
+    const samples: string[] = []
+    let lastAlignedTop: number | null = null
+    const isAligned = (c: HTMLElement) => {
+      const target = findRow(c)
+      if (!target) {
+        samples.push("row-unmounted")
+        return false
+      }
+      const visualOffset = target.getBoundingClientRect().top - c.getBoundingClientRect().top
+      samples.push(`vo=${Math.round(visualOffset + offset)} st=${Math.round(c.scrollTop)}`)
+      return Math.abs(visualOffset + offset) <= 24
+    }
+    const settled = await settleVirtualScroll(
+      () => this.getScrollContainer(),
+      isAligned,
+      (c) => {
+        // 上一拍对准之后 scrollTop 又被改动：站点自己的滚动在与恢复竞争
+        if (lastAlignedTop !== null && Math.abs(c.scrollTop - lastAlignedTop) > 2) {
+          samples.push(`external-scroll=${Math.round(c.scrollTop)}`)
+        }
+        const target = findRow(c)
+        if (target) {
+          alignScrollTop(c, docTop(c, target) + offset)
+          lastAlignedTop = c.scrollTop
+        }
+      },
+      signal,
+      { timeoutMs: 4000 },
+    )
+    if (settled || signal?.aborted) return settled
+
+    // 收敛失败但行仍在目标附近（渲染抖动导致始终差几像素）则接受现状；
+    // 行已不在 DOM（被站点拽走）才算失败
+    const finalContainer = this.getScrollContainer()
+    const finalRow = finalContainer ? findRow(finalContainer) : null
+    if (finalContainer && finalRow) {
+      const visualOffset =
+        finalRow.getBoundingClientRect().top - finalContainer.getBoundingClientRect().top
+      if (Math.abs(visualOffset + offset) <= 240) {
+        console.warn(
+          "[Ophel] Reading history restore accepted with loose alignment",
+          samples.slice(-12),
+        )
+        return true
+      }
+    }
+    console.warn(
+      "[Ophel] Reading history restore incomplete: DeepSeek scroll did not settle",
+      samples.slice(-12),
+    )
+    return false
+  }
+
+  /**
+   * 高亮估算快照：以当前挂载窗口的 key（= 服务端 message_id）映射分支序号做锚点，
+   * 行顶、行底各记一个点；边界取分支消息总数与最大 scrollTop（与大纲高亮同一
+   * 内容坐标系）。
+   */
+  override getVirtualOutlinePositionSnapshot(): VirtualOutlinePositionSnapshot | null {
+    const container = this.getScrollContainer()
+    if (!container || !this.isVirtualScrollConversation()) return null
+    const data = this.apiOutlineData
+    if (!data || data.sessionId !== this.getSessionId()) return null
+
+    const branchIndex = this.getApiBranchIndex(data)
+    const containerRect = container.getBoundingClientRect()
+    const anchors: VirtualPositionAnchor[] = []
+    const idMap = this.buildTempRowIdMap(container, data)
+    container.querySelectorAll("[data-virtual-list-item-key]").forEach((row) => {
+      const rawKey = Number(row.getAttribute("data-virtual-list-item-key"))
+      const key = idMap.get(rawKey) ?? rawKey
+      const index = branchIndex.get(key)
+      if (index === undefined) return
+      const rect = row.getBoundingClientRect()
+      const top = rect.top - containerRect.top + container.scrollTop
+      anchors.push({ index, top })
+      anchors.push({ index: index + 1, top: top + rect.height })
+    })
+    if (anchors.length === 0) return null
+
+    return {
+      anchors,
+      bounds: {
+        endSlot: data.branchMessageIds.length,
+        endTop: Math.max(0, container.scrollHeight - container.clientHeight),
+      },
+    }
+  }
+
+  override getVirtualOutlineRowIndex(item: OutlineItem): number | null {
+    const data = this.apiOutlineData
+    if (!data || data.sessionId !== this.getSessionId()) return null
+    const branchIndex = this.getApiBranchIndex(data)
+
+    const ref = item.navigationId || item.id
+    const headingRef = this.parseApiOutlineItemId(ref)
+    if (headingRef) return branchIndex.get(headingRef.messageId) ?? null
+    const queryMessageId = this.parseApiUserQueryItemId(ref)
+    if (queryMessageId !== null) return branchIndex.get(queryMessageId) ?? null
+
+    const mountedId = this.getMountedRowMessageId(item.element)
+    if (mountedId === null) return null
+    if (mountedId >= 0 || branchIndex.has(mountedId)) {
+      return branchIndex.get(mountedId) ?? null
+    }
+    // 负数临时 key（本会话新发的提问行）：按位置映射回真实 id 再查分支序号
+    const container = this.getScrollContainer()
+    if (!container) return null
+    const realId = this.buildTempRowIdMap(container, data).get(mountedId)
+    return realId !== undefined ? branchIndex.get(realId) ?? null : null
+  }
+
+  private getApiBranchIndex(data: DeepSeekHistoryOutlineData): Map<number, number> {
+    if (this.apiBranchIndexCache?.data === data) return this.apiBranchIndexCache.map
+    const map = new Map(data.branchMessageIds.map((id, index) => [id, index]))
+    this.apiBranchIndexCache = { data, map }
+    return map
+  }
+
+  /**
+   * 不刷新页面连发消息时，DeepSeek 给本会话新发的提问行挂负数临时 key
+   * （-2、-4…，永不回改成真实 message_id；assistant 行是真实 id）。
+   * 负数 id 不在分支序列里，会被归并/过期判定误当成删除残留。
+   * 这里按位置把临时 key 映射回真实 id：提问行的上/下相邻行都是 assistant 行，
+   * 其真实 id 在分支序列中的后/前一条即为该提问的真实 id。
+   * 两侧候选冲突或都不可得时放弃映射（保守，不臆造归属）。
+   */
+  private buildTempRowIdMap(
+    container: Element,
+    data: DeepSeekHistoryOutlineData | null,
+  ): Map<number, number> {
+    const map = new Map<number, number>()
+    if (!data) return map
+
+    const keys = Array.from(container.querySelectorAll("[data-virtual-list-item-key]")).map((row) =>
+      Number(row.getAttribute("data-virtual-list-item-key")),
+    )
+    const branchIndex = this.getApiBranchIndex(data)
+    const branchIds = data.branchMessageIds
+
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i]
+      if (!Number.isFinite(key) || key >= 0 || branchIndex.has(key)) continue
+
+      let fromPrev: number | null = null
+      let fromNext: number | null = null
+      const prevKey = i > 0 ? keys[i - 1] : undefined
+      if (prevKey !== undefined && branchIndex.has(prevKey)) {
+        const prevIndex = branchIndex.get(prevKey)!
+        if (prevIndex + 1 < branchIds.length) fromPrev = branchIds[prevIndex + 1]
+      }
+      const nextKey = i + 1 < keys.length ? keys[i + 1] : undefined
+      if (nextKey !== undefined && branchIndex.has(nextKey)) {
+        const nextIndex = branchIndex.get(nextKey)!
+        if (nextIndex > 0) fromNext = branchIds[nextIndex - 1]
+      }
+
+      const realId =
+        fromPrev !== null && fromNext !== null
+          ? fromPrev === fromNext
+            ? fromPrev
+            : null
+          : fromPrev ?? fromNext
+      if (realId !== null) map.set(key, realId)
+    }
+    return map
+  }
+
+  /** 按真实 message_id 找挂载行；提问行挂负数临时 key 时经位置映射命中 */
+  private findMountedVirtualRow(
+    container: Element,
+    messageId: number,
+    data: DeepSeekHistoryOutlineData | null,
+  ): Element | null {
+    const direct = container.querySelector(`[data-virtual-list-item-key="${messageId}"]`)
+    if (direct) return direct
+    const idMap = this.buildTempRowIdMap(container, data)
+    for (const [tempKey, realId] of idMap) {
+      if (realId === messageId) {
+        return container.querySelector(`[data-virtual-list-item-key="${tempKey}"]`)
+      }
+    }
+    return null
   }
 
   getResponseContainerSelector(): string {
@@ -545,8 +893,12 @@ export class DeepSeekAdapter extends SiteAdapter {
       this.getScrollContainer() || document.querySelector(this.getResponseContainerSelector())
     if (!container) return []
 
+    // 虚拟滚动兜底：异步拉取历史消息接口，补齐离屏回复的标题
+    this.maybeRefreshApiOutline(container)
+
     const outline: OutlineItem[] = []
     const domUserQueries: OutlineItem[] = []
+    const domQueryFullTexts = new Map<OutlineItem, string>()
     const messageSelector = this.config.sitePrivateSelectors.message
     const messages = Array.from(container.querySelectorAll(messageSelector)).filter(
       (message) => !message.parentElement?.closest(messageSelector),
@@ -558,6 +910,9 @@ export class DeepSeekAdapter extends SiteAdapter {
       if (!markdown) {
         if (!includeUserQueries) return
 
+        // 流式思考阶段正文 markdown 尚未生成，不能把 AI 思考块当成用户提问
+        if (!this.resolveUserMessageElement(message)) return
+
         const text = this.extractUserQueryMarkdown(message)
         if (!text) return
 
@@ -568,6 +923,7 @@ export class DeepSeekAdapter extends SiteAdapter {
         }
 
         const item = this.createUserQueryOutlineItem(text, message as HTMLElement, wordCount)
+        domQueryFullTexts.set(item, text)
         domUserQueries.push(item)
         outline.push(item)
         return
@@ -604,22 +960,45 @@ export class DeepSeekAdapter extends SiteAdapter {
       })
     })
 
+    // 接口数据可用：提问与标题统一按 message_id 归并（方案 C），原生 TOC 只作定位跳板
+    const apiData = this.apiOutlineData
+    if (apiData && apiData.sessionId === this.getSessionId()) {
+      return this.mergeOutlineByBranchOrder(outline, apiData, container, domQueryFullTexts, {
+        maxLevel,
+        includeUserQueries,
+        showWordCount,
+      })
+    }
+
+    // 接口不可用（未登录/失败/结构变更）：回退 DOM + 原生 TOC 路径
     if (!includeUserQueries) {
       return outline
     }
-
     const nativeUserQueries = this.extractNativeUserQueries(domUserQueries)
     if (nativeUserQueries.length <= domUserQueries.length) {
       return outline
     }
-
     return this.mergeOutlineWithNativeUserQueries(outline, nativeUserQueries)
   }
 
   async resolveOutlineTarget(
-    item: Pick<OutlineItem, "level" | "text" | "isUserQuery">,
+    item: Pick<OutlineItem, "level" | "text" | "isUserQuery" | "id" | "navigationId">,
     queryIndex?: number,
   ): Promise<Element | null> {
+    // 接口回填的离屏条目：优先按 message_id 精确定位，而非全局文本匹配
+    const ref = item.navigationId || item.id
+    const apiHeadingRef = this.parseApiOutlineItemId(ref)
+    if (apiHeadingRef) {
+      const apiTarget = await this.resolveApiOutlineTarget(apiHeadingRef, item.text)
+      if (apiTarget) return apiTarget
+    } else {
+      const apiQueryMessageId = this.parseApiUserQueryItemId(ref)
+      if (apiQueryMessageId !== null) {
+        const apiTarget = await this.resolveApiUserQueryTarget(apiQueryMessageId, item.text)
+        if (apiTarget) return apiTarget
+      }
+    }
+
     const isUserQueryTarget = item.isUserQuery && item.level === 0 && queryIndex !== undefined
     const revealRequestId = isUserQueryTarget
       ? ++this.nativeOutlineRevealRequestId
@@ -644,6 +1023,616 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
 
     return this.waitForUserQueryElement(queryIndex, item.text, revealRequestId)
+  }
+
+  // ==================== 大纲缓存（历史消息接口数据源） ====================
+
+  /**
+   * DeepSeek 消息列表走 ds-virtual-list 虚拟滚动，离屏回复的标题会从 DOM 卸载。
+   * 这里直接请求站点的 history_messages 接口（不带 cache_version 即全量 REPLACE），
+   * 从 RESPONSE markdown 解析标题，作为大纲标题的完整数据源。
+   */
+  private maybeRefreshApiOutline(container: Element): void {
+    if (!this.isUserConversationPage()) return
+
+    const sessionId = this.getSessionId()
+    if (sessionId !== this.apiOutlineSessionId) {
+      // 会话切换时解除解析失败熔断与拉取冷却，新会话应立即补齐大纲
+      this.apiOutlineSessionId = sessionId
+      this.apiOutlineParseFailures = 0
+      this.apiOutlineLastFetchAt = 0
+    }
+
+    const scrollable = container instanceof HTMLElement ? container : null
+    const atBottom = scrollable
+      ? scrollable.scrollTop + scrollable.clientHeight >=
+        scrollable.scrollHeight - API_OUTLINE_BOTTOM_TOLERANCE_PX
+      : false
+    const stale = isApiOutlineStale({
+      data: this.apiOutlineData,
+      sessionId,
+      mountedIds: this.collectMountedVirtualMessageIds(
+        container,
+        this.buildTempRowIdMap(
+          container,
+          this.apiOutlineData && this.apiOutlineData.sessionId === sessionId
+            ? this.apiOutlineData
+            : null,
+        ),
+      ),
+      atBottom,
+    })
+
+    // 生成中响应未入库，拉到的回复不完整；等生成结束后下一次 extract 再拉
+    if (
+      !shouldAttemptApiOutlineFetch({
+        now: Date.now(),
+        lastFetchAt: this.apiOutlineLastFetchAt,
+        backoffMs: API_OUTLINE_FETCH_BACKOFF_MS,
+        parseFailures: this.apiOutlineParseFailures,
+        inFlight: this.apiOutlineFetchPromise !== null,
+        generating: this.isGenerating(),
+        stale,
+      })
+    ) {
+      return
+    }
+
+    // 没有登录态时静默跳过（退化为纯 DOM 扫描），不进入 Promise 链避免每次 extract 空转
+    const token = this.getUserToken()
+    if (!token) return
+
+    // 任何一次实际发起的拉取都记入冷却：version 未变的成功重拉也不会连续重试
+    this.apiOutlineLastFetchAt = Date.now()
+    this.apiOutlineFetchPromise = this.fetchApiOutline(sessionId, token)
+      .then((result) => {
+        if (result === "parse-failed") {
+          this.apiOutlineParseFailures += 1
+          return
+        }
+        this.apiOutlineParseFailures = 0
+        if (result === "changed") {
+          window.postMessage({ type: EVENT_OUTLINE_DATA_UPDATED }, "*")
+        }
+      })
+      .catch((error) => {
+        console.warn("[DeepSeekAdapter] Failed to fetch history outline:", error)
+      })
+      .finally(() => {
+        this.apiOutlineFetchPromise = null
+      })
+  }
+
+  private collectMountedVirtualMessageIds(
+    container: Element,
+    idMap?: Map<number, number>,
+  ): Set<number> {
+    const ids = new Set<number>()
+    container.querySelectorAll("[data-virtual-list-item-key]").forEach((row) => {
+      const id = Number(row.getAttribute("data-virtual-list-item-key"))
+      if (Number.isFinite(id)) {
+        ids.add(idMap?.get(id) ?? id)
+      }
+    })
+    return ids
+  }
+
+  private async fetchApiOutline(
+    sessionId: string,
+    token: string,
+  ): Promise<"changed" | "unchanged" | "parse-failed"> {
+    const response = await fetch(
+      `${window.location.origin}${CHAT_HISTORY_API_PATH}?chat_session_id=${encodeURIComponent(sessionId)}`,
+      {
+        headers: this.buildHistoryApiHeaders(token),
+        credentials: "include",
+      },
+    )
+    if (!response.ok) {
+      throw new Error(`history_messages responded ${response.status}`)
+    }
+
+    const parsed = parseDeepSeekHistoryOutline(await response.json())
+    if (!parsed || parsed.sessionId !== sessionId) return "parse-failed"
+
+    const previous = this.apiOutlineData
+    this.apiOutlineData = parsed
+    return !previous ||
+      previous.sessionId !== parsed.sessionId ||
+      previous.version !== parsed.version
+      ? "changed"
+      : "unchanged"
+  }
+
+  /**
+   * 方案 C 统一归并：DOM 条目与接口回填条目统一按 message_id -> 分支序号归并，
+   * 不使用"第几个挂载提问"这类相对计数。挂载项以 DOM 为准（文本真实、元素在手），
+   * 接口只补未挂载的提问与回复标题。
+   */
+  private mergeOutlineByBranchOrder(
+    domItems: OutlineItem[],
+    data: DeepSeekHistoryOutlineData,
+    container: Element,
+    domQueryFullTexts: Map<OutlineItem, string>,
+    options: { maxLevel: number; includeUserQueries: boolean; showWordCount: boolean },
+  ): OutlineItem[] {
+    const { maxLevel, includeUserQueries, showWordCount } = options
+    const idMap = this.buildTempRowIdMap(container, data)
+    const mountedIds = this.collectMountedVirtualMessageIds(container, idMap)
+
+    const domEntries = domItems.map((item) => ({
+      messageId: this.getMountedRowMessageId(item.element, idMap),
+      item,
+    }))
+
+    // 已产出 DOM 条目的提问 message_id：挂载行未必有条目（纯附件提问无文本可提取，
+    // DOM 扫描会丢弃），回填跳过必须以实际条目为准，否则这类提问在挂载后反而消失
+    const domQueryMessageIds = new Set<number>()
+    for (const entry of domEntries) {
+      if (entry.messageId !== null && entry.item.isUserQuery && entry.item.level === 0) {
+        domQueryMessageIds.add(entry.messageId)
+      }
+    }
+
+    // 收藏签名的 occurrence 需要在完整提问序列上按未截断文本计数
+    const queryFullTexts = new Map<OutlineItem, string>(domQueryFullTexts)
+
+    // 发送/生成中的新消息可能还挂在临时行 key 上（或尚未进入虚拟列表），
+    // DOM 条目归属不到分支；接口重拉后回填条目与它们并存会重复。
+    // 按文本统计这类 DOM 条目，回填时从尾部丢掉同名条目（尾部才是新消息；
+    // 同文本的旧提问/旧标题若未挂载，保留其回填不受影响）
+    const branchIdSet = new Set(data.branchMessageIds)
+    const unmatchedQueryKeys = new Map<string, number>()
+    const unmatchedHeadingKeys = new Map<string, number>()
+    for (const entry of domEntries) {
+      if (entry.messageId !== null && branchIdSet.has(entry.messageId)) continue
+      const item = entry.item
+      if (item.isUserQuery && item.level === 0) {
+        // 与接口文本口径对齐（接口文本已经过 stripMarkdownInline）
+        const key = this.normalizeUserQueryMatchText(
+          stripMarkdownInline(queryFullTexts.get(item) ?? item.text),
+        )
+        unmatchedQueryKeys.set(key, (unmatchedQueryKeys.get(key) ?? 0) + 1)
+      } else if (!item.isUserQuery) {
+        const key = `${item.level}:${item.text}`
+        unmatchedHeadingKeys.set(key, (unmatchedHeadingKeys.get(key) ?? 0) + 1)
+      }
+    }
+
+    const fillQueryEntries: { messageId: number; item: OutlineItem }[] = []
+    const fillHeadingEntries: { messageId: number; item: OutlineItem }[] = []
+
+    if (includeUserQueries) {
+      for (const query of data.userQueries) {
+        if (domQueryMessageIds.has(query.messageId)) continue
+        let wordCount: number | undefined
+        if (showWordCount) {
+          // 提问条目的字数口径 = 对应回复的文本长度，未挂载时取接口估算值
+          const assistantId = data.assistantIdByQueryIndex.get(query.queryIndex)
+          wordCount =
+            assistantId !== undefined ? data.replyWordCountByAssistantId.get(assistantId) ?? 0 : 0
+        }
+        const item = this.createUserQueryOutlineItem(query.text, null, wordCount)
+        item.navigationId = `deepseek:api-u:${query.messageId}`
+        queryFullTexts.set(item, query.text)
+        fillQueryEntries.push({ messageId: query.messageId, item })
+      }
+    }
+
+    for (const [messageId, headings] of data.headingsByAssistantId) {
+      if (mountedIds.has(messageId)) continue
+      headings.forEach((heading, orderInMessage) => {
+        if (heading.level > maxLevel) return
+        const id = `deepseek:api-h:${messageId}:${heading.level}:${orderInMessage}:${hashOutlineText(heading.text)}`
+        fillHeadingEntries.push({
+          messageId,
+          item: {
+            level: heading.level,
+            text: heading.text,
+            element: null,
+            id,
+            navigationId: id,
+            wordCount: showWordCount ? heading.wordCount : undefined,
+          },
+        })
+      })
+    }
+
+    const fillEntries = [
+      ...this.dropTrailingFillDuplicates(
+        fillQueryEntries,
+        (item) => this.normalizeUserQueryMatchText(queryFullTexts.get(item) ?? item.text),
+        unmatchedQueryKeys,
+      ),
+      ...this.dropTrailingFillDuplicates(
+        fillHeadingEntries,
+        (item) => `${item.level}:${item.text}`,
+        unmatchedHeadingKeys,
+      ),
+    ]
+
+    const merged = mergeByBranchMessageOrder(data.branchMessageIds, domEntries, fillEntries)
+
+    if (includeUserQueries) {
+      this.assignUserQueryOutlineIds(merged, queryFullTexts)
+    }
+    return merged
+  }
+
+  /** 从回填条目尾部丢弃与「无分支归属的 DOM 条目」同名的重复项（计数式，见上） */
+  private dropTrailingFillDuplicates(
+    fillEntries: { messageId: number; item: OutlineItem }[],
+    keyOf: (item: OutlineItem) => string,
+    unmatchedCounts: Map<string, number>,
+  ): { messageId: number; item: OutlineItem }[] {
+    if (unmatchedCounts.size === 0 || fillEntries.length === 0) return fillEntries
+
+    const kept = [...fillEntries]
+    for (let i = kept.length - 1; i >= 0; i -= 1) {
+      const key = keyOf(kept[i].item)
+      const count = unmatchedCounts.get(key) ?? 0
+      if (count === 0) continue
+      if (count === 1) unmatchedCounts.delete(key)
+      else unmatchedCounts.set(key, count - 1)
+      kept.splice(i, 1)
+    }
+    return kept
+  }
+
+  /**
+   * 在归并后的完整提问序列上统一计算 occurrence 并生成收藏签名 id。
+   * 若只在挂载子集上计数，同一提问在不同滚动位置签名漂移、收藏失效。
+   */
+  private assignUserQueryOutlineIds(
+    items: OutlineItem[],
+    queryFullTexts: Map<OutlineItem, string>,
+  ): void {
+    const occurrenceMap = new Map<string, number>()
+    for (const item of items) {
+      if (!item.isUserQuery || item.level !== 0) continue
+      const fullText = queryFullTexts.get(item) ?? item.text
+      const matchKey = this.normalizeUserQueryMatchText(fullText)
+      const occurrence = occurrenceMap.get(matchKey) ?? 0
+      occurrenceMap.set(matchKey, occurrence + 1)
+      item.id = `deepseek-user-query::${occurrence}::${matchKey}`
+    }
+  }
+
+  private getMountedRowMessageId(
+    element: Element | null,
+    idMap?: Map<number, number>,
+  ): number | null {
+    const row = element?.closest("[data-virtual-list-item-key]")
+    if (!row) return null
+    const id = Number(row.getAttribute("data-virtual-list-item-key"))
+    if (!Number.isFinite(id)) return null
+    return idMap?.get(id) ?? id
+  }
+
+  private parseApiOutlineItemId(
+    id?: string,
+  ): { messageId: number; level: number; orderInMessage: number } | null {
+    if (!id) return null
+    const match = id.match(/^deepseek:api-h:(\d+):(\d+):(\d+):[0-9a-f]+$/)
+    if (!match) return null
+    return {
+      messageId: Number(match[1]),
+      level: Number(match[2]),
+      orderInMessage: Number(match[3]),
+    }
+  }
+
+  private parseApiUserQueryItemId(id?: string): number | null {
+    if (!id) return null
+    const match = id.match(/^deepseek:api-u:(\d+)$/)
+    return match ? Number(match[1]) : null
+  }
+
+  private findApiHeadingInRow(
+    row: Element,
+    ref: { level: number; orderInMessage: number },
+    text: string,
+  ): Element | null {
+    const headings = Array.from(row.querySelectorAll(OUTLINE_HEADING_SELECTOR))
+    const direct = headings[ref.orderInMessage]
+    if (direct && (direct.textContent || "").trim() === text) return direct
+
+    // setext/引用块/原生 HTML 标题会渲染进 DOM 但不参与 ATX 序号，序号可能
+    // 错位：先用「层级+文本」精确命中真正的目标，避免层级巧合跳错标题
+    const precise = headings.find(
+      (heading) =>
+        Number(heading.tagName.charAt(1)) === ref.level &&
+        (heading.textContent || "").trim() === text,
+    )
+    if (precise) return precise
+
+    // reference 角标等渲染差异导致文本无法精确比对时，才采信同层级的序号命中
+    if (direct && Number(direct.tagName.charAt(1)) === ref.level) return direct
+    return null
+  }
+
+  /**
+   * 直接滚动探测聊天虚拟列表，把目标 message_id 的行挂载出来。
+   * scrollTop 与挂载窗口的 key 区间单调对应，每次用真实挂载行做锚点闭环逼近，
+   * 通常 1-3 次收敛；ds-virtual-list 在程序化 scrollTop + 强制 layout 后同步
+   * 重挂载（与 scanNativeOutlineEntries 同一手法），成功时全程无需借道原生
+   * TOC 点击（省掉站点 React 的同步处理与逐位置 settle 等待）。
+   * 失败返回 null，调用方回退 TOC 跳转链路。
+   */
+  private async probeMountVirtualRow(
+    messageId: number,
+    container: HTMLElement,
+    data: DeepSeekHistoryOutlineData | null,
+    requestId: number | null,
+    signal?: AbortSignal,
+  ): Promise<Element | null> {
+    if (container.scrollHeight <= container.clientHeight) return null
+
+    const branchIndex = data ? new Map(data.branchMessageIds.map((id, i) => [id, i])) : null
+    const findRow = () => this.findMountedVirtualRow(container, messageId, data)
+    // 编辑/删除造成的 id 空洞下，分支序号距离比 id 差值更接近真实行距
+    const rowDistance = (key: number): number => {
+      const targetIdx = branchIndex?.get(messageId)
+      const keyIdx = branchIndex?.get(key)
+      return targetIdx !== undefined && keyIdx !== undefined ? targetIdx - keyIdx : messageId - key
+    }
+
+    let prevSignature = ""
+    for (let attempt = 0; attempt < VIRTUAL_ROW_PROBE_MAX_ATTEMPTS; attempt += 1) {
+      const existing = findRow()
+      if (existing) return existing
+      // requestId 为 null 表示非大纲链路调用（阅读历史恢复），不参与大纲请求失效判断
+      if (requestId !== null && requestId !== this.nativeOutlineRevealRequestId) return null
+      if (signal?.aborted) return null
+
+      const rows = this.readMountedVirtualRows(container, this.buildTempRowIdMap(container, data))
+      if (rows.length === 0) return null
+
+      const signature = `${rows[0].key}:${rows[rows.length - 1].key}:${Math.round(container.scrollTop)}`
+      if (signature === prevSignature) {
+        // 窗口无变化：重挂载可能是异步的，给一帧时间
+        await this.sleep(VIRTUAL_ROW_PROBE_SETTLE_MS)
+      }
+      prevSignature = signature
+
+      const first = rows[0]
+      const last = rows[rows.length - 1]
+      let deltaRows = 0
+      if (rowDistance(first.key) < 0) {
+        deltaRows = rowDistance(first.key)
+      } else if (rowDistance(last.key) > 0) {
+        deltaRows = rowDistance(last.key)
+      }
+
+      if (deltaRows === 0) {
+        // 目标 key 落在窗口 key 区间内却未挂载（id 空洞或挂载滞后）
+        await this.sleep(VIRTUAL_ROW_PROBE_SETTLE_MS)
+        continue
+      }
+
+      const spanRows = Math.max(
+        1,
+        Math.abs(
+          (branchIndex?.get(last.key) ?? last.key) - (branchIndex?.get(first.key) ?? first.key),
+        ),
+      )
+      const spanPx = last.top - first.top
+      const pxPerRow =
+        spanPx > 0 ? spanPx / spanRows : container.clientHeight / Math.max(1, rows.length)
+      if (!(pxPerRow > 0)) return null
+
+      const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight)
+      // 至少移动一行，避免小步长在原地打转
+      const deltaPx = Math.sign(deltaRows) * Math.max(Math.abs(deltaRows) * pxPerRow, pxPerRow)
+      const nextTop = Math.min(maxScroll, Math.max(0, container.scrollTop + deltaPx))
+      if (nextTop === container.scrollTop && (nextTop === 0 || nextTop === maxScroll)) {
+        // 已到滚动边界仍未挂载：目标行不存在（可能被删除）
+        return null
+      }
+
+      container.scrollTop = nextTop
+      container.dispatchEvent(new Event("scroll", { bubbles: true }))
+      // 强制同步 layout，促使虚拟列表本轮完成重挂载
+      container.getBoundingClientRect()
+    }
+
+    return this.bisectMountVirtualRow(messageId, container, findRow, requestId, signal, data)
+  }
+
+  /**
+   * probeMountVirtualRow 的兜底：启发式逼近依赖行高估算，id 空洞或行高不均时
+   * 会过冲震荡。挂载窗口的 key 区间随 scrollTop 单调移动，二分不依赖行高，
+   * 对长对话 log 级收敛。
+   */
+  private async bisectMountVirtualRow(
+    messageId: number,
+    container: HTMLElement,
+    findRow: () => Element | null,
+    requestId: number | null,
+    signal?: AbortSignal,
+    data: DeepSeekHistoryOutlineData | null = null,
+  ): Promise<Element | null> {
+    const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight)
+    let lo = 0
+    let hi = maxScroll
+    let mid = Math.min(maxScroll, Math.max(0, container.scrollTop))
+
+    for (let attempt = 0; attempt < 14; attempt += 1) {
+      const existing = findRow()
+      if (existing) return existing
+      if (requestId !== null && requestId !== this.nativeOutlineRevealRequestId) return null
+      if (signal?.aborted) return null
+
+      const rows = this.readMountedVirtualRows(container, this.buildTempRowIdMap(container, data))
+      if (rows.length === 0) return null
+
+      const firstKey = rows[0].key
+      const lastKey = rows[rows.length - 1].key
+      if (messageId < firstKey) {
+        hi = mid
+      } else if (messageId > lastKey) {
+        lo = mid
+      } else {
+        // 目标 key 落在窗口区间内却未挂载：等几拍排除挂载滞后，仍没有就是 id 空洞
+        for (let wait = 0; wait < 3; wait += 1) {
+          await this.sleep(VIRTUAL_ROW_PROBE_SETTLE_MS)
+          const mounted = findRow()
+          if (mounted) return mounted
+        }
+        return null
+      }
+      if (hi - lo <= 2) return null
+
+      mid = Math.round((lo + hi) / 2)
+      container.scrollTop = mid
+      container.dispatchEvent(new Event("scroll", { bubbles: true }))
+      container.getBoundingClientRect()
+      await this.sleep(VIRTUAL_ROW_PROBE_SETTLE_MS)
+    }
+
+    return findRow()
+  }
+
+  private readMountedVirtualRows(
+    container: HTMLElement,
+    idMap?: Map<number, number>,
+  ): { key: number; top: number }[] {
+    const rows: { key: number; top: number }[] = []
+    container.querySelectorAll("[data-virtual-list-item-key]").forEach((row) => {
+      const rawKey = Number(row.getAttribute("data-virtual-list-item-key"))
+      const key = idMap?.get(rawKey) ?? rawKey
+      if (Number.isFinite(key)) {
+        rows.push({ key, top: row.getBoundingClientRect().top })
+      }
+    })
+    return rows.sort((a, b) => a.key - b.key)
+  }
+
+  private async resolveApiOutlineTarget(
+    ref: { messageId: number; level: number; orderInMessage: number },
+    text: string,
+  ): Promise<Element | null> {
+    const container =
+      this.getScrollContainer() || document.querySelector(this.getResponseContainerSelector())
+    if (!container) return null
+
+    const scopedData =
+      this.apiOutlineData && this.apiOutlineData.sessionId === this.getSessionId()
+        ? this.apiOutlineData
+        : null
+    const findMounted = () => {
+      const row = this.findMountedVirtualRow(container, ref.messageId, scopedData)
+      return row ? this.findApiHeadingInRow(row, ref, text) : null
+    }
+
+    const mounted = findMounted()
+    if (mounted) return mounted
+
+    const data = scopedData
+    if (!data) return null
+
+    // 快路径：直接滚动探测把目标回复行挂载出来，行内按序号定位标题
+    const requestId = ++this.nativeOutlineRevealRequestId
+    // 探测/跳转会移动滚动位置；彻底失败时复原，避免把用户甩到无关位置。
+    // 请求已被更新的定位接管时不复原
+    const entryScrollTop = container.scrollTop
+    const fail = (): null => {
+      if (requestId === this.nativeOutlineRevealRequestId) {
+        container.scrollTop = entryScrollTop
+      }
+      return null
+    }
+    const probedRow =
+      container instanceof HTMLElement
+        ? await this.probeMountVirtualRow(ref.messageId, container, data, requestId)
+        : null
+    if (probedRow) {
+      const heading = this.findApiHeadingInRow(probedRow, ref, text)
+      if (heading) return heading
+    }
+
+    // 慢路径回退：借原生大纲跳到所属提问附近，让虚拟列表把目标回复挂载出来。
+    // 匹配文本优先用接口的提问文本，TOC 只做点击跳板
+    const queryIndex = data.queryIndexByAssistantId.get(ref.messageId)
+    if (!queryIndex) return fail()
+    const queryText =
+      data.userQueries.find((query) => query.queryIndex === queryIndex)?.text ||
+      this.collectNativeOutlineEntries()[queryIndex - 1]?.text
+    if (!queryText) return fail()
+
+    const jumped = await this.revealUserQueryThroughNativeOutline(queryIndex, queryText, requestId)
+    if (!jumped) return fail()
+
+    const deadline = Date.now() + 2000
+    while (Date.now() < deadline) {
+      const target = findMounted()
+      if (target) return target
+      await this.sleep(80)
+    }
+    return fail()
+  }
+
+  /** 接口回填的提问条目：行挂载则直接返回，否则借原生 TOC 跳转后轮询挂载 */
+  private async resolveApiUserQueryTarget(
+    messageId: number,
+    text: string,
+  ): Promise<Element | null> {
+    const container =
+      this.getScrollContainer() || document.querySelector(this.getResponseContainerSelector())
+    if (!container) return null
+
+    const scopedData =
+      this.apiOutlineData && this.apiOutlineData.sessionId === this.getSessionId()
+        ? this.apiOutlineData
+        : null
+    const findMounted = () => {
+      const row = this.findMountedVirtualRow(container, messageId, scopedData)
+      // data-virtual-list-item-key 行是 .ds-message 的包裹层，需向下找用户消息元素
+      const message = row?.querySelector(this.config.selectors.userQuery)
+      return message instanceof HTMLElement ? message : null
+    }
+
+    const mounted = findMounted()
+    if (mounted) return mounted
+
+    const data = scopedData
+    if (!data) return null
+    const query = data.userQueries.find((entry) => entry.messageId === messageId)
+    if (!query) return null
+
+    const requestId = ++this.nativeOutlineRevealRequestId
+    // 同 resolveApiOutlineTarget：彻底失败时复原滚动位置
+    const entryScrollTop = container.scrollTop
+    const fail = (): null => {
+      if (requestId === this.nativeOutlineRevealRequestId) {
+        container.scrollTop = entryScrollTop
+      }
+      return null
+    }
+    // 快路径：直接滚动探测把目标提问行挂载出来
+    const probedRow =
+      container instanceof HTMLElement
+        ? await this.probeMountVirtualRow(messageId, container, data, requestId)
+        : null
+    if (probedRow) {
+      const message = probedRow.querySelector(this.config.selectors.userQuery)
+      if (message instanceof HTMLElement) return message
+    }
+
+    const jumped = await this.revealUserQueryThroughNativeOutline(
+      query.queryIndex,
+      query.text || text,
+      requestId,
+    )
+    if (!jumped) return fail()
+
+    const deadline = Date.now() + 2000
+    while (Date.now() < deadline) {
+      const target = findMounted()
+      if (target) return target
+      await this.sleep(80)
+    }
+    return fail()
   }
 
   private createUserQueryOutlineItem(
@@ -688,16 +1677,18 @@ export class DeepSeekAdapter extends SiteAdapter {
         : undefined
     const shareMessages = await this.collectShareExportMessageSnapshots(collector)
     if (shareMessages?.length) {
-      if (collector) {
-        this.exportBundleCache = {
-          messages: shareMessages,
-          assets: collector.assets,
-        }
-      }
-
-      this.mountExportSnapshot(shareMessages)
-      return { count: shareMessages.length }
+      return this.finishExportWithSnapshots(shareMessages, collector)
     }
+
+    const apiMessages = await this.collectApiExportMessageSnapshots(collector)
+    if (apiMessages?.length) {
+      return this.finishExportWithSnapshots(apiMessages, collector)
+    }
+
+    // 接口路径不可用且 DOM 历史未预加载（manager 因 apiFirstExport 跳过了预加载）：
+    // 返回 null 让导出流程补做预加载后重试，避免在只加载了部分历史的 DOM 上
+    // 滚动采集得到不完整的导出
+    if (context.domHistoryPreloaded === false) return null
 
     const scrollContainer =
       this.getScrollContainer() || document.querySelector(this.getResponseContainerSelector())
@@ -710,6 +1701,13 @@ export class DeepSeekAdapter extends SiteAdapter {
       return null
     }
 
+    return this.finishExportWithSnapshots(messages, collector)
+  }
+
+  private finishExportWithSnapshots(
+    messages: DeepSeekExportMessageSnapshot[],
+    collector?: ExportAssetCollector,
+  ): { count: number } {
     if (collector) {
       this.exportBundleCache = {
         messages,
@@ -856,8 +1854,11 @@ export class DeepSeekAdapter extends SiteAdapter {
           extraCss: "box-sizing: border-box !important; min-width: 0 !important;",
         },
         {
-          selector: this.config.sitePrivateSelectors.canvasPreviewSafeArea,
-          scopeSelector: this.config.sitePrivateSelectors.canvasLayoutScope,
+          // 文档预览 / Canvas 预览右侧边栏：内容列带内联 width 且为 content-box，
+          // 必须强制 border-box，padding 内缩才能真正压缩内容而不是把内容挤出去。
+          selector: this.config.sitePrivateSelectors.panelPreviewContent,
+          scopeSelector: this.config.sitePrivateSelectors.panelPreviewScope,
+          obstacleSelectors: [],
           applySide: "right",
           insetMode: "edge",
           extraCss: "box-sizing: border-box !important; min-width: 0 !important;",
@@ -1849,6 +2850,65 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
   }
 
+  /**
+   * 常规会话优先走 history_messages 接口拿全量 markdown（公式/代码零损耗、
+   * 无需滚动收集）；接口不可用或无法证明历史完整时返回 null，回退滚动收集。
+   */
+  private async collectApiExportMessageSnapshots(
+    collector?: ExportAssetCollector,
+  ): Promise<DeepSeekExportMessageSnapshot[] | null> {
+    const sessionId = this.getSessionId()
+    const token = this.getUserToken()
+    if (!sessionId || !token) return null
+
+    try {
+      const response = await fetch(
+        `${window.location.origin}${CHAT_HISTORY_API_PATH}?chat_session_id=${encodeURIComponent(sessionId)}`,
+        {
+          headers: this.buildHistoryApiHeaders(token),
+          credentials: "include",
+        },
+      )
+      if (!response.ok) return null
+
+      const parsed = parseDeepSeekHistoryExport(await response.json())
+      if (!parsed || parsed.sessionId !== sessionId) return null
+
+      const includeThoughts = this.shouldIncludeThoughtsInExport()
+      const messages: DeepSeekExportMessageSnapshot[] = []
+
+      for (const message of parsed.messages) {
+        if (message.role === "user") {
+          const attachments = message.fileFragments.flatMap((fragment) =>
+            this.extractShareUserAttachments(fragment),
+          )
+          const content = this.normalizeExportMessageContent(
+            this.formatUserQueryExportContent(message.requestText, attachments, collector),
+          )
+          if (content) {
+            messages.push({ role: DEEPSEEK_EXPORT_ROLE_USER, content })
+          }
+          continue
+        }
+
+        const thinking = message.thinkingMarkdown.trim()
+        const thoughtBlocks =
+          includeThoughts && thinking ? [this.formatAsThoughtBlockquote(thinking)] : []
+        const content = this.normalizeExportMessageContent(
+          [...thoughtBlocks, message.responseMarkdown.trim()].filter(Boolean).join("\n\n"),
+        )
+        if (content) {
+          messages.push({ role: DEEPSEEK_EXPORT_ROLE_ASSISTANT, content })
+        }
+      }
+
+      return messages.length > 0 ? messages : null
+    } catch (error) {
+      console.warn("[DeepSeekAdapter] Failed to collect api export payload:", error)
+      return null
+    }
+  }
+
   private extractShareExportMessagesFromPayload(
     payload: unknown,
     collector?: ExportAssetCollector,
@@ -1954,10 +3014,32 @@ export class DeepSeekAdapter extends SiteAdapter {
           name,
           type: this.extractFileTypeFromName(name),
           size,
-          source: signedPath ? normalizeExportAssetUrl(signedPath) : "",
+          // 非图片附件不产出下载地址，导出只保留文件名标签
+          source: isImage && signedPath ? this.resolveSignedImageUrl(signedPath) : "",
         },
       ]
     })
+  }
+
+  /**
+   * signed_path 形如 /file?file_id=...&state=...，是相对地址且缺 ty 参数；
+   * 真实文件托管在 files.deepseeksvc.com/api/file，ty 必传（实测仅支持
+   * p/t/r，图片用 p=大图，t=缩略图）。签名 state 原样透传。
+   * 形态不符时回退按原地址解析。
+   */
+  private resolveSignedImageUrl(signedPath: string): string {
+    try {
+      const url = new URL(signedPath, window.location.origin)
+      const fileId = url.searchParams.get("file_id")
+      const state = url.searchParams.get("state")
+      if (url.pathname !== "/file" || !fileId || !state) {
+        return normalizeExportAssetUrl(signedPath)
+      }
+      const params = new URLSearchParams({ file_id: fileId, state, ty: "p" })
+      return `https://files.deepseeksvc.com/api/file?${params.toString()}`
+    } catch {
+      return normalizeExportAssetUrl(signedPath)
+    }
   }
 
   private getNestedRecord(source: unknown, path: string[]): Record<string, unknown> | null {
@@ -2823,6 +3905,17 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
   }
 
+  private buildHistoryApiHeaders(token: string): Record<string, string> {
+    return {
+      accept: "*/*",
+      authorization: `Bearer ${token}`,
+      "x-client-platform": "web",
+      "x-client-locale": this.getClientLocale(),
+      // 见 DEEPSEEK_CLIENT_VERSION：该头决定接口返回完整 fragments 形态
+      "x-client-version": DEEPSEEK_CLIENT_VERSION,
+    }
+  }
+
   private getUserToken(): string | null {
     const raw = localStorage.getItem(USER_TOKEN_STORAGE_KEY)
     if (!raw) return null
@@ -3011,51 +4104,33 @@ export class DeepSeekAdapter extends SiteAdapter {
   }
 
   private isPinnedConversationLink(link: Element): boolean {
-    const group = this.findConversationGroup(link)
-    if (!group) return false
-
-    const directChildren = Array.from(group.children)
-    const conversationChildren = directChildren.filter((child) => this.isConversationLink(child))
-    if (conversationChildren.length === 0) return false
-
-    const firstConversation = conversationChildren[0]
-    const firstConversationIndex = directChildren.indexOf(firstConversation)
-    if (firstConversationIndex <= 0) return false
-
-    const header = directChildren.find(
-      (child, index) => index < firstConversationIndex && !this.isConversationLink(child),
-    )
-    if (!header) return false
-
-    const hasElementChildren = header.children.length > 0
-    const hasFocusRing = header.querySelector(this.config.sitePrivateSelectors.focusRing) !== null
-    const hasSpan = header.querySelector(":scope > span, span") !== null
-
-    return hasElementChildren && hasFocusRing && hasSpan
-  }
-
-  private findConversationGroup(link: Element): HTMLElement | null {
     let current = link.parentElement
+    let pathChild = link
 
     while (current && current !== document.body) {
       const directChildren = Array.from(current.children)
-      const conversationChildren = directChildren.filter((child) => this.isConversationLink(child))
+      const pathIndex = directChildren.indexOf(pathChild)
 
-      if (conversationChildren.length > 0) {
-        const firstConversationIndex = directChildren.indexOf(conversationChildren[0])
-        const hasHeaderBeforeConversation = directChildren.some(
-          (child, index) => index < firstConversationIndex && !this.isConversationLink(child),
-        )
-
-        if (hasHeaderBeforeConversation && conversationChildren.some((child) => child === link)) {
-          return current
-        }
+      if (pathIndex > 0) {
+        const hasGroupHeader = directChildren
+          .slice(0, pathIndex)
+          .some((child) => this.isConversationGroupHeader(child))
+        // 新版侧边栏：置顶分组的会话列表被额外包了一层容器，
+        // 日期分组的会话则是分组容器的直接子节点
+        if (hasGroupHeader) return pathChild !== link
       }
 
+      pathChild = current
       current = current.parentElement
     }
 
-    return null
+    return false
+  }
+
+  private isConversationGroupHeader(element: Element): boolean {
+    if (this.isConversationLink(element)) return false
+    if (element.querySelector(this.config.conversation.itemSelector)) return false
+    return Boolean(element.textContent?.trim())
   }
 
   private isConversationLink(element: Element): boolean {

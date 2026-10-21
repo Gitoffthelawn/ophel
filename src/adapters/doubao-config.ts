@@ -26,7 +26,9 @@ type DoubaoPrivateSelectors = SitePrivateSelectors & {
   nativeQuotePopover: string[]
   slateElement: string
   historyContainer: string
-  pinnedConversation: string
+  conversationSection: string
+  conversationSectionHeader: string
+  pinnedSectionLabels: string[]
   virtualRow: string
   virtualScrollHolder: string
   shareMessageList: string
@@ -80,12 +82,19 @@ export interface DoubaoSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const DOUBAO_CONFIG_VERSION = 3
+export const DOUBAO_CONFIG_VERSION = 8
 
 const createDoubaoConfig = (): DoubaoSiteConfig => {
   const sidebarRoot = "#flow_chat_sidebar"
   const conversationItem = `${sidebarRoot} a[id^="conversation_"][href*="/chat/"]`
-  const newChatButton = `${sidebarRoot} > div:nth-child(2)`
+  const newChatIconPath = 'svg path[d^="M12.6221 1.01074"]'
+  const newChatButton = [
+    `${sidebarRoot} [class*="sidebar_nav_item"]:has(${newChatIconPath})`,
+    `[class*="sidebar_nav_item"]:has(${newChatIconPath})`,
+    `div[class*="cursor-pointer"]:has(${newChatIconPath})`,
+    `:is(button, div):has(> svg > ${newChatIconPath})`,
+    `${sidebarRoot} > div:nth-child(2)`,
+  ]
   const virtualScroll = '[class*="v_list_scroller"]'
   const virtualRow = ".v_list_row"
   const messageBlock = '[data-target-id="message-box-target-id"]'
@@ -125,6 +134,7 @@ const createDoubaoConfig = (): DoubaoSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.DOUBAO]],
+    traits: { historyLazyLoad: false, periodicOutlineRefresh: true },
     selectors: {
       textarea: [
         // v3 输入框为 TipTap（ProseMirror）编辑器
@@ -143,7 +153,7 @@ const createDoubaoConfig = (): DoubaoSiteConfig => {
       chatContent: [assistantContent, userQuery],
       userQuery,
       assistantResponse,
-      newChatButton: [newChatButton],
+      newChatButton,
       stopButton: stopButtonSelectors,
     },
     input: { mode: "contenteditable", submitKey: "Enter" },
@@ -176,10 +186,17 @@ const createDoubaoConfig = (): DoubaoSiteConfig => {
       { selector: '[style*="--content-max-width"]', property: "--content-max-width" },
       { selector: ".chrome70-container", property: "--center-content-max-width" },
     ],
-    zenMode: { hide: ["nav", ".container-qOgFQp", ".container-hzjmF1"] },
-    cleanMode: { hide: [".container-qOgFQp", '[aria-label="活动入口"]'] },
+    zenMode: {
+      hide: ["nav", ".container-hzjmF1"],
+    },
+    cleanMode: {
+      hide: [
+        '[aria-label="活动入口"]',
+        `${mainLayoutScope} .h-header-height .s-font-small-strong + div`,
+      ],
+    },
     quickQuote: "native",
-    supportsHostThemeSync: false,
+    supportsHostThemeSync: true,
     sitePrivateSelectors: {
       nativeQuotePopover: [
         '[data-word-selection-toolbar="true"]',
@@ -188,7 +205,11 @@ const createDoubaoConfig = (): DoubaoSiteConfig => {
       ],
       slateElement: '[data-slate-node="element"]',
       historyContainer: `${sidebarRoot} [data-history-container="true"]`,
-      pinnedConversation: '[class*="pin-"]',
+      conversationSection: `${sidebarRoot} section`,
+      conversationSectionHeader: '[class*="group/section-header"]',
+      // 新版侧边栏把置顶会话独立成分区，但分区结构与其他分区完全一致，
+      // 站点没有提供可区分的属性，只能按分区标题识别置顶区
+      pinnedSectionLabels: ["置顶", "Pinned"],
       virtualRow,
       virtualScrollHolder: '[data-name="scroll_holder"]',
       shareMessageList: '[class*="message-list-root-"]',

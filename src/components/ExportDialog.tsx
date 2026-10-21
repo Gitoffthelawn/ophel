@@ -1,15 +1,17 @@
-import React, { useEffect, useState } from "react"
+import React, { useCallback, useEffect, useState } from "react"
 
 import {
   CopyIcon,
+  CopyOutlineIcon,
   HTMLFileIcon,
   JSONFileIcon,
   MarkdownIcon,
   SegmentedExportIcon,
+  SettingsIcon,
   TXTFileIcon,
 } from "~components/icons"
 import type { ConversationExportOptions } from "~core/conversation-manager"
-import type { ExportPackaging } from "~types/settings"
+import type { ExportPackaging, ExportStyle } from "~types/settings"
 import type { ExportFormat } from "~utils/exporter"
 import { t } from "~utils/i18n"
 import { useSettingsStore } from "~stores/settings-store"
@@ -93,12 +95,48 @@ const EXPORT_DIALOG_STYLES = `
     gap: 8px;
   }
 
+  .gh-export-section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
   .gh-export-section-title {
     font-size: 12px;
     font-weight: 600;
     letter-spacing: 0.02em;
     color: var(--gh-text-secondary, #6b7280);
     margin: 0;
+  }
+
+  .gh-export-settings-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: var(--gh-text-secondary, #6b7280);
+    padding: 3px;
+    margin: -3px 0;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, color 0.15s ease;
+    outline: none;
+  }
+
+  .gh-export-settings-btn:hover:not(:disabled) {
+    background: var(--gh-hover, rgba(0, 0, 0, 0.05));
+    color: var(--gh-text, #1f2937);
+  }
+
+  .gh-export-settings-btn:focus-visible {
+    outline: 2px solid var(--gh-primary, #4285f4);
+    outline-offset: 1px;
+  }
+
+  .gh-export-settings-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .gh-export-format-grid {
@@ -146,11 +184,6 @@ const EXPORT_DIALOG_STYLES = `
     color: var(--gh-primary, #4285f4);
     font-weight: 600;
     box-shadow: 0 0 0 1px var(--gh-primary, #4285f4);
-  }
-
-  /* 剪贴板是动作而非文件格式，独占整行以容纳各语言长文案 */
-  .gh-export-format-btn-full {
-    grid-column: 1 / -1;
   }
 
   .gh-export-format-badge {
@@ -367,19 +400,20 @@ export interface ExportDialogProps {
   onClose: () => void
   onExport: (format: ExportFormat, options: ConversationExportOptions) => Promise<boolean | void>
   onSegmentedExport?: () => void
+  onOpenSettings?: () => void
 }
 
 const getFormatOptions = (): {
   format: ExportFormat
   label: string
-  badge: string
+  badge?: string
   Icon: React.FC<{ size?: number; className?: string }>
 }[] => [
   { format: "markdown", label: "Markdown", badge: ".md", Icon: MarkdownIcon },
   { format: "html", label: "HTML", badge: ".html", Icon: HTMLFileIcon },
   { format: "json", label: "JSON", badge: ".json", Icon: JSONFileIcon },
   { format: "txt", label: "Text", badge: ".txt", Icon: TXTFileIcon },
-  { format: "clipboard", label: t("exportToClipboard"), badge: "copy", Icon: CopyIcon },
+  { format: "clipboard", label: t("exportToClipboard"), Icon: CopyIcon },
 ]
 
 export const ExportDialog: React.FC<ExportDialogProps> = ({
@@ -387,6 +421,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   onClose,
   onExport,
   onSegmentedExport,
+  onOpenSettings,
 }) => {
   const settings = useSettingsStore((state) => state.settings)
   const defaultSettingFormat = settings.export?.defaultExportFormat ?? "markdown"
@@ -397,6 +432,19 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       ? defaultSettingFormat
       : "markdown"
 
+  const handleOpenExportSettings = useCallback(() => {
+    onClose()
+    if (onOpenSettings) {
+      onOpenSettings()
+      return
+    }
+    window.dispatchEvent(
+      new CustomEvent("ophel:navigateSettingsPage", {
+        detail: { settingId: "export-settings-card" },
+      }),
+    )
+  }, [onClose, onOpenSettings])
+
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>(defaultFormat)
   const [includeThoughts, setIncludeThoughts] = useState<boolean>(
     settings.export?.includeThoughts ?? true,
@@ -406,6 +454,9 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     settings.export?.exportMarkdownDivider ?? "---",
   )
   const [packageZip, setPackageZip] = useState<boolean>(settings.export?.packaging === "zip")
+  const [exportStyle, setExportStyle] = useState<ExportStyle>(
+    settings.export?.exportStyle === "clean" ? "clean" : "standard",
+  )
   const [isExporting, setIsExporting] = useState(false)
 
   // 每次打开时从全局设置重新同步初始值，避免常驻挂载导致的过期快照
@@ -422,6 +473,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     setShowIndex(current.export?.exportShowIndex ?? false)
     setCustomDivider(current.export?.exportMarkdownDivider ?? "---")
     setPackageZip(current.export?.packaging === "zip")
+    setExportStyle(current.export?.exportStyle === "clean" ? "clean" : "standard")
   }, [isOpen])
 
   if (!isOpen) return null
@@ -438,6 +490,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
         showIndex,
         packaging,
         customDivider,
+        style: exportStyle,
       })
       if (success !== false) {
         onClose()
@@ -501,25 +554,50 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             <button
               key={item.format}
               type="button"
-              className={
-                item.format === "clipboard"
-                  ? "gh-export-format-btn gh-export-format-btn-full"
-                  : "gh-export-format-btn"
-              }
+              className="gh-export-format-btn"
               data-active={selectedFormat === item.format}
+              title={item.label}
               onClick={() => setSelectedFormat(item.format)}>
               <span className="gh-export-format-label">
                 <item.Icon size={15} className="gh-export-format-icon" />
                 <span>{item.label}</span>
               </span>
-              <span className="gh-export-format-badge">{item.badge}</span>
+              {item.badge && <span className="gh-export-format-badge">{item.badge}</span>}
             </button>
           ))}
+          {/* 复制大纲：即时动作（非导出格式），能力由大纲 tab 挂载期间暴露；未挂载时不显示 */}
+          {typeof window.__ophelCopyFullOutline === "function" && (
+            <button
+              type="button"
+              className="gh-export-format-btn"
+              title={t("outlineCopyFull")}
+              disabled={isExporting}
+              onClick={() => {
+                onClose()
+                void window.__ophelCopyFullOutline?.()
+              }}>
+              <span className="gh-export-format-label">
+                <CopyOutlineIcon size={15} className="gh-export-format-icon" />
+                <span>{t("outlineCopyFull")}</span>
+              </span>
+            </button>
+          )}
         </div>
       </div>
 
       <div className="gh-export-section">
-        <div className="gh-export-section-title">{t("exportOptions")}</div>
+        <div className="gh-export-section-header">
+          <div className="gh-export-section-title">{t("exportOptions")}</div>
+          <button
+            type="button"
+            className="gh-export-settings-btn"
+            title={t("exportSettings")}
+            aria-label={t("exportSettings")}
+            disabled={isExporting}
+            onClick={handleOpenExportSettings}>
+            <SettingsIcon size={14} />
+          </button>
+        </div>
         <div className="gh-export-options-list">
           <label className="gh-export-option-row">
             <span>{t("exportIncludeThoughtsLabel")}</span>
@@ -563,6 +641,17 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
                 type="checkbox"
                 checked={packageZip}
                 onChange={(e) => setPackageZip(e.target.checked)}
+              />
+            </label>
+          )}
+
+          {isMarkdownLike && (
+            <label className="gh-export-option-row">
+              <span>{t("exportStyleCleanOption")}</span>
+              <input
+                type="checkbox"
+                checked={exportStyle === "clean"}
+                onChange={(e) => setExportStyle(e.target.checked ? "clean" : "standard")}
               />
             </label>
           )}

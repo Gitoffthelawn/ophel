@@ -44,6 +44,9 @@ describe("feature capability panel boundaries", () => {
     expect(source).toContain("if (visibleTabs.includes(TAB_IDS.CONVERSATIONS))")
     expect(source).toContain('if (typeof idx === "number" && visibleTabs[idx])')
     expect(source).toContain("const currentIndex = visibleTabs.indexOf(tab)")
+    expect(source).toContain(
+      '{visibleTabs.length > 1 && ( <div className="gh-panel-tabs" role="tablist"',
+    )
     expect(source).toContain("{visibleTabs.map((tab) => {")
     expect(source).toContain("{visibleTabs.includes(activeTab) && (")
     expect(source).toContain("currentSettings.tab?.openInNewTab && canOpenNewTab")
@@ -58,8 +61,6 @@ describe("feature capability panel boundaries", () => {
     )
     expect(source).toContain('zenMode: "zen"')
     expect(source).toContain('[TOOLS_MENU_IDS.EXPORT]: "export-basic"')
-    expect(source).toContain('[TOOLS_MENU_IDS.SEGMENTED_EXPORT]: "export-basic"')
-    expect(source).toContain('[TOOLS_MENU_IDS.COPY_MARKDOWN]: "export-basic"')
     expect(source).toContain('[TOOLS_MENU_IDS.MOVE]: "conversation-list"')
     expect(source).toContain('[TOOLS_MENU_IDS.SET_TAG]: "conversation-list"')
     expect(source).toContain('[TOOLS_MENU_IDS.MODEL_LOCK]: "model-lock"')
@@ -67,7 +68,7 @@ describe("feature capability panel boundaries", () => {
     expect(source).toContain("if (!isCollapsedButtonSupported(id)) return null")
     expect(source).toContain("if (!isToolsMenuItemSupported(item.id as ToolsMenuId)) continue")
     expect(source).toContain('if (!supportsCapability("zen")) return')
-    expect(source).toContain('if (newZenEnabled && supportsCapability("clean"))')
+    expect(source).not.toContain('updateNestedSetting("layout", "cleanMode"')
   })
 
   it("derives the conversation unsupported state from the shared matrix", () => {
@@ -106,6 +107,7 @@ describe("feature capability settings boundaries", () => {
     expect(source).toContain("{supportsUserQueryWidth && (")
     expect(source).toContain("{supportsZenMode && (")
     expect(source).toContain("{supportsCleanMode && (")
+    expect(source).not.toContain("updatedLayout.cleanMode =")
     expect(source).toContain("{isCommunitySitePack && (")
     expect(source).toContain('t("communitySitePackBadge")')
     expect(source).toContain('t("communitySitePackDesc")')

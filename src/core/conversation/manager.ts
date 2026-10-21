@@ -39,7 +39,7 @@ import {
 import { getAllLocalizedTexts, t } from "~utils/i18n"
 import { getTopScrollPosition } from "~utils/scroll-helper"
 import { createSiteScopedStorageKey, resolvePersistedSiteInstanceKey } from "~utils/site-identity"
-import { consumeRestoreFlag, type ExportPackaging } from "~utils/storage"
+import { consumeRestoreFlag, type ExportPackaging, type ExportStyle } from "~utils/storage"
 import { showToast } from "~utils/toast"
 
 import type { Conversation, ConversationData, Tag } from "./types"
@@ -68,7 +68,7 @@ const HISTORY_LOAD_TIME_BUDGET_MS = 5 * 60 * 1000
 /**
  * 高度收敛后、适配器仍报告历史起点缺口时的补载预算。
  * 覆盖"分页请求在飞但 scrollHeight 暂未变化"的场景；有界是为了不让
- * 永远补不齐的会话（如无完整历史的共享会话）卡住导出。
+ * 永远补不齐的对话（如无完整历史的共享对话）卡住导出。
  */
 const HISTORY_CATCH_UP_BUDGET_MS = 30 * 1000
 
@@ -145,6 +145,7 @@ export interface ConversationExportOptions {
   includeThoughts?: boolean
   showIndex?: boolean
   customDivider?: string
+  style?: ExportStyle
 }
 
 type ConversationExportDataOptions = ConversationExportOptions
@@ -257,15 +258,18 @@ export class ConversationManager {
       this.startGeminiMigrationRetry()
     }
 
-    // 修复历史数据中 folderId 指向已不存在文件夹的会话（面板只按现有文件夹渲染，
-    // 这类会话会不可见）。同步的更新分支也会修复 folderId，但只覆盖本次侧边栏
-    // 扫到的会话；这里在启动时兜底修复其余会话。
+    // 清理历史 ChatGPT 对话中残留的 "personal" cid，归一化为 undefined（默认个人空间）
+    this.repairLegacyChatgptPersonalCid()
+
+    // 修复历史数据中 folderId 指向已不存在文件夹的对话（面板只按现有文件夹渲染，
+    // 这类对话会不可见）。同步的更新分支也会修复 folderId，但只覆盖本次侧边栏
+    // 扫到的对话；这里在启动时兜底修复其余对话。
     this.repairOrphanedConversationFolders()
 
     // 检查是否刚恢复了备份数据，如果是则跳过自动同步以保持备份的干净状态
     const isRestore = await consumeRestoreFlag()
 
-    // 首次安装或当前站点数据为空时，自动加载全部会话
+    // 首次安装或当前站点数据为空时，自动加载全部对话
     const currentSiteCount = Object.keys(this.getAllConversations()).length
     const shouldRunInitialAutoFullSync =
       currentSiteCount === 0 && this.siteAdapter.loadAllConversations && !isRestore
@@ -282,8 +286,38 @@ export class ConversationManager {
   }
 
   /**
-   * 将 folderId 缺失或指向不存在文件夹的会话移回收件箱。
-   * 幂等，只改动确实无效的会话，避免老用户升级后历史会话在面板里消失。
+   * 将 ChatGPT 历史对话中残留的 "personal" cid 归一化为 undefined（默认个人空间）。
+   * 幂等，避免多账号与个人空间分裂。
+   */
+  private repairLegacyChatgptPersonalCid(): void {
+    const all = this.storedConversations
+    let changed = false
+    const nextConversations: Record<string, Conversation> = {}
+
+    for (const [storageKey, conversation] of Object.entries(all)) {
+      if (
+        (conversation.siteId === SITE_IDS.CHATGPT ||
+          conversation.siteInstanceKey === SITE_IDS.CHATGPT) &&
+        conversation.cid === "personal"
+      ) {
+        const cleaned = { ...conversation }
+        delete cleaned.cid
+        nextConversations[storageKey] = cleaned
+        changed = true
+      } else {
+        nextConversations[storageKey] = conversation
+      }
+    }
+
+    if (changed) {
+      useConversationsStore.setState({ conversations: nextConversations })
+      this.notifyDataChange()
+    }
+  }
+
+  /**
+   * 将 folderId 缺失或指向不存在文件夹的对话移回收件箱。
+   * 幂等，只改动确实无效的对话，避免老用户升级后历史对话在面板里消失。
    */
   private repairOrphanedConversationFolders(): void {
     const validFolderIds = new Set(this.folders.map((folder) => folder.id))
@@ -350,7 +384,10 @@ export class ConversationManager {
       nextConversations[storageKey] = {
         ...conv,
         cid: currentCid,
-        url: this.buildGeminiConversationUrl(conv.id, userPathPrefix),
+        // Spark 线程的 URL 是 /spark/chat/{id}，不能按 /app 模板重建
+        url: (conv.url || "").includes("/spark/chat/")
+          ? conv.url
+          : this.buildGeminiConversationUrl(conv.id, userPathPrefix),
       }
     })
 
@@ -581,11 +618,6 @@ export class ConversationManager {
     }
   }
 
-  // ================= Data Loading（已迁移到 Zustand stores）=================
-
-  // 不再需要 loadData / loadTags / saveFolders / saveConversations / saveTags
-  // 数据加载由 Zustand persist 自动处理
-
   // ================= Observer Logic =================
 
   startSidebarObserver() {
@@ -602,10 +634,10 @@ export class ConversationManager {
       const maxRetries = 5
       const retryDelay = 1000
 
-      const sidebarContainer = this.siteAdapter.getSidebarScrollContainer() || document
+      const sidebarContainer = this.siteAdapter.getConversationObserverContainer() || document
 
       if (config.shadow && retryCount < maxRetries) {
-        const foundContainer = this.siteAdapter.getSidebarScrollContainer()
+        const foundContainer = this.siteAdapter.getConversationObserverContainer()
         if (!foundContainer) {
           setTimeout(() => startObserverRetry(retryCount + 1), retryDelay)
           return
@@ -669,7 +701,7 @@ export class ConversationManager {
     const existing = conversations[info.id]
 
     if (isNew && !existing) {
-      // 新会话
+      // 新对话
       getConversationsStore().addConversation({
         id: info.id,
         siteId: this.siteAdapter.getSiteId(),
@@ -684,7 +716,7 @@ export class ConversationManager {
       })
       this.notifyDataChange()
     } else if (existing) {
-      // 更新现有会话
+      // 更新现有对话
       let needsUpdate = false
       const updates: Partial<Conversation> = {}
 
@@ -745,7 +777,7 @@ export class ConversationManager {
 
           const existing = this.conversations[info.id]
           if (!existing) {
-            // 新会话
+            // 新对话
             this.updateConversationFromObservation(info, true)
             this.monitorConversationTitle(el as HTMLElement, info.id)
           } else {
@@ -774,7 +806,7 @@ export class ConversationManager {
     el.dataset.ghTitleObserver = "true"
 
     if (!this.titleWatcher) {
-      const container = this.siteAdapter.getSidebarScrollContainer() || document.body
+      const container = this.siteAdapter.getConversationObserverContainer() || document.body
       this.titleWatcher = DOMToolkit.watchMultiple(container as Node, {
         debounce: 500,
       })
@@ -823,7 +855,7 @@ export class ConversationManager {
     return this.folders
   }
 
-  /** 当前站点实例 key，用于跨站点场景（如全局搜索）区分站内/站外会话 */
+  /** 当前站点实例 key，用于跨站点场景（如全局搜索）区分站内/站外对话 */
   getSiteInstanceKey(): string {
     return this.siteInstanceKey
   }
@@ -851,7 +883,7 @@ export class ConversationManager {
   deleteFolder(id: string) {
     if (id === "inbox") return // 禁止删除 inbox
 
-    // 将会话移动到 inbox
+    // 将对话移动到 inbox
     getConversationsStore().moveConversationsToInbox(id)
 
     getFoldersStore().deleteFolder(id)
@@ -994,6 +1026,13 @@ export class ConversationManager {
     getConversationsStore().moveToFolder(this.getConversationStorageKey(id), targetFolderId)
   }
 
+  moveConversations(ids: string[], targetFolderId: string) {
+    getConversationsStore().moveConversations(
+      ids.map((id) => this.getConversationStorageKey(id)),
+      targetFolderId,
+    )
+  }
+
   setLastUsedFolder(folderId: string) {
     getConversationsStore().setLastUsedFolderId(folderId)
   }
@@ -1014,7 +1053,7 @@ export class ConversationManager {
 
   deleteTag(tagId: string) {
     getTagsStore().deleteTag(tagId)
-    // 从所有会话中移除该标签引用
+    // 从所有对话中移除该标签引用
     getConversationsStore().removeTagFromAll(tagId)
   }
 
@@ -1022,10 +1061,25 @@ export class ConversationManager {
     getConversationsStore().setConversationTags(this.getConversationStorageKey(convId), tagIds)
   }
 
+  setConversationsTags(updates: Record<string, string[]>) {
+    const mapped: Record<string, string[]> = {}
+    for (const [convId, tagIds] of Object.entries(updates)) {
+      mapped[this.getConversationStorageKey(convId)] = tagIds
+    }
+    getConversationsStore().setTagsFor(mapped)
+  }
+
   // ================= Conversation Operations Extended =================
 
   togglePin(convId: string): boolean {
     return getConversationsStore().togglePin(this.getConversationStorageKey(convId))
+  }
+
+  setConversationsPinned(ids: string[], pinned: boolean) {
+    getConversationsStore().setPinnedFor(
+      ids.map((id) => this.getConversationStorageKey(id)),
+      pinned,
+    )
   }
 
   renameConversation(convId: string, newTitle: string) {
@@ -1049,7 +1103,7 @@ export class ConversationManager {
   }
 
   /**
-   * 获取当前站点/团队的所有会话
+   * 获取当前站点/团队的所有对话
    */
   getAllConversations(): Record<string, Conversation> {
     const currentCid = this.siteAdapter.getCurrentCid?.() || null
@@ -1064,7 +1118,7 @@ export class ConversationManager {
   }
 
   /**
-   * 从侧边栏同步会话（增量）
+   * 从侧边栏同步对话（增量）
    */
   syncConversations(
     targetFolderId: string | null = null,
@@ -1094,7 +1148,7 @@ export class ConversationManager {
       const existing = conversations[item.id]
 
       if (existing) {
-        // 更新已有会话
+        // 更新已有对话
         const updates: Partial<Conversation> = {}
         let needsUpdate = false
 
@@ -1134,7 +1188,7 @@ export class ConversationManager {
           updatedCount++
         }
       } else {
-        // 新会话
+        // 新对话
         upserts.push({
           id: item.id,
           siteId: this.siteAdapter.getSiteId(),
@@ -1153,9 +1207,11 @@ export class ConversationManager {
 
     if (options.syncDeleted) {
       const currentCid = this.siteAdapter.getCurrentCid?.() || null
+      const deletionScope = this.siteAdapter.getConversationDeletionScope?.() ?? null
 
       Object.entries(conversations).forEach(([id, conv]) => {
         if (!this.matchesCid(conv, currentCid)) return
+        if (deletionScope && !deletionScope(conv)) return
         if (sidebarIds.has(id)) return
 
         deleteIds.push(this.getConversationStorageKey(id))
@@ -1174,17 +1230,22 @@ export class ConversationManager {
   }
 
   /**
-   * 检查会话是否属于当前站点和团队
+   * 检查对话是否属于当前站点和团队
    */
   matchesCid(conv: Conversation, currentCid: string | null): boolean {
     if (!this.isCurrentSiteInstance(conv)) return false
-    if (!currentCid) return !conv.cid
-    if (!conv.cid) return true
-    return conv.cid === currentCid
+
+    // "personal" 在 ChatGPT 等站点中表示个人默认空间，与 null/undefined 语义等价
+    const normalizedCurrent = currentCid === "personal" ? null : currentCid
+    const normalizedConv = conv.cid === "personal" ? null : conv.cid || null
+
+    if (!normalizedCurrent) return !normalizedConv
+    if (!normalizedConv) return true
+    return normalizedConv === normalizedCurrent
   }
 
   /**
-   * 获取侧边栏会话顺序
+   * 获取侧边栏对话顺序
    */
   getSidebarConversationOrder(): string[] {
     const config = this.siteAdapter.getConversationObserverConfig?.()
@@ -1312,6 +1373,7 @@ export class ConversationManager {
         customModelName: settings.export?.customModelName,
         showIndex: settings.export?.exportShowIndex,
         customDivider: settings.export?.exportMarkdownDivider,
+        style: settings.export?.exportStyle,
       }),
     }
   }
@@ -1502,7 +1564,7 @@ export class ConversationManager {
       return existing || null
     }
 
-    // 导出时优先保留已同步到会话库中的原始标题，但本次导出要清理历史污染标题。
+    // 导出时优先保留已同步到对话库中的原始标题，但本次导出要清理历史污染标题。
     const title =
       this.sanitizeConversationTitleForUse(existing?.title, {
         dropLocalizedFallback: true,
@@ -1573,7 +1635,7 @@ export class ConversationManager {
       updatedAt: now,
     }
 
-    // 分享页与临时会话页（如 Claude 隐身会话）都不写入会话库，避免产生假记录
+    // 分享页与临时对话页（如 Claude 隐身对话）都不写入对话库，避免产生假记录
     if (this.siteAdapter.isSharePage() || this.siteAdapter.isEphemeralConversationPage()) {
       return fallbackConversation
     }
@@ -1630,53 +1692,43 @@ export class ConversationManager {
     }
 
     try {
-      notifyProgress("loading-history")
-
-      // 加载完整历史（滚动到顶部）。
-      // 收敛条件：scrollHeight 连续 3 轮不变；
-      // 旧逻辑只看高度，慢网络下单页加载超过 1.5s 会被误判为"没有更多历史"而提前停止，
-      // 导致长会话开头若干段从未进入 DOM（导出缺段的来源之一）。
+      // 接口导出优先的站点（traits.apiFirstExport，如新版 ChatGPT 会话页）不依赖
+      // DOM 历史，跳过滚顶预加载；接口路径失败回退 DOM 采集时，补做预加载再重试一次
+      const skipHistoryPreload = this.siteAdapter.canSkipExportHistoryPreload()
       let historyPossiblyIncomplete = false
-      if (scrollContainer) {
-        const deadline = Date.now() + HISTORY_LOAD_TIME_BUDGET_MS
-        let prevHeight = -1
-        let stableRounds = 0
-
-        while (Date.now() < deadline) {
-          scrollContainer.scrollTop = getTopScrollPosition(scrollContainer)
-          await new Promise((resolve) => setTimeout(resolve, 500))
-
-          const currentHeight = scrollContainer.scrollHeight
-          if (currentHeight === prevHeight) {
-            stableRounds++
-            if (stableRounds >= 3) break
-          } else {
-            stableRounds = 0
-            prevHeight = currentHeight
-          }
+      if (skipHistoryPreload) {
+        // 标记 DOM 历史未预加载：适配器的 DOM 回退路径应返回 null 触发下方补载重试
+        exportContext.domHistoryPreloaded = false
+      } else {
+        notifyProgress("loading-history")
+        if (scrollContainer) {
+          historyPossiblyIncomplete =
+            await this.preloadConversationHistoryForExport(scrollContainer)
         }
-
-        if (Date.now() >= deadline) {
-          historyPossiblyIncomplete = true
-          console.warn(
-            "[ConversationManager] History load hit time budget; export may miss early messages",
-          )
-        } else if (this.siteAdapter.hasUnloadedConversationHistory()) {
-          // 高度收敛但历史起点未加载完（如 ChatGPT 起始 turn-N > 1）：
-          // 分页请求可能在飞但高度暂未变化，继续滚顶做有界补载
-          if (!(await this.waitForHistoryCatchUp(scrollContainer))) {
-            historyPossiblyIncomplete = true
-            console.warn(
-              "[ConversationManager] History start still incomplete after catch-up budget",
-            )
-          }
-        }
+        exportContext.domHistoryPreloaded = true
       }
 
       // 导出前钩子（站点可选实现）
       notifyProgress("preparing")
       exportLifecycleEnabled = true
       exportLifecycleState = await this.siteAdapter.prepareConversationExport(exportContext)
+
+      // 接口导出失败（返回 null）且此前跳过了预加载：补做历史预加载，
+      // 让适配器的 DOM 回退路径在完整历史上重试一次
+      if (
+        exportLifecycleState === null &&
+        skipHistoryPreload &&
+        exportContext.domHistoryPreloaded !== true
+      ) {
+        notifyProgress("loading-history")
+        if (scrollContainer) {
+          historyPossiblyIncomplete =
+            await this.preloadConversationHistoryForExport(scrollContainer)
+        }
+        exportContext.domHistoryPreloaded = true
+        notifyProgress("preparing")
+        exportLifecycleState = await this.siteAdapter.prepareConversationExport(exportContext)
+      }
 
       // 只有 ZIP 模式才收集附件资产；Markdown 模式保持单文件导出路径。
       notifyProgress("extracting")
@@ -1728,6 +1780,51 @@ export class ConversationManager {
 
       this.notifyExportProgress(null)
     }
+  }
+
+  /**
+   * 导出前的 DOM 历史预加载：滚动到顶部并等待加载收敛。
+   * 收敛条件：scrollHeight 连续 3 轮不变；
+   * 旧逻辑只看高度，慢网络下单页加载超过 1.5s 会被误判为"没有更多历史"而提前停止，
+   * 导致长对话开头若干段从未进入 DOM（导出缺段的来源之一）。
+   * 返回 true 表示历史可能不完整（加载触顶或补载后起点仍有缺口）。
+   */
+  private async preloadConversationHistoryForExport(
+    scrollContainer: HTMLElement,
+  ): Promise<boolean> {
+    const deadline = Date.now() + HISTORY_LOAD_TIME_BUDGET_MS
+    let prevHeight = -1
+    let stableRounds = 0
+
+    while (Date.now() < deadline) {
+      scrollContainer.scrollTop = getTopScrollPosition(scrollContainer)
+      await new Promise((resolve) => setTimeout(resolve, 500))
+
+      const currentHeight = scrollContainer.scrollHeight
+      if (currentHeight === prevHeight) {
+        stableRounds++
+        if (stableRounds >= 3) break
+      } else {
+        stableRounds = 0
+        prevHeight = currentHeight
+      }
+    }
+
+    if (Date.now() >= deadline) {
+      console.warn(
+        "[ConversationManager] History load hit time budget; export may miss early messages",
+      )
+      return true
+    }
+    if (this.siteAdapter.hasUnloadedConversationHistory()) {
+      // 高度收敛但历史起点未加载完（如 ChatGPT 起始 turn-N > 1）：
+      // 分页请求可能在飞但高度暂未变化，继续滚顶做有界补载
+      if (!(await this.waitForHistoryCatchUp(scrollContainer))) {
+        console.warn("[ConversationManager] History start still incomplete after catch-up budget")
+        return true
+      }
+    }
+    return false
   }
 
   /**
@@ -1885,7 +1982,7 @@ export class ConversationManager {
   }
 
   /**
-   * 导出会话
+   * 导出对话
    */
   async exportConversation(
     convId: string,
@@ -1909,6 +2006,7 @@ export class ConversationManager {
           customModelName: settings.export?.customModelName,
           showIndex: options?.showIndex ?? settings.export?.exportShowIndex,
           customDivider: options?.customDivider ?? settings.export?.exportMarkdownDivider,
+          style: options?.style ?? settings.export?.exportStyle,
         })
 
         let content: string

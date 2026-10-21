@@ -2,7 +2,7 @@
 
 ## 项目愿景
 
-Ophel 是一款跨平台浏览器扩展（同时支持油猴脚本），将 AI 对话转化为可阅读、可导航、可复用的知识内容。通过实时大纲、会话文件夹与 Prompt 词库，让 AI 对话告别无限滚动，成为可组织、可沉淀的工作流。
+Ophel 是一款跨平台浏览器扩展（同时支持油猴脚本），将 AI 对话转化为可阅读、可导航、可复用的知识内容。通过实时大纲、对话文件夹与 Prompt 词库，让 AI 对话告别无限滚动，成为可组织、可沉淀的工作流。
 
 支持站点（15 个）：Gemini、Gemini Enterprise、AI Studio、ChatGPT、Grok、Claude、DeepSeek、Doubao、Kimi、Qwen Studio（原 QwenAI，文件已重命名 qwen-studio.ts）、Qianwen、Yuanbao、Z.ai、ChatGLM、Ima。
 
@@ -129,7 +129,7 @@ graph TD
 
     CORE --> C_MOD["modules-init.ts (模块编排)"]
     CORE --> C_OUTLINE["outline-manager.ts"]
-    CORE --> C_CONV["conversation/ (会话管理)"]
+    CORE --> C_CONV["conversation/ (对话管理)"]
     CORE --> C_THEME["theme-manager.ts"]
     CORE --> C_COPY["copy-manager.ts"]
     CORE --> C_LAYOUT["layout-manager.ts"]
@@ -153,7 +153,7 @@ graph TD
 | `src/core/`       | 核心业务模块（多个管理器），由 `modules-init.ts` 统一编排     | `modules-init.ts`, `outline-manager.ts`, `theme-manager.ts`, `layout-manager.ts`, `conversation/`, `webdav-sync.ts`, `assistant-mermaid-renderer.ts`, `gemini-mystuff-bridge.ts`, `usage-counter-manager.ts`                         |
 | `src/components/` | React UI 层，运行在 Shadow DOM 中                             | `App.tsx`, `MainPanel.tsx`, `OutlineTab.tsx`, `ConversationsTab.tsx`, `SettingsModal.tsx`, `global-search/`                                                                                                                          |
 | `src/stores/`     | Zustand 状态管理，persist 到 chrome.storage.local             | `settings-store.ts`, `conversations-store.ts`, `prompts-store.ts`, `folders-store.ts`, `tags-store.ts`                                                                                                                               |
-| `src/contents/`   | Plasmo Content Script 入口                                    | `main.ts`（逻辑入口）, `ui-entry.tsx`（UI/Shadow DOM）, `monitor-entry.ts`（网络监控）, `aistudio-preload.ts`, `gemini-watermark-main.ts`, `iframe-scroll-main.ts`, `scroll-lock-main.ts`                                            |
+| `src/contents/`   | Plasmo Content Script 入口                                    | `main.ts`（逻辑入口）, `ui-entry.tsx`（UI/Shadow DOM）, `monitor-entry.ts`（网络监控）, `aistudio-preload.ts`, `gemini-watermark-main.ts`, `scroll-lock-main.ts`                                                                     |
 | `src/platform/`   | 平台抽象层（浏览器扩展 vs 油猴脚本）                          | `types.ts`, `index.ts`, `extension/`, `userscript/`                                                                                                                                                                                  |
 | `src/utils/`      | 工具函数                                                      | `i18n.ts`, `dom-toolkit.ts`, `exporter.ts`, `markdown.ts`, `themes/`, `scroll-helper.ts`                                                                                                                                             |
 | `src/constants/`  | 常量与默认配置                                                | `defaults.ts`（SITE_IDS）, `ui.ts`, `shortcuts.ts`, `tools-menu.ts`                                                                                                                                                                  |
@@ -241,11 +241,29 @@ import { useSettingsStore } from "~stores/settings-store"
 - `match()` / `getSiteId()` / `getName()` - 站点识别
 - `getTextareaSelectors()` / `insertPrompt()` - 输入框交互
 - `extractOutline()` - 大纲提取
-- `getConversationList()` / `navigateToConversation()` - 会话管理
+- `getConversationList()` / `navigateToConversation()` - 对话管理
 - `getExportConfig()` - 导出配置
 - `lockModel()` - 模型锁定（通用实现在基类中）
 
 支持的站点标识（`SITE_IDS`）：`gemini`, `gemini-enterprise`, `chatgpt`, `claude`, `grok`, `aistudio`, `deepseek`, `doubao`, `kimi`, `qwenai`（文件为 `qwen-studio.ts`）, `qianwen`, `yuanbao`, `zai`, `chatglm`, `ima`
+
+#### API 数据源大纲与导出（虚拟滚动站点）
+
+消息列表虚拟滚动的站点（DeepSeek 首发），大纲与导出可以直接请求站点历史消息接口，替代纯 DOM 扫描/滚动收集。站无关机制统一在 `src/utils/outline-api-source.ts`（分支回溯、缓存过期判定、拉取闸门、分支序号归并）与 `src/utils/outline-heading-cache.ts`（markdown 标题解析、文本清洗、哈希）；站点文件（如 `src/adapters/deepseek-history-outline.ts` / `deepseek-history-export.ts`）只负责把接口 payload 解析为通用数据形态。
+
+新站点接入清单：
+
+1. 解析器返回 extends `ApiOutlineSourceData` 的数据（`sessionId` / `branchMessageIds` / `maxMessageId` 为契约字段）；导出解析的完整性要求必须严于大纲（无法证明历史完整时返回 null，回退滚动收集）。
+2. config `traits` 声明 `virtualOutlineFill: true`，并 bump 对应 `*_CONFIG_VERSION`；声明后跳转即时刷新与高亮重算经 `usesVirtualOutlineFill()` / `hasPositionlessOutlineNodes()` 门控，不影响其他站点。
+3. 拉取必须过 `shouldAttemptApiOutlineFetch` 闸门（单飞、生成中跳过、冷却、解析失败熔断），会话切换时重置冷却与熔断计数；数据更新后 `postMessage(EVENT_OUTLINE_DATA_UPDATED)` 请求大纲刷新。
+4. 大纲条目统一按 `mergeByBranchMessageOrder` 归并：挂载项以 DOM 为准，接口只补未挂载条目（DeepSeek 提问条目按「是否产出 DOM 条目」判定——纯附件提问行挂载但无文本可提取，仍需接口回填）；回填条目用 `navigationId` 携带定位信息（如 `{site}:api-h:{messageId}:...`），`resolveOutlineTarget` 优先按它精确定位。纯附件（如只发图片）的提问没有文本，条目文案回退用首个附件文件名，与站点原生 TOC 的标题口径一致。
+5. 接口主机与附件 CDN 加入 `package.json` `host_permissions`（油猴端 `connect: ["*"]` 无需改）；manifest 权限保持最小授权。
+
+Claude 接入的差异点（`src/adapters/claude-history-outline.ts`、`src/adapters/claude.ts`）：DOM 虚拟行没有消息 id、只有位置序号（`data-rs-index`），消息 id 为 uuid 字符串。解析器内部做 uuid 到数值的预映射后复用 `resolveActiveBranch`，全链路统一用「分支位置序号」作为 messageIndex（接口历史截断时按 aria-setsize 尾部对齐，无法对齐判解析失败）；过期判定在位置语义之外补充两个粘性强制重拉信号——生成结束（含重新生成）与同 id 标题文本漂移；回填直接写入站点已有的 `outlineItemCache`（id 体系与 DOM 扫描一致，下游归并/定位不变），不走 `mergeByBranchMessageOrder`；全量滚动回填保留为接口不可用时的兜底。纯附件（如只发图片）的提问 text 块为空，条目文案回退用首个附件 `file_name`（`files` 先于 `attachments`，与导出解析同一字段口径），DOM 扫描对这类行同样无条目，缓存回填天然覆盖。
+
+AI Studio 接入的差异点（`src/adapters/aistudio-history-outline.ts`、`src/adapters/aistudio.ts`，详见 `docs/developer/aistudio-api-outline-plan.md`）：接口是 Google 内部 RPC（ResolveDriveResource，`application/json+protobuf` 位置数组），历史为线性单链，无需分支回溯；SAPISIDHASH 校验绑定 Origin，请求必须经 main world 桥（`src/core/aistudio-rpc-bridge.ts` + `src/contents/aistudio-rpc-main.ts`，油猴端装进 `unsafeWindow`）代发，因此 RPC 本身不需要新增 host_permissions。序号空间用「带文本提问的 1-based 序号」，与时间线滚动条条目同构；过期判定的 mountedIds 直接取滚动条序号（滚动条始终列出全部提问），生成结束强制重拉。回填不走进出口归并，直接在滚动条分支按 `aistudio-api:q<queryIndex>:h<order>` id 补未挂载轮次的回答标题，跳转经滚动条 reveal 后按文本定位。认证与端点解析与删除链路共用 `src/utils/google-rpc-auth.ts`。导出走同一接口主动拉取全量对话（含思考链与附件）：附件是用户 Drive 文件（chunk 内只有文件 ID），真实文件名与字节经平台 `fetch` 通道（扩展 background / 油猴 GM_xhr）从 `drive.usercontent.google.com` 获取——浏览器页面上下文受 CORS 限制读不到 `Content-Disposition`。
+
+Grok 接入的差异点（`src/adapters/grok-history-outline.ts`、`src/adapters/grok.ts`）：数据分两段接口，`GET /rest/app-chat/conversations/{id}/response-node` 返回全量分支骨架（responseId/sender/parentResponseId，按创建顺序排列），`POST .../load-responses` 按 responseId 批量取正文（单批 20 条）；树签名（节点数 + 叶 responseId）未变时跳过正文拉取，生成结束强制重拉。cookie 认证即可，无需额外请求头。激活分支叶节点优先取 URL `rid`（须为无子节点的叶子），否则取骨架末尾节点。消息 id 是 uuid 字符串，全链路用「分支位置序号」作为 messageIndex（同 Claude），但 DOM 虚拟行直接携带 responseId（`data-plane-row="gateway:<uuid>"`、消息元素 `id="response-<uuid>"`），挂载行映射天然精确，无需 aria-setsize 对齐；未入库的新行统一映射为 `maxMessageId + 1` 触发过期重拉。DOM 大纲条目的 id 本身即 `response-<uuid>`，回填提问条目沿用同一 id，挂载切换时收藏不失效，无需 DeepSeek 的 occurrence 签名重算。跳转定位只有 probe+bisect 滚动挂载一条路径（Grok 无原生 TOC 兜底），失败回退基类文本搜索。阅读历史的行身份用 responseId 字符串（`AnchorData.rowKey` 已扩为 `number | string`），恢复时有界等待接口数据以取得分支位置后复用同一 probe 挂载。导出改走同一组接口（`src/adapters/grok-history-export.ts`）：完整性门槛严于大纲——骨架必须恰有一个根、分支每个 responseId 都必须取到正文，否则返回 null 回退 DOM 收集；正文剥离 `<grok:render>` 占位标签，生成图片从 `cardAttachmentsJson` 图片块按卡片去重取最终版本（相对 URL 经 `buildGrokAssetSource` 归一到 assets.grok.com），用户附件直接用 `fileAttachmentsMetadata`（与分享页接口同构，复用同一解析器）；思考步骤标题（steps）与工具过程不参与导出，与 DOM 导出等价。
 
 ### 核心模块 (`src/core/modules-init.ts`)
 
@@ -274,7 +292,7 @@ import { useSettingsStore } from "~stores/settings-store"
 使用 Zustand + persist 中间件，数据持久化到 `chrome.storage.local`：
 
 - **settings-store** - 全局设置（主题、功能开关、站点特定配置）
-- **conversations-store** - 会话元数据（标题、文件夹、标签、置顶）
+- **conversations-store** - 对话元数据（标题、文件夹、标签、置顶）
 - **prompts-store** - 提示词库
 - **folders-store** - 文件夹管理
 - **tags-store** - 标签管理
@@ -308,7 +326,7 @@ import { useSettingsStore } from "~stores/settings-store"
 | 数据     | `MSG_CLEAR_ALL_DATA`, `MSG_RESTORE_DATA`                                                                                                         | 数据清除/恢复                      |
 | Claude   | `MSG_SET_CLAUDE_SESSION_KEY`, `MSG_TEST_CLAUDE_TOKEN`, `MSG_GET_CLAUDE_SESSION_KEY`, `MSG_CHECK_CLAUDE_GENERATING`, `MSG_SWITCH_NEXT_CLAUDE_KEY` | Claude 账号管理                    |
 | 模型     | `MSG_GET_AISTUDIO_MODELS`                                                                                                                        | AI Studio 模型列表                 |
-| 会话     | `MSG_START_NEW_CONVERSATION`                                                                                                                     | 发起新会话                         |
+| 对话     | `MSG_START_NEW_CONVERSATION`                                                                                                                     | 发起新对话                         |
 | 事件     | `EVENT_MONITOR_INIT`                                                                                                                             | 网络监控初始化                     |
 
 ## 测试策略
@@ -330,7 +348,7 @@ import { useSettingsStore } from "~stores/settings-store"
 | -------------------------------- | ----- | ----------------------------------------------- |
 | `src/style.css`                  | 1,472 | 主样式（大纲面板、快捷按钮、tooltip 等核心 UI） |
 | `src/styles/settings.css`        | 2,081 | 设置页面（Options Page）样式                    |
-| `src/styles/conversations.css`   | 1,313 | 会话 Tab 样式（文件夹、标签、搜索、批量操作）   |
+| `src/styles/conversations.css`   | 1,313 | 对话 Tab 样式（文件夹、标签、搜索、批量操作）   |
 | `src/styles/queue-overlay.css`   | 395   | Prompt Queue 排队叠加层样式                     |
 | `src/styles/theme-variables.css` | 286   | CSS 变量定义文件（浅色/深色模式默认值）         |
 | `src/popup.css`                  | 395   | 浏览器扩展 Popup 页面样式                       |
@@ -466,7 +484,7 @@ feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert, deps, ux
 
 - 用户操作流程：`popup.tsx` -> 支持站点检测 -> Content Script 注入 -> `main.ts` 初始化适配器 -> `modules-init.ts` 初始化模块 -> `ui-entry.tsx` 挂载 Shadow DOM -> `App.tsx` 渲染面板
 - 设置同步流程：UI 操作 -> `useSettingsStore.updateNestedSetting()` -> Zustand persist -> `chrome.storage.local` -> `subscribeModuleUpdates()` 热更新模块
-- 会话管理流程：`ConversationObserverConfig` 观察 DOM -> `ConversationManager` 聚合数据 -> `conversations-store` 持久化
+- 对话管理流程：`ConversationObserverConfig` 观察 DOM -> `ConversationManager` 聚合数据 -> `conversations-store` 持久化
 - WebDAV 同步流程：`WebDAVSyncManager` -> `MSG_WEBDAV_REQUEST` -> Background SW 代理 -> WebDAV 服务器
 
 ## 变更记录 (Changelog)

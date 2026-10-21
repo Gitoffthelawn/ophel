@@ -19,8 +19,10 @@ import {
   TOOLS_MENU_ITEMS,
   getDefaultToolsMenuIds,
 } from "~constants"
+import { DEFAULT_SETTINGS } from "~constants/default-settings"
 import { useSettingsStore } from "~stores/settings-store"
 import { t } from "~utils/i18n"
+import { showToast } from "~utils/toast"
 
 import { PageTitle, SettingCard, SettingRow, TabGroup, ToggleRow } from "../components"
 
@@ -264,7 +266,7 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
     const fromIndex = draggedItem.index
     if (fromIndex === targetIndex) return
 
-    const newOrder = [...(settings.features?.order || [])]
+    const newOrder = [...(settings.features?.order || DEFAULT_SETTINGS.features.order)]
     const [moved] = newOrder.splice(fromIndex, 1)
     newOrder.splice(targetIndex, 0, moved)
     updateNestedSetting("features", "order", newOrder)
@@ -315,7 +317,7 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
 
       {/* ========== 面板 Tab ========== */}
       {activeTab === "panel" && (
-        <SettingCard title={t("panelSettings")}>
+        <SettingCard title={t("panelSettings")} settingId="panel-settings-card">
           {/* 面板模式 */}
           <div
             className={`settings-panel-mode-accordion ${isPanelModeAdvancedVisible ? "open" : ""}`}
@@ -696,70 +698,91 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
       )}
 
       {/* ========== 界面排版 Tab ========== */}
-      {activeTab === "tabOrder" && (
-        <SettingCard title={t("tabOrderSettings")} description={t("tabOrderDesc")}>
-          {settings.features?.order
-            ?.filter((id) => TAB_DEFINITIONS[id])
-            .map((tabId, index) => {
-              const def = TAB_DEFINITIONS[tabId]
-              const isEnabled =
-                tabId === "prompts"
-                  ? settings.features?.prompts?.enabled !== false
-                  : tabId === "outline"
-                    ? settings.features?.outline?.enabled !== false
-                    : tabId === "conversations"
-                      ? settings.features?.conversations?.enabled !== false
-                      : true
-              return (
-                <SortableItem
-                  key={tabId}
-                  iconNode={
-                    def.IconComponent ? (
-                      <def.IconComponent size={18} color="currentColor" />
-                    ) : (
-                      def.icon
-                    )
-                  }
-                  label={t(def.label)}
-                  index={index}
-                  total={settings.features?.order.filter((id) => TAB_DEFINITIONS[id]).length}
-                  enabled={isEnabled}
-                  showToggle
-                  onToggle={() => {
-                    if (tabId === "prompts")
-                      updateDeepSetting("features", "prompts", "enabled", !isEnabled)
-                    else if (tabId === "outline")
-                      updateDeepSetting("features", "outline", "enabled", !isEnabled)
-                    else if (tabId === "conversations")
-                      updateDeepSetting("features", "conversations", "enabled", !isEnabled)
-                  }}
-                  onDragStart={(e) => handleDragStart(e, "tab", index)}
-                  onDragOver={handleDragOver}
-                  onDragEnd={handleDragEnd}
-                  onDrop={handleTabDrop}
-                  isDragging={draggedItem?.type === "tab" && draggedItem?.index === index}
-                />
-              )
-            })}
-        </SettingCard>
-      )}
+      {activeTab === "tabOrder" &&
+        (() => {
+          const orderList = (settings.features?.order || DEFAULT_SETTINGS.features.order).filter(
+            (id) => TAB_DEFINITIONS[id],
+          )
+          const isTabEnabled = (id: string) => {
+            if (id === "prompts") return settings.features?.prompts?.enabled !== false
+            if (id === "outline") return settings.features?.outline?.enabled !== false
+            if (id === "conversations") return settings.features?.conversations?.enabled !== false
+            return false
+          }
+          const enabledTabsCount = orderList.filter((id) => isTabEnabled(id)).length
+
+          return (
+            <SettingCard
+              title={t("tabOrderSettings")}
+              description={t("tabOrderDesc")}
+              settingId="tab-order-card">
+              {orderList.map((tabId, index) => {
+                const def = TAB_DEFINITIONS[tabId]
+                const isEnabled = isTabEnabled(tabId)
+                const isOnlyEnabled = isEnabled && enabledTabsCount <= 1
+
+                return (
+                  <SortableItem
+                    key={tabId}
+                    iconNode={
+                      def.IconComponent ? (
+                        <def.IconComponent size={18} color="currentColor" />
+                      ) : (
+                        def.icon
+                      )
+                    }
+                    label={t(def.label)}
+                    index={index}
+                    total={orderList.length}
+                    enabled={isEnabled}
+                    showToggle
+                    onToggle={() => {
+                      if (isOnlyEnabled) {
+                        showToast(t("tabOrderAtLeastOne"))
+                        return
+                      }
+                      if (tabId === "prompts")
+                        updateDeepSetting("features", "prompts", "enabled", !isEnabled)
+                      else if (tabId === "outline")
+                        updateDeepSetting("features", "outline", "enabled", !isEnabled)
+                      else if (tabId === "conversations")
+                        updateDeepSetting("features", "conversations", "enabled", !isEnabled)
+                    }}
+                    onDragStart={(e) => handleDragStart(e, "tab", index)}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDrop={handleTabDrop}
+                    isDragging={draggedItem?.type === "tab" && draggedItem?.index === index}
+                  />
+                )
+              })}
+            </SettingCard>
+          )
+        })()}
 
       {/* ========== 快捷按钮 Tab ========== */}
       {activeTab === "shortcuts" && (
         <>
           <SettingCard
             title={t("quickButtonsBehaviorTitle")}
-            description={t("quickButtonsBehaviorDesc")}>
+            description={t("quickButtonsBehaviorDesc")}
+            settingId="quick-buttons-card">
             <ToggleRow
               label={t("quickButtonsHideWhenPanelOpenLabel")}
               description={t("quickButtonsHideWhenPanelOpenDesc")}
               settingId="quick-buttons-hide-when-panel-open"
-              checked={settings.quickButtons?.hideWhenPanelOpen ?? false}
+              checked={
+                settings.quickButtons?.hideWhenPanelOpen ??
+                DEFAULT_SETTINGS.quickButtons.hideWhenPanelOpen
+              }
               onChange={() =>
                 updateNestedSetting(
                   "quickButtons",
                   "hideWhenPanelOpen",
-                  !(settings.quickButtons?.hideWhenPanelOpen ?? false),
+                  !(
+                    settings.quickButtons?.hideWhenPanelOpen ??
+                    DEFAULT_SETTINGS.quickButtons.hideWhenPanelOpen
+                  ),
                 )
               }
             />
@@ -812,7 +835,8 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
           </SettingCard>
           <SettingCard
             title={t("collapsedButtonsOrderTitle")}
-            description={t("collapsedButtonsOrderDesc")}>
+            description={t("collapsedButtonsOrderDesc")}
+            settingId="collapsed-buttons-order-card">
             {settings.quickButtons?.collapsed?.map((btn, index) => {
               // 暂时隐藏"手动锚点"设置项，避免对用户造成困扰
               if (btn.id === "manualAnchor") return null
@@ -848,7 +872,10 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
 
       {/* ========== 工具箱菜单 Tab ========== */}
       {activeTab === "toolsMenu" && (
-        <SettingCard title={t("toolboxMenuTitle")} description={t("toolboxMenuDesc")}>
+        <SettingCard
+          title={t("toolboxMenuTitle")}
+          description={t("toolboxMenuDesc")}
+          settingId="toolbox-menu-card">
           {TOOLS_MENU_ITEMS.filter((item) => item.id !== TOOLS_MENU_IDS.SETTINGS).map((item) => {
             const enabledIds = settings.quickButtons?.toolsMenu ?? getDefaultToolsMenuIds()
             const isEnabled = enabledIds.includes(item.id)

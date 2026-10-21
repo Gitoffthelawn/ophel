@@ -1,5 +1,6 @@
 import { MSG_PROXY_FETCH, sendToBackground } from "~utils/messaging"
 import { t } from "~utils/i18n"
+import { showToast } from "~utils/toast"
 import { processBananaWatermarkImageData } from "~core/watermark/banana-engine"
 import {
   classifyGeminiAssetUrl,
@@ -72,6 +73,7 @@ export class WatermarkRemover {
   private skippedSourceCache = new Set<string>()
   private enabled = false
   private stopObserver: (() => void) | null = null
+  private processImagesTimer: ReturnType<typeof setTimeout> | null = null
   private mainWorldMessageListener: ((event: MessageEvent) => void) | null = null
   private actionButtonListener: ((event: MouseEvent) => void) | null = null
   private userscriptOriginalFetch: typeof fetch | null = null
@@ -129,6 +131,10 @@ export class WatermarkRemover {
     if (this.stopObserver) {
       this.stopObserver()
       this.stopObserver = null
+    }
+    if (this.processImagesTimer !== null) {
+      clearTimeout(this.processImagesTimer)
+      this.processImagesTimer = null
     }
   }
 
@@ -962,6 +968,7 @@ export class WatermarkRemover {
       )
 
       if (!processedDataUrl) {
+        showToast(t("watermarkFailed"))
         return
       }
 
@@ -975,7 +982,9 @@ export class WatermarkRemover {
         this.triggerDownloadFromDataUrl(processedDataUrl)
       }
     } catch {
-      return
+      // 原生下载/复制已被 stopImmediatePropagation 阻断，
+      // 失败必须显式提示，不能让用户误以为操作成功
+      showToast(t("watermarkFailed"))
     } finally {
       this.hideImageProcessingIndicator(loadingHost)
     }
@@ -1491,7 +1500,7 @@ export class WatermarkRemover {
           shouldCheck = true
         }
       }
-      if (shouldCheck) this.processExistingImages()
+      if (shouldCheck) this.scheduleProcessExistingImages()
     })
     observer.observe(document.body, {
       childList: true,
@@ -1500,5 +1509,17 @@ export class WatermarkRemover {
       attributeFilter: ["src", "srcset"],
     })
     this.stopObserver = () => observer.disconnect()
+  }
+
+  /**
+   * 防抖调度图片扫描：流式输出期间 mutation 批次高频触发，
+   * 直接每次全量 querySelectorAll("img") 会造成持续主线程压力
+   */
+  private scheduleProcessExistingImages() {
+    if (this.processImagesTimer !== null) return
+    this.processImagesTimer = setTimeout(() => {
+      this.processImagesTimer = null
+      void this.processExistingImages()
+    }, 300)
   }
 }

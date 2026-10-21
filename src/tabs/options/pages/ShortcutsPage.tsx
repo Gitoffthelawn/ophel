@@ -176,12 +176,7 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({ siteId: _siteId }) => {
           !!normalizedExistingBinding.ctrl === !!normalizedBinding.ctrl &&
           !!normalizedExistingBinding.shift === !!normalizedBinding.shift
         ) {
-          const conflictParts = [
-            t("shortcutConflictWith"),
-            `"${t(meta.labelKey)}"`,
-            t("shortcutConflict"),
-          ].filter(Boolean)
-          return conflictParts.join(" ")
+          return t("shortcutConflict", { name: t(meta.labelKey) })
         }
       }
       return undefined
@@ -254,7 +249,7 @@ const ShortcutsPage: React.FC<ShortcutsPageProps> = ({ siteId: _siteId }) => {
       <PageTitle title={t("navShortcuts")} Icon={KeyboardIcon} />
       <p className="settings-page-desc">{t("shortcutsPageDesc")}</p>
 
-      <SettingCard title={t("shortcutsGlobalSettings")}>
+      <SettingCard title={t("shortcutsGlobalSettings")} settingId="shortcuts-global-card">
         <ToggleRow
           label={t("enableShortcuts")}
           description={t("enableShortcutsDesc")}

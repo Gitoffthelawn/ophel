@@ -115,6 +115,8 @@ import {
 } from "./global-search/syntax"
 import { useTagsStore } from "~stores/tags-store"
 import {
+  ABOUT_SPONSOR_SETTING_ID,
+  NAV_IDS,
   TAB_IDS,
   resolveSettingRoute,
   searchSettingsItems,
@@ -150,7 +152,8 @@ interface PointerPosition {
 
 const LAUNCHER_PEEK_DWELL_MS = 300
 const LAUNCHER_PEEK_HIDE_DELAY_MS = 250
-const EDGE_HOVER_ZONE_DWELL_MS = 150
+// 悬停边缘把手/触发区后的停留时间：过滤快速划过、屏幕边缘误触与跨屏滑过
+const EDGE_TRIGGER_DWELL_MS = 300
 
 const EXPORT_STAGE_TEXT_KEYS: Record<ConversationExportStage, string> = {
   "loading-history": "exportOverlayLoadingHistory",
@@ -358,11 +361,25 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
 
   const resolveSettingSearchTitle = useCallback(
     (item: SettingsSearchItem): string => {
+      if (item.settingId.startsWith("page-")) {
+        const route = resolveSettingRoute(item.settingId)
+        if (route) {
+          return getPageLabel(route.page)
+        }
+      }
+
+      if (item.settingId.startsWith("subtab-")) {
+        const route = resolveSettingRoute(item.settingId)
+        if (route?.subTab) {
+          return getSubTabLabel(route.subTab)
+        }
+      }
+
       const titleKey = SETTING_SEARCH_TITLE_KEY_MAP[item.settingId]
       if (titleKey) {
         return getLocalizedText({
           key: titleKey,
-          fallback: toSearchTitleFallback(item.settingId),
+          fallback: item.title || toSearchTitleFallback(item.settingId),
         })
       }
 
@@ -392,19 +409,32 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
         }
       }
 
-      return toSearchTitleFallback(item.settingId)
+      return item.title || toSearchTitleFallback(item.settingId)
     },
-    [getLocalizedText],
+    [getLocalizedText, getPageLabel, getSubTabLabel],
   )
 
   const getSettingsBreadcrumb = useCallback(
     (settingId: string): string => {
+      const settingsRootLabel = getLocalizedText({
+        key: "globalSearchCategorySettings",
+        fallback: "Settings",
+      })
+
+      if (settingId.startsWith("page-")) {
+        return settingsRootLabel
+      }
+
       const route = resolveSettingRoute(settingId)
       if (!route) {
-        return getLocalizedText({ key: "globalSearchCategorySettings", fallback: "Settings" })
+        return settingsRootLabel
       }
 
       const pageLabel = getPageLabel(route.page)
+      if (settingId.startsWith("subtab-")) {
+        return `${settingsRootLabel} / ${pageLabel}`
+      }
+
       if (!route.subTab) {
         return pageLabel
       }
@@ -475,6 +505,11 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     )
     // eslint-disable-next-line react-hooks/exhaustive-deps -- 只在 adapter 变化时重新创建
   }, [adapter, updateDeepSetting])
+
+  // 面板卸载或适配器切换时销毁旧实例，释放 window 监听、store 订阅和计时器
+  useEffect(() => {
+    return () => outlineManager?.destroy()
+  }, [outlineManager])
 
   // 面板展开状态：true 表示面板没有收进快捷按钮组，和悬浮/吸附模式无关
   const [isPanelExpanded, setIsPanelExpandedState] = useState(false)
@@ -639,6 +674,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   const [hoverWidthReleaseToken, setHoverWidthReleaseToken] = useState(0)
   const [isReleaseNotesOpen, setIsReleaseNotesOpen] = useState(false)
   const [hasUnseenReleaseNotes, setHasUnseenReleaseNotes] = useState(false)
+  // 本进程内已标记已读的版本：防止关闭弹窗时 effect 重读存储的竞态把红点复活
+  const markedSeenVersionRef = useRef<string | null>(null)
   const [showReleaseNotesToast, setShowReleaseNotesToast] = useState(false)
   const [showExtensionUpdateNotice, setShowExtensionUpdateNotice] = useState(
     () => typeof window !== "undefined" && Boolean(window.__OPHEL_EXTENSION_UPDATE_AVAILABLE__),
@@ -730,7 +767,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     ? getFullChangelogUrl(releaseNotesLanguage)
     : "https://ophel.app/docs/changelog"
 
-  // 红点悬停 popover 与更新 toast 共用的标题和首条要点预览
+  // 更新 toast 的标题和首条要点预览
   const releaseNotesTitleText = canShowCurrentReleaseNotes
     ? formatLocalizedText(
         { key: "releaseNotesTitle", fallback: `Ophel Atlas v{version}` },
@@ -753,6 +790,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   }, [releaseNotesMarkdown])
 
   const markCurrentReleaseNotesSeen = useCallback(() => {
+    markedSeenVersionRef.current = APP_VERSION
     setHasUnseenReleaseNotes(false)
     void markReleaseNotesSeen(APP_VERSION).catch((error) => {
       console.warn("[Ophel] Failed to save release notes state:", error)
@@ -763,13 +801,14 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     if (!canShowCurrentReleaseNotes || !releaseNotesMarkdown.trim()) return
     // 无论从哪个入口打开更新日志，都同时收起 toast，避免浮层叠在 modal 之上
     setShowReleaseNotesToast(false)
+    // 打开即视为已读：用户已经看到内容，红点随之消失
+    markCurrentReleaseNotesSeen()
     setIsReleaseNotesOpen(true)
-  }, [canShowCurrentReleaseNotes, releaseNotesMarkdown])
+  }, [canShowCurrentReleaseNotes, markCurrentReleaseNotesSeen, releaseNotesMarkdown])
 
   const closeReleaseNotes = useCallback(() => {
     setIsReleaseNotesOpen(false)
-    markCurrentReleaseNotesSeen()
-  }, [markCurrentReleaseNotesSeen])
+  }, [])
 
   const openFullChangelog = useCallback(() => {
     platform.openTab(fullChangelogUrl)
@@ -818,8 +857,6 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       !releaseNotesMarkdown.trim() ||
       !isSettingsHydrated ||
       !settings?.hasAgreedToTerms ||
-      // 与右下角扩展更新横幅错开，避免两个浮层同位置重叠
-      showExtensionUpdateNotice ||
       // 更新日志已打开时不再弹 toast；关闭后已读标记会让本 effect 不再调度
       isReleaseNotesOpen
     ) {
@@ -832,12 +869,20 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     void getReleaseNotesState()
       .then((state) => {
         if (cancelled) return
-        const unseen = state.lastSeenVersion !== APP_VERSION
+        const unseen =
+          markedSeenVersionRef.current !== APP_VERSION && state.lastSeenVersion !== APP_VERSION
         setHasUnseenReleaseNotes(unseen)
 
         // 更新提醒 toast 每个版本最多一次，且只在升级场景（有历史版本记录）触发，
-        // 首次安装走红点即可，避免和免责流程叠加打扰
-        if (unseen && state.lastSeenVersion && state.lastToastVersion !== APP_VERSION) {
+        // 首次安装走红点即可，避免和免责流程叠加打扰；
+        // 与右下角扩展更新横幅错开，避免两个浮层同位置重叠（红点不受横幅影响，
+        // 横幅关闭后本 effect 重跑时会再走到这里补弹 toast）
+        if (
+          unseen &&
+          state.lastSeenVersion &&
+          state.lastToastVersion !== APP_VERSION &&
+          !showExtensionUpdateNotice
+        ) {
           toastDelayTimer = setTimeout(() => {
             if (!cancelled) setShowReleaseNotesToast(true)
           }, 1600)
@@ -939,7 +984,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
   }, [])
 
-  const handleEdgeHoverZoneMouseEnter = useCallback(() => {
+  // 吸附收起状态下的统一展开入口：悬停需停留 EDGE_TRIGGER_DWELL_MS 才弹出面板
+  const scheduleEdgeTriggerDwell = useCallback(() => {
     clearEdgeHoverZoneDwellTimer()
 
     if (!edgeSnapState || settingsRef.current?.panel?.panelMode !== "edge-snap") {
@@ -949,7 +995,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     edgeHoverZoneDwellTimerRef.current = setTimeout(() => {
       edgeHoverZoneDwellTimerRef.current = null
       handlePanelMouseEnter()
-    }, EDGE_HOVER_ZONE_DWELL_MS)
+    }, EDGE_TRIGGER_DWELL_MS)
   }, [clearEdgeHoverZoneDwellTimer, edgeSnapState, handlePanelMouseEnter])
 
   const handleEdgeHoverZoneMouseLeave = useCallback(() => {
@@ -1139,13 +1185,33 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
         return
       }
 
+      // 吸附收起状态下悬停把手需停留片刻再展开，避免指针路过边缘时误触
+      if (
+        edgeSnapState &&
+        settingsRef.current?.panel?.panelMode === "edge-snap" &&
+        !isEdgePeeking
+      ) {
+        scheduleEdgeTriggerDwell()
+        return
+      }
+
       handlePanelMouseEnter()
     },
-    [clearLauncherPeekDwellTimer, clearLauncherPeekHideTimer, handlePanelMouseEnter],
+    [
+      clearLauncherPeekDwellTimer,
+      clearLauncherPeekHideTimer,
+      edgeSnapState,
+      handlePanelMouseEnter,
+      isEdgePeeking,
+      scheduleEdgeTriggerDwell,
+    ],
   )
 
   const handleMainPanelMouseLeave = useCallback(
     (_event: React.MouseEvent<HTMLDivElement>) => {
+      // 取消未完成的悬停展开，避免指针已离开但面板延迟弹出
+      clearEdgeHoverZoneDwellTimer()
+
       if (isLauncherPeekingRef.current) {
         scheduleLauncherPeekHide()
         return
@@ -1153,7 +1219,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
 
       handlePanelMouseLeave()
     },
-    [handlePanelMouseLeave, scheduleLauncherPeekHide],
+    [clearEdgeHoverZoneDwellTimer, handlePanelMouseLeave, scheduleLauncherPeekHide],
   )
 
   useEffect(() => {
@@ -1847,6 +1913,20 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     showEdgePeek,
   ])
 
+  // 更新日志页脚的赞助入口：中文下打开设置“关于”页并定位到赞助支持区块
+  const openSponsorFromReleaseNotes = useCallback(() => {
+    closeReleaseNotes()
+    openSettingsModal()
+    // 延迟发送导航事件，确保 Modal 已挂载
+    setTimeout(() => {
+      window.dispatchEvent(
+        new CustomEvent("ophel:navigateSettingsPage", {
+          detail: { page: NAV_IDS.ABOUT, settingId: ABOUT_SPONSOR_SETTING_ID },
+        }),
+      )
+    }, 50)
+  }, [closeReleaseNotes, openSettingsModal])
+
   const navigateToSearchResult = useCallback(
     async (item: GlobalSearchResultItem) => {
       const navigationRequestId = ++outlineSearchNavigationRequestIdRef.current
@@ -2017,8 +2097,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       }
 
       if (item.category === "conversations" && item.conversationId) {
-        // 站外会话没有当前站点的适配器上下文，直接新标签打开会话链接
-        if (item.offsiteSite) {
+        // 站外对话没有当前站点的适配器上下文，直接新标签打开对话链接
+        if (item.sourceSite?.isOffsite) {
           if (item.conversationUrl) {
             platform.openTab(item.conversationUrl)
           } else {
@@ -2128,6 +2208,18 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       window.removeEventListener("ophel:openSettingsSearch", handleOpenSearchEvent)
     }
   }, [openGlobalSettingsSearch])
+
+  // 空态横幅等入口请求打开更新日志
+  useEffect(() => {
+    const handleOpenReleaseNotesEvent = () => {
+      openReleaseNotes()
+    }
+
+    window.addEventListener("ophel:openReleaseNotes", handleOpenReleaseNotesEvent)
+    return () => {
+      window.removeEventListener("ophel:openReleaseNotes", handleOpenReleaseNotesEvent)
+    }
+  }, [openReleaseNotes])
 
   useEffect(() => {
     if (!isGlobalSettingsSearchOpen || !showGlobalSearchSyntaxHelp) {
@@ -2322,8 +2414,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   // 从 window 获取 main.ts 创建的全局 ThemeManager 实例
   // userscript 场景下 App 可能先于核心模块渲染，这里统一复用全局单例
   const themeManager = useMemo(() => {
-    const currentAdapter = getAdapter()
-    const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
+    // 使用 props 传入的生效适配器：全局 getAdapter() 会绕过内置站点停用与 SitePack 接管
+    const currentSiteInstanceKey = adapter?.getSiteInstanceKey() || "_default"
     const fallbackTheme = settings ? getSiteTheme(settings, currentSiteInstanceKey) : undefined
 
     return ensureGlobalThemeManager({
@@ -2360,9 +2452,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       const currentSettings = settingsRef.current
       const sites = currentSettings?.theme?.sites || {}
 
-      // 获取当前站点 ID
-      const currentAdapter = getAdapter()
-      const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
+      // 获取当前站点 ID（使用 props 传入的生效适配器）
+      const currentSiteInstanceKey = adapter?.getSiteInstanceKey() || "_default"
 
       // 确保站点配置有完整的默认值，但优先使用已有配置
       const existingSite = currentSettings
@@ -2395,7 +2486,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     return () => {
       themeManager.setOnModeChange(undefined)
     }
-  }, [themeManager, setSettings, isSettingsHydrated]) // 移除 settings?.theme 依赖，通过 ref 访问最新值
+  }, [themeManager, setSettings, isSettingsHydrated, adapter]) // 通过 ref 访问最新 settings 避免重新挂载回调
 
   const themeSites = settings?.theme?.sites
   const syncUnpin = settings?.features?.conversations?.syncUnpin
@@ -2423,9 +2514,8 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   useEffect(() => {
     if (!isSettingsHydrated) return // 等待 hydration 完成
 
-    // 使用当前站点的配置而非 _default
-    const currentAdapter = getAdapter()
-    const currentSiteInstanceKey = currentAdapter?.getSiteInstanceKey() || "_default"
+    // 使用当前站点（生效适配器）的配置而非 _default
+    const currentSiteInstanceKey = adapter?.getSiteInstanceKey() || "_default"
     const siteTheme = themeSites?.[currentSiteInstanceKey] || themeSites?._default
     const lightId = siteTheme?.lightStyleId
     const darkId = siteTheme?.darkStyleId
@@ -2433,7 +2523,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     if (lightId && darkId) {
       themeManager.setPresets(lightId, darkId)
     }
-  }, [themeSites, themeManager, isSettingsHydrated])
+  }, [themeSites, themeManager, isSettingsHydrated, adapter])
 
   // 监听自定义样式变化，同步到 ThemeManager
   useEffect(() => {
@@ -2463,8 +2553,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       return
     }
 
-    // 不再调用 applyModePreference，由 main.ts 负责初始应用
-    // 这里只启动监听器，监听页面主题变化（如浏览器/站点自动切换）
+    // 监听页面主题变化（如浏览器/站点自动切换）
     themeManager.startThemeMonitoring()
 
     return () => {
@@ -2483,7 +2572,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
     if (outlineManager) {
       outlineManager.refresh()
-      // SPA 路由变化：立刻让大纲面板清掉上一个会话的内容、并安排几次错峰 refresh，
+      // SPA 路由变化：立刻让大纲面板清掉上一个对话的内容、并安排几次错峰 refresh，
       // 避免切换到新对话后大纲面板仍在显示旧对话条目。modules-init.ts 会在
       // popstate / pushState / replaceState 时 dispatch "gh-url-change"。
       const onUrlChange = () => outlineManager.handleUrlChange()
@@ -2607,8 +2696,6 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
       },
     })
 
-    // 简单的提示，实际文案建议放在 useShortcuts或统一管理
-    // 这里暂时使用硬编码中文，后续可优化
     showToast(newState ? t("preventAutoScrollEnabled") : t("preventAutoScrollDisabled"))
   }, [setSettings])
 
@@ -2658,7 +2745,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     [conversationManager, adapter],
   )
 
-  // 会话列表菜单通过事件请求打开导出弹窗（或按设置直出），与工具箱按钮共用同一入口逻辑
+  // 对话列表菜单通过事件请求打开导出弹窗（或按设置直出），与工具箱按钮共用同一入口逻辑
   useEffect(() => {
     const handleOpenExportDialog = () => {
       void handleFloatingToolbarExport()
@@ -2733,34 +2820,6 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
     showToast(`${t("cleared")} (${cleared})`)
   }, [outlineManager])
-
-  // 复制为 Markdown 处理器
-  const handleCopyMarkdown = useCallback(async () => {
-    if (!conversationManager || !adapter) return
-    const sessionId = adapter.getSessionId()
-    if (!sessionId) {
-      showToast(t("exportNeedOpenFirst"))
-      return
-    }
-    const success = await conversationManager.exportConversation(sessionId, "clipboard")
-    if (!success) {
-      showToast(t("exportFailed"))
-    }
-  }, [conversationManager, adapter])
-
-  // 工具箱直接导出 HTML 处理器
-  const handleFloatingToolbarHTMLExport = useCallback(async () => {
-    if (!conversationManager || !adapter) return
-    const sessionId = adapter.getSessionId()
-    if (!sessionId) {
-      showToast(t("exportNeedOpenFirst"))
-      return
-    }
-    const success = await conversationManager.exportConversation(sessionId, "html")
-    if (!success) {
-      showToast(t("exportFailed"))
-    }
-  }, [conversationManager, adapter])
 
   // 模型锁定切换处理器 (按站点)
   const handleModelLockToggle = useCallback(() => {
@@ -3135,7 +3194,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
   }, [adapter, selectedPrompt])
 
-  // 切换会话时自动清空选中的提示词悬浮条及输入框
+  // 切换对话时自动清空选中的提示词悬浮条及输入框
   useEffect(() => {
     if (!selectedPrompt || !adapter) return
 
@@ -3285,7 +3344,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
         <div
           aria-hidden="true"
           className={`gh-edge-hover-zone gh-interactive ${edgeSnapState}`}
-          onMouseEnter={handleEdgeHoverZoneMouseEnter}
+          onMouseEnter={scheduleEdgeTriggerDwell}
           onMouseLeave={handleEdgeHoverZoneMouseLeave}
         />
       )}
@@ -3326,13 +3385,12 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
           hasUnseenReleaseNotes
         }
         onOpenReleaseNotes={canShowCurrentReleaseNotes ? openReleaseNotes : undefined}
-        releaseNotesTitleText={releaseNotesTitleText}
-        releaseNotesPreview={releaseNotesPreview}
         onMouseEnter={handleMainPanelMouseEnter}
         onMouseLeave={handleMainPanelMouseLeave}
       />
 
       <QuickButtons
+        adapter={adapter}
         isPanelExpanded={isPanelExpanded}
         hasUnseenReleaseNotes={
           canShowCurrentReleaseNotes &&
@@ -3369,9 +3427,6 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
           setIsFloatingToolbarClearOpen(true)
         }}
         onGlobalSearch={openGlobalSettingsSearch}
-        onCopyMarkdown={handleCopyMarkdown}
-        onExportHTML={handleFloatingToolbarHTMLExport}
-        onSegmentedExport={handleFloatingToolbarSegmentedExport}
         onModelLockToggle={handleModelLockToggle}
         isModelLocked={isModelLocked}
         onOpenSettings={openSettingsModal}
@@ -3402,6 +3457,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
           fullChangelogUrl={fullChangelogUrl}
           onClose={closeReleaseNotes}
           onOpenFullChangelog={openFullChangelog}
+          onOpenSponsor={openSponsorFromReleaseNotes}
         />
       ) : null}
       {segmentedExportDraft && (
@@ -3421,6 +3477,17 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
         onClose={() => setIsExportDialogOpen(false)}
         onExport={handleCustomExport}
         onSegmentedExport={handleFloatingToolbarSegmentedExport}
+        onOpenSettings={() => {
+          setIsExportDialogOpen(false)
+          openSettingsModal()
+          setTimeout(() => {
+            window.dispatchEvent(
+              new CustomEvent("ophel:navigateSettingsPage", {
+                detail: { settingId: "export-settings-card" },
+              }),
+            )
+          }, 50)
+        }}
       />
       <GlobalSearchOverlay
         isOpen={isGlobalSettingsSearchOpen}
@@ -3689,7 +3756,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
             await conversationManager.updateConversation(convId, { tagIds })
           }}
           onRefresh={() => {
-            // 强制刷新会话列表 ? conversationManager 会触发 onChange
+            // 强制刷新对话列表 - conversationManager 会触发 onChange
           }}
         />
       )}

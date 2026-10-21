@@ -1,4 +1,5 @@
 import type {
+  AutoHideInputConfig,
   ExportConfig,
   ModelSwitcherConfig,
   NetworkMonitorConfig,
@@ -39,10 +40,10 @@ export interface SitePackInputConfig {
   submitKey?: "Enter" | "Ctrl+Enter"
 }
 
-/** 会话列表字段映射，用受限原语替代站点自定义提取函数。 */
+/** 对话列表字段映射，用受限原语替代站点自定义提取函数。 */
 export interface SitePackConversationConfig {
   itemSelector: string
-  /** attr 缺省为 href；regex 的第一个捕获组作为会话 id。 */
+  /** attr 缺省为 href；regex 的第一个捕获组作为对话 id。 */
   idFrom: {
     attr?: string
     regex: string
@@ -62,7 +63,7 @@ export interface SitePackGeneratingConfig {
 }
 
 export interface SitePackSessionConfig {
-  /** 对 pathname 匹配，第一个捕获组作为会话 id。 */
+  /** 对 pathname 匹配，第一个捕获组作为对话 id。 */
   idFromPathRegex?: string
   newConversationPathPatterns?: string[]
   sharePathPrefix?: string
@@ -89,6 +90,48 @@ export interface SitePackDocumentOutlineConfig {
   labelI18n?: Record<string, string>
 }
 
+/**
+ * 站点结构/加载特征（静态声明），与功能能力（capabilities）区分：
+ * capabilities 决定功能是否可用，traits 描述页面渲染与加载方式，
+ * 驱动滚动、大纲、导出等通用行为。字段统一名词式命名；
+ * 未声明的字段由基类访问方法回落到保守缺省值。
+ *
+ * 布尔命名分层约定（新代码遵守，不要跨层混用前缀）：
+ * - 静态结构/加载特征：声明在 traits 字段（名词式），基类方法只作薄封装；
+ *   新增特征只加字段，不再新增 `xxx()` 布尔方法。
+ *   例外：倒序渲染沿用既有顶层字段 `outlineReverse`（同时驱动大纲与导出
+ *   的顺序反转），不在 traits 重复声明。
+ * - 静态功能开关：`supports*` 方法（如 supportsFormulaCopy）。
+ * - 运行时状态查询：`has*` / `is*` 方法（如 hasUnloadedConversationHistory）。
+ */
+export interface SiteTraits {
+  /** 正文渲染在 Shadow DOM 内，抽取前需等待 Shadow DOM 渲染。缺省 false。 */
+  shadowDOM?: boolean
+  /**
+   * 会话历史随向上滚动从服务端懒加载。缺省 true（保守）。
+   * 全量渲染或仅前端虚拟滚动的站点应声明 false：去顶部/阅读恢复可直接
+   * 滚动到位，跳过 HistoryLoader 的固定轮询等待。
+   */
+  historyLazyLoad?: boolean
+  /**
+   * 大纲需要轮询兜底刷新（虚拟化/懒挂载会话视图不可靠触发 DOM mutation 时声明）。
+   * 缺省 false。
+   */
+  periodicOutlineRefresh?: boolean
+  /**
+   * 会话视口虚拟滚动，大纲含未挂载、无缓存位置的回填条目（如 DeepSeek 历史
+   * 消息接口回填）。声明后大纲在程序化跳转后立即刷新并重算高亮；普通站点的
+   * 缓存回填条目（ChatGPT/Claude/豆包）不适用。缺省 false。
+   */
+  virtualOutlineFill?: boolean
+  /**
+   * 导出主路径走站点接口拿全量数据，不依赖 DOM 历史预加载（如 ChatGPT
+   * conversations 接口导出）。声明后导出跳过滚顶预加载；接口不可用回退
+   * DOM 采集时，由导出流程补做预加载再重试一次。缺省 false。
+   */
+  apiFirstExport?: boolean
+}
+
 /** SitePack 与内置配置共同使用的声明式配置面。 */
 export interface SitePackConfig {
   theme?: {
@@ -107,6 +150,8 @@ export interface SitePackConfig {
   export?: ExportConfig
   zenMode?: ZenModeConfig
   cleanMode?: ZenModeConfig
+  /** 输入框自动隐藏；声明即支持（显示设置入口），实际开关由用户设置控制，缺省不支持。 */
+  autoHideInput?: AutoHideInputConfig
   widthSelectors?: Omit<WidthSelectorConfig, "transformValue">[]
   /** 声明 panel-avoidance 能力时必填；驱动 Ophel 面板安全区避让布局。 */
   panelAvoidance?: SitePackPanelAvoidanceConfig
@@ -114,6 +159,8 @@ export interface SitePackConfig {
   documentOutline?: SitePackDocumentOutlineConfig
   mermaidSupport?: "native" | "fallback"
   quickQuote?: "enabled" | "native" | "disabled"
+  /** 站点结构/加载特征声明；见 SiteTraits。 */
+  traits?: SiteTraits
   /** 缺省 false；由声明式适配器显式选择是否联动宿主页主题。 */
   supportsHostThemeSync?: boolean
   /** 声明后启用 localStorage + html class 机制的宿主页主题联动。 */

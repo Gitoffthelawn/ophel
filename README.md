@@ -10,12 +10,12 @@
   <h3 style="margin-top: -2px;">✨ Turn Conversations into Knowledge, Not Just History ✨</h3>
   
   <p>
-    No more getting lost in endless scroll. Clarify context with real-time Outlines, Build your system with Conversation Folders, Refine experience with the Prompt Library, Let sparkling thoughts flow freely in order.
+    No more getting lost in endless scroll. Clarify context with real-time Outlines, Build your system with Chat Folders, Refine experience with the Prompt Library, Let sparkling thoughts flow freely in order.
   </p>
   
   <sub>👇 Demo: From "Infinite Scroll" to "Navigable AI Documents"</sub>
   
-  ![Ophel Demo](./docs/media/demo/outline.gif)
+  <img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
   
   <p>
     <strong><em>Making AI chat a truly organizeable workflow for the first time</em></strong><br/>
@@ -66,7 +66,6 @@
 </p>
 
 <p align="center">
-  <a href="#-demo">Demo</a> •
   <a href="#-core-features">Core Features</a> •
   <a href="#-quick-start">Quick Start</a> •
   <a href="#-support-ophel-atlas">Support Ophel Atlas</a> •
@@ -76,12 +75,6 @@
 <p align="center">
   🌐 <strong>English</strong> | <a href="./README_zh-CN.md">简体中文</a> | <a href="./docs/readmes/README_zh-TW.md">繁體中文</a> | <a href="./docs/readmes/README_ja.md">日本語</a> | <a href="./docs/readmes/README_ko.md">한국어</a> | <a href="./docs/readmes/README_de.md">Deutsch</a> | <a href="./docs/readmes/README_fr.md">Français</a> | <a href="./docs/readmes/README_es.md">Español</a> | <a href="./docs/readmes/README_pt-BR.md">Português</a> | <a href="./docs/readmes/README_ru.md">Русский</a>
 </p>
-
-## 📹 Demo
-
-|                                                          Outline                                                           |                                                       Conversations                                                        |                                                          Features                                                          |
-| :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: |
-| <video src="https://github.com/user-attachments/assets/a40eb655-295e-4f9c-b432-9313c9242c9d" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/a249baeb-2e82-4677-847c-2ff584c3f56b" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/6dfca20d-2f88-4844-b3bb-c48321100ff4" width="280" controls></video> |
 
 ## ✨ Core Features
 
@@ -100,7 +93,7 @@
       <td>Auto-parse conversation structure into a navigable TOC with hierarchical collapse, search, anchors, bookmarks, outline copy, and word counts</td>
     </tr>
     <tr>
-      <td>💬 <a href="https://ophel.app/docs/features/conversations">Conversations</a></td>
+      <td>💬 <a href="https://ophel.app/docs/features/conversations">Chats</a></td>
       <td>Folders + tags for dual-dimension management, auto-sync from source sites, search, batch ops, and drag-to-reorder</td>
     </tr>
     <tr>
@@ -117,7 +110,7 @@
     </tr>
     <tr>
       <td>🔍 <a href="https://ophel.app/docs/features/global-search">Global Search</a></td>
-      <td>Unified search across conversations, outlines, prompts, and settings with <code>folder:</code> <code>tag:</code> <code>date:</code> syntax filters and fuzzy matching</td>
+      <td>Unified search across chats, outlines, prompts, and settings with <code>folder:</code> <code>tag:</code> <code>date:</code> syntax filters and fuzzy matching</td>
     </tr>
     <tr>
       <td>📖 <a href="https://ophel.app/docs/enhancements/content">Reading</a></td>
@@ -144,7 +137,7 @@
 >
 > **Ophel Atlas** puts privacy first: local by default, your data stays in your control.
 >
-> - **Local by default:** settings, prompts, and conversation management data are stored in your browser
+> - **Local by default:** settings, prompts, and chat management data are stored in your browser
 > - **No account required:** use it without signing up
 > - **Permissions on demand:** optional permissions are requested only when needed and can be revoked anytime (see the Permissions page in the extension)
 > - **Optional WebDAV sync:** use your own WebDAV for multi-device consistency (controllable, portable)
@@ -256,7 +249,7 @@ Reload each target site after saving. Prefer manager-side custom rules over edit
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://pic1.afdiancdn.com/default/avatar/avatar-orange.png?imageView2/1/w/120/h/120" width="84px;" alt="Will" /><br />
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -270,6 +263,10 @@ Reload each target site after saving. Prefer manager-side custom rules over edit
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <sub><b>**然</b></sub>
     </td>
   </tr>
   </tbody>

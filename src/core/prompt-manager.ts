@@ -35,8 +35,17 @@ export class PromptManager {
     // 等待 hydration 完成
     if (!usePromptsStore.getState()._hasHydrated) {
       await new Promise<void>((resolve) => {
+        // 超时兜底：存储异常时 _hasHydrated 可能永不置真，
+        // 不能让初始化链路永久挂起（与 ReadingHistoryManager 同一模式）
+        const timeoutId = window.setTimeout(() => {
+          console.warn("[PromptManager] hydration 等待超时，使用当前状态继续初始化")
+          unsubscribe()
+          resolve()
+        }, 3000)
+
         const unsubscribe = usePromptsStore.subscribe((state) => {
           if (state._hasHydrated) {
+            window.clearTimeout(timeoutId)
             unsubscribe()
             resolve()
           }
@@ -71,7 +80,8 @@ export class PromptManager {
     getPromptsStore().renameCategory(oldName, newName)
   }
 
-  deleteCategory(name: string, defaultCategoryName: string = "未分类") {
+  // 空串表示未分类，由展示层本地化渲染，避免把中文写进用户数据
+  deleteCategory(name: string, defaultCategoryName: string = "") {
     getPromptsStore().deleteCategory(name, defaultCategoryName)
   }
 
@@ -109,7 +119,13 @@ export class PromptManager {
         await new Promise((resolve) => setTimeout(resolve, retryDelays[index]))
       }
 
-      this.adapter.findTextarea()
+      // 首次优先复用已缓存的输入框：findTextarea 的可见性校验（offsetParent）会强制同步布局，
+      // 在长对话页面上触发一次全文档样式重算；重试时仍重新查找，保留输入框失效后的恢复能力
+      if (index === 0) {
+        this.adapter.getTextareaElement()
+      } else {
+        this.adapter.findTextarea()
+      }
 
       const result = this.adapter.insertPrompt(content)
       if (result) {
@@ -178,7 +194,10 @@ export class PromptManager {
     const seen = new Set<HTMLElement>()
 
     for (const selector of submitSelectors) {
-      const matched = DOMToolkit.query(selector, { all: true, shadow: true }) as Element[] | null
+      const matched = DOMToolkit.query(selector, {
+        all: true,
+        shadow: this.adapter.usesShadowDOM(),
+      }) as Element[] | null
       if (!matched || !Array.isArray(matched)) continue
 
       for (const element of matched) {

@@ -5,7 +5,17 @@ import { useBookmarkStore, type Bookmark } from "~stores/bookmarks-store"
 import { useSettingsStore } from "~stores/settings-store"
 import { showToast } from "~utils/toast"
 import { t } from "~utils/i18n"
+import {
+  EVENT_MONITOR_COMPLETE,
+  EVENT_MONITOR_START,
+  EVENT_OUTLINE_DATA_UPDATED,
+  EVENT_OUTLINE_JUMP_COMPLETED,
+} from "~utils/messaging"
 import { signalReadingHistoryUserNavigation } from "~utils/reading-history-navigation"
+import {
+  estimateGroupedVirtualTops,
+  type VirtualOutlineSlot,
+} from "~utils/virtual-outline-position"
 
 type ExtendedOutlineItem = OutlineItem & {
   isBookmarked?: boolean
@@ -58,13 +68,22 @@ interface TreeState {
 
 type OutlineActiveConsumer = "outlineTab" | "globalSearch"
 
-/** djb2 hash：将任意长度字符串压缩为 8 位十六进制字符串 */
-function djb2Hash(str: string): string {
+/**
+ * 增量 djb2 hash 器：逐段混入字符串，避免把全部大纲文本
+ * join 成一个长字符串再 hash（长对话每次刷新都会产生大字符串分配）
+ */
+function createDjb2Mixer() {
   let hash = 5381
-  for (let i = 0; i < str.length; i++) {
-    hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0
+  return {
+    mix(str: string) {
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) + hash + str.charCodeAt(i)) >>> 0
+      }
+    },
+    digest(): string {
+      return hash.toString(16).padStart(8, "0")
+    },
   }
-  return hash.toString(16).padStart(8, "0")
 }
 
 export class OutlineManager {
@@ -124,10 +143,18 @@ export class OutlineManager {
   // Global refresh debounce (防止多处同时触发时的重复执行)
   private refreshDebounceTimer: ReturnType<typeof setTimeout> | null = null
   private readonly REFRESH_DEBOUNCE_MS = 300
+  // 程序化跳转后的错峰刷新节奏（与 handleUrlChange 同理）：虚拟滚动站点的
+  // DOM 换挂载是异步的，单次过早 refresh 会抽到旧 DOM 且因文本未变静默跳过
+  private readonly JUMP_REFRESH_DELAYS = [80, 250, 600, 1200]
 
   // 设置变更回调
   private onExpandLevelChange?: (level: number) => void
   private onShowUserQueriesChange?: (show: boolean) => void
+
+  // 需要手动释放的资源
+  private boundHandleMessage = (event: MessageEvent) => this.handleMessage(event)
+  private unsubscribeBookmarks: (() => void) | null = null
+  private destroyed = false
 
   constructor(
     adapter: SiteAdapter,
@@ -145,10 +172,10 @@ export class OutlineManager {
     this.expandLevel = settings.expandLevel ?? 6
 
     // Listen to monitor messages
-    window.addEventListener("message", this.handleMessage.bind(this))
+    window.addEventListener("message", this.boundHandleMessage)
 
     // 订阅 bookmarks-store，当书签变化时刷新大纲
-    void useBookmarkStore.subscribe(() => {
+    this.unsubscribeBookmarks = useBookmarkStore.subscribe(() => {
       // 只有在激活状态下才刷新，避免不必要的计算
       if (this.isActive) {
         this.refresh()
@@ -249,16 +276,40 @@ export class OutlineManager {
   private routeChangeVersion = 0
 
   private handleMessage(event: MessageEvent) {
-    if (event.source !== window) return
-    // Imports needed: EVENT_MONITOR_START, EVENT_MONITOR_COMPLETE
-    // I will add them to the top of the file
     const { type } = event.data || {}
 
-    if (type === "GH_MONITOR_START" /* EVENT_MONITOR_START */) {
+    // 油猴沙箱中 event.source 可能是代理对象而非 window 本身（与 network-monitor
+    // 的放宽校验一致）；这两类事件仅触发一次刷新，无安全风险，按类型放行
+    if (type === EVENT_OUTLINE_DATA_UPDATED) {
+      // 适配器从站外数据源（如 DeepSeek 历史消息接口）补齐了大纲数据
+      if (this.isActive) {
+        this.refresh()
+      }
+      return
+    }
+
+    if (type === EVENT_OUTLINE_JUMP_COMPLETED) {
+      // 程序化跳转完成后错峰刷新：仅当树里存在未挂载且无缓存位置的条目
+      // （虚拟滚动 + 外部数据回填）才有意义，普通站点不受影响。
+      // 必须用 immediate 绕过全局防抖，否则多次探测会被合并成一次过早的扫描
+      if (this.isActive && this.hasPositionlessOutlineNodes()) {
+        for (const delay of this.JUMP_REFRESH_DELAYS) {
+          setTimeout(() => {
+            if (this.destroyed || !this.isActive) return
+            this.refresh(undefined, true)
+          }, delay)
+        }
+      }
+      return
+    }
+
+    if (event.source !== window) return
+
+    if (type === EVENT_MONITOR_START) {
       if (this.settings.autoUpdate) {
         this.startAutoUpdate()
       }
-    } else if (type === "GH_MONITOR_COMPLETE" /* EVENT_MONITOR_COMPLETE */) {
+    } else if (type === EVENT_MONITOR_COMPLETE) {
       this.stopAutoUpdate()
       // Final refresh
       this.refresh()
@@ -440,6 +491,33 @@ export class OutlineManager {
     }
   }
 
+  // 释放全部外部资源：面板卸载或适配器切换后必须调用，避免泄漏监听与计时器
+  destroy() {
+    if (this.destroyed) return
+    this.destroyed = true
+
+    window.removeEventListener("message", this.boundHandleMessage)
+    this.unsubscribeBookmarks?.()
+    this.unsubscribeBookmarks = null
+
+    this.stopAutoUpdate()
+    this.stopPeriodicOutlineRefreshFallback()
+    this.stopSourceObserver()
+
+    if (this.refreshDebounceTimer) {
+      clearTimeout(this.refreshDebounceTimer)
+      this.refreshDebounceTimer = null
+    }
+    if (this.fallbackRefreshTimer) {
+      clearTimeout(this.fallbackRefreshTimer)
+      this.fallbackRefreshTimer = null
+    }
+
+    this.listeners = []
+    this.activeConsumers.clear()
+    this.isActive = false
+  }
+
   private notify() {
     this.listeners.forEach((l) => l())
   }
@@ -514,6 +592,15 @@ export class OutlineManager {
     this.preSearchExpandLevel = null
     this.searchLevelManual = false
     this.matchCount = 0
+
+    // 若切换到非对话源（如文档源），且当前 expandLevel 为 0（在对话中代表“仅用户提问”）
+    // 由于文档源中不存在用户提问节点，保留 0 级会导致文档所有标题被隐藏而呈现空状态，因此重置为默认展开级别 6
+    if (target.kind === "document" || sourceId !== "conversation") {
+      if (this.expandLevel === 0) {
+        this.expandLevel = 6
+      }
+    }
+
     this.updateAutoUpdateState()
     this.refresh()
     this.notify()
@@ -682,8 +769,13 @@ export class OutlineManager {
   }
 
   getState() {
-    // 根据是否开启用户提问，确定 minRelativeLevel
-    const minRelativeLevel = this.settings.showUserQueries ? 0 : 1
+    // 检查当前树或扁平节点中是否存在用户提问节点
+    const hasUserQueries =
+      this.activeSourceId === "conversation" &&
+      (this.tree.some((node) => node.isUserQuery) ||
+        this.flatNodes.some((node) => node.isUserQuery))
+    // 根据是否开启用户提问且当前源实际包含用户提问，确定 minRelativeLevel
+    const minRelativeLevel = this.settings.showUserQueries && hasUserQueries ? 0 : 1
 
     // 计算 displayLevel (Legacy logic)
     let displayLevel: number
@@ -692,8 +784,8 @@ export class OutlineManager {
     } else {
       displayLevel = this.expandLevel ?? 6
     }
-    // 限制最小值
-    const minDisplayLevel = this.settings.showUserQueries ? 0 : 1
+    // 限制最小值：若当前源不支持用户提问，最小显示级别强制为 1
+    const minDisplayLevel = this.settings.showUserQueries && hasUserQueries ? 0 : 1
     if (displayLevel < minDisplayLevel) {
       displayLevel = minDisplayLevel
     }
@@ -703,6 +795,8 @@ export class OutlineManager {
       expandLevel: this.expandLevel,
       levelCounts: this.levelCounts,
       isAllExpanded: this.isAllExpanded,
+      // 开关状态只反映设置值；当前源是否有用户提问仅影响层级钳制，
+      // 否则在无用户提问的页面按钮会恒为未选中且点击看似无响应
       includeUserQueries: this.settings.showUserQueries,
       minRelativeLevel,
       displayLevel,
@@ -794,7 +888,7 @@ export class OutlineManager {
 
   // Adjusted refresh signature
   refresh(overrideLevel?: number, immediate = false) {
-    if (!this.settings.enabled || this.isRefreshing) return
+    if (this.destroyed || !this.settings.enabled || this.isRefreshing) return
 
     // immediate = true: 立即执行（用于 fallback 检测和路由切换）
     // immediate = false: 防抖执行（用于书签、设置变更等）
@@ -885,18 +979,30 @@ export class OutlineManager {
     const liveSettings = useSettingsStore.getState().settings
     const showWordCount = liveSettings?.features?.outline?.showWordCount ?? false
 
-    let outlineData = this.siteAdapter.extractOutlineForSource(
-      this.activeSourceId,
-      this.settings.maxLevel,
-      this.settings.showUserQueries,
-      showWordCount,
-    )
+    // 新对话页的欢迎/推荐内容可能命中对话容器选择器，其中的标题不是真实对话结构。
+    // 对话源在新对话落地页直接视为空（含书签合并，避免幽灵书签重新撑起树），
+    // 让空态与下游消费方（复制大纲、页内收藏）行为一致；文档源不受影响。
+    // URL 不跳转的临时对话（Claude 隐身、Gemini 临时对话）发消息后 DOM 已有用户提问，
+    // 此时不抑制，大纲正常工作。
+    const suppressConversationOutline =
+      this.activeSourceId === "conversation" &&
+      (this.siteAdapter.isNewConversation?.() ?? false) &&
+      !(this.siteAdapter.hasUserMessagesInDom?.() ?? false)
+
+    let outlineData = suppressConversationOutline
+      ? []
+      : this.siteAdapter.extractOutlineForSource(
+          this.activeSourceId,
+          this.settings.maxLevel,
+          this.settings.showUserQueries,
+          showWordCount,
+        )
     // --- Merge Bookmarks ---
     const sessionId = this.getBookmarkSessionId()
     const bookmarks = useBookmarkStore.getState().getBookmarksBySession(sessionId)
     this.ghostBookmarkIds = new Set()
 
-    if (bookmarks.length > 0) {
+    if (!suppressConversationOutline && bookmarks.length > 0) {
       const bookmarkById = new Map(bookmarks.map((bookmark) => [bookmark.id, bookmark]))
       const bookmarksBySignature = new Map<string, Map<string, Bookmark>>()
       bookmarks.forEach((bookmark) => {
@@ -1020,6 +1126,7 @@ export class OutlineManager {
     if (outlineData.length === 0) {
       if (this.tree.length > 0) {
         this.tree = []
+        this.flatItems = []
         this.flatNodes = []
         this.scrollNodes = []
         this.scrollPositions = []
@@ -1047,13 +1154,17 @@ export class OutlineManager {
     const sessionIdForKey = this.siteAdapter.getSessionId() || "no-session"
     const pathname = typeof window !== "undefined" ? window.location.pathname : ""
     const sessionScopeKey = `${this.siteAdapter.getSiteId()}:${sessionIdForKey}:${pathname}:${this.activeSourceId}`
-    const rawKey =
-      sessionScopeKey +
-      "|" +
-      showWordCountFlag +
-      "|" +
-      outlineData.map((i) => `${i.text}:${(i as ExtendedOutlineItem).isBookmarked}`).join("|")
-    const outlineKey = djb2Hash(rawKey)
+    const mixer = createDjb2Mixer()
+    mixer.mix(sessionScopeKey)
+    mixer.mix("|")
+    mixer.mix(showWordCountFlag)
+    outlineData.forEach((i) => {
+      mixer.mix("|")
+      mixer.mix(i.text)
+      mixer.mix(":")
+      mixer.mix(String((i as ExtendedOutlineItem).isBookmarked))
+    })
+    const outlineKey = mixer.digest()
     const currentStateMap: Record<string, TreeState> = {}
     if (this.tree.length > 0) {
       this.captureTreeState(this.tree, currentStateMap)
@@ -1082,7 +1193,9 @@ export class OutlineManager {
     const displayLevel = overrideLevel !== undefined ? overrideLevel : this.expandLevel ?? 6
     this.expandLevel = displayLevel
 
-    const minDisplayLevel = this.settings.showUserQueries ? 0 : 1
+    const hasUserQueries =
+      this.activeSourceId === "conversation" && outlineData.some((i) => i.isUserQuery)
+    const minDisplayLevel = this.settings.showUserQueries && hasUserQueries ? 0 : 1
     const effectiveDisplayLevel = displayLevel < minDisplayLevel ? minDisplayLevel : displayLevel
 
     // 1. Initialize logic
@@ -1293,19 +1406,9 @@ export class OutlineManager {
     this.flatNodes.forEach((node) => {
       if (node.isGhost) return
 
-      let element = node.element
-      if (!element || !element.isConnected) {
-        if (this.activeSourceId === "conversation") {
-          if (node.isUserQuery && node.level === 0 && node.queryIndex !== undefined) {
-            element = this.findUserQueryElement(node.queryIndex, node.text) as HTMLElement
-          } else {
-            element = this.findElementByHeading(node.level, node.text) as HTMLElement
-          }
-        }
-        if (element) {
-          node.element = element
-        }
-      }
+      // 虚拟列表卸载的节点保留坐标；新 DOM 引用由大纲刷新统一更新。
+      // 在滚动热路径逐项重新查询整页，会把长历史放大成 O(n²) 的扫描。
+      const element = node.element
 
       if (!element || !element.isConnected) {
         pushCachedEntry(node)
@@ -1395,11 +1498,11 @@ export class OutlineManager {
     })
   }
 
-  // Legacy: 使用原始 level (H1-H6) 判断，不是 relativeLevel
+  // 使用原始 level (H1-H6) 判断，而非 relativeLevel
   private initializeCollapsedState(nodes: OutlineNode[], displayLevel: number) {
     nodes.forEach((node) => {
       if (node.children && node.children.length > 0) {
-        // Legacy: child.level > displayLevel
+        // 检查子节点层级是否超过当前显示层级
         const allChildrenHidden = node.children.every((child) => child.level > displayLevel)
         node.collapsed = allChildrenHidden
         this.initializeCollapsedState(node.children, displayLevel)
@@ -1409,12 +1512,12 @@ export class OutlineManager {
     })
   }
 
-  // Legacy: 使用原始 level (H1-H6) 判断，不是 relativeLevel
+  // 使用原始 level (H1-H6) 判断，而非 relativeLevel
   private clearForceExpandedState(nodes: OutlineNode[], displayLevel: number) {
     nodes.forEach((node) => {
       node.forceExpanded = false
       if (node.children && node.children.length > 0) {
-        // Legacy: child.level > displayLevel
+        // 检查子节点层级是否超过当前显示层级
         const allChildrenHidden = node.children.every((child) => child.level > displayLevel)
         node.collapsed = allChildrenHidden
         this.clearForceExpandedState(node.children, displayLevel)
@@ -1433,21 +1536,21 @@ export class OutlineManager {
     this.notify()
   }
 
-  // 折叠全部 (Legacy: toggleExpandAll when isAllExpanded = true)
+  // 折叠全部
   collapseAll() {
-    // Legacy: collapse to minLevel or 0 if showing user queries
+    // 折叠到最小层级（如果显示用户提问则折叠到 0）
     const targetLevel = this.settings.showUserQueries ? 0 : this.minLevel || 1
     this.setLevel(targetLevel)
   }
 
-  // 展开全部 (Legacy: toggleExpandAll when isAllExpanded = false)
+  // 展开全部
   expandAll() {
-    // Legacy: expand to maxActualLevel
+    // 展开到当前存在的最大层级
     const maxActualLevel = Math.max(...Object.keys(this.levelCounts).map(Number), 1)
     this.setLevel(maxActualLevel)
   }
 
-  // 设置展开层级 (Legacy: setLevel 完全复刻)
+  // 设置展开层级
   setLevel(level: number) {
     // 收藏模式下禁用层级调整
     if (this.bookmarkMode) {
@@ -1457,8 +1560,7 @@ export class OutlineManager {
 
     this.expandLevel = level
 
-    // Legacy: clearForceExpandedState 已经正确设置了 collapsed 状态
-    // 不再需要额外调用 initializeCollapsedState
+    // 重置并按层级更新折叠状态
     if (this.tree.length > 0) {
       this.clearForceExpandedState(this.tree, level)
     }
@@ -1467,7 +1569,7 @@ export class OutlineManager {
     const maxActualLevel = Math.max(...Object.keys(this.levelCounts).map(Number), 1)
     this.isAllExpanded = level >= maxActualLevel
 
-    // Legacy: 如果在搜索状态下调整了 Slider，标记为手动
+    // 如果在搜索状态下调整了层级滑块，标记为手动层级
     if (this.searchQuery) {
       this.searchLevelManual = true
     }
@@ -1501,8 +1603,7 @@ export class OutlineManager {
     this.setShowUserQueries(!this.settings.showUserQueries)
   }
 
-  // Legacy: expandParents 完全复刻 + 强制可见支持
-  // 设置整条路径（包括目标和所有祖先）为 forceVisible
+  // 展开并设置整条路径（包括目标和所有祖先）为 forceVisible
   revealNode(index: number) {
     // 先清除之前的 forceVisible 标记
     const clearForceVisible = (nodes: OutlineNode[]) => {
@@ -1556,12 +1657,13 @@ export class OutlineManager {
         if (node.forceVisible) {
           node.forceVisible = false
           node.forceExpanded = false
-          // 根据当前层级设置决定是否折叠
+          // 根据当前层级设置决定是否折叠；
+          // 与 initializeCollapsedState / clearForceExpandedState 保持一致，
+          // 必须用原始 level 而非 relativeLevel 比较，
+          // 否则标题从 H2/H3 起始的文档（minLevel > 1）恢复后会错误保持展开
           if (node.children && node.children.length > 0) {
-            const hasChildBeyondLevel = node.children.every(
-              (child) => child.relativeLevel > this.expandLevel,
-            )
-            node.collapsed = hasChildBeyondLevel
+            const allChildrenHidden = node.children.every((child) => child.level > this.expandLevel)
+            node.collapsed = allChildrenHidden
           }
         }
         if (node.children && node.children.length > 0) {
@@ -1574,7 +1676,6 @@ export class OutlineManager {
     this.notify()
   }
 
-  // Legacy: handleSearch 完全复刻
   setSearchQuery(query: string) {
     if (!query) {
       // === 结束搜索 ===
@@ -1616,7 +1717,7 @@ export class OutlineManager {
       }
 
       this.searchQuery = query
-      this.searchLevelManual = false // Legacy: 重置手动层级标记
+      this.searchLevelManual = false // 重置手动层级标记
       this.performSearch(query)
     }
     this.notify()
@@ -1761,20 +1862,186 @@ export class OutlineManager {
     return this.findMountedActiveNode(scrollContainer)?.index ?? null
   }
 
+  // 树里是否存在既未挂载又无缓存滚动位置的回填条目。仅限声明了
+  // traits.virtualOutlineFill 的站点（DeepSeek、Claude）。未声明的缓存回填
+  // 恒为 false，避免把跳转后的即时刷新扩到不需要它的站点。
+  hasPositionlessOutlineNodes(): boolean {
+    if (!this.usesVirtualOutlineFill()) return false
+    return this.flatNodes.some(
+      (node) => !node.isGhost && !node.element && typeof node.scrollTop !== "number",
+    )
+  }
+
+  /**
+   * 虚拟滚动站点没有可用的离屏坐标。当前视口量不到标题时保留上一次高亮，
+   * 不能把缓存 scrollTop 投影回视口，否则卸载条目会和屏幕上的条目抢高亮。
+   */
+  holdsVirtualHighlight(): boolean {
+    return this.usesVirtualOutlineFill()
+  }
+
+  /** 树重建后按对象身份或稳定 id 找回同一条，避免沿用已经错位的 index。 */
+  findRetainedOutlineNode(previous: OutlineNode | null): OutlineNode | null {
+    if (!previous) return null
+    if (this.flatNodes.includes(previous)) return previous
+    if (!previous.id) return null
+    return this.flatNodes.find((node) => node.id === previous.id) ?? null
+  }
+
+  private usesVirtualOutlineFill(): boolean {
+    return this.siteAdapter.usesVirtualOutlineFill?.() ?? false
+  }
+
+  /**
+   * 只比较本帧仍挂在视口里的节点。API 回填条目和已卸载条目没有视觉坐标，
+   * 不参与高亮；一个都没有时返回 null，由调用方保持上一次结果。
+   */
+  private findLiveVirtualActiveNode(scrollContainer: HTMLElement): OutlineNode | null {
+    const viewportRect = this.getScrollViewportRect(scrollContainer)
+    if (!viewportRect) return null
+
+    const anchorY = viewportRect.top + Math.min(Math.max(viewportRect.height * 0.25, 48), 160)
+    const live: MeasuredOutlineNode[] = []
+
+    const measureElement = (element: Element): MeasuredOutlineElement | null => {
+      const clientRects = element.getClientRects()
+      if (clientRects.length === 0) return null
+
+      let top = clientRects[0].top
+      let bottom = clientRects[0].bottom
+      for (let i = 1; i < clientRects.length; i += 1) {
+        const rect = clientRects[i]
+        top = Math.min(top, rect.top)
+        bottom = Math.max(bottom, rect.bottom)
+      }
+
+      const height = Math.max(0, bottom - top)
+      if (height <= 0) return null
+      return { top, height }
+    }
+
+    for (const node of this.flatNodes) {
+      if (node.isGhost) continue
+      const element = node.element
+      if (!element?.isConnected) continue
+
+      const measured = measureElement(element)
+      if (!measured) continue
+      const bottom = measured.top + measured.height
+      if (bottom <= viewportRect.top || measured.top >= viewportRect.bottom) continue
+      live.push({ node, ...measured })
+    }
+
+    if (live.length === 0) {
+      return this.findEstimatedVirtualActiveNode(scrollContainer, viewportRect, anchorY)
+    }
+
+    let activeUserQuery: MeasuredOutlineNode | null = null
+    let latestUserQueryBeforeAnchor: MeasuredOutlineNode | null = null
+    for (const query of live) {
+      if (!query.node.isUserQuery) continue
+      const bottom = query.top + query.height
+      if (query.top <= anchorY && bottom > anchorY) {
+        if (!activeUserQuery || query.top > activeUserQuery.top) {
+          activeUserQuery = query
+        }
+      }
+      if (
+        query.top <= anchorY &&
+        (!latestUserQueryBeforeAnchor || query.top > latestUserQueryBeforeAnchor.top)
+      ) {
+        latestUserQueryBeforeAnchor = query
+      }
+    }
+
+    if (activeUserQuery) return activeUserQuery.node
+
+    let activeHeading: MeasuredOutlineNode | null = null
+    let nextVisibleHeading: MeasuredOutlineNode | null = null
+    for (const heading of live) {
+      if (heading.node.isUserQuery) continue
+      const bottom = heading.top + heading.height
+      if (heading.top <= anchorY) {
+        if (!activeHeading || heading.top > activeHeading.top) {
+          activeHeading = heading
+        }
+      } else if (heading.top < viewportRect.bottom && bottom > viewportRect.top) {
+        if (!nextVisibleHeading || heading.top < nextVisibleHeading.top) {
+          nextVisibleHeading = heading
+        }
+      }
+    }
+
+    if (
+      latestUserQueryBeforeAnchor &&
+      (!activeHeading || activeHeading.top < latestUserQueryBeforeAnchor.top)
+    ) {
+      const firstHeading = this.findFirstHeadingInUserQuerySection(latestUserQueryBeforeAnchor.node)
+      const liveFirst = firstHeading
+        ? live.find((item) => item.node === firstHeading && item.top <= anchorY)
+        : undefined
+      return liveFirst?.node ?? latestUserQueryBeforeAnchor.node
+    }
+
+    return activeHeading?.node ?? nextVisibleHeading?.node ?? null
+  }
+
+  /**
+   * 视口内没有任何仍挂载的大纲节点时的兜底。自动更新关闭或跳转后尚未刷新的
+   * 虚拟滚动站点（DeepSeek/Claude），大纲树冻结在旧挂载窗口，元素引用整体失效，
+   * 不高亮重算就会一直停在旧位置。这里用适配器提供的挂载行锚点给每条大纲估
+   * 一个单调的内容坐标，再按同一锚线选高亮；估算不可用返回 null，由调用方
+   * 保持上一次结果。
+   */
+  private findEstimatedVirtualActiveNode(
+    scrollContainer: HTMLElement,
+    viewportRect: ScrollViewportRect,
+    anchorY: number,
+  ): OutlineNode | null {
+    const snapshot = this.siteAdapter.getVirtualOutlinePositionSnapshot?.()
+    if (!snapshot) return null
+
+    const slots: VirtualOutlineSlot[] = []
+    const slotNodes: OutlineNode[] = []
+    const orderByRow = new Map<number, number>()
+    for (const node of this.flatNodes) {
+      if (node.isGhost) continue
+      const rowIndex = this.siteAdapter.getVirtualOutlineRowIndex?.(node)
+      if (rowIndex === null || rowIndex === undefined) continue
+      const order = orderByRow.get(rowIndex) ?? 0
+      orderByRow.set(rowIndex, order + 1)
+      slots.push({ index: rowIndex, order })
+      slotNodes.push(node)
+    }
+    if (slots.length === 0) return null
+
+    const viewportScrollTop = this.getViewportScrollTop(scrollContainer, viewportRect)
+    if (viewportScrollTop === null) return null
+
+    const tops = estimateGroupedVirtualTops(slots, snapshot.anchors, snapshot.bounds)
+    const anchorTop = viewportScrollTop + (anchorY - viewportRect.top)
+
+    // 估算坐标随文档顺序单调不减：取锚线之前（含）的最后一条
+    let active: OutlineNode | null = null
+    for (let i = 0; i < tops.length; i += 1) {
+      if (tops[i] <= anchorTop) {
+        active = slotNodes[i]
+      }
+    }
+    return active
+  }
+
   findMountedActiveNode(scrollContainer: HTMLElement): OutlineNode | null {
     if (this.settings.followMode !== "current") return null
     if (this.flatNodes.length === 0) return null
-
-    const nativeActiveId = this.siteAdapter.findActiveOutlineItemId()
-    if (nativeActiveId) {
-      const nativeActiveNode = this.flatNodes.find((node) => {
-        const nodeNavigationId = node.navigationId || node.id || ""
-        return nodeNavigationId === nativeActiveId || nodeNavigationId.startsWith(nativeActiveId)
-      })
-      if (nativeActiveNode && !nativeActiveNode.isGhost) {
-        return nativeActiveNode
-      }
+    if (this.usesVirtualOutlineFill()) {
+      return this.findLiveVirtualActiveNode(scrollContainer)
     }
+
+    const nativeActiveNode = this.findNativeActiveOutlineNode()
+    const nativeSectionEnd = nativeActiveNode
+      ? this.findUserQuerySectionEndIndex(nativeActiveNode)
+      : 0
 
     const viewportRect = this.getScrollViewportRect(scrollContainer)
     if (!viewportRect) return null
@@ -1795,6 +2062,18 @@ export class OutlineManager {
       viewportRect.height,
       latestCachedUserQuery,
     )
+    // 有原生导航激活项时，把它所在的整个问题区间加入候选：区间标题可能全部
+    // 离屏且 scrollPositions 过期，仅靠锚点附近的窗口会漏掉它们
+    if (nativeActiveNode) {
+      const candidateSet = new Set(candidateNodes)
+      for (let i = nativeActiveNode.index; i < nativeSectionEnd; i += 1) {
+        const node = this.flatNodes[i]
+        if (node && !node.isGhost && !candidateSet.has(node)) {
+          candidateSet.add(node)
+          candidateNodes.push(node)
+        }
+      }
+    }
     const mountedHeadings: MeasuredOutlineNode[] = []
     const mountedUserQueries: MeasuredOutlineNode[] = []
 
@@ -1872,6 +2151,18 @@ export class OutlineManager {
       }
     }
 
+    // 原生导航（如 ChatGPT 右侧 TOC）已给出当前问题：只用来锁定问题区间，
+    // 区间内仍按滚动位置高亮锚线上方最深的标题，而不是直接高亮用户问题本身
+    if (nativeActiveNode) {
+      const sectionHeading = this.findActiveHeadingInUserQuerySection(
+        nativeActiveNode,
+        nativeSectionEnd,
+        mountedHeadings,
+        anchorY,
+      )
+      return sectionHeading ?? nativeActiveNode
+    }
+
     if (activeUserQuery) {
       return activeUserQuery.node
     }
@@ -1907,6 +2198,43 @@ export class OutlineManager {
     }
 
     return nextVisibleHeading?.node ?? cachedVisibleNode
+  }
+
+  /** 站点原生导航（如 ChatGPT 右侧 TOC）报出的当前激活大纲节点 */
+  private findNativeActiveOutlineNode(): OutlineNode | null {
+    const nativeActiveId = this.siteAdapter.findActiveOutlineItemId()
+    if (!nativeActiveId) return null
+
+    const nativeActiveNode = this.flatNodes.find((node) => {
+      const nodeNavigationId = node.navigationId || node.id || ""
+      return nodeNavigationId === nativeActiveId || nodeNavigationId.startsWith(nativeActiveId)
+    })
+    return nativeActiveNode && !nativeActiveNode.isGhost ? nativeActiveNode : null
+  }
+
+  // flatNodes 为先序遍历且 node.index 与扁平下标一致；
+  // 用户问题区间 = 自身之后到下一个 level 0 节点（下一个用户问题）之前
+  private findUserQuerySectionEndIndex(sectionNode: OutlineNode): number {
+    for (let i = sectionNode.index + 1; i < this.flatNodes.length; i += 1) {
+      if (this.flatNodes[i].relativeLevel === 0) return i
+    }
+    return this.flatNodes.length
+  }
+
+  /** 问题区间内位于锚线上方、最靠近锚线的标题（即当前阅读到的最深一级） */
+  private findActiveHeadingInUserQuerySection(
+    sectionNode: OutlineNode,
+    sectionEnd: number,
+    mountedHeadings: MeasuredOutlineNode[],
+    anchorY: number,
+  ): OutlineNode | null {
+    let active: MeasuredOutlineNode | null = null
+    for (const heading of mountedHeadings) {
+      if (heading.node.index <= sectionNode.index || heading.node.index >= sectionEnd) continue
+      if (heading.top > anchorY) continue
+      if (!active || heading.top > active.top) active = heading
+    }
+    return active?.node ?? null
   }
 
   private collectActiveCandidateNodes(

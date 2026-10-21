@@ -14,7 +14,7 @@
     </br>
     用实时大纲厘清脉络，
     </br>
-    用会话文件夹构筑体系，
+    用对话文件夹构筑体系，
     </br>
     用 Prompt 词库沉淀经验，
     </br>
@@ -23,7 +23,7 @@
   
   <sub>👇 Demo: 从“无限滚动的聊天记录”，到“可导航的 AI 文档”</sub>
   
-  ![Ophel Demo](./docs/media/demo/outline.gif)
+  <img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
   
   <p>
     <strong><em>它让 AI 对话第一次成为可组织的工作流</em></strong><br/>
@@ -77,7 +77,6 @@
 </p>
 
 <p align="center">
-  <a href="#-功能演示">功能演示</a> •
   <a href="#-核心功能">核心功能</a> •
   <a href="#-快速开始">快速开始</a> •
   <a href="#-支持-ophel-atlas">支持 Ophel Atlas</a> •
@@ -88,38 +87,32 @@
   🌐 <a href="./README.md">English</a> | <strong>简体中文</strong> | <a href="./docs/readmes/README_zh-TW.md">繁體中文</a> | <a href="./docs/readmes/README_ja.md">日本語</a> | <a href="./docs/readmes/README_ko.md">한국어</a> | <a href="./docs/readmes/README_de.md">Deutsch</a> | <a href="./docs/readmes/README_fr.md">Français</a> | <a href="./docs/readmes/README_es.md">Español</a> | <a href="./docs/readmes/README_pt-BR.md">Português</a> | <a href="./docs/readmes/README_ru.md">Русский</a>
 </p>
 
-## 📹 功能演示
-
-|                                                        大纲 Outline                                                        |                                                     会话 Conversations                                                     |                                                       功能 Features                                                        |
-| :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------------: |
-| <video src="https://github.com/user-attachments/assets/a40eb655-295e-4f9c-b432-9313c9242c9d" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/a249baeb-2e82-4677-847c-2ff584c3f56b" width="280" controls></video> | <video src="https://github.com/user-attachments/assets/6dfca20d-2f88-4844-b3bb-c48321100ff4" width="280" controls></video> |
-
 ## ✨ 核心功能
 
-> 适用于学习研究、需求分析、代码讨论、内容创作等一切需要”结构、秩序与复用”的 AI 对话场景。
+> 适用于学习研究、需求分析、代码讨论、内容创作等一切需要“结构、秩序与复用”的 AI 对话场景。
 
 <table>
   <thead>
     <tr>
-      <th width=”200”>功能</th>
+      <th width="200">功能</th>
       <th>描述</th>
     </tr>
   </thead>
   <tbody>
     <tr>
-      <td>🧭 <a href=”https://ophel.app/docs/zh/features/outline”>智能大纲</a></td>
+      <td>🧭 <a href="https://ophel.app/docs/zh/features/outline">智能大纲</a></td>
       <td>实时解析对话结构生成可导航目录，支持层级折叠、搜索跳转、锚点定位、收藏书签、大纲复制与字数统计</td>
     </tr>
     <tr>
-      <td>💬 <a href=”https://ophel.app/docs/zh/features/conversations”>会话管理</a></td>
-      <td>文件夹 + 标签双维度管理，自动同步源站会话，支持搜索、批量操作与拖拽排序</td>
+      <td>💬 <a href="https://ophel.app/docs/zh/features/conversations">对话管理</a></td>
+      <td>文件夹 + 标签双维度管理，自动同步源站对话，支持搜索、批量操作与拖拽排序</td>
     </tr>
     <tr>
-      <td>📤 <a href=”https://ophel.app/docs/zh/features/export”>对话导出</a></td>
+      <td>📤 <a href="https://ophel.app/docs/zh/features/export">对话导出</a></td>
       <td>支持 Markdown/JSON/TXT 多格式导出，zip 打包保留图片附件，分段导出精准提取内容</td>
     </tr>
     <tr>
-      <td>💡 <a href=”https://ophel.app/docs/zh/features/prompts”>提示词库</a></td>
+      <td>💡 <a href="https://ophel.app/docs/zh/features/prompts">提示词库</a></td>
       <td>变量模板、分类管理、一键填充，支持提示词链与队列自动排队发送，选择文本快捷引用</td>
     </tr>
     <tr>
@@ -127,23 +120,23 @@
       <td>内置 15 个主流 AI 站点适配；“适配中心”可在线安装适配包、<strong>热插拔扩展更多站点</strong>，支持云端更新自动修复</td>
     </tr>
     <tr>
-      <td>🔍 <a href=”https://ophel.app/docs/zh/features/global-search”>全局搜索</a></td>
-      <td>跨会话/大纲/提示词/设置统一搜索，支持 <code>folder:</code> <code>tag:</code> <code>date:</code> 等语法过滤与模糊匹配</td>
+      <td>🔍 <a href="https://ophel.app/docs/zh/features/global-search">全局搜索</a></td>
+      <td>跨对话/大纲/提示词/设置统一搜索，支持 <code>folder:</code> <code>tag:</code> <code>date:</code> 等语法过滤与模糊匹配</td>
     </tr>
     <tr>
-      <td>📖 <a href=”https://ophel.app/docs/zh/enhancements/content”>阅读增强</a></td>
+      <td>📖 <a href="https://ophel.app/docs/zh/enhancements/content">阅读增强</a></td>
       <td>Mermaid 图表渲染、LaTeX 公式支持、用户问题 Markdown 排版、滚动锁定</td>
     </tr>
     <tr>
-      <td>⌨️ <a href=”https://ophel.app/docs/zh/customization/shortcuts”>效率工具</a></td>
+      <td>⌨️ <a href="https://ophel.app/docs/zh/customization/shortcuts">效率工具</a></td>
       <td>阅读历史恢复、自定义快捷键、模型锁定、标签页增强命名、AI 完成通知</td>
     </tr>
     <tr>
-      <td>🎨 <a href=”https://ophel.app/docs/zh/customization/appearance”>界面定制</a></td>
+      <td>🎨 <a href="https://ophel.app/docs/zh/customization/appearance">界面定制</a></td>
       <td>20+ 主题、自定义 CSS、宽屏模式、禅模式，<code>Option+D</code> 一键切换明暗</td>
     </tr>
     <tr>
-      <td>🔒 <a href=”https://ophel.app/docs/zh/data/privacy”>隐私与数据</a></td>
+      <td>🔒 <a href="https://ophel.app/docs/zh/data/privacy">隐私与数据</a></td>
       <td>默认本地存储、WebDAV 多设备同步、文件导入导出、零数据收集</td>
     </tr>
   </tbody>
@@ -155,7 +148,7 @@
 >
 > **Ophel Atlas** 以隐私优先为原则：默认本地存储，你的数据由你掌控。
 >
-> - **默认本地存储：** 配置、Prompt、会话管理数据等默认保存在浏览器本地
+> - **默认本地存储：** 配置、Prompt、对话管理数据等默认保存在浏览器本地
 > - **无需注册账号：** 不需要创建任何账号即可使用
 > - **按需授权：** 可选权限在需要时再授权，并可随时撤销（见扩展内 Permissions 页面）
 > - **可选 WebDAV 同步：** 如果你需要多设备一致，可选择使用你自己的 WebDAV 服务进行同步（可控、可迁移）
@@ -267,7 +260,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://pic1.afdiancdn.com/default/avatar/avatar-orange.png?imageView2/1/w/120/h/120" width="84px;" alt="Will" /><br />
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -281,6 +274,10 @@
     <td align="center" valign="top" width="14.28%">
       <img src="https://api.dicebear.com/7.x/bottts/svg?seed=anonymous%7Cwechat%7C2026-07-22%7C%EF%BF%A53&amp;radius=20&amp;backgroundColor=f1f5f9" width="84px;" alt="anonymous" /><br />
       <sub><b>anonymous</b></sub>
+    </td>
+    <td align="center" valign="top" width="14.28%">
+      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <sub><b>**然</b></sub>
     </td>
   </tr>
   </tbody>

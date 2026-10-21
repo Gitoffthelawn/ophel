@@ -3,7 +3,7 @@
  *
  * 说明：
  * - 与国内版 qianwen.com 完全独立，避免选择器/路由相互污染
- * - 会话列表优先走官方接口 /api/v2/chats/，DOM 只做补充
+ * - 对话列表优先走官方接口 /api/v2/chats/，DOM 只做补充
  * - 输入框、导出、主题、模型选择器均基于 qwen.html 快照中的稳定类名和结构锚点
  */
 import { SITE_IDS } from "~constants"
@@ -97,7 +97,7 @@ interface QwenAiAssistantImage {
 type QwenAiModelLockFailureReason = "button_not_found" | "menu_empty" | "not_found"
 
 export class QwenAiAdapter extends SiteAdapter {
-  private config: QwenStudioSiteConfig = QWEN_STUDIO_CONFIG
+  protected config: QwenStudioSiteConfig = QWEN_STUDIO_CONFIG
   private conversationSnapshot: ConversationInfo[] = []
   private conversationSnapshotFetchedAt = 0
   private conversationSnapshotPromise: Promise<ConversationInfo[]> | null = null
@@ -158,7 +158,7 @@ export class QwenAiAdapter extends SiteAdapter {
   }
 
   isSharePage(): boolean {
-    // 自有会话：/chat/...    分享会话：/s/ID
+    // 自有对话：/chat/...    分享对话：/s/ID
     return window.location.pathname.startsWith("/s/")
   }
 
@@ -271,7 +271,10 @@ export class QwenAiAdapter extends SiteAdapter {
       }
     }
 
-    return super.navigateToConversation(id, url || this.getConversationUrl(id))
+    // 降级：优先 history 导航免刷新（路由响应 popstate，已实测），失败再整页刷新
+    const targetUrl = url || this.getConversationUrl(id)
+    if (this.navigateViaHistory(targetUrl)) return true
+    return super.navigateToConversation(id, targetUrl)
   }
 
   getTextareaSelectors(): string[] {
@@ -860,9 +863,10 @@ export class QwenAiAdapter extends SiteAdapter {
   }
 
   private cloneZenModeConfig(config: ZenModeConfig): ZenModeConfig {
-    const { hide, rootClass, styles } = config
+    const { hide, preserveFlow, rootClass, styles } = config
     return {
       ...(hide ? { hide: [...hide] } : {}),
+      ...(preserveFlow ? { preserveFlow: [...preserveFlow] } : {}),
       ...(rootClass ? { rootClass: { ...rootClass } } : {}),
       ...(styles ? { styles: styles.map((style) => ({ ...style })) } : {}),
     }

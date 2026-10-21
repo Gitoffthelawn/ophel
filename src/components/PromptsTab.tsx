@@ -1126,9 +1126,9 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     setPrompts(allPrompts)
     setCategories(allCategories)
 
-    // 分类有效性检查：如果当前选中的分类不再存在或变空，回退到「全部」
+    // 分类有效性检查：如果当前选中的分类不再存在或变空，回退到「全部」（虚拟分类始终有效）
     setSelectedCategory((prev) => {
-      if (prev === VIRTUAL_CATEGORY.ALL) return prev
+      if (prev === VIRTUAL_CATEGORY.ALL || prev === VIRTUAL_CATEGORY.RECENT) return prev
       // 检查分类是否还存在
       if (!allCategories.includes(prev)) return VIRTUAL_CATEGORY.ALL
       // 检查分类下是否还有提示词
@@ -1886,11 +1886,11 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
 
     loadData()
     setImportDialogState({ show: false, prompts: [] })
-    const msg = `已合并：更新 ${toUpdate.length} 个，新增 ${toAdd.length} 个`
     showToast(
-      t("promptMergeSuccess")
-        ?.replace("{updated}", toUpdate.length.toString())
-        .replace("{added}", toAdd.length.toString()) || msg,
+      t("promptMergeSuccess", {
+        updated: toUpdate.length.toString(),
+        added: toAdd.length.toString(),
+      }),
     )
   }
 
@@ -1901,7 +1901,8 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
       return
     }
 
-    const newCategory = editingPrompt.category || t("uncategorized")
+    // 未选择分类时保持空串（未分类），展示层按当前语言渲染，避免把本地化文案写进数据
+    const newCategory = editingPrompt.category || ""
     let shouldSwitchToNewCategory = false
 
     if (editingPrompt.id) {
@@ -1989,7 +1990,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   const handleDelete = (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
     e.preventDefault()
-    showConfirm(t("confirmDelete"), "确定删除该提示词？", async () => {
+    showConfirm(t("confirmDelete"), t("promptDeleteConfirm"), async () => {
       await manager.deletePrompt(id)
       showToast(t("deleted"))
       loadData()
@@ -2019,12 +2020,10 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     if (prompt) {
       setEditingPrompt({ ...prompt })
     } else {
-      // 新建时：如果当前选中了真实分类，使用该分类；否则使用第一个真实分类或「未分类」
+      // 新建时：如果当前选中了真实分类，使用该分类；否则使用第一个真实分类或留空（未分类）
       const isVirtualCategory =
         selectedCategory === VIRTUAL_CATEGORY.ALL || selectedCategory === VIRTUAL_CATEGORY.RECENT
-      const defaultCategory = isVirtualCategory
-        ? categories[0] || t("uncategorized")
-        : selectedCategory
+      const defaultCategory = isVirtualCategory ? categories[0] || "" : selectedCategory
       setEditingPrompt({ title: "", content: "", category: defaultCategory })
     }
     setIsModalOpen(true)
@@ -2065,14 +2064,15 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   }
 
   const filtered = getFilteredPrompts()
-  const isPromptReorderingEnabled =
-    selectedCategory !== VIRTUAL_CATEGORY.RECENT &&
-    !searchQuery.trim() &&
-    selectedPlatforms.length === 0
   const isCurrentPlatformFilter =
     currentPlatform !== null &&
     selectedPlatforms.length === 1 &&
     selectedPlatforms[0] === currentPlatform.id
+  // 提示词顺序是全局手动数组，平台筛选只是隐藏部分行，
+  // 拖放落点按目标项 id 映射回全局数组即可，与筛选哪个站点无关；
+  // 仅"最近使用"（按时间排序）和搜索中（防误触）禁用拖动
+  const isPromptReorderingEnabled =
+    selectedCategory !== VIRTUAL_CATEGORY.RECENT && !searchQuery.trim()
   const isCustomPlatformFilter = selectedPlatforms.length > 0 && !isCurrentPlatformFilter
   const selectedPlatform =
     selectedPlatforms.length === 1
@@ -3088,7 +3088,10 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                     : "var(--gh-hover, #f3f4f6)",
                 borderRadius: "12px",
                 fontSize: "12px",
-                color: selectedCategory === VIRTUAL_CATEGORY.ALL ? "white" : "#4b5563",
+                color:
+                  selectedCategory === VIRTUAL_CATEGORY.ALL
+                    ? "var(--gh-text-on-primary, #ffffff)"
+                    : "var(--gh-text-secondary, #6b7280)",
                 cursor: "pointer",
                 flexShrink: 0,
                 border:
@@ -3113,14 +3116,17 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                           : `var(--gh-category-${colorIndex})`,
                       borderRadius: "12px",
                       fontSize: "12px",
-                      color: selectedCategory === cat ? "white" : "#4b5563",
+                      color:
+                        selectedCategory === cat
+                          ? "var(--gh-text-on-primary, #ffffff)"
+                          : "var(--gh-text-secondary, #6b7280)",
                       cursor: "pointer",
                       flexShrink: 0,
                       border:
                         selectedCategory === cat
                           ? "1px solid var(--gh-primary, #4285f4)"
                           : "1px solid transparent",
-                      maxWidth: "80px",
+                      maxWidth: "120px",
                       overflow: "hidden",
                       textOverflow: "ellipsis",
                       whiteSpace: "nowrap",
@@ -3342,7 +3348,10 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                       ? "var(--gh-primary, #4285f4)"
                       : "var(--gh-hover, #f3f4f6)",
                   borderRadius: "10px",
-                  color: selectedCategory === VIRTUAL_CATEGORY.RECENT ? "white" : "#4b5563",
+                  color:
+                    selectedCategory === VIRTUAL_CATEGORY.RECENT
+                      ? "var(--gh-text-on-primary, #ffffff)"
+                      : "var(--gh-text-secondary, #6b7280)",
                   cursor: "pointer",
                   border:
                     selectedCategory === VIRTUAL_CATEGORY.RECENT
@@ -3389,13 +3398,14 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
               color: "var(--gh-text-tertiary, #9ca3af)",
               fontSize: "14px",
             }}>
-            暂无提示词
+            {t("promptsEmpty")}
           </div>
         ) : (
           filtered.map((p) => {
             const isSelected = selectedPromptId === p.id
             const isLocated = locatedPromptId === p.id
             const isHighlighted = isSelected || isLocated
+            const cardVariables = extractVariables(p.content)
 
             return (
               <div
@@ -3434,16 +3444,40 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                   }}>
                   <div
                     style={{
-                      fontWeight: 600,
-                      fontSize: "14px",
-                      color: "var(--gh-text, #1f2937)",
                       flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      minWidth: 0,
                       overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
                       paddingRight: "8px",
                     }}>
-                    {p.title}
+                    <span
+                      style={{
+                        fontWeight: 600,
+                        fontSize: "14px",
+                        color: "var(--gh-text, #1f2937)",
+                        minWidth: 0,
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      }}>
+                      {p.title}
+                    </span>
+                    {cardVariables.length > 0 && (
+                      <Tooltip
+                        content={cardVariables.map((v) => `{{${v.raw}}}`).join(", ")}
+                        triggerStyle={{ flexShrink: 0, marginLeft: "6px" }}>
+                        <span
+                          style={{
+                            fontSize: "12px",
+                            color: "var(--gh-text-tertiary, #9ca3af)",
+                            fontFamily: "monospace",
+                            whiteSpace: "nowrap",
+                          }}>
+                          {`{{×${cardVariables.length}}}`}
+                        </span>
+                      </Tooltip>
+                    )}
                   </div>
                   <div
                     style={{

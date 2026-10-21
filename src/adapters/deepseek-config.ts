@@ -32,8 +32,8 @@ type DeepSeekPrivateSelectors = SitePrivateSelectors & {
   composerButton: string
   selectedModel: string
   newChatLayoutScope: string
-  canvasLayoutScope: string
-  canvasPreviewSafeArea: string
+  panelPreviewScope: string
+  panelPreviewContent: string
   panelAvoidanceScope: string
   messageListItems: string
   messageComposer: string
@@ -63,7 +63,7 @@ export interface DeepSeekSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const DEEPSEEK_CONFIG_VERSION = 1
+export const DEEPSEEK_CONFIG_VERSION = 5
 
 const createDeepSeekConfig = (): DeepSeekSiteConfig => {
   const conversationLink = 'a[href*="/a/chat/s/"]'
@@ -83,6 +83,7 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
   const sendIconPath =
     'svg path[d="M8.3125 0.981587C8.66767 1.0545 8.97902 1.20558 9.2627 1.43374C9.48724 1.61438 9.73029 1.85933 9.97949 2.10854L14.707 6.83608L13.293 8.25014L9 3.95717V15.0431H7V3.95717L2.70703 8.25014L1.29297 6.83608L6.02051 2.10854C6.26971 1.85933 6.51277 1.61438 6.7373 1.43374C6.97662 1.24126 7.28445 1.04542 7.6875 0.981587C7.8973 0.94841 8.1031 0.956564 8.3125 0.981587Z"]'
   const stopIconPath = 'svg path[d^="M2 4.88"]'
+  const newChatIconPath = 'svg path[d^="M8 0.599609"]'
   const submitButton = [
     `div[role="button"]${iconButton}:has(${sendIconPath})`,
     `button${iconButton}:has(${sendIconPath})`,
@@ -91,11 +92,21 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
     `div[role="button"]${iconButton}:has(${stopIconPath})`,
     `button${iconButton}:has(${stopIconPath})`,
   ]
+  const newChatButton = [
+    `div[tabindex]:has(${newChatIconPath})`,
+    `div[role="button"]:has(${newChatIconPath})`,
+    `button:has(${newChatIconPath})`,
+    `div[tabindex]:has(> .ds-icon):has(> ${focusRing})`,
+    'a[href="/a/chat"]',
+    'a[href="/a/chat/"]',
+  ]
   const messageLayoutWidthScope = ":root"
   const messageLayoutScope = `:is(.ds-virtual-list:has(${message}), .ds-virtual-list:has(textarea${sidebarScrollArea}))`
   const newChatLayoutScope = `#root > div:has(textarea${sidebarScrollArea}):not(:has(${message}))`
-  const canvasLayoutScope = '#root > div:has(.ds-virtual-list):has(div[aria-hidden="false"] iframe)'
-  const canvasPreviewSafeArea = `div[aria-hidden="false"]:has(iframe) ${sidebarScrollArea}`
+  // 文档预览与 Canvas 预览共用同一个右侧边栏（aria-hidden 切换显隐，标题栏带
+  // role="heading"），避让只需内缩边栏自己的内容列，不影响左侧聊天列。
+  const panelPreviewScope = '#root div[aria-hidden="false"]:has(div[role="heading"])'
+  const panelPreviewContent = `${panelPreviewScope} > div:has(div[role="heading"])`
   const panelAvoidanceScope = [messageLayoutScope, newChatLayoutScope].join(", ")
   const messageListItems = `${messageLayoutScope} .ds-virtual-list-items`
   const messageComposer = `${messageLayoutScope} > div:has(textarea${sidebarScrollArea})`
@@ -109,6 +120,10 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
 
   return {
     capabilities: [...BUILTIN_FEATURE_CAPABILITIES[SITE_IDS.DEEPSEEK]],
+    // apiFirstExport：会话页/分享页可走 history_messages/share 接口导出全量历史，
+    // 不依赖 DOM 历史预加载；接口失败时由 prepareConversationExport 返回 null
+    // 触发导出流程补做预加载后重试。
+    traits: { historyLazyLoad: false, virtualOutlineFill: true, apiFirstExport: true },
     selectors: {
       textarea: [
         'textarea[placeholder*="DeepSeek"]',
@@ -121,7 +136,7 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
       chatContent: [assistantResponse, userQuery],
       userQuery,
       assistantResponse,
-      newChatButton: ['a[href="/a/chat"]', 'a[href="/a/chat/"]'],
+      newChatButton,
       stopButton,
     },
     input: { mode: "textarea", submitKey: "Enter" },
@@ -156,8 +171,10 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
         noCenter: true,
       },
     ],
-    zenMode: { hide: [".dc04ec1d", "._0fcaa63"] },
-    cleanMode: { hide: ["._0fcaa63"] },
+    zenMode: { hide: [".dc04ec1d"] },
+    cleanMode: {
+      preserveFlow: ["._0fcaa63", ".ds-virtual-list > div:last-child > div:last-child"],
+    },
     quickQuote: "enabled",
     sitePrivateSelectors: {
       sidebarScrollArea,
@@ -173,8 +190,8 @@ const createDeepSeekConfig = (): DeepSeekSiteConfig => {
       ].join(", "),
       selectedModel: ".ds-toggle-button--selected",
       newChatLayoutScope,
-      canvasLayoutScope,
-      canvasPreviewSafeArea,
+      panelPreviewScope,
+      panelPreviewContent,
       panelAvoidanceScope,
       messageListItems,
       messageComposer,

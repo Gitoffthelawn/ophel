@@ -1,6 +1,7 @@
 import { SITE_IDS } from "~constants/defaults"
 
 import type {
+  AutoHideInputConfig,
   ExportConfig,
   ModelSwitcherConfig,
   NetworkMonitorConfig,
@@ -111,6 +112,11 @@ type GeminiPrivateSelectors = SitePrivateSelectors & {
   canvasCodeIcon: string[]
   canvasDocumentIcon: string[]
   canvasCard: string
+  canvasInlinePreview: string
+  canvasSidePanel: string
+  canvasPrevVersionButton: string
+  canvasNextVersionButton: string
+  canvasVersionDisabled: string
   canvasShareArtifact: string
   canvasArtifactContainer: string
   canvasEntryChip: string
@@ -146,6 +152,10 @@ type GeminiPrivateSelectors = SitePrivateSelectors & {
   inputSafeArea: string
   newChatInputSafeArea: string
   userQueryWidth: string
+  sparkGoalCard: string
+  sparkGoalTitle: string
+  sparkGoalPinnedMenu: string
+  sparkThreadTitle: string
 }
 
 export interface GeminiSiteConfig extends BuiltinSiteConfig {
@@ -159,14 +169,15 @@ export interface GeminiSiteConfig extends BuiltinSiteConfig {
   widthSelectors: Omit<WidthSelectorConfig, "transformValue">[]
   zenMode: ZenModeConfig
   cleanMode: ZenModeConfig
+  autoHideInput: AutoHideInputConfig
   mermaidSupport: NonNullable<BuiltinSiteConfig["mermaidSupport"]>
   quickQuote: NonNullable<BuiltinSiteConfig["quickQuote"]>
   supportsHostThemeSync: boolean
   sitePrivateSelectors: GeminiPrivateSelectors
 }
 
-/** 内置修复修改默认配置时必须递增，使旧缓存 patch 自动失效。 */
-export const GEMINI_CONFIG_VERSION = 1
+/** 内置修复修改默认配置时递增（相对上一 release 版本 +1），使旧缓存 patch 自动失效。一次发版周期内无需重复递增。 */
+export const GEMINI_CONFIG_VERSION = 7
 
 const createGeminiConfig = (): GeminiSiteConfig => {
   const userQuery = "user-query"
@@ -179,18 +190,30 @@ const createGeminiConfig = (): GeminiSiteConfig => {
   const immersivePanel = "immersive-panel"
   const sharePage = "share-landing-page"
   const visuallyHidden = ".cdk-visually-hidden"
-  const canvasCard = '[data-test-id="gem-processing-card"]'
+  const canvasCard = 'gem-processing-card, [data-test-id="gem-processing-card"]'
   const canvasEntryChip = "immersive-entry-chip"
-  const deepResearchPanel = "immersive-panel deep-research-immersive-panel"
-  const canvasCodePanel = "immersive-panel code-immersive-panel"
-  const canvasDocumentPanel = "immersive-panel extended-response-panel:has(canvas-create-button)"
+  const deepResearchPanel =
+    "deep-research-immersive-panel, immersive-panel deep-research-immersive-panel"
+  const canvasInlinePreview = "inline-preview, .inline-preview-container"
+  const canvasSidePanel =
+    "immersive-panel code-immersive-panel, code-immersive-panel, immersive-panel extended-response-panel:has(.code-editor), immersive-panel extended-response-panel:has(canvas-create-button)"
+  const canvasCodePanel = `${canvasInlinePreview}, immersive-entry-chip inline-preview, ${canvasSidePanel}`
+  const canvasDocumentPanel =
+    "immersive-panel extended-response-panel:has(canvas-create-button), extended-response-panel:has(canvas-create-button)"
+  const canvasPrevVersionButton =
+    'gem-icon-button[arialabel*="上一版本" i] button, gem-icon-button[arialabel*="Previous version" i] button, button[aria-label*="上一版本" i], button[aria-label*="Previous version" i], gem-icon-button[fonticonname="undo"] button'
+  const canvasNextVersionButton =
+    'gem-icon-button[arialabel*="下一版本" i] button, gem-icon-button[arialabel*="Next version" i] button, button[aria-label*="下一版本" i], button[aria-label*="Next version" i], gem-icon-button[fonticonname="redo"] button'
+  const canvasVersionDisabled =
+    '.gem-button-disabled, .gem-icon-button-disabled, [disabled], [aria-disabled="true"], [inert]'
   const shareAssistantMarkdown = "message-content .markdown"
   const deepResearchDocumentShare = `${sharePage} immersive-share-landing-page structured-content-container[data-test-id="deep-research-block"]`
   const deepResearchArtifactShare = `${sharePage} structured-content-container[data-test-id="immersive-artifact-content"]`
   const canvasArtifactContainer = ".immersive-artifact-container"
   const canvasCodeBlock = "code-block"
-  const canvasCodeEditor = 'xap-code-editor[data-test-id="code-editor"]'
-  const messageWidth = ".conversation-container"
+  const canvasCodeEditor =
+    'xap-code-editor[data-test-id="code-editor"], xap-code-editor, [data-test-id="code-editor"], code-editor, .code-editor, .monaco-editor'
+  const messageWidth = ".conversation-container, conversation-container"
   const inputWidth = ".input-area-container"
   const layoutScope = "bard-sidenav-content, body:not(:has(bard-sidenav-content)) main.chat-app"
   const markdownFixerSourceAttributeKeywords = [
@@ -241,7 +264,13 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         'button[aria-label*="Send"]',
         'button[aria-label*="发送"]',
         ".send-button",
+        ".send-button.submit",
+        "button.send-button.submit",
+        "gem-icon-button.send-button.submit",
+        ".send-button-container button",
         '[data-testid*="send"]',
+        '[data-test-id*="send-button"]',
+        'button:has(mat-icon[fonticon="send"])',
       ],
       responseContainer,
       chatContent: [
@@ -264,14 +293,22 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         '[data-test-id="temp-chat-button"]',
         'button[aria-label="临时对话"]',
       ],
-      stopButton: ['button:has(mat-icon[fonticon="stop"])', 'mat-icon[fonticon="stop"]'],
+      stopButton: [
+        'button:has(mat-icon[fonticon="stop"])',
+        'mat-icon[fonticon="stop"]',
+        ".send-button.stop",
+        "button.send-button.stop",
+        "gem-icon-button.send-button.stop",
+        '[data-test-id*="stop-button"]',
+      ],
       scrollContainer: [responseContainer],
       sidebarScrollContainer: conversationList,
     },
     input: { mode: "contenteditable", submitKey: "Enter" },
     conversation: {
       itemSelector: conversationItem,
-      idFrom: { attr: "jslog", regex: '\\["c_([^"]+)"' },
+      // 侧边栏 jslog 中的会话 id 已改为 base64 编码，稳定来源是内部 <a> 的 href（/app/<id>）
+      idFrom: { attr: "href", regex: "/app/([a-f0-9]+)" },
       titleSelector: conversationTitle,
       urlTemplate: "/app/{id}",
       activeMatch: "a.mdc-list-item--activated",
@@ -279,7 +316,13 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       shadow: false,
     },
     generating: {
-      existsSelectors: ['mat-icon[fonticon="stop"]'],
+      existsSelectors: [
+        'mat-icon[fonticon="stop"]',
+        ".send-button.stop",
+        "button.send-button.stop",
+        "gem-icon-button.send-button.stop",
+        '[data-test-id*="stop-button"]',
+      ],
     },
     networkMonitor: {
       urlPatterns: ["BardFrontendService", "StreamGenerate"],
@@ -288,12 +331,13 @@ const createGeminiConfig = (): GeminiSiteConfig => {
     modelSwitcher: {
       selectorButtonSelectors: [
         ".input-area-switch-label",
+        '[data-test-id="bard-mode-menu-button"]',
         ".model-selector",
         '[data-test-id="model-selector"]',
         '[aria-label*="model"]',
         'button[aria-haspopup="menu"]',
       ],
-      menuItemSelector: '.mode-title, [role="menuitem"], [role="option"]',
+      menuItemSelector: '.bard-mode-list-button, .mode-title, [role="menuitem"], [role="option"]',
       checkInterval: 1000,
       maxAttempts: 15,
       menuRenderDelay: 300,
@@ -301,7 +345,7 @@ const createGeminiConfig = (): GeminiSiteConfig => {
     export: {
       userQuerySelector: userQuery,
       assistantResponseSelector: `${assistantResponse}, .model-response-container .markdown`,
-      turnSelector: ".conversation-turn",
+      turnSelector: ".conversation-container, conversation-container, .conversation-turn",
       useShadowDOM: false,
     },
     widthSelectors: [
@@ -314,6 +358,20 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         selector: inputWidth,
         property: "max-width",
         extraCss: "width: 100% !important; min-width: 0 !important;",
+      },
+      {
+        selector:
+          ".md-content > *, message-content .markdown > *, thinking-overlay, .response-footer, .response-container-header, .response-container-footer, model-response-disclaimers, election-info-disclaimer, finance-info-disclaimer",
+        property: "max-width",
+        value: "100%",
+        noCenter: true,
+      },
+      {
+        selector: "message-actions",
+        property: "max-width",
+        value: "100%",
+        noCenter: true,
+        extraCss: "margin-inline-start: 0 !important;",
       },
       {
         selector: ".table-block.new-table-style",
@@ -341,11 +399,45 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       hide: ["bard-sidenav", "div.sidenav-with-history-container"],
     },
     cleanMode: {
-      hide: [
+      preserveFlow: [
         "hallucination-disclaimer",
+        ".hallucination-disclaimer",
+        "condensed-tos-disclaimer",
+        "model-response-disclaimers",
+        "election-info-disclaimer",
+        "finance-info-disclaimer",
+        "freemium-rag-disclaimer",
+        "freemium-file-upload-near-quota-disclaimer",
+        "freemium-file-upload-quota-exceeded-disclaimer",
+      ],
+      hide: [
+        "sensitive-memories-banner",
+        "bot-banner",
         "g1-dynamic-upsell-button",
         ".share-viewer_footer_disclaimer",
         'share-landing-page immersive-share-landing-page .page:has(structured-content-container[data-test-id="deep-research-block"]) > .footer',
+      ],
+    },
+    autoHideInput: {
+      // 仅浮层化活跃对话的输入容器；新对话页的零态居中输入（.input-area-container.is-zero-state）保持原样。
+      // Gemini 2026 下半年改版后 input-area-container 从 fieldset 挪到了外层 div，
+      // fieldset 改用 input-area-fieldset 类，这里只依赖稳定的标签层级
+      container: "input-container:has(> .input-area-container:not(.is-zero-state) > fieldset)",
+      // 滚动末尾占位用 ::after 伪元素注入，不往 infinite-scroller 里塞真实 DOM 节点
+      scrollContainer: responseContainer,
+      styles: [
+        {
+          selector: ".conversation-container",
+          property: "min-height",
+          value: "0",
+        },
+        {
+          selector: "infinite-scroller.chat-history",
+          property: "mask-image",
+          value: "none",
+          extraCss:
+            "overflow-anchor: none; -webkit-mask-image: none !important; --bottom-gradient-color: transparent !important;",
+        },
       ],
     },
     mermaidSupport: "fallback",
@@ -370,17 +462,36 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       canvasDocumentPanel,
       panelToolbarActions: "toolbar .action-buttons",
       deepResearchPanelExportButton: '[data-test-id="export-menu-button"]',
-      deepResearchPanelCloseButton: `${deepResearchPanel} [data-test-id="close-button"], ${immersivePanel} [data-test-id="close-button"]`,
+      deepResearchPanelCloseButton: [
+        "deep-research-immersive-panel toolbar .close-button button",
+        'deep-research-immersive-panel toolbar button:has(mat-icon[fonticon="close"])',
+        'deep-research-immersive-panel toolbar button[aria-label*="关闭"]',
+        'deep-research-immersive-panel toolbar button[aria-label*="close" i]',
+        'deep-research-immersive-panel [data-test-id="close-button"]',
+        `${immersivePanel} [data-test-id="close-button"]`,
+      ].join(", "),
       canvasPanelDownloadButton: '[data-test-id="download-preview-button"]',
       panelThinking: "thinking-panel",
       panelToolbarTitle: "toolbar h2.title-text",
-      canvasPanelTitle: "toolbar h2.title-text, .title-text",
-      canvasPanelCloseButton: 'toolbar [data-test-id="close-button"]',
+      canvasPanelTitle:
+        "toolbar h2.title-text, .title-wrapper .title, .title-container .title, .title-text, .title",
+      canvasPanelCloseButton: [
+        ".close-button button",
+        'button[aria-label*="关闭"]',
+        'button[aria-label*="close" i]',
+        'gem-icon-button[fonticonname="close"] button',
+        'gem-icon-button[arialabel*="关闭"] button',
+        'button:has(mat-icon[fonticon="close"])',
+        'button:has(mat-icon[data-mat-icon-name="close"])',
+        '[data-test-id="close-button"]',
+      ].join(", "),
       chatsExpandableSection: 'expandable-section[data-test-id="chats-expandable-section"]',
       chatsExpandableSectionFallback: 'expandable-section[storagekey="chats"]',
       chatsExpandableSectionHost: "expandable-section",
       conversationList,
-      historyLoadingSpinner: '[data-test-id="loading-history-spinner"]',
+      // 加载中 spinner 的 test-id 已由 loading-history-spinner 更名为 loading-content-spinner
+      historyLoadingSpinner:
+        '[data-test-id="loading-content-spinner"], [data-test-id="loading-history-spinner"]',
       conversationAnchor: "a",
       conversationPinnedIcon: 'mat-icon[fonticon="push_pin"]',
       conversationActiveTitle: `a.mdc-list-item--activated ${conversationTitle}`,
@@ -448,7 +559,8 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       visuallyHidden,
       userQueryText: ".query-text",
       userQueryLine: ".query-text-line",
-      exportMessageSource: "message-content, .conversation-turn",
+      exportMessageSource:
+        "message-content, .conversation-container, conversation-container, .conversation-turn",
       immersivePanel,
       exportImageScope: [
         ".attachment-container.generated-images",
@@ -459,13 +571,25 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         "[data-image-attachment-index]",
       ],
       userQueryImage: ["img[data-test-id='uploaded-img']", ".preview-image"],
-      uploadedFile: '[data-test-id="uploaded-file"]',
+      uploadedFile:
+        '[data-test-id="uploaded-file"], user-query-file-preview, .new-file-preview-container',
       sharePage,
       shareTurn: `${sharePage} .share-turn-viewer`,
       shareAssistantMarkdown,
       assistantExportNoise: [
         visuallyHidden,
         "model-thoughts",
+        "thinking-overlay",
+        "sources-list",
+        "deep-research-source-lists",
+        ".deep-research-source-lists",
+        ".end-of-report-marker",
+        '[data-test-id="used-sources-button"]',
+        '[data-test-id="used-sources-list"]',
+        '[aria-controls="used-sources-list"]',
+        ".used-sources",
+        '[data-test-id="collapsible-thinking-button"]',
+        ".collapsible-thinking-button",
         canvasEntryChip,
         "gem-processing-card",
         canvasCard,
@@ -477,6 +601,7 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         "mat-icon",
         "share-button",
         "copy-button",
+        "message-actions",
         "download-generated-image-button",
         ".generated-image-controls",
         ".loader",
@@ -500,14 +625,22 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         ".loader",
       ],
       generatedImageButton: "button.image-button",
-      driveViewer: `${immersivePanel} .drive-viewer`,
-      driveViewerOwner: ".drive-viewer",
+      driveViewer: `${immersivePanel} .drive-viewer, .drive-viewer, drive-viewer, [data-test-id="drive-viewer"]`,
+      driveViewerOwner: ".drive-viewer, drive-viewer",
       driveViewerTextContent: ".drive-viewer-text-content",
       driveViewerError: ".drive-viewer-msg-error",
       driveViewerTextCandidate: ".drive-viewer-text-content pre, .drive-viewer-text-content",
       driveViewerName: ".drive-viewer-toolstrip-name",
       driveActiveItemInfo: '[id="drive-active-item-info"], div[style*="display:none"]',
-      driveViewerCloseButton: ".drive-viewer-close-button",
+      driveViewerCloseButton: [
+        ".drive-viewer-close-button",
+        "toolbar .close-button button",
+        'toolbar button:has(mat-icon[fonticon="close"])',
+        'toolbar button:has(mat-icon[data-mat-icon-name="close"])',
+        'button[aria-label*="关闭"]',
+        'button[aria-label*="close" i]',
+        '[data-test-id="close-button"]',
+      ].join(", "),
       uploadedFileName: ['[data-test-id="filename-label"]', ".filename-label", ".new-file-name"],
       uploadedFileAriaAction: "a[aria-label], button[aria-label]",
       uploadedFileType: ".new-file-type",
@@ -515,10 +648,28 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       deepResearchDocumentShare,
       deepResearchArtifactShare,
       deepResearchConfirmation: "deep-research-confirmation-widget",
-      deepResearchPanelMarkdown: ["#extended-response-markdown-content", shareAssistantMarkdown],
+      deepResearchPanelMarkdown: [
+        "structured-content-container #extended-response-markdown-content",
+        "structured-content-container message-content .markdown",
+        "structured-content-container message-content",
+        "structured-content-container",
+        "#extended-response-markdown-content",
+        "message-content#extended-response-message-content .markdown",
+        shareAssistantMarkdown,
+      ],
       deepResearchAppDocumentMarkdown: [
+        `${deepResearchPanel} structured-content-container #extended-response-markdown-content`,
+        `${deepResearchPanel} structured-content-container message-content .markdown`,
+        `${deepResearchPanel} structured-content-container message-content`,
+        `${deepResearchPanel} structured-content-container`,
+        "deep-research-immersive-panel structured-content-container #extended-response-markdown-content",
+        "deep-research-immersive-panel structured-content-container message-content .markdown",
+        "deep-research-immersive-panel structured-content-container",
         `${deepResearchPanel} #extended-response-markdown-content`,
+        `${deepResearchPanel} message-content#extended-response-message-content .markdown`,
+        `${deepResearchPanel} message-content .markdown`,
         `${deepResearchPanel} ${shareAssistantMarkdown}`,
+        "#extended-response-markdown-content",
       ],
       deepResearchAppTrigger: `${assistantResponse} ${canvasCard}, ${assistantResponse} ${canvasEntryChip}`,
       deepResearchIcon: [
@@ -538,6 +689,11 @@ const createGeminiConfig = (): GeminiSiteConfig => {
         'mat-icon[data-mat-icon-name="article"]',
       ],
       canvasCard,
+      canvasInlinePreview,
+      canvasSidePanel,
+      canvasPrevVersionButton,
+      canvasNextVersionButton,
+      canvasVersionDisabled,
       canvasShareArtifact: `${sharePage} ${canvasArtifactContainer}`,
       canvasArtifactContainer,
       canvasEntryChip,
@@ -556,28 +712,37 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       canvasTabRadio: "button[role='radio']",
       canvasTabSelected: ".mat-button-toggle-checked",
       canvasHidden: ".hidden",
-      canvasCodeContent: '[data-test-id="code-content"], pre code, code',
+      canvasCodeContent:
+        '[data-test-id="code-content"], .code-content:not(web-preview):not(.hidden), pre code, code',
       canvasMonacoEditor: ".monaco-editor",
       canvasMonacoTextarea: "textarea.inputarea",
       canvasMonacoScrollable: ".monaco-scrollable-element",
       canvasMonacoLine: ".view-lines .view-line",
-      canvasMonacoContentHeight: ".view-lines, .margin, .lines-content",
-      canvasTitle: ".title-text, .card-title",
-      canvasNestedTitle: ".title-text",
+      canvasMonacoContentHeight: ".view-lines, .margin-view-overlays, .margin",
+      canvasTitle:
+        ".title-wrapper .title, .title-container .title, .title-text, .card-title, .title",
+      canvasNestedTitle: ".title-wrapper .title, .title-container .title, .title-text, .title",
       canvasCodeLanguage: ".code-block-decoration span",
       canvasMode: "[data-mode-id]",
       outlineMessageContent: "message-content",
       outlineUserMetadataButton: 'button[jslog*="BardVeMetadataKey"]',
       outlineAssistantMarkdown: ".model-response-text, message-content",
-      outlineThoughts: "model-thoughts",
+      outlineThoughts: "model-thoughts, thinking-overlay",
       modelName: ".input-area-switch-label",
       layoutScope,
       immersiveLayout: "chat-window.immersives-mode:not(.mobile-device)",
       chatColumnScope: "chat-window .chat-container",
-      messageSafeArea: responseContainer,
+      messageSafeArea: "infinite-scroller.chat-history",
       inputSafeArea: "input-container",
-      newChatInputSafeArea: "chat-window.center-input-layout .input-area-container.is-zero-state",
+      newChatInputSafeArea:
+        "chat-window.center-input-layout .input-area-container.is-zero-state, .center-input-layout .input-area-container, .zero-state-theme .input-area-container",
       userQueryWidth: ".user-query-bubble-with-background:not(.edit-mode)",
+      // Gemini Spark（/spark 路由）：对话列表是主内容区/左窗格里的任务卡片，没有侧边栏列表
+      sparkGoalCard: 'remy-task-list .goal-card[id^="goal-c_"]',
+      sparkGoalTitle: ".goal-description",
+      // 置顶标记：操作菜单宿主上的语义类。pin 图标的 sf-hidden 只是显隐工具类，hover/渲染时序下不可靠
+      sparkGoalPinnedMenu: "remy-goal-action-menu.is-pinned",
+      sparkThreadTitle: '[data-test-id="remy-split-pane-title"]',
     },
   }
 }

@@ -1,7 +1,8 @@
 {
   "language": "auto",
   "hasAgreedToTerms": false,
-  "hasSeenOphelAdvancedGuide": false,
+
+  "disabledSites": [],
 
   "remoteConfig": {
     "autoUpdate": true,
@@ -30,7 +31,7 @@
   },
 
   "content": {
-    "assistantMermaid": true,
+    "assistantMermaid": false,
     "markdownFix": false,
     "watermarkRemoval": false,
     "formulaCopy": true,
@@ -49,7 +50,8 @@
     "exportMarkdownDivider": "---",
     "exportShowDialog": true,
     "packaging": "markdown",
-    "defaultExportFormat": "markdown"
+    "defaultExportFormat": "markdown",
+    "exportStyle": "standard"
   },
 
   "theme": {
@@ -188,6 +190,10 @@
       "yuanbao": { "enabled": true },
       "zai": { "enabled": true },
       "_default": { "enabled": true }
+    },
+    "autoHideInput": {
+      "gemini": { "enabled": false },
+      "_default": { "enabled": false }
     }
   },
 
@@ -261,7 +267,7 @@
   },
 
   "readingHistory": {
-    "persistence": true,
+    "persistence": false,
     "autoRestore": true,
     "cleanupDays": 3
   },
@@ -283,7 +289,7 @@
     "floatingToolbar": {
       "open": true
     },
-    "hideWhenPanelOpen": false,
+    "hideWhenPanelOpen": true,
     "proximityRadius": 150
   },
 
@@ -359,6 +365,7 @@
     "collapseNavbar": false,
     "collapseTools": false,
     "collapseAdvanced": false,
+    "collapseRunSettings": false,
     "enableSearch": true,
     "defaultModel": "",
     "markdownFix": false,

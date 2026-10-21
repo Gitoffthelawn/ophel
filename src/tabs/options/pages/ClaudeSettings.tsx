@@ -71,7 +71,7 @@ const ClaudeSettings: React.FC<ClaudeSettingsProps> = ({ siteId }) => {
 
   // 切换 Session Key（带检测）
   const handleSwitchToken = async (keyId: string) => {
-    // 禁止切换到空值（已移除默认选项）
+    // 禁止切换到空值
     if (!keyId) {
       showToast(t("claudePleaseSelectKey"), TOAST_DURATION.SHORT)
       return
@@ -565,7 +565,10 @@ const ClaudeSettings: React.FC<ClaudeSettingsProps> = ({ siteId }) => {
               padding: "8px 12px",
               flex: "1 1 auto",
               opacity: keys.length === 0 || isBatchTesting ? 0.6 : 1,
-              backgroundColor: isBatchTesting ? "rgba(var(--gh-primary-rgb), 0.1)" : undefined,
+              // --gh-primary-rgb 从未定义，用 color-mix 基于 --gh-primary 取 12% 透明度
+              backgroundColor: isBatchTesting
+                ? "color-mix(in srgb, var(--gh-primary, #3b82f6) 12%, transparent)"
+                : undefined,
               color: isBatchTesting ? "var(--gh-primary)" : undefined,
               borderColor: isBatchTesting ? "var(--gh-primary)" : undefined,
               whiteSpace: "nowrap",
@@ -713,7 +716,7 @@ const ClaudeSettings: React.FC<ClaudeSettingsProps> = ({ siteId }) => {
                             fontWeight: 500,
                             border: "1px solid var(--gh-border)",
                           }}>
-                          当前使用
+                          {t("claudeKeyUsing")}
                         </span>
                       )}
                       {renderTypeBadge(key.accountType)}
