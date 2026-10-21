@@ -302,11 +302,7 @@ jobs:
           cp assets/icon.png build/userscript/assets/
           cp -R docs/readmes build/userscript/docs/
           mkdir -p build/userscript/docs/media
-          cp -R docs/media/demo build/userscript/docs/media/
           cp -R docs/media/support build/userscript/docs/media/
-          # 将 demo 图替换为网络链接，避免 release 分支 README 在外部平台渲染异常
-          sed -i 's|!\[Ophel Demo\](./docs/media/demo/outline.gif)|<img src="https://github.com/user-attachments/assets/7161a37b-5fb3-4799-a6a9-25521e1a514f" alt="Ophel Demo" style="max-width:100%;">|g' build/userscript/README*.md
-          sed -i 's|!\[Ophel Demo\](../media/demo/outline.gif)|<img src="https://github.com/user-attachments/assets/7161a37b-5fb3-4799-a6a9-25521e1a514f" alt="Ophel Demo" style="max-width:100%;">|g' build/userscript/docs/readmes/README*.md 2>/dev/null || true
           # 剥离 shields.io 徽章中的 base64 内联 logo，避免 Greasy Fork 附加信息超过 50000 字符限制
           sed -i 's/\&logo=data%3Aimage[^"]*//g' build/userscript/README*.md
           sed -i 's/\&logo=data%3Aimage[^"]*//g' build/userscript/docs/readmes/README*.md 2>/dev/null || true
