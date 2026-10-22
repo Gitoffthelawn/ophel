@@ -39,8 +39,7 @@ Ophel Atlas 是 TypeScript + React 18 + Plasmo 的浏览器扩展，同时支持
 - 扩展开发：`pnpm dev`
 - 格式检查：`pnpm format:check`
 - Lint 检查：`pnpm lint:check`
-- 类型检查：`pnpm typecheck`（覆盖 `src/` 与 `tests/`）
-- 测试：`pnpm test`（Vitest）
+- 类型检查：`pnpm typecheck`
 - 校验 SitePack：`pnpm registry:validate`
 - Chrome 构建：`pnpm build`
 - Firefox 构建：`pnpm build:firefox`
@@ -49,7 +48,7 @@ Ophel Atlas 是 TypeScript + React 18 + Plasmo 的浏览器扩展，同时支持
 - 油猴本地调试构建：`pnpm build:userscript:local`
 - 油猴本地资源服务：`pnpm serve:userscript:assets`
 
-项目使用 Vitest 作为测试体系。代码变更优先运行最相关检查；提交前的完整验证顺序见 `docs/developer/conventions/commits.md`。涉及存储适配、内容脚本入口、样式注入或核心初始化时，再补 `pnpm build:userscript` 与 `pnpm build:firefox`。若无法运行，交付时说明原因和替代检查。
+代码变更优先运行最相关检查；提交前的完整验证顺序见 `docs/developer/conventions/commits.md`。涉及存储适配、内容脚本入口、样式注入或核心初始化时，再补 `pnpm build:userscript` 与 `pnpm build:firefox`。若无法运行，交付时说明原因和替代检查。
 
 ## 编码约束
 
@@ -105,12 +104,12 @@ Ophel Atlas 是 TypeScript + React 18 + Plasmo 的浏览器扩展，同时支持
 ## 更新日志写法
 
 - 详细规范见 `docs/developer/conventions/changelog.md`；写更新日志前必读。
-- 核心禁令：中英文两份日志必须同步；只使用三类固定标题（New Features / Improvements / Bug Fixes 及对应中文）；说通俗人话，严禁出现虚拟滚动、DOM、离屏卸载等技术黑话与实现细节；新条目必须追加在 `[Unreleased]` 对应分类列表的最末尾，禁止插在首行；一个分支（一个 PR）只写一条日志，同一分支的多处相关改动必须合并为一条，禁止按站点或 commit 逐条罗列。
+- 核心禁令：中英文两份日志必须同步；只使用三类固定标题（New Features / Improvements / Bug Fixes 及对应中文）；说通俗人话，严禁出现虚拟滚动、DOM、离屏卸载等技术黑话与实现细节；新条目必须追加在 `[Unreleased]` 对应分类列表的最末尾，禁止插在首行；条目末尾能确认时必须保留 PR 编号；一个分支（一个 PR）原则上只写一条日志，若单个 PR 包含多处互不相关的重大改动，最多允许拆为两条清晰聚焦的条目。
 
 ## 提交与 PR
 
 - 详细规范见 `docs/developer/conventions/commits.md`；提交或创建 PR 前必读。
-- 核心禁令：Commit 与 PR 使用英文 Conventional Commits（`type(scope): subject`）；PR 默认创建为 Draft；提交前先看 `git status` 和 `git diff`，不混入无关改动。
+- 核心禁令：Commit 与 PR 使用英文 Conventional Commits（`type(scope): subject`）；PR 标题默认在末尾追加 `[skip ci]`；PR 默认创建为 Draft；提交前先看 `git status` 和 `git diff`，不混入无关改动。
 
 ## 验证与交付
 

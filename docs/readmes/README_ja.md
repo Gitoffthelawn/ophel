@@ -9,19 +9,19 @@
   
   <p>
     無限スクロールによる情報の迷宮に別れを告げよう
-    </br>
+    <br />
     リアルタイムのアウトラインで文脈を整理し、
-    </br>
+    <br />
     会話フォルダで体系を構築し、
-    </br>
+    <br />
     プロンプトライブラリで経験を蓄積し、
-    </br>
+    <br />
     煌めく思考を秩序の中で自由に解き放とう
   </p>
   
   <p align="center" style="font-size: 12px; color: #555;">👇 デモ：「無限スクロールのチャット履歴」から「ナビ可能なAIドキュメント」へ</p>
 
-<img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/3e15e094-4085-4532-9bd7-7ec3f1ca525e" />
+<img width="1200" height="675" alt="Image" src="https://github.com/user-attachments/assets/07a69dc7-f87c-4913-bd71-1ede00230c30" />
 
   <p>
     <strong><em>AIチャットを初めて「整理可能なワークフロー」にします</em></strong><br/>
@@ -47,7 +47,7 @@
     <a href="https://chat.qwen.ai"><img src="https://img.shields.io/static/v1?label=&message=Qwen%20Studio&color=7C3AED&style=flat&logo=data%3Aimage/png%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAMAAABEpIrGAAAAaVBMVEVHcExeTe1cUe1fVO1cNOlhV%2B9wcfJVQvBQR/NeSu5WO%2BphRupVEeSFkff///9gRulhT%2BtiOediVu308/64sfWon/NfLOVua/BqYO7W0/qLeO1WPenm5PyRhvCDbe3Au/Z3fPNTEeRRLuid/6vZAAAADnRSTlMAg%2BXYqru9MxBfz/W/ga%2BH9kIAAAGTSURBVDiNdZPrYoMgDIV1VattB8hNEZTJ%2Bz/kkqCt3er5ZZvPQ3KCRfFSVTdN0xWnKqMcx2FoT4GBRQFEc1avAmMjelw/168zY8xxIOCY4Qc0f78BNwWA4VIekGM7nYG6SkI8CUD2dq6gewCHJXnOudgoQHI7X0ZrPcfAFD5sijrGqMmiE%2BQ%2BO2ziXZocpPRY0mDxR6qm/KQUE/78bzHTFBdoyDvMQCzTUwb1lUcAQEh8YbHW9iAYZHAokxdXA%2BA1HrluZZ6CQrGBgBYA4dHCkEHPvdmacGVeMwAcN8HoCN5n%2BtVmgUDCISMdkiI8hkSn3vIeAOALvsHRQlDHnNIxOewLAIlGBYuVHjycGkAXahMd%2Bh5fnKyl1HBl3HvPqc0aAW6xrbCulLvfl5qjItpiSU35XuStC9HlpCAH3LRjytG4M8UF9T1skWdgKmgacQXgjtdou3O1SHnVm8GIcR0/oJZv2Qbj9rhubze6XKYFNfbPwM8%2BDrAyKwDV53pRPJRa8Vqc1Yt2mqFuy1Og6B4V6PDHL81hMVCAJrPEAAAAAElFTkSuQmCC" alt="Qwen Studio"/></a>
     <a href="https://yuanbao.tencent.com"><img src="https://img.shields.io/static/v1?label=&message=Yuanbao&color=F97316&style=flat&logo=data%3Aimage%2Fpng%3Bbase64%2CiVBORw0KGgoAAAANSUhEUgAAAGQAAABkCAMAAABHPGVmAAAABGdBTUEAALGPC%2FxhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAA51BMVEUAAAAAz3AAzHAAy3AAzXAAzHAAzHAAzXAAzHAAzHAAy3AAz3AAzXAAzXAAynAAzXAAzHEAzHAAy3AAzHAAy3AAzHAAzHAw1ooQz3kg04Ig0oJQ3J2A5bfP9uR%2F5bef7Mkw1ov%2F%2F%2F%2Ff%2Be2%2F8ttg36ZA2ZOw79Jw4q5g36XP9eSQ6MDv%2FPZA2ZQg04EQ0Hmv79Jv4q6P6cDf%2BO2P6MDf39%2BQkJBgYGCAgICfn5%2Bvr68QEBAAAABwcHAgICDv7%2B%2B%2Fv7%2BgoKBAQEB%2Ff38w1YtQUFAwMDCQ6cDPz8%2BPj49fX1%2BA5rig7Mlw4q%2BcA9JGAAAAFnRSTlMAEFBwj6%2FP3%2B%2B%2FQCCfYDB%2Fb5CA37CgSCmUoAAAAAFiS0dEIcRsDRYAAATWSURBVGjetZp9f5pIEMeXoICiXkiaSTSX6GqpJtjYtMbmShKbXu7ay%2BX9v577gCC77CwssPf7S5eHLzOzj7NLiKKMA7PVtmwHAMCxO52W2TVUn1WSa%2FZsQGS3%2BwM9hG4LBexBvW5TgvGbBaWy%2B24DxKDllCNi9epi3I4ioT7GaFVB1MMcqjqKi01FT52eVYcAdCoYc%2BgMR3UYAI6pHo3heT0GALTUXGXB8PfaDABbwWWuDXBR01mqlIEDcDluwgBwBuWMCW1kSCklYsB01pBRTHEjxiV93xgCjjQuUcxhSBt7C4qiH48bY3qhgQFg4eNm3CP6lH7QAsFb5WF8aUZpk5bICulh4qBHEaFzTRAk%2BLsRakwpXWiCQCfP6ENqiD5I3mHubkayiCC6YgLg8DWstyu9iiDX2iB8DXMh8xZt3qtkckVDYm%2FRQCOkIxgSNZJIS42UQd4QCHaQakH5eOr7vn8juerlDfF3DBooz1RO57MgfWi1GCJ37CtYPymYJ%2FcrVuKb%2BYzyGiOYI7b3BYBrWsWUTwEVJWKsHaOb%2Fs8%2B7LYUMbmgqKZCf9Hlwg6fs3vL5l2fqFSXaOj3axzmzmBSyPhCqTLlOJ48pP%2FOOLOHcsTNjBYqN1a4TN2CEXdnIPWYP6Ul4t0Q9cVtHCI6NzHjSxmC0ilXO3tsSEbCveLIcnMZlDNyDe2YEAOkkAjDhca%2FVULkG5qRtRIMQim9Gs99%2F%2BOpv7hdKRKE2B8Qc%2F%2F7TP0dpeLGJJN42Z8KX1oq1l8eYdbRn6WPrO82m69rofgeK9yJbQDvWMhKxvjjWxjpLlf8EIbho4TC1i%2BLMImTaxnkMWaE3554O%2BLCDf4Iu446Jsx6fSFhbMNE3zkX7tDP%2BDPshNohzJ%2BRBPI1hXBfvQmLLOGqFwuRRX6TQtivvk%2FK1lUhkqA8p5BHwVnhD4n1H6SQpTpkI5Tw4mY8hEvUBKqQbbGz%2BH7FIXa5vxDIfVhUtSilf3JV2Cr3V4ElWwljyr61k41ZsWaKEPqSlDzhkDEP8aDUlJcU8ldW9pTUrhccwk2nPaarl5rygLWT1GHfMQbnLTDJAZSacpdCHhA0agqf0%2Bgyw%2B9Of4uPrEMszE%2Fyvos3BAxCcvnrM2TC84y2vJ%2FxAPALgfB5E5sQcpIzBXHYOg79c77l3T%2BG4T8I45V%2F4TtC8pFHHUbX2y3SuJ%2BwQiE302eWQCWNRVnTfJJpwE24i8JSn2HHs3pPMGVUnyLmSHv8IkgDZSWu0ZLtFUsb5VV8k52sGY8AodSI%2FhRLAKSbBAa6w%2FCqwVVs4sPDrsJ5JZdN8UVTL0sHo9dh9K8yIniVrMqZDI5sY0kxMlIEYwjW6lMtyzFyBJ%2BKkkQlcVrhkmJ2XpC%2BYA2RVbB9FZBwgtVbYYIkn%2BY2oViTt9UV9%2F6r8duk5BkQNtJUNhWHy%2BX7SMvJUOFuMWWbJJ91Ctt5KHNYZaEbdZ6GFzPyMAYxFDas1WUTXK6t4eUpQ74VpC34TsE24EATRWF77n9m6KGUMXREX3Xzt4kstT35Rq3SUz0yY9YOjPKmf%2BWDHpmqHF%2BIErk1IlPFjMSYk6oM5WjUx1T0VA2M4zU5HeWqxMY6anzSq3tSfPTKa3z0aqdBv40fIuuZTQ5diTK6ptfppMfhrLZnHig76T8EnUECfKwPQAAAAABJRU5ErkJggg%3D%3D" alt="Yuanbao"/></a>
     <a href="https://ima.qq.com"><img src="https://img.shields.io/static/v1?label=&message=ima&color=07A45F&style=flat&logo=data%3Aimage/png%3Bbase64%2C/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIiAdHx8kKDQsJCYxJx8fLT0tMTU3Ojo6Iys/RD84QzQ5OjcBCgoKDQwNGg8PGjclHyU3Kzc3Nzc3Kzc3Nys3Ny01Nzc1LTcuKzI3NzctNys3Liw3Kys3NzctKysrLis3NCsrN//AABEIACAAIAMBIgACEQEDEQH/xAAYAAEBAQEBAAAAAAAAAAAAAAAGBQgHA//EACYQAAEDBAICAgIDAAAAAAAAAAECAwQFBhEhADEHExJBYYEUIlH/xAAXAQEBAQEAAAAAAAAAAAAAAAAEAAUB/8QAHREAAgEEAwAAAAAAAAAAAAAAAAECAwQRIQUSE//aAAwDAQACEQMRAD8Ag%2BSPINy1G9ZFJoM2XEYiSv4rDERRQt51KviSSNqyrQHWMaznmhYXvTEYEtSVSA2n2lPRXj%2B2P3nkqfEt%2BjOS7kmQ4UZ5psrfnekezGMdgZJPWtnQ5CsvyXSLwqsmn0%2BPLZcZaLqVPpSA4gEAnRODsa5HGNZnvVCfENSUyS2r1FXQXjWf3jmePG3kG5aderFIr0yXLZlyv4r7EtRWtl1SviCCdpwrRHWM6zjnU7y8m0iz6rGp1Qjy3nHmw6pTCUkNoJIHZGTo64gp8W3q05EuSHDhSXnWwtid6R7MYx2RkEdb2NjkSeSb5Et926bVlUmNKRHecUhaVrz8SUnOFY3jhC0rCk2ZSJ7tNnRHbhkthCJDzZ9LScglI%2BznHf4TrW39RW9HWUqSr4/Svo8mlxazk55nXV55aCTrtvqkELtsKVeNJgO1KbFauCM2ULkMtn0upySEn7GM9/lWt6YeOaE7a1rRaTJkpkOtqWtSkZ%2BIKjnCc7xz1bURylBC3VAAH4/Z/wA4KhyUqs1BCKaljZ//2Q%3D%3D" alt="ima"/></a>
-    </br>
+    <br />
     <a href="https://ophel.app/docs/enhancements/site-extensions"><img src="https://img.shields.io/badge/さらに多くのサイト-プラグイン式・プラグ＆プレイ-B8860B?style=flat" alt="プラグイン式サイトアダプター：さらに多くのサイト、プラグ＆プレイ"/></a>
     <br/>
     <img src="https://img.shields.io/github/package-json/v/urzeye/ophel?color=blue" alt="Version">
@@ -55,7 +55,7 @@
     <img src="https://img.shields.io/github/last-commit/urzeye/ophel" alt="Last Commit">
     <a href="https://github.com/urzeye/ophel/stargazers"><img src="https://img.shields.io/github/stars/urzeye/ophel?style=social" alt="Stars"></a>
     <a href="https://github.com/urzeye/ophel/network/members"><img src="https://img.shields.io/github/forks/urzeye/ophel?style=social" alt="Forks"></a>
-    </br>
+    <br />
     <a href="https://chromewebstore.google.com/detail/ai-chat-organizer-outline/lpcohdfbomkgepfladogodgeoppclakd"><img src="https://img.shields.io/chrome-web-store/users/lpcohdfbomkgepfladogodgeoppclakd?logo=google-chrome&logoColor=white&label=Chrome%20Web%20Store&color=4285F4&labelColor=4285F4" alt="Chrome Web Store"></a>
     <a href="https://microsoftedge.microsoft.com/addons/detail/ophel-atlas-ai-chat-navi/ffpenkdeifijngifjmbbpijfpdhlolga"><img src="https://img.shields.io/badge/Edge_Add--ons-0078D7?logo=data:image/svg%2Bxml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciICB2aWV3Qm94PSIwIDAgNDggNDgiIHdpZHRoPSI5NnB4IiBoZWlnaHQ9Ijk2cHgiPjxwYXRoIGZpbGw9IiMxZTg4ZTUiIGQ9Ik00MC42OSwzNS40MmMtOS4xNSwxMS44OC0yMS40MSw4LjgtMjYuMjMsNi4xIGMtNy4zNS00LjExLTEyLjUtMTMuNjgtOS40NC0yMy4yNWMwLjktMi44MiwyLjI3LTUuMjMsMy45OC03LjIzYzEuNjcsMC4xMywzLjY1LDAuMTMsNi0wLjA0YzE0LTEsMTgsMTEsMTcsMTQgYy0wLjUxLDEuNTMtMi4zMiwyLjAyLTMuOTcsMi4xM2MwLjE2LTAuMjIsMC4zNi0wLjU0LDAuNjQtMS4wMmMwLjg3LTEuNTQsMC45OC00LjQ5LTEuNzMtNi4yN2MtMi42MS0xLjctNS40My0wLjY1LTYuODgsMS4yOCBjLTEuNDUsMS45Mi0wLjg4LDQuODEtMC4zNyw2LjA5YzIuMiw1LjUyLDYuMjYsNi45NSw5LjAyLDcuNzhjMi43NiwwLjgzLDYuODYsMC43MSw5LjA1LTAuMTljMi4xOC0wLjkxLDIuOC0xLjQzLDMuMjItMC45NyBDNDEuNDEsMzQuMjksNDEuMTEsMzQuODIsNDAuNjksMzUuNDJ6Ii8%2BPHBhdGggZmlsbD0iIzBkNDdhMSIgZD0iTTQwLjczMiwzNS40MmMtMy40OCw0LjUyLTcuNDEsNi44Ny0xMS4yMSw3LjkxIGMtMC4wMywwLjAxLTAuMDYsMC4wMS0wLjA4LDAuMDJjLTIuMiwwLjQyLTMuOTUsMC4wOC01Ljg1LTAuMjljLTMuMDktMC42LTcuMzUtNC4wMS04LjM4LTEwLjE4Yy0wLjg4LTUuMzEsMS42My05LjgxLDUuNTktMTIuNTQgYy0wLjI2LDAuMjQtMC40OSwwLjUtMC43LDAuNzhjLTEuNDUsMS45Mi0wLjg4LDQuODEtMC4zNyw2LjA5YzIuMiw1LjUyLDYuMjYsNi45NSw5LjAyLDcuNzhjMi43NiwwLjgzLDYuODYsMC43MSw5LjA1LTAuMTkgYzIuMTgtMC45MSwyLjgtMS40MywzLjIyLTAuOTdDNDEuNDUyLDM0LjI5LDQxLjE1MiwzNC44Miw0MC43MzIsMzUuNDJ6Ii8%2BPHBhdGggZmlsbD0iIzAwZTVmZiIgZD0iTTI2Ljk0LDQuMjVjMC4wMiwwLjI2LDAuMDMsMC41NCwwLjAzLDAuODFjMCwzLjc4LTEuNzUsNy4xNC00LjQ4LDkuMzIgYy0xLjAyLTAuNTItMi4yMS0wLjk0LTMuNjUtMS4yMmMtNC4wNy0wLjc4LTEwLjYzLDEuMS0xMy4zLDUuNzdjLTAuODgsMS41My0xLjI1LDMuMS0xLjQxLDQuNTVjMC4wNC0xLjcxLDAuMzMtMy40NiwwLjg5LTUuMjEgQzguMzEsOC4wMSwxNy44NiwzLjA1LDI2Ljk0LDQuMjV6Ii8%2BPHBhdGggZmlsbD0iIzAwZTY3NiIgZD0iTTQxLjQsMjcuODljLTIuNzYsMi43OC02LjI3LDIuODYtOC42NywyLjczIGMtMi40MS0wLjEyLTMuNTktMC44Mi00LjY5LTEuNWMtMS4xMS0wLjY5LTAuNDgtMS4zNy0wLjM3LTEuNTJjMC4xMS0wLjE1LDAuMzgtMC40MSwxLTEuNDljMC4yOS0wLjUxLDAuNS0xLjE4LDAuNTQtMS45MSBjNC42Mi0zLjQzLDcuOTYtOC40OSw5LjE2LTE0LjM0YzIuOTIsMi45NSw0LjMsNi4yMSw0Ljc5LDcuNjFDNDQuMDQsMTkuOTksNDQuNzEsMjQuNTYsNDEuNCwyNy44OXoiLz48cGF0aCBmaWxsPSIjMWRlOWI2IiBkPSJNMzguMzcsOS44NXYwLjAxYy0xLjIsNS44NS00LjU0LDEwLjkxLTkuMTYsMTQuMzRjMC4wMy0wLjQyLDAtMC44Ny0wLjEtMS4zMiBjMC0wLjAyLTAuMDEtMC4wNC0wLjAxLTAuMDVjLTAuMjUtMS40Ny0wLjk5LTMuMzMtMi4yMi00Ljc3Yy0xLjIyLTEuNDQtMi41Mi0yLjczLTQuMzktMy42OGMyLjczLTIuMTgsNC40OC01LjU0LDQuNDgtOS4zMiBjMC0wLjI3LTAuMDEtMC41NS0wLjAzLTAuODFjMC40LDAuMDUsMC43OSwwLjExLDEuMTksMC4xOUMzMi43NCw1LjMzLDM2LjA0LDcuNDksMzguMzcsOS44NXoiLz48L3N2Zz4=&style=flat" alt="Edge Add-ons"></a>
     <a href="https://addons.mozilla.org/firefox/addon/ophel-ai-chat-enhancer/"><img src="https://img.shields.io/amo/users/ophel-ai-chat-enhancer?logo=firefox&logoColor=white&label=Firefox%20Add-ons&color=FF7139&labelColor=FF7139" alt="Firefox Add-ons"></a>
@@ -244,7 +244,7 @@
       <sub><b>Lewu Gao</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaHtqmS5_svvGLGrJELBucI_wDPrrwgACTykAAm9ByFRanhipsu36yT0E.jpg" width="84px;" alt="Will" /><br />
+      <img src="https://github.com/user-attachments/assets/369f1bbd-c66b-4b97-8007-d7e669e46b31" width="84px;" alt="Will" /><br />
       <sub><b>Will</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
@@ -260,7 +260,7 @@
       <sub><b>anonymous</b></sub>
     </td>
     <td align="center" valign="top" width="14.28%">
-      <img src="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEaaGhqmS3ONp0Nji535vNTkf7njuv7ugACNSkAAm9ByFTGm8MeNRIAAak9BA.jpg" width="84px;" alt="**然" /><br />
+      <img src="https://github.com/user-attachments/assets/f9d63951-0ba6-4e27-b5c9-da5e0e1228ac" width="84px;" alt="**然" /><br />
       <sub><b>**然</b></sub>
     </td>
   </tr>

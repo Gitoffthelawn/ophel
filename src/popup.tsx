@@ -15,7 +15,12 @@ import { SettingsIcon } from "~components/icons/SettingsIcon"
 import { StarIcon } from "~components/icons/StarIcon"
 import { TimeIcon } from "~components/icons/TimeIcon"
 import { Tooltip } from "~components/ui/Tooltip"
-import { ABOUT_SPONSOR_SETTING_ID, NAV_IDS } from "~constants"
+import {
+  ABOUT_SPONSOR_SETTING_ID,
+  NAV_IDS,
+  SITE_PACKS_TAB_IDS,
+  sitePackInstalledSettingId,
+} from "~constants"
 import type { SupportedAiPlatform } from "~constants/defaults"
 import {
   buildQuickAccessSites,
@@ -120,11 +125,14 @@ function IndexPopup() {
     [effectiveState, disabledPackPlatform],
   )
 
+  // 开关目标是已停用适配包时，站点名展示该包（开关旁的名字始终与作用对象一致）
+  const displayPlatform = useMemo(
+    () => (toggleTarget?.kind === "pack" ? toggleTarget.platform : effectiveState.platform),
+    [toggleTarget, effectiveState],
+  )
+
   const currentSite = useMemo((): SiteInfo | null => {
     if (!activeTabUrl) return null
-    // 开关目标是已停用适配包时，站点名展示该包（开关旁的名字始终与作用对象一致）
-    const displayPlatform =
-      toggleTarget?.kind === "pack" ? toggleTarget.platform : effectiveState.platform
     if (displayPlatform) {
       const status =
         toggleTarget?.kind === "pack" && !toggleTarget.enabled ? "disabled" : effectiveState.status
@@ -140,7 +148,19 @@ function IndexPopup() {
     } catch {
       return { name: t("popupCurrentSite"), url: "", status: "unsupported" }
     }
-  }, [activeTabUrl, effectiveState, toggleTarget])
+  }, [activeTabUrl, displayPlatform, effectiveState, toggleTarget])
+
+  // 当前标签页实际域名：多入口平台在站点卡片上展示并支持切换
+  const currentTabHost = useMemo(() => {
+    if (!activeTabUrl) return ""
+    try {
+      return new URL(activeTabUrl).hostname
+    } catch {
+      return ""
+    }
+  }, [activeTabUrl])
+  const siteEntryUrls = displayPlatform?.entryUrls ?? []
+  const currentSiteMenuKey = displayPlatform ? `current-site:${displayPlatform.id}` : null
 
   const isCurrentSiteDisabled = currentSite?.status === "disabled"
   const canToggleCurrentSite = toggleTarget !== null
@@ -304,9 +324,10 @@ function IndexPopup() {
     }
   }
 
-  const openOptionsPage = (page?: string, settingId?: string) => {
+  const openOptionsPage = (page?: string, settingId?: string, subTab?: string) => {
     const params = new URLSearchParams()
     if (page) params.set("page", page)
+    if (subTab) params.set("subTab", subTab)
     if (settingId) params.set("settingId", settingId)
     const query = params.toString()
     // Use tabs.create as fallback for popup context
@@ -340,7 +361,17 @@ function IndexPopup() {
   const openQuickAccessSite = (site: QuickAccessSite) => {
     const url = resolveQuickAccessUrl(site, lastEntryUrls)
     if (!url) {
-      openOptionsPage("sitePacks")
+      // 未绑定域名的适配包：直接定位到适配中心「已安装」里对应的包卡片
+      const packId = site.platform.id.startsWith("pack:") ? site.platform.id.slice(5) : null
+      if (packId) {
+        openOptionsPage(
+          NAV_IDS.SITE_PACKS,
+          sitePackInstalledSettingId(packId),
+          SITE_PACKS_TAB_IDS.INSTALLED,
+        )
+      } else {
+        openOptionsPage(NAV_IDS.SITE_PACKS)
+      }
       return
     }
     // 单入口平台的打开目标可由 urls[0] 推导，无需落盘
@@ -372,6 +403,14 @@ function IndexPopup() {
       await chrome.tabs.create({ url, active: true })
     }
     window.close()
+  }
+
+  // 切换当前站点的入口域名：导航当前标签页，并同步记住为快捷访问默认入口
+  const switchCurrentSiteEntry = (url: string) => {
+    if (displayPlatform && siteEntryUrls.length > 1) {
+      rememberEntryUrl(displayPlatform.id, url)
+    }
+    void openUrlInCurrentTab(url)
   }
 
   const startNewChatInCurrentSite = async () => {
@@ -437,7 +476,55 @@ function IndexPopup() {
             {currentSite?.name !== t("popupCurrentSite") && (
               <div className="popup-site-label">{t("popupCurrentSite")}</div>
             )}
-            <div className="popup-site-name">{currentSite?.name || "..."}</div>
+            <div className="popup-site-name-row">
+              <div className="popup-site-name">{currentSite?.name || "..."}</div>
+              {displayPlatform && currentTabHost && (
+                <div className="popup-site-entry-anchor">
+                  {siteEntryUrls.length > 1 ? (
+                    <Tooltip content={t("popupSwitchSiteEntry")} placement="top">
+                      <button
+                        className="popup-site-entry-pill switchable"
+                        aria-label={t("popupSwitchSiteEntry")}
+                        aria-haspopup="menu"
+                        aria-expanded={entryMenuSiteKey === currentSiteMenuKey}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setEntryMenuSiteKey(
+                            entryMenuSiteKey === currentSiteMenuKey ? null : currentSiteMenuKey,
+                          )
+                        }}>
+                        <span className="popup-site-entry-host">{currentTabHost}</span>
+                        <ChevronDownIcon size={10} />
+                      </button>
+                    </Tooltip>
+                  ) : (
+                    <span className="popup-site-entry-pill">
+                      <span className="popup-site-entry-host">{currentTabHost}</span>
+                    </span>
+                  )}
+                  {entryMenuSiteKey === currentSiteMenuKey && (
+                    <div
+                      ref={entryMenuRef}
+                      className={`popup-site-entry-menu${entryMenuDropUp ? " drop-up" : ""}`}
+                      role="menu"
+                      onClick={(e) => e.stopPropagation()}>
+                      {siteEntryUrls.map((url) => {
+                        const host = hostOf(url)
+                        return (
+                          <button
+                            key={url}
+                            className={`popup-site-entry-item${host === currentTabHost ? " active" : ""}`}
+                            role="menuitem"
+                            onClick={() => switchCurrentSiteEntry(url)}>
+                            {host}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {currentSite && (
             <div className="popup-site-status-right">
@@ -488,13 +575,6 @@ function IndexPopup() {
                 const resolvedUrl = resolveQuickAccessUrl(site, lastEntryUrls)
                 // 停用的内置站点：保留导航能力，弱化展示并标注状态
                 const tileDisabled = isQuickAccessTileDisabled(site.platform, disabledSites)
-                const subtitle = tileDisabled
-                  ? t("popupSiteDisabled")
-                  : site.urls.length === 0
-                    ? t("popupSitePackUnbound")
-                    : site.urls.length > 1 && resolvedUrl
-                      ? hostOf(resolvedUrl)
-                      : null
                 return (
                   <div className="popup-site-tile" key={site.key}>
                     <Tooltip
@@ -515,7 +595,6 @@ function IndexPopup() {
                           fallbackClassName="popup-site-emoji"
                         />
                         <span className="popup-site-title">{site.platform.name}</span>
-                        {subtitle && <span className="popup-site-subtitle">{subtitle}</span>}
                       </button>
                     </Tooltip>
                     {site.urls.length > 1 && (

@@ -11,6 +11,21 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.13][1.2.13] - 2026-10-21
+
+### ✨ Improvements
+
+- **Gemini unified layout adaptation** — Adapted to Gemini's unified layout so task (formerly Spark) conversations sync into chat management normally, and restored auto-hide input on redesigned conversation pages. (#977)
+- **Z.ai new domain and input width fix** — Added support for Z.ai's new domain `zchat.z.ai`, and fixed an issue where enabling panel avoidance squeezed the input box on new chat pages. (#979)
+- **Popup quick access and site pack navigation** — The popup now supports multi-entry domain switching with cleaner tile alignment, and clicking unbound site packs jumps directly to the corresponding settings card. (#979, #982)
+
+### 🐛 Bug Fixes
+
+- **Grok page layout update adaptation** — Fixed issues after Grok's page update where the outline failed to generate, panel avoidance covered the chat area, and scroll-to-top/bottom buttons scrolled the sidebar instead of the conversation. (#980)
+- **Missing questions in Doubao long-chat outline** — Fixed an issue in long Doubao conversations where earlier questions went missing from the outline and could not be jumped to. (#981)
+
+---
+
 ## [1.2.12][1.2.12] - 2026-10-12
 
 **⚠️ Notice — Our GitHub account is still suspended and the appeal is ongoing. Until it is restored, GitHub links (repository, issue tracker) and the online adapter library in the Adapter Center may be unavailable. If you run into any problems, please let us know on [Discord](https://discord.gg/rmPzb6Cx9u).**
@@ -1618,6 +1633,7 @@ This is the first official release of Ophel, providing comprehensive enhancement
 
 ---
 
+[1.2.13]: https://github.com/urzeye/ophel/releases/tag/v1.2.13
 [1.2.12]: https://github.com/urzeye/ophel/releases/tag/v1.2.12
 [1.2.11]: https://github.com/urzeye/ophel/releases/tag/v1.2.11
 [1.2.10]: https://github.com/urzeye/ophel/releases/tag/v1.2.10

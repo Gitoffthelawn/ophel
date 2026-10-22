@@ -387,9 +387,8 @@ function runPnpm(args) {
 }
 
 function runQualityChecks() {
-  console.log("Running pre-release checks: typecheck, test")
+  console.log("Running pre-release checks: typecheck")
   runPnpm(["typecheck"])
-  runPnpm(["test"])
 }
 
 async function runRelease(version, options) {

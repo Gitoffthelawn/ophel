@@ -152,10 +152,6 @@ type GeminiPrivateSelectors = SitePrivateSelectors & {
   inputSafeArea: string
   newChatInputSafeArea: string
   userQueryWidth: string
-  sparkGoalCard: string
-  sparkGoalTitle: string
-  sparkGoalPinnedMenu: string
-  sparkThreadTitle: string
 }
 
 export interface GeminiSiteConfig extends BuiltinSiteConfig {
@@ -177,7 +173,7 @@ export interface GeminiSiteConfig extends BuiltinSiteConfig {
 }
 
 /** 内置修复修改默认配置时递增（相对上一 release 版本 +1），使旧缓存 patch 自动失效。一次发版周期内无需重复递增。 */
-export const GEMINI_CONFIG_VERSION = 7
+export const GEMINI_CONFIG_VERSION = 8
 
 const createGeminiConfig = (): GeminiSiteConfig => {
   const userQuery = "user-query"
@@ -420,9 +416,11 @@ const createGeminiConfig = (): GeminiSiteConfig => {
     },
     autoHideInput: {
       // 仅浮层化活跃对话的输入容器；新对话页的零态居中输入（.input-area-container.is-zero-state）保持原样。
-      // Gemini 2026 下半年改版后 input-area-container 从 fieldset 挪到了外层 div，
-      // fieldset 改用 input-area-fieldset 类，这里只依赖稳定的标签层级
-      container: "input-container:has(> .input-area-container:not(.is-zero-state) > fieldset)",
+      // 内部结构屡次变动（input-area-container 从 fieldset 挪到 wrapper div、2026-10 又新增
+      // input-area-v2 > .input-area 包裹层），选择器不得依赖内部层级，只用「input-container 内
+      // 含非零态输入区」作活跃对话判定，零态排除再以祖先主题类兜底。
+      container:
+        "input-container:has(.input-area-container:not(.is-zero-state)):not(.center-input-layout input-container, .zero-state-theme input-container)",
       // 滚动末尾占位用 ::after 伪元素注入，不往 infinite-scroller 里塞真实 DOM 节点
       scrollContainer: responseContainer,
       styles: [
@@ -737,12 +735,6 @@ const createGeminiConfig = (): GeminiSiteConfig => {
       newChatInputSafeArea:
         "chat-window.center-input-layout .input-area-container.is-zero-state, .center-input-layout .input-area-container, .zero-state-theme .input-area-container",
       userQueryWidth: ".user-query-bubble-with-background:not(.edit-mode)",
-      // Gemini Spark（/spark 路由）：对话列表是主内容区/左窗格里的任务卡片，没有侧边栏列表
-      sparkGoalCard: 'remy-task-list .goal-card[id^="goal-c_"]',
-      sparkGoalTitle: ".goal-description",
-      // 置顶标记：操作菜单宿主上的语义类。pin 图标的 sf-hidden 只是显隐工具类，hover/渲染时序下不可靠
-      sparkGoalPinnedMenu: "remy-goal-action-menu.is-pinned",
-      sparkThreadTitle: '[data-test-id="remy-split-pane-title"]',
     },
   }
 }
