@@ -276,7 +276,7 @@
 </p>
 
 <p align="center">
-  <strong>공유도 마찬가지로 강력합니다:</strong> <strong><a href="https://linux.do/">Linux.do</a>, Reddit, X, YouTube</strong>에서 경험을 공유해 주시면 정말 기쁠 것 같습니다. 모든 피드백과 응원이 Ophel의 성장을 돕습니다!
+  <strong>공유도 마찬가지로 강력합니다:</strong> <strong>Reddit, X, YouTube, <a href="https://linux.do/">Linux.do</a>, <a href="https://meta.appinn.net">Appinn</a></strong>에서 경험을 공유해 주시면 정말 기쁠 것 같습니다. 모든 피드백과 응원이 Ophel의 성장을 돕습니다!
 </p>
 
 <p align="center">
@@ -389,7 +389,7 @@ pnpm serve:userscript:assets   # 아이콘/스타일 등 정적 어셋을 로컬
     <tr>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/urzeye"><img src="https://raw.githubusercontent.com/urzeye/ophel/main/docs/media/github/avatar.gif" width="80" height="80" alt="小 i 同学"/></a><br /><a href="https://github.com/urzeye"><sub><b>小 i 同学</b></sub></a><br /><span title="Code">💻</span> <span title="Ideas, Planning, & Feedback">🤔</span> <span title="Infrastructure (Hosting, Build-Tools, etc)">🚇</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/treasuresure"><img src="https://avatars.githubusercontent.com/u/50103468?v=4&s=80" width="80" height="80" alt="treasuresure"/></a><br /><a href="https://github.com/treasuresure"><sub><b>treasuresure</b></sub></a><br /><span title="Design">🎨</span> <span title="Financial">💵</span></td>
-      <td align="center" valign="top" width="12.5%"><a href="https://www.tjsky.net/"><img src="https://avatars.githubusercontent.com/u/7272911?v=4&s=80" width="80" height="80" alt="去年夏天"/></a><br /><a href="https://www.tjsky.net/"><sub><b>去年夏天</b></sub></a><br /><span title="Code">💻</span></td>
+      <td align="center" valign="top" width="12.5%"><a href="https://github.com/tjsky"><img src="https://avatars.githubusercontent.com/u/7272911?v=4&s=80" width="80" height="80" alt="去年夏天"/></a><br /><a href="https://github.com/tjsky"><sub><b>去年夏天</b></sub></a><br /><span title="Code">💻</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/lanvent"><img src="https://avatars.githubusercontent.com/u/26515464?v=4&s=80" width="80" height="80" alt="Jianglang"/></a><br /><a href="https://github.com/lanvent"><sub><b>Jianglang</b></sub></a><br /><span title="Code">💻</span> <span title="Bug reports">🐛</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/Felix3322"><img src="https://avatars.githubusercontent.com/u/115849429?v=4&s=80" width="80" height="80" alt="Felix Liu"/></a><br /><a href="https://github.com/Felix3322"><sub><b>Felix Liu</b></sub></a><br /><span title="Code">💻</span></td>
       <td align="center" valign="top" width="12.5%"><a href="https://github.com/KanameMadoka520"><img src="https://avatars.githubusercontent.com/u/90090108?v=4&s=80" width="80" height="80" alt="Madoka"/></a><br /><a href="https://github.com/KanameMadoka520"><sub><b>Madoka</b></sub></a><br /><span title="Code">💻</span></td>
