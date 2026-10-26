@@ -1,0 +1,180 @@
+{
+  "$comment": "docs/media/badges/ 下徽章 SVG 的生成清单，由 scripts/generate-badges.mjs 消费。url 中的 {logo} 会在运行时替换为 logos/ 目录下对应文件的 base64 data URI。",
+  "badges": [
+    {
+      "name": "deepwiki-de.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/DeepWiki_fragen-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-es.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/Preguntar_a_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-fr.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/Demander_à_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-ja.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/DeepWikiに聞く-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-ko.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/DeepWiki에게_묻기-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-ru.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/Спросить_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-zh-cn.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/询问_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki-zh-tw.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/詢問_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "deepwiki.svg",
+      "logo": "deepwiki.svg",
+      "url": "https://img.shields.io/badge/Ask_DeepWiki-555555?style=flat-square&logo={logo}&logoColor=white"
+    },
+    {
+      "name": "edge-addons.svg",
+      "logo": "edge-addons.svg",
+      "url": "https://img.shields.io/badge/Edge_Add--ons-0078D7?logo={logo}&style=flat"
+    },
+    {
+      "name": "scriptcat.svg",
+      "logo": null,
+      "url": "https://img.shields.io/badge/ScriptCat-脚本猫-ff5722"
+    },
+    {
+      "name": "sites/aistudio.svg",
+      "logo": "aistudio.png",
+      "url": "https://img.shields.io/static/v1?label=&message=AI%20Studio&color=4285F4&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/chatglm.svg",
+      "logo": "chatglm.png",
+      "url": "https://img.shields.io/static/v1?label=&message=ChatGLM&color=2563EB&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/chatgpt.svg",
+      "logo": "chatgpt.png",
+      "url": "https://img.shields.io/static/v1?label=&message=ChatGPT&color=74AA9C&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/claude.svg",
+      "logo": "claude.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Claude&color=D97757&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/deepseek.svg",
+      "logo": "deepseek.png",
+      "url": "https://img.shields.io/static/v1?label=&message=DeepSeek&color=4D6BFE&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/doubao.svg",
+      "logo": "doubao.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Doubao&color=0057FE&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/gemini-enterprise.svg",
+      "logo": "gemini-enterprise.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Gemini%20Enterprise&color=9334E6&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/gemini.svg",
+      "logo": "gemini.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Gemini&color=4285F4&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/grok.svg",
+      "logo": "grok.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Grok&color=000000&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/ima.svg",
+      "logo": "ima.jpg",
+      "url": "https://img.shields.io/static/v1?label=&message=ima&color=07A45F&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/kimi.svg",
+      "logo": "kimi.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Kimi&color=5B44F3&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/qianwen.svg",
+      "logo": "qianwen.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Qianwen&color=FF6A00&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/qwen-studio.svg",
+      "logo": "qwen-studio.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Qwen%20Studio&color=7C3AED&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/yuanbao.svg",
+      "logo": "yuanbao.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Yuanbao&color=F97316&style=flat&logo={logo}"
+    },
+    {
+      "name": "sites/zai.svg",
+      "logo": "zai.png",
+      "url": "https://img.shields.io/static/v1?label=&message=Z.ai&color=111827&style=flat&logo={logo}"
+    },
+    {
+      "name": "zread-de.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Zread_fragen-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-es.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Preguntar_a_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-fr.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Demander_à_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-ja.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Zreadに聞く-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-ko.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Zread에게_묻기-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-ru.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Спросить_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-zh-cn.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/询问_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread-zh-tw.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/詢問_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    },
+    {
+      "name": "zread.svg",
+      "logo": "zread.svg",
+      "url": "https://img.shields.io/badge/Ask_Zread-_.svg?style=flat-square&color=00b0aa&labelColor=000000&logo={logo}&logoColor=ffffff"
+    }
+  ]
+}
