@@ -15,25 +15,20 @@ import {
   KeyboardIcon,
   MaximizeIcon,
   PageContentIcon,
-  PermissionsIcon,
   RestoreIcon,
   SitePacksIcon,
-  SearchIcon,
 } from "~components/icons"
 import { Tooltip } from "~components/ui/Tooltip"
 import { SidebarCommunityLinks } from "~components/SidebarCommunityLinks"
 import { NAV_IDS, resolveSettingsNavigateDetail, type SettingsNavigateDetail } from "~constants"
 import { useHasUnseenReleaseNotes } from "~hooks/useHasUnseenReleaseNotes"
-import { platform } from "~platform"
 import { useSettingsHydrated, useSettingsStore } from "~stores/settings-store"
 import { SidebarFooter } from "~tabs/options/components/SidebarFooter"
 import AboutPage from "~tabs/options/pages/AboutPage"
 import AppearancePage from "~tabs/options/pages/AppearancePage"
 import BackupPage from "~tabs/options/pages/BackupPage"
 import FeaturesPage from "~tabs/options/pages/FeaturesPage"
-import GlobalSearchPage from "~tabs/options/pages/GlobalSearchPage"
 import GeneralPage from "~tabs/options/pages/GeneralPage"
-import PermissionsPage from "~tabs/options/pages/PermissionsPage"
 import ShortcutsPage from "~tabs/options/pages/ShortcutsPage"
 import SitePacksPage from "~tabs/options/pages/SitePacksPage"
 import SiteSettingsPage from "~tabs/options/pages/SiteSettingsPage"
@@ -111,20 +106,8 @@ const NAV_ITEMS: Array<{
     label: "Site Packs",
     beta: true,
   },
-  {
-    id: NAV_IDS.GLOBAL_SEARCH,
-    Icon: SearchIcon,
-    labelKey: "navGlobalSearch",
-    label: "Global Search",
-  },
   { id: NAV_IDS.SHORTCUTS, Icon: KeyboardIcon, labelKey: "navShortcuts", label: "Shortcuts" },
-  { id: NAV_IDS.BACKUP, Icon: BackupIcon, labelKey: "navBackup", label: "Backup & Data" },
-  {
-    id: NAV_IDS.PERMISSIONS,
-    Icon: PermissionsIcon,
-    labelKey: "navPermissions",
-    label: "Permissions",
-  },
+  { id: NAV_IDS.BACKUP, Icon: BackupIcon, labelKey: "navBackup", label: "Data & Permissions" },
   { id: NAV_IDS.ABOUT, Icon: AboutIcon, labelKey: "navAbout", label: "About" },
 ]
 
@@ -370,6 +353,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   }, [isOpen, siteId])
 
+  // 弹窗打开期间开启键盘屏障：站点在 window/document 捕获阶段的快捷键监听
+  // 由主世界劫持层跳过（keyboard-guard-main.ts / keyboard-guard-inject.ts），
+  // 避免弹窗内按键（如录制快捷键）穿透触发站点自身快捷键
+  useEffect(() => {
+    if (!isOpen) return
+
+    document.documentElement.dataset.ophelKeyboardShield = "1"
+    return () => {
+      delete document.documentElement.dataset.ophelKeyboardShield
+    }
+  }, [isOpen])
+
   // 禁止背景滚动
   useEffect(() => {
     if (isOpen) {
@@ -419,12 +414,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
         return <AppearancePage siteId={siteInstanceKey} initialTab={initialSubTab} />
       case NAV_IDS.FEATURES:
         return <FeaturesPage siteId={siteId} initialTab={initialSubTab} />
-      case NAV_IDS.GLOBAL_SEARCH:
-        return <GlobalSearchPage siteId={siteId} />
       case NAV_IDS.SHORTCUTS:
         return <ShortcutsPage siteId={siteId} />
-      case NAV_IDS.PERMISSIONS:
-        return <PermissionsPage siteId={siteId} />
       case NAV_IDS.BACKUP:
         return <BackupPage siteId={siteId} initialTab={initialSubTab} onNavigate={setActivePage} />
       case NAV_IDS.ABOUT:
@@ -483,12 +474,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
             </div>
           </div>
           <nav className="settings-sidebar-nav">
-            {NAV_ITEMS.filter((item) => {
-              // 油猴脚本环境中过滤掉 permissions 导航项
-              if (!platform.hasCapability("permissions") && item.id === NAV_IDS.PERMISSIONS)
-                return false
-              return true
-            }).map((item) => (
+            {NAV_ITEMS.map((item) => (
               <button
                 key={item.id}
                 className={`settings-nav-item ${activePage === item.id ? "active" : ""}`}
