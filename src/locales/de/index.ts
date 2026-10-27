@@ -34,7 +34,14 @@ export const de = {
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "Layout und Verarbeitung pro Website konfigurieren",
+  siteSettingsPageDesc:
+    "Seitenlayout, Modellsperre und websitespezifische Funktionen pro Website konfigurieren",
+  siteSelectorLabel: "Website konfigurieren",
+  siteSettingsOtherSiteToast:
+    "Einstellungen für {site} werden bearbeitet; Änderungen wirken sich nicht auf die aktuelle Website aus",
+  currentSiteBadge: "Aktuelle Website",
+  siteExclusiveSettingsLabel: "Websitespezifisch",
+  noSiteExclusiveSettings: "Keine websitespezifischen Einstellungen für diese Website",
   communitySitePackBadge: "Community-Paket (Kernfunktionen)",
   communitySitePackDesc:
     "Diese Website wird durch ein Community-Paket unterstützt. Es werden nur die Funktionen angezeigt, die das Paket unterstützt.",
@@ -221,7 +228,6 @@ export const de = {
   layoutSettingsTitle: "Breitensteuerung",
   tabLayout: "Layout",
   tabModelLock: "Modellsperre",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "Maximale Chatbreite anpassen",
   userQueryWidthSettings: "Benutzerbreite",
   scrollSettings: "Scrollen",
@@ -1589,13 +1595,6 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   popupSettings: "Einstellungen",
 
   // Policy Retry
-  policyRetryLabel: "Autom. Wiederholung bei Richtlinienblockierung",
-  policyRetryDesc:
-    "Nachricht automatisch erneut senden, wenn sie durch Unternehmensrichtlinien blockiert wurde",
-  maxRetriesLabel: "Max. Wiederholungen",
-  retryCountSuffix: "Mal (gleiche Frage)",
-  policyRetryActive: "Richtlinienblockierung, erneuter versuch ({current}/{max})",
-  policyRetryLimitReached: "Wiederholungslimit erreicht",
   preventAutoScrollEnabled: "Scroll-Sperre aktiviert",
   preventAutoScrollDisabled: "Scroll-Sperre deaktiviert",
 
@@ -1620,6 +1619,13 @@ Gib den Code und eine Zusammenfassung der Verbesserungen aus.`,
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "Alles durchsuchen",
   globalSearchPlaceholderOutline: "Gliederung durchsuchen",
   globalSearchPlaceholderSettings: "Einstellungen durchsuchen",

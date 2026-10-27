@@ -34,7 +34,12 @@ export const ja = {
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "サイトごとのレイアウトとコンテンツ処理の設定",
+  siteSettingsPageDesc: "サイトごとにページレイアウト、モデルロック、専用機能を設定",
+  siteSelectorLabel: "設定するサイト",
+  siteSettingsOtherSiteToast: "{site} の設定を編集中です。変更は現在のサイトには適用されません",
+  currentSiteBadge: "現在のサイト",
+  siteExclusiveSettingsLabel: "専用設定",
+  noSiteExclusiveSettings: "このサイトには専用設定がありません",
   communitySitePackBadge: "コミュニティパック（コア機能）",
   communitySitePackDesc:
     "このサイトはコミュニティパックによって対応しており、パックがサポートする機能のみ表示されます。",
@@ -224,7 +229,6 @@ export const ja = {
   layoutSettingsTitle: "ページ幅制御",
   tabLayout: "レイアウト",
   tabModelLock: "モデルロック",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "チャットページの最大幅を調整します",
   userQueryWidthSettings: "ユーザー入力幅",
   scrollSettings: "スクロール設定",
@@ -1629,12 +1633,6 @@ export const ja = {
   popupSettings: "設定",
 
   // Policy Retry
-  policyRetryLabel: "ポリシー遮断時の自動再試行",
-  policyRetryDesc: "企業のポリシーによりメッセージが遮断された場合、自動的に再送信を試みる",
-  maxRetriesLabel: "最大再試行回数",
-  retryCountSuffix: "回 (同じ質問)",
-  policyRetryActive: "ポリシーによる遮断、再試行中 ({current}/{max})",
-  policyRetryLimitReached: "再試行回数の上限に達しました",
   preventAutoScrollEnabled: "スクロールロックが有効になりました",
   preventAutoScrollDisabled: "スクロールロックが無効になりました",
 
@@ -1658,6 +1656,13 @@ export const ja = {
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "すべてを検索",
   globalSearchPlaceholderOutline: "アウトラインを検索",
   globalSearchPlaceholderSettings: "設定を検索",

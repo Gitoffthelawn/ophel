@@ -34,7 +34,13 @@ export const en = {
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "Configure site-specific layout and content processing",
+  siteSettingsPageDesc: "Configure page layout, model lock, and site-specific features per site",
+  siteSelectorLabel: "Configure site",
+  siteSettingsOtherSiteToast:
+    "Configuring settings for {site}; changes won't affect the current site",
+  currentSiteBadge: "Current site",
+  siteExclusiveSettingsLabel: "Site-specific",
+  noSiteExclusiveSettings: "No site-specific settings for this site yet",
   communitySitePackBadge: "Community pack (core features)",
   communitySitePackDesc:
     "This site is powered by a community pack. Only the features it supports are shown.",
@@ -224,7 +230,6 @@ export const en = {
   layoutSettingsTitle: "Page Width Control",
   tabLayout: "Page Layout",
   tabModelLock: "Model Lock",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "Adjust the maximum width of the chat page",
   userQueryWidthSettings: "User Query Width",
   scrollSettings: "Scroll Settings",
@@ -1628,12 +1633,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   popupSettings: "Settings",
 
   // Policy Retry
-  policyRetryLabel: "Auto-retry on Policy Block",
-  policyRetryDesc: "Automatically resend message when blocked by enterprise policy",
-  maxRetriesLabel: "Max Retries",
-  retryCountSuffix: "times (same question)",
-  policyRetryActive: "Policy blocked, retrying ({current}/{max})",
-  policyRetryLimitReached: "Retry limit reached",
   preventAutoScrollEnabled: "Scroll lock enabled",
   preventAutoScrollDisabled: "Scroll lock disabled",
 
@@ -1658,6 +1657,13 @@ Please output the optimized code block directly, followed by a brief summary of 
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "Search all",
   globalSearchPlaceholderOutline: "Search outline",
   globalSearchPlaceholderSettings: "Search settings",
