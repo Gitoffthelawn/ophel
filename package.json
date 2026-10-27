@@ -36,6 +36,7 @@
     "build:userscript:local": "node scripts/build-userscript-local.mjs",
     "serve:userscript:assets": "node scripts/serve-userscript-assets.mjs",
     "sync:supporters": "node scripts/generate-supporters-readmes.mjs",
+    "generate:badges": "node scripts/generate-badges.mjs",
     "sync:contributors": "node scripts/sync-contributors.mjs && npx all-contributors-cli generate",
     "sync:all": "pnpm sync:supporters && pnpm sync:contributors",
     "release": "node scripts/release.mjs",

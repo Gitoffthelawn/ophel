@@ -304,9 +304,6 @@ jobs:
           cp -R docs/readmes build/userscript/docs/
           mkdir -p build/userscript/docs/media
           cp -R docs/media/support build/userscript/docs/media/
-          # 剥离 shields.io 徽章中的 base64 内联 logo，避免 Greasy Fork 附加信息超过 50000 字符限制
-          sed -i 's/\&logo=data%3Aimage[^"]*//g' build/userscript/README*.md
-          sed -i 's/\&logo=data%3Aimage[^"]*//g' build/userscript/docs/readmes/README*.md 2>/dev/null || true
 
       - name: Deploy Userscript to release branch
         uses: peaceiris/actions-gh-pages@v4
