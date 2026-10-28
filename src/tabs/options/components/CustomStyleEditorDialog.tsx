@@ -11,11 +11,86 @@ import { ClearIcon, ThemeDarkIcon, ThemeLightIcon } from "~components/icons"
 import { DialogOverlay, Tooltip } from "~components/ui"
 import { t } from "~utils/i18n"
 import type { CustomStyle } from "~utils/storage"
-import { createSafeHTML } from "~utils/trusted-types"
 
 import { SafeCodeEditor } from "./SafeCodeEditor"
 
 hljs.registerLanguage("css", css)
+
+const HTML_ENTITIES: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+}
+
+function decodeHighlightText(text: string): string {
+  return text.replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (match, entity: string) => {
+    if (entity.startsWith("#")) {
+      const codePoint =
+        entity[1].toLowerCase() === "x"
+          ? Number.parseInt(entity.slice(2), 16)
+          : Number.parseInt(entity.slice(1), 10)
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : match
+    }
+    return HTML_ENTITIES[entity.toLowerCase()] ?? match
+  })
+}
+
+/**
+ * highlight.js 输出的是 HTML 字符串。这里转成 React 节点，
+ * 避免把 TrustedHTML 交给 react-simple-code-editor 当 children 渲染。
+ */
+function highlightHtmlToReact(html: string): React.ReactNode {
+  const root: React.ReactNode[] = []
+  const stack: Array<{ className: string; children: React.ReactNode[] }> = []
+  let key = 0
+
+  const currentChildren = () => (stack.length ? stack[stack.length - 1].children : root)
+  const append = (node: React.ReactNode) => currentChildren().push(node)
+
+  for (const part of html.split(/(<span class="[^"]*">|<\/span>)/g)) {
+    if (!part) continue
+
+    if (part === "</span>") {
+      const node = stack.pop()
+      if (node) {
+        append(
+          React.createElement(
+            "span",
+            { key: `token-${key++}`, className: node.className },
+            node.children,
+          ),
+        )
+      }
+      continue
+    }
+
+    if (part.startsWith('<span class="')) {
+      stack.push({ className: part.slice('<span class="'.length, -2), children: [] })
+      continue
+    }
+
+    append(decodeHighlightText(part))
+  }
+
+  // highlight.js 的输出是闭合的；这里兜底处理异常片段，避免丢内容。
+  while (stack.length) {
+    const node = stack.pop()!
+    append(
+      React.createElement(
+        "span",
+        { key: `token-${key++}`, className: node.className },
+        node.children,
+      ),
+    )
+  }
+
+  root.push(React.createElement("br", { key: "trailing-line" }))
+  return root
+}
 
 const STYLE_EDITOR_DIALOG_STYLES = `
   .gh-dialog.gh-style-editor-dialog {
@@ -74,7 +149,8 @@ const STYLE_EDITOR_DIALOG_STYLES = `
     flex-direction: column;
     gap: 18px;
     padding: 18px;
-    overflow-y: auto;
+    /* 代码框随高度自适应；只有极矮视口才让表单区整体滚动，正常尺寸不会出现外层滚动条 */
+    overflow: auto;
   }
   .gh-style-editor-field {
     display: flex;
@@ -132,25 +208,74 @@ const STYLE_EDITOR_DIALOG_STYLES = `
   }
   .gh-style-editor-code {
     flex: 1;
-    min-height: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
   }
   .gh-style-editor-code-frame {
     flex: 1;
-    min-height: 320px;
+    /* 保留最小编辑高度：极矮视口下由 body 整体滚动，而不是把代码框压到不可用 */
+    min-height: 160px;
     border: 1px solid var(--gh-input-border, #d1d5db);
     border-radius: 8px;
     background: var(--gh-bg-secondary, #f9fafb);
     color: var(--gh-text, #374151);
     overflow: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gh-border, #d1d5db) transparent;
+    scrollbar-gutter: stable;
+  }
+  .gh-style-editor-code-frame::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .gh-style-editor-code-frame::-webkit-scrollbar-track,
+  .gh-style-editor-code-frame::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  .gh-style-editor-code-frame::-webkit-scrollbar-thumb {
+    min-height: 40px;
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--gh-text-tertiary, #8d94a1) 58%, transparent);
+    background-clip: content-box;
+  }
+  .gh-style-editor-code-frame::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--gh-text-tertiary, #8d94a1) 80%, transparent);
+    background-clip: content-box;
   }
   .gh-style-editor-code-frame:focus-within {
     border-color: var(--gh-primary, #4285f4);
   }
   .gh-style-editor-code-frame textarea:focus {
     outline: none;
+  }
+  .gh-style-editor-code-frame .hljs-comment,
+  .gh-style-editor-code-frame .hljs-quote {
+    color: var(--gh-text-tertiary, #8d94a1);
+    font-style: italic;
+  }
+  .gh-style-editor-code-frame .hljs-keyword,
+  .gh-style-editor-code-frame .hljs-selector-tag,
+  .gh-style-editor-code-frame .hljs-doctag {
+    color: var(--gh-danger, #ef4444);
+  }
+  .gh-style-editor-code-frame .hljs-selector-class,
+  .gh-style-editor-code-frame .hljs-selector-id,
+  .gh-style-editor-code-frame .hljs-selector-pseudo,
+  .gh-style-editor-code-frame .hljs-title,
+  .gh-style-editor-code-frame .hljs-section {
+    color: var(--gh-primary, #4285f4);
+  }
+  .gh-style-editor-code-frame .hljs-string,
+  .gh-style-editor-code-frame .hljs-attr,
+  .gh-style-editor-code-frame .hljs-attribute {
+    color: var(--gh-secondary, #34a853);
+  }
+  .gh-style-editor-code-frame .hljs-number,
+  .gh-style-editor-code-frame .hljs-literal,
+  .gh-style-editor-code-frame .hljs-built_in {
+    color: var(--gh-primary, #4285f4);
   }
   .gh-style-editor-footer {
     display: flex;
@@ -258,7 +383,9 @@ export const CustomStyleEditorDialog: React.FC<CustomStyleEditorDialogProps> = (
             <SafeCodeEditor
               value={style.css}
               onValueChange={(code) => onChange({ ...style, css: code })}
-              highlight={(code) => createSafeHTML(hljs.highlight(code, { language: "css" }).value)}
+              highlight={(code) =>
+                highlightHtmlToReact(hljs.highlight(code, { language: "css" }).value)
+              }
               padding={12}
               style={{
                 fontFamily: '"Menlo", "Monaco", "Consolas", monospace',
