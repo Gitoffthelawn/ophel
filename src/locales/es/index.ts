@@ -126,7 +126,7 @@ export const es = {
   sitePacksCustomOriginsTitle: "Añadir un sitio personalizado",
   sitePacksCustomOriginsDesc:
     "Añade tu sitio de IA autoalojado (p. ej. Open WebUI) y elige qué paquete lo admite.",
-  sitePacksCustomOriginLabel: "Origen HTTPS",
+  sitePacksCustomOriginLabel: "Dirección del sitio",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "Paquete",
   sitePacksBindingPackPlaceholder: "Elige un pack instalado",
