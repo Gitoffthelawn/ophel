@@ -29,12 +29,18 @@ export const it = {
   navPageContent: "Pagina e contenuto",
   navFeatures: "Funzionalità",
   navPermissions: "Autorizzazioni",
-  navBackup: "Gestione dei dati",
+  navBackup: "Dati e autorizzazioni",
   navAbout: "Informazioni",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "Configura il layout specifico del sito e l'elaborazione dei contenuti",
+  siteSettingsPageDesc: "Configura layout di pagina, blocco modello e funzioni specifiche per sito",
+  siteSelectorLabel: "Sito da configurare",
+  siteSettingsOtherSiteToast:
+    "Modifica delle impostazioni di {site}; le modifiche non influiscono sul sito corrente",
+  currentSiteBadge: "Sito corrente",
+  siteExclusiveSettingsLabel: "Specifiche del sito",
+  noSiteExclusiveSettings: "Nessuna impostazione specifica per questo sito",
   communitySitePackBadge: "Pacchetto della community (funzioni principali)",
   communitySitePackDesc:
     "Questo sito è supportato da un pacchetto della community. Vengono mostrate solo le funzioni che supporta.",
@@ -152,8 +158,7 @@ export const it = {
   appearancePageDesc: "Personalizza stili e temi visivi",
   pageContentPageDesc: "Modifica il layout della pagina e la visualizzazione dei contenuti",
   featuresPageDesc: "Configurare i moduli delle funzionalità di estensione",
-  permissionsPageDesc: "Visualizza e gestisci le autorizzazioni delle estensioni.",
-  backupPageDesc: "Gestisci il backup dei dati e la sincronizzazione cloud",
+  backupPageDesc: "Gestisci backup dei dati, sincronizzazione cloud e autorizzazioni",
   aboutPageDesc: "I vantaggi dell'intelligenza artificiale, a portata di mano.",
   tsPlasmoDesc: "Framework di estensione del browser",
   tsReactDesc: "Libreria dell'interfaccia utente",
@@ -231,7 +236,6 @@ export const it = {
   layoutSettingsTitle: "Controllo della larghezza della pagina",
   tabLayout: "Layout della pagina",
   tabModelLock: "Blocco del modello",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "Regola la larghezza massima della pagina della chat",
   userQueryWidthSettings: "Larghezza query utente",
   scrollSettings: "Scorri Impostazioni",
@@ -1685,13 +1689,6 @@ export const it = {
   popupSettings: "Impostazioni",
 
   // Policy Retry
-  policyRetryLabel: "Nuovo tentativo automatico su Blocco criteri",
-  policyRetryDesc:
-    "Invia di nuovo automaticamente il messaggio quando bloccato dai criteri aziendali",
-  maxRetriesLabel: "Numero massimo di tentativi",
-  retryCountSuffix: "volte (stessa domanda)",
-  policyRetryActive: "Criterio bloccato, nuovo tentativo ({current}/{max})",
-  policyRetryLimitReached: "Limite di tentativi raggiunto",
   preventAutoScrollEnabled: "Blocco scorrimento abilitato",
   preventAutoScrollDisabled: "Blocco scorrimento disabilitato",
 
@@ -1717,6 +1714,13 @@ export const it = {
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "Cerca tutto",
   globalSearchPlaceholderOutline: "Schema di ricerca",
   globalSearchPlaceholderSettings: "Impostazioni di ricerca",
@@ -1735,10 +1739,6 @@ export const it = {
   globalSearchEmptyPrompts: "Nessun risultato immediato",
   globalSearchEmptyCurrentSession: "Nessun risultato nella sessione corrente",
   globalSearchCategoriesLabel: "Categorie di ricerca globali",
-  globalSearchPageDesc:
-    "Configura il comportamento di Search Everywhere e i dettagli di interazione",
-  globalSearchTriggerHint: "Grilletto: {shortcut}",
-  globalSearchTriggerDoubleShift: "premere due volte Maiusc",
   globalSearchMatchingSettingsTitle: "Ricerca corrispondente",
   globalSearchMatchingSettingsDesc:
     "Configura il modo in cui Search Everywhere corrisponde ai risultati della ricerca",

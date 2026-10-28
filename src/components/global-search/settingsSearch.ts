@@ -5,7 +5,6 @@ import {
   FEATURES_TAB_IDS,
   NAV_IDS,
   SITE_PACKS_TAB_IDS,
-  SITE_SETTINGS_TAB_IDS,
   type SettingsSearchItem,
 } from "~constants"
 
@@ -19,11 +18,9 @@ export const SETTING_SEARCH_PAGE_LABEL_DEFINITIONS: Record<string, LocalizedLabe
   [NAV_IDS.FEATURES]: { key: "navFeatures", fallback: "Features" },
   [NAV_IDS.SITE_SETTINGS]: { key: "navSiteSettings", fallback: "Site Settings" },
   [NAV_IDS.SITE_PACKS]: { key: "navSitePacks", fallback: "Site Packs" },
-  [NAV_IDS.GLOBAL_SEARCH]: { key: "navGlobalSearch", fallback: "Global Search" },
   [NAV_IDS.APPEARANCE]: { key: "navAppearance", fallback: "Appearance" },
   [NAV_IDS.SHORTCUTS]: { key: "navShortcuts", fallback: "Keyboard Shortcuts" },
-  [NAV_IDS.BACKUP]: { key: "navBackup", fallback: "Data Management" },
-  [NAV_IDS.PERMISSIONS]: { key: "navPermissions", fallback: "Permissions" },
+  [NAV_IDS.BACKUP]: { key: "navBackup", fallback: "Data & Permissions" },
   [NAV_IDS.ABOUT]: { key: "navAbout", fallback: "About" },
 }
 
@@ -38,6 +35,7 @@ export const SETTING_SEARCH_SUB_TAB_LABEL_DEFINITIONS: Record<string, LocalizedL
   [SITE_PACKS_TAB_IDS.UPDATES]: { key: "sitePacksTabUpdates", fallback: "Updates" },
   [BACKUP_TAB_IDS.LOCAL]: { key: "localBackupTab", fallback: "Local Backup" },
   [BACKUP_TAB_IDS.WEBDAV]: { key: "webdavTab", fallback: "WebDAV Sync" },
+  [BACKUP_TAB_IDS.PERMISSIONS]: { key: "navPermissions", fallback: "Permissions" },
   [FEATURES_TAB_IDS.TAB_SETTINGS]: { key: "tabSettingsTab", fallback: "Tab Settings" },
   [FEATURES_TAB_IDS.REMINDER]: { key: "reminderTab", fallback: "Alerts" },
   [FEATURES_TAB_IDS.OUTLINE]: { key: "tabOutline", fallback: "Outline" },
@@ -51,13 +49,23 @@ export const SETTING_SEARCH_SUB_TAB_LABEL_DEFINITIONS: Record<string, LocalizedL
     fallback: "Reading History",
   },
   [FEATURES_TAB_IDS.CONTENT]: { key: "navContent", fallback: "Content" },
+  [FEATURES_TAB_IDS.GLOBAL_SEARCH]: { key: "navGlobalSearch", fallback: "Global Search" },
   [FEATURES_TAB_IDS.TOOLBOX]: { key: "toolboxMenu", fallback: "Toolbox" },
-  [SITE_SETTINGS_TAB_IDS.LAYOUT]: { key: "tabLayout", fallback: "Layout" },
-  [SITE_SETTINGS_TAB_IDS.MODEL_LOCK]: { key: "tabModelLock", fallback: "Model Lock" },
+  // 站点设置页的二级维度是站点本身，label 直接取站点名
   gemini: { key: "globalSearchSiteGemini", fallback: "Gemini" },
+  "gemini-enterprise": { key: "globalSearchSiteGeminiEnterprise", fallback: "Gemini Enterprise" },
   aistudio: { key: "globalSearchSiteAIStudio", fallback: "AI Studio" },
   chatgpt: { key: "globalSearchSiteChatGPT", fallback: "ChatGPT" },
   claude: { key: "globalSearchSiteClaude", fallback: "Claude" },
+  grok: { key: "globalSearchSiteGrok", fallback: "Grok" },
+  kimi: { key: "globalSearchSiteKimi", fallback: "Kimi" },
+  qianwen: { key: "globalSearchSiteQianwen", fallback: "Qianwen" },
+  qwenai: { key: "globalSearchSiteQwenAi", fallback: "Qwen Studio" },
+  yuanbao: { key: "globalSearchSiteYuanbao", fallback: "Yuanbao" },
+  ima: { key: "globalSearchSiteIma", fallback: "ima" },
+  zai: { key: "globalSearchSiteZai", fallback: "Z.ai" },
+  chatglm: { key: "globalSearchSiteChatglm", fallback: "ChatGLM" },
+  doubao: { key: "globalSearchSiteDoubao", fallback: "Doubao" },
   [APPEARANCE_TAB_IDS.PRESETS]: { key: "themePresetsTab", fallback: "Theme Presets" },
   [APPEARANCE_TAB_IDS.CUSTOM]: { key: "customStylesTab", fallback: "Custom Styles" },
 }
@@ -99,8 +107,6 @@ export const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
   "export-include-thoughts": "exportIncludeThoughtsLabel",
   "export-packaging": "exportPackagingLabel",
   "gemini-markdown-fix": "markdownFixLabel",
-  "gemini-policy-max-retries": "maxRetriesLabel",
-  "gemini-policy-retry": "policyRetryLabel",
   "gemini-watermark-removal": "watermarkRemovalLabel",
   "layout-page-width-enabled": "enablePageWidth",
   "layout-page-width-value": "pageWidthValueLabel",
@@ -143,6 +149,9 @@ export const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
   "shortcuts-global-url": "globalShortcutUrl",
   "shortcuts-browser-shortcuts": "globalShortcutsTitle",
   "shortcuts-prompt-submit-shortcut": "promptSubmitShortcutLabel",
+  // 站点设置页已无 tab 结构，这两个 subtab 项的 route 不带 subTab，标题改走 key 映射以保持多语言
+  "subtab-site-settings-layout": "tabLayout",
+  "subtab-site-settings-model-lock": "tabModelLock",
   "tab-auto-focus": "autoFocusLabel",
   "tab-auto-rename": "autoRenameTabLabel",
   "tab-notification-sound": "notificationSoundLabel",
@@ -237,9 +246,14 @@ export const MODEL_LOCK_SITE_LABEL_DEFINITIONS: Record<string, LocalizedLabelDef
   chatgpt: { key: "globalSearchSiteChatGPT", fallback: "ChatGPT" },
   claude: { key: "globalSearchSiteClaude", fallback: "Claude" },
   grok: { key: "globalSearchSiteGrok", fallback: "Grok" },
+  kimi: { key: "globalSearchSiteKimi", fallback: "Kimi" },
+  qianwen: { key: "globalSearchSiteQianwen", fallback: "Qianwen" },
+  yuanbao: { key: "globalSearchSiteYuanbao", fallback: "Yuanbao" },
   qwenai: { key: "globalSearchSiteQwenAi", fallback: "Qwen Studio" },
   ima: { key: "globalSearchSiteIma", fallback: "ima" },
   zai: { key: "globalSearchSiteZai", fallback: "Z.ai" },
+  chatglm: { key: "globalSearchSiteChatglm", fallback: "ChatGLM" },
+  doubao: { key: "globalSearchSiteDoubao", fallback: "Doubao" },
 }
 
 export const MODEL_LOCK_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
@@ -302,6 +316,16 @@ export const MODEL_LOCK_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
     settingId: "model-lock-zai",
     title: "模型锁定：Z.ai",
     keywords: ["model lock", "z.ai", "zai", "模型锁定"],
+  },
+  {
+    settingId: "model-lock-chatglm",
+    title: "模型锁定：ChatGLM",
+    keywords: ["model lock", "chatglm", "智谱", "模型锁定"],
+  },
+  {
+    settingId: "model-lock-doubao",
+    title: "模型锁定：豆包",
+    keywords: ["model lock", "doubao", "豆包", "模型锁定"],
   },
 ]
 

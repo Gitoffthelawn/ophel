@@ -9,9 +9,15 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### ✨ Improvements
+
+- **Site settings grouped by site** — Site settings now open with a site picker at the top; the selected site's page layout, model lock, and site-specific options are shown together in one view instead of being spread across tabs. (#987)
+- **Streamlined settings menu** — Global search settings now live under the Features page, and permissions moved into the data management page (renamed to Data & Permissions, with its own tab), trimming the settings menu from 10 entries to 8. (#988)
+
 ### 🐛 Bug Fixes
 
 - **Doubao scroll-to-top bounce-back** — Fixed an issue where, right after refreshing a Doubao conversation page, clicking scroll-to-top before scrolling the page reached the top but then got pulled back to the bottom. (#983)
+- **Shortcut recording triggering site shortcuts** — Fixed an issue where pressing a key combination while recording a shortcut in the settings dialog (for example Ctrl+K on DeepSeek) also triggered the website's own shortcut. (#988)
 
 ---
 

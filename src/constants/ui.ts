@@ -37,10 +37,8 @@ export const NAV_IDS = {
   FEATURES: "features",
   SITE_SETTINGS: "siteSettings",
   SITE_PACKS: "sitePacks",
-  GLOBAL_SEARCH: "globalSearch",
   SHORTCUTS: "shortcuts",
   BACKUP: "backup",
-  PERMISSIONS: "permissions",
   ABOUT: "about",
 } as const
 
@@ -60,6 +58,7 @@ export const FEATURES_TAB_IDS = {
   REMINDER: "reminder",
   CONTENT: "content",
   READING_HISTORY: "readingHistory",
+  GLOBAL_SEARCH: "globalSearch",
   TOOLBOX: "toolbox",
 } as const
 
@@ -77,17 +76,11 @@ export const APPEARANCE_TAB_IDS = {
   CUSTOM: "custom",
 } as const
 
-// ==================== Site Settings Page Tab IDs ====================
-export const SITE_SETTINGS_TAB_IDS = {
-  LAYOUT: "layout",
-  MODEL_LOCK: "modelLock",
-  // 站点专属 Tab ID 直接使用 SITE_IDS
-} as const
-
 // ==================== Backup Page Tab IDs ====================
 export const BACKUP_TAB_IDS = {
   LOCAL: "local",
   WEBDAV: "webdav",
+  PERMISSIONS: "permissions",
 } as const
 
 // ==================== Settings Deep Link ====================
@@ -119,11 +112,11 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
   "page-features": { page: NAV_IDS.FEATURES },
   "page-site-settings": { page: NAV_IDS.SITE_SETTINGS },
   "page-site-packs": { page: NAV_IDS.SITE_PACKS },
-  "page-global-search": { page: NAV_IDS.GLOBAL_SEARCH },
+  "page-global-search": { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH },
   "page-shortcuts": { page: NAV_IDS.SHORTCUTS },
   "page-appearance": { page: NAV_IDS.APPEARANCE },
   "page-backup": { page: NAV_IDS.BACKUP },
-  "page-permissions": { page: NAV_IDS.PERMISSIONS },
+  "page-permissions": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.PERMISSIONS },
   "page-about": { page: NAV_IDS.ABOUT },
 
   // --- 二级子 Tab (SubTab) ---
@@ -147,18 +140,31 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     page: NAV_IDS.FEATURES,
     subTab: FEATURES_TAB_IDS.READING_HISTORY,
   },
-  "subtab-site-settings-layout": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.LAYOUT,
+  "subtab-features-global-search": {
+    page: NAV_IDS.FEATURES,
+    subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH,
   },
-  "subtab-site-settings-model-lock": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.MODEL_LOCK,
-  },
+  // 站点设置页已无 tab 结构：站点即二级维度，subTab 直接承载站点 id
+  "subtab-site-settings-layout": { page: NAV_IDS.SITE_SETTINGS },
+  "subtab-site-settings-model-lock": { page: NAV_IDS.SITE_SETTINGS },
   "subtab-site-settings-gemini": { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini" },
   "subtab-site-settings-aistudio": { page: NAV_IDS.SITE_SETTINGS, subTab: "aistudio" },
   "subtab-site-settings-chatgpt": { page: NAV_IDS.SITE_SETTINGS, subTab: "chatgpt" },
   "subtab-site-settings-claude": { page: NAV_IDS.SITE_SETTINGS, subTab: "claude" },
+  "model-lock-gemini": { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini" },
+  "model-lock-gemini-enterprise": { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini-enterprise" },
+  "model-lock-aistudio": { page: NAV_IDS.SITE_SETTINGS, subTab: "aistudio" },
+  "model-lock-chatgpt": { page: NAV_IDS.SITE_SETTINGS, subTab: "chatgpt" },
+  "model-lock-claude": { page: NAV_IDS.SITE_SETTINGS, subTab: "claude" },
+  "model-lock-grok": { page: NAV_IDS.SITE_SETTINGS, subTab: "grok" },
+  "model-lock-kimi": { page: NAV_IDS.SITE_SETTINGS, subTab: "kimi" },
+  "model-lock-qianwen": { page: NAV_IDS.SITE_SETTINGS, subTab: "qianwen" },
+  "model-lock-qwenai": { page: NAV_IDS.SITE_SETTINGS, subTab: "qwenai" },
+  "model-lock-yuanbao": { page: NAV_IDS.SITE_SETTINGS, subTab: "yuanbao" },
+  "model-lock-ima": { page: NAV_IDS.SITE_SETTINGS, subTab: "ima" },
+  "model-lock-zai": { page: NAV_IDS.SITE_SETTINGS, subTab: "zai" },
+  "model-lock-chatglm": { page: NAV_IDS.SITE_SETTINGS, subTab: "chatglm" },
+  "model-lock-doubao": { page: NAV_IDS.SITE_SETTINGS, subTab: "doubao" },
   "subtab-appearance-presets": {
     page: NAV_IDS.APPEARANCE,
     subTab: APPEARANCE_TAB_IDS.PRESETS,
@@ -182,6 +188,10 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
   },
   "subtab-backup-local": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "subtab-backup-webdav": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.WEBDAV },
+  "subtab-backup-permissions": {
+    page: NAV_IDS.BACKUP,
+    subTab: BACKUP_TAB_IDS.PERMISSIONS,
+  },
 
   // --- 设置集合 Card ---
   "panel-settings-card": { page: NAV_IDS.GENERAL, subTab: "panel" },
@@ -210,21 +220,15 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     subTab: FEATURES_TAB_IDS.READING_HISTORY,
   },
   "content-interaction-card": { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.CONTENT },
-  "layout-clean-mode-card": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.LAYOUT,
-  },
-  "layout-auto-hide-input-card": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.LAYOUT,
-  },
+  "layout-clean-mode-card": { page: NAV_IDS.SITE_SETTINGS },
+  "layout-auto-hide-input-card": { page: NAV_IDS.SITE_SETTINGS },
   "backup-export-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "backup-import-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "backup-reset-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "backup-webdav-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.WEBDAV },
   "shortcuts-global-card": { page: NAV_IDS.SHORTCUTS },
-  "permissions-optional-card": { page: NAV_IDS.PERMISSIONS },
-  "permissions-required-card": { page: NAV_IDS.PERMISSIONS },
+  "permissions-optional-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.PERMISSIONS },
+  "permissions-required-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.PERMISSIONS },
   [ABOUT_SPONSOR_SETTING_ID]: { page: NAV_IDS.ABOUT },
 
   // --- 具体设置项 ---
@@ -307,14 +311,8 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     page: NAV_IDS.SITE_PACKS,
     subTab: SITE_PACKS_TAB_IDS.UPDATES,
   },
-  "layout-clean-mode-enabled": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.LAYOUT,
-  },
-  "layout-auto-hide-input-enabled": {
-    page: NAV_IDS.SITE_SETTINGS,
-    subTab: SITE_SETTINGS_TAB_IDS.LAYOUT,
-  },
+  "layout-clean-mode-enabled": { page: NAV_IDS.SITE_SETTINGS },
+  "layout-auto-hide-input-enabled": { page: NAV_IDS.SITE_SETTINGS },
   "chatgpt-code-block-batch-mount": {
     page: NAV_IDS.SITE_SETTINGS,
     subTab: "chatgpt",
@@ -348,16 +346,20 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     subTab: FEATURES_TAB_IDS.CONVERSATIONS,
   },
   "permission-item-storage": {
-    page: NAV_IDS.PERMISSIONS,
+    page: NAV_IDS.BACKUP,
+    subTab: BACKUP_TAB_IDS.PERMISSIONS,
   },
   "permission-item-notifications": {
-    page: NAV_IDS.PERMISSIONS,
+    page: NAV_IDS.BACKUP,
+    subTab: BACKUP_TAB_IDS.PERMISSIONS,
   },
   "permission-item-cookies": {
-    page: NAV_IDS.PERMISSIONS,
+    page: NAV_IDS.BACKUP,
+    subTab: BACKUP_TAB_IDS.PERMISSIONS,
   },
   "permission-item-webdav": {
-    page: NAV_IDS.PERMISSIONS,
+    page: NAV_IDS.BACKUP,
+    subTab: BACKUP_TAB_IDS.PERMISSIONS,
   },
   "backup-webdav-url": {
     page: NAV_IDS.BACKUP,
@@ -375,8 +377,14 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     page: NAV_IDS.BACKUP,
     subTab: BACKUP_TAB_IDS.WEBDAV,
   },
-  "global-search-matching-card": { page: NAV_IDS.GLOBAL_SEARCH },
-  "global-search-prompt-card": { page: NAV_IDS.GLOBAL_SEARCH },
+  "global-search-matching-card": {
+    page: NAV_IDS.FEATURES,
+    subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH,
+  },
+  "global-search-prompt-card": {
+    page: NAV_IDS.FEATURES,
+    subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH,
+  },
   "collapsed-buttons-order-card": {
     page: NAV_IDS.GENERAL,
     subTab: "shortcuts",
@@ -397,18 +405,12 @@ const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
   { prefix: "tools-menu-", route: { page: NAV_IDS.GENERAL, subTab: "toolsMenu" } },
   { prefix: "shortcuts-", route: { page: NAV_IDS.SHORTCUTS } },
   { prefix: "shortcut-binding-", route: { page: NAV_IDS.SHORTCUTS } },
-  {
-    prefix: "layout-",
-    route: { page: NAV_IDS.SITE_SETTINGS, subTab: SITE_SETTINGS_TAB_IDS.LAYOUT },
-  },
+  { prefix: "layout-", route: { page: NAV_IDS.SITE_SETTINGS } },
   { prefix: "gemini-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini" } },
   { prefix: "aistudio-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "aistudio" } },
   { prefix: "chatgpt-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "chatgpt" } },
   { prefix: "claude-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "claude" } },
-  {
-    prefix: "model-lock-",
-    route: { page: NAV_IDS.SITE_SETTINGS, subTab: SITE_SETTINGS_TAB_IDS.MODEL_LOCK },
-  },
+  { prefix: "model-lock-", route: { page: NAV_IDS.SITE_SETTINGS } },
   {
     prefix: "outline-",
     route: { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.OUTLINE },
@@ -443,7 +445,7 @@ const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
   },
   {
     prefix: "permission-item-",
-    route: { page: NAV_IDS.PERMISSIONS },
+    route: { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.PERMISSIONS },
   },
   {
     prefix: "backup-webdav-",
@@ -455,7 +457,7 @@ const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
   },
   {
     prefix: "global-search-",
-    route: { page: NAV_IDS.GLOBAL_SEARCH },
+    route: { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH },
   },
   {
     prefix: "tab-notification-",
@@ -515,8 +517,6 @@ export const SETTING_ID_ALIASES: Record<string, string> = {
   "panel.preventAutoScroll": "outline-prevent-auto-scroll",
   "content.markdownFix": "gemini-markdown-fix",
   "content.watermarkRemoval": "gemini-watermark-removal",
-  "geminiEnterprise.policyRetry.enabled": "gemini-policy-retry",
-  "geminiEnterprise.policyRetry.maxRetries": "gemini-policy-max-retries",
   "aistudio.collapseNavbar": "aistudio-collapse-navbar",
   "aistudio.collapseRunSettings": "aistudio-collapse-run-settings",
   "aistudio.collapseTools": "aistudio-collapse-tools",
@@ -550,15 +550,27 @@ export const resolveSettingRoute = (settingId?: string): SettingRoute | undefine
   return SETTING_ID_ROUTE_RULES.find((rule) => resolvedSettingId.startsWith(rule.prefix))?.route
 }
 
+// 已合并的一级页面旧 ID 重定向：历史深链与 URL 参数（page=globalSearch / page=permissions）仍可落地
+const LEGACY_SETTINGS_PAGE_REDIRECTS: Record<string, SettingRoute> = {
+  globalSearch: { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH },
+  permissions: { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.PERMISSIONS },
+}
+
 export const resolveSettingsNavigateDetail = (
   detail: SettingsNavigateDetail,
 ): SettingsNavigateDetail => {
   const resolvedSettingId = resolveSettingId(detail.settingId)
   const route = resolveSettingRoute(resolvedSettingId)
+  const legacyRedirect = detail.page ? LEGACY_SETTINGS_PAGE_REDIRECTS[detail.page] : undefined
 
-  const resolvedPage = detail.page ?? route?.page
+  const resolvedPage = legacyRedirect?.page ?? detail.page ?? route?.page
   const resolvedSubTab =
-    detail.subTab ?? (detail.page && detail.page !== route?.page ? undefined : route?.subTab)
+    detail.subTab ??
+    (legacyRedirect
+      ? legacyRedirect.subTab
+      : detail.page && detail.page !== route?.page
+        ? undefined
+        : route?.subTab)
 
   const isTabOnlyTarget = Boolean(
     resolvedSettingId?.startsWith("page-") || resolvedSettingId?.startsWith("subtab-"),
@@ -695,7 +707,7 @@ const PAGE_TAB_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
   },
   {
     settingId: "page-backup",
-    title: "备份与同步",
+    title: "数据与权限",
     keywords: [
       "backup",
       "sync",
@@ -705,6 +717,9 @@ const PAGE_TAB_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
       "备份",
       "同步",
       "数据管理",
+      "数据与权限",
+      "权限",
+      "权限管理",
       "导入导出",
       "云端同步",
       "还原",
@@ -893,7 +908,6 @@ const SUB_TAB_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
       "gemini 专属",
       "markdown fix",
       "watermark",
-      "重试",
     ],
   },
   {
@@ -1199,7 +1213,6 @@ const SETTING_CARD_SEARCH_ITEMS: SettingsSearchItem[] = [
       "markdown fix",
       "watermark",
       "水印",
-      "策略重试",
     ],
   },
   {
@@ -1910,16 +1923,6 @@ export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
     settingId: "gemini-watermark-removal",
     title: "Gemini：去水印",
     keywords: ["gemini", "watermark", "去水印"],
-  },
-  {
-    settingId: "gemini-policy-retry",
-    title: "Gemini：策略重试",
-    keywords: ["gemini", "policy retry", "策略重试"],
-  },
-  {
-    settingId: "gemini-policy-max-retries",
-    title: "Gemini：最大重试次数",
-    keywords: ["gemini", "max retries", "最大重试"],
   },
   {
     settingId: "aistudio-collapse-navbar",

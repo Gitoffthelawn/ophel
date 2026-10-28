@@ -29,12 +29,18 @@ export const ru = {
   navPageContent: "Контент",
   navFeatures: "Функции",
   navPermissions: "Доступа",
-  navBackup: "Данные",
+  navBackup: "Данные и разрешения",
   navAbout: "О проекте",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "Настройка макета и обработки контента для каждого сайта",
+  siteSettingsPageDesc:
+    "Настройка макета страницы, блокировки модели и специальных функций для каждого сайта",
+  siteSelectorLabel: "Настраиваемый сайт",
+  siteSettingsOtherSiteToast: "Настройка {site}; изменения не затронут текущий сайт",
+  currentSiteBadge: "Текущий сайт",
+  siteExclusiveSettingsLabel: "Специальные настройки",
+  noSiteExclusiveSettings: "Для этого сайта нет специальных настроек",
   communitySitePackBadge: "Пакет сообщества (основные функции)",
   communitySitePackDesc:
     "Этот сайт поддерживается пакетом сообщества. Отображаются только поддерживаемые им функции.",
@@ -150,8 +156,7 @@ export const ru = {
   appearancePageDesc: "Персонализация стилей и тем",
   pageContentPageDesc: "Настройка макета страницы и отображения контента",
   featuresPageDesc: "Настройка функциональных модулей",
-  permissionsPageDesc: "Просмотр и управление разрешениями расширения.",
-  backupPageDesc: "Управление резервным копированием и облачной синхронизацией",
+  backupPageDesc: "Управление резервным копированием, облачной синхронизацией и разрешениями",
   aboutPageDesc: "Преимущества ИИ под рукой.",
   tsPlasmoDesc: "Фреймворк для браузерных расширений",
   tsReactDesc: "Библиотека интерфейса",
@@ -220,7 +225,6 @@ export const ru = {
   layoutSettingsTitle: "Управление шириной",
   tabLayout: "Макет",
   tabModelLock: "Замок модели",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "Настройте максимальную ширину чата",
   userQueryWidthSettings: "Ширина запроса",
   scrollSettings: "Прокрутка",
@@ -1546,13 +1550,6 @@ export const ru = {
   popupSettings: "Настройки",
 
   // Policy Retry
-  policyRetryLabel: "Автоповтор при блокировке политикой",
-  policyRetryDesc:
-    "Автоматически повторно отправлять сообщение, если оно заблокировано корпоративной политикой",
-  maxRetriesLabel: "Макс. попыток",
-  retryCountSuffix: "раз (тот же вопрос)",
-  policyRetryActive: "Блокировка политикой, повторная попытка ({current}/{max})",
-  policyRetryLimitReached: "Достигнут лимит попыток",
   preventAutoScrollEnabled: "Блокировка прокрутки включена",
   preventAutoScrollDisabled: "Блокировка прокрутки выключена",
 
@@ -1577,6 +1574,13 @@ export const ru = {
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "Искать везде",
   globalSearchPlaceholderOutline: "Искать в оглавлении",
   globalSearchPlaceholderSettings: "Искать в настройках",
@@ -1595,9 +1599,6 @@ export const ru = {
   globalSearchEmptyPrompts: "Нет результатов по промптам",
   globalSearchEmptyCurrentSession: "Нет результатов в текущей сессии",
   globalSearchCategoriesLabel: "Категории глобального поиска",
-  globalSearchPageDesc: "Настройка поведения и взаимодействия Search Everywhere",
-  globalSearchTriggerHint: "Запуск: {shortcut}",
-  globalSearchTriggerDoubleShift: "двойное нажатие Shift",
   globalSearchMatchingSettingsTitle: "Сопоставление поиска",
   globalSearchMatchingSettingsDesc:
     "Настройте, как Search Everywhere сопоставляет результаты поиска.",

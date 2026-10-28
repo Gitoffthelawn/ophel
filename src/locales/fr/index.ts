@@ -29,12 +29,19 @@ export const fr = {
   navPageContent: "Contenu",
   navFeatures: "Fonctions",
   navPermissions: "Autorisations",
-  navBackup: "Données",
+  navBackup: "Données et autorisations",
   navAbout: "À propos",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
-  siteSettingsPageDesc: "Configurer la mise en page et le traitement par site",
+  siteSettingsPageDesc:
+    "Configurer la mise en page, le verrouillage du modèle et les fonctions spécifiques par site",
+  siteSelectorLabel: "Site à configurer",
+  siteSettingsOtherSiteToast:
+    "Configuration de {site} ; les modifications n'affectent pas le site actuel",
+  currentSiteBadge: "Site actuel",
+  siteExclusiveSettingsLabel: "Spécifiques au site",
+  noSiteExclusiveSettings: "Aucun réglage spécifique pour ce site",
   communitySitePackBadge: "Pack communautaire (fonctions principales)",
   communitySitePackDesc:
     "Ce site est pris en charge par un pack communautaire. Seules les fonctionnalités qu'il prend en charge sont affichées.",
@@ -153,8 +160,7 @@ export const fr = {
   appearancePageDesc: "Personnaliser les styles visuels et les thèmes",
   pageContentPageDesc: "Ajuster la mise en page et l'affichage du contenu",
   featuresPageDesc: "Configurer les modules de fonctionnalités",
-  permissionsPageDesc: "Voir et gérer les permissions de l'extension.",
-  backupPageDesc: "Gérer la sauvegarde des données et la synchronisation cloud",
+  backupPageDesc: "Gérer la sauvegarde, la synchronisation cloud et les permissions",
   aboutPageDesc: "L'IA à votre portée.",
   tsPlasmoDesc: "Framework d'extensions de navigateur",
   tsReactDesc: "Bibliothèque d'interface utilisateur",
@@ -223,7 +229,6 @@ export const fr = {
   layoutSettingsTitle: "Contrôle de Largeur",
   tabLayout: "Mise en page",
   tabModelLock: "Blocage de Modèle",
-  tabGemini: "Gemini",
   enablePageWidthDesc: "Ajuster la largeur maximale du chat",
   userQueryWidthSettings: "Largeur Utilisateur",
   scrollSettings: "Défilement",
@@ -1595,13 +1600,6 @@ Donnez le code puis un résumé des améliorations.`,
   popupSettings: "Réglages",
 
   // Policy Retry
-  policyRetryLabel: "Réessai auto après blocage politique",
-  policyRetryDesc:
-    "Renvoyer automatiquement le message s'il est bloqué par la politique de l'entreprise",
-  maxRetriesLabel: "Max Réessais",
-  retryCountSuffix: "fois (même question)",
-  policyRetryActive: "Politique bloquée, nouvel essai ({current}/{max})",
-  policyRetryLimitReached: "Limite de réessais atteinte",
   preventAutoScrollEnabled: "Verrouillage du défilement activé",
   preventAutoScrollDisabled: "Verrouillage du défilement désactivé",
 
@@ -1627,6 +1625,13 @@ Donnez le code puis un résumé des améliorations.`,
   globalSearchSiteClaude: "Claude",
   globalSearchSiteGrok: "Grok",
   globalSearchSiteZai: "Z.ai",
+  globalSearchSiteChatglm: "ChatGLM",
+  globalSearchSiteDoubao: "Doubao",
+  globalSearchSiteKimi: "Kimi",
+  globalSearchSiteQianwen: "Qianwen",
+  globalSearchSiteQwenAi: "Qwen Studio",
+  globalSearchSiteYuanbao: "Yuanbao",
+  globalSearchSiteIma: "ima",
   globalSearchPlaceholderAll: "Rechercher partout",
   globalSearchPlaceholderOutline: "Rechercher dans le plan",
   globalSearchPlaceholderSettings: "Rechercher dans les paramètres",
@@ -1646,10 +1651,6 @@ Donnez le code puis un résumé des améliorations.`,
   globalSearchEmptyPrompts: "Aucun résultat de prompt",
   globalSearchEmptyCurrentSession: "Aucun résultat dans la session actuelle",
   globalSearchCategoriesLabel: "Catégories de recherche globale",
-  globalSearchPageDesc:
-    "Configurer le comportement et les détails d'interaction de Search Everywhere",
-  globalSearchTriggerHint: "Déclenchement : {shortcut}",
-  globalSearchTriggerDoubleShift: "double appui sur Shift",
   globalSearchMatchingSettingsTitle: "Correspondance de recherche",
   globalSearchMatchingSettingsDesc:
     "Configure la façon dont Search Everywhere met en correspondance les résultats.",
