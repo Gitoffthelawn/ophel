@@ -19,7 +19,6 @@ import {
   SitePacksIcon,
 } from "~components/icons"
 import { Tooltip } from "~components/ui/Tooltip"
-import { SidebarCommunityLinks } from "~components/SidebarCommunityLinks"
 import { NAV_IDS, resolveSettingsNavigateDetail, type SettingsNavigateDetail } from "~constants"
 import { useHasUnseenReleaseNotes } from "~hooks/useHasUnseenReleaseNotes"
 import { useSettingsHydrated, useSettingsStore } from "~stores/settings-store"
@@ -33,7 +32,11 @@ import ShortcutsPage from "~tabs/options/pages/ShortcutsPage"
 import SitePacksPage from "~tabs/options/pages/SitePacksPage"
 import SiteSettingsPage from "~tabs/options/pages/SiteSettingsPage"
 import { APP_DISPLAY_NAME, getAppIconUrl } from "~utils/config"
-import { attachEditableKeyboardFocusGuard, OPHEL_INTERACTION_LAYER_PROPS } from "~utils/dom-toolkit"
+import {
+  attachEditableKeyboardFocusGuard,
+  isEventFromEscapeLayer,
+  OPHEL_INTERACTION_LAYER_PROPS,
+} from "~utils/dom-toolkit"
 import { setLanguage, t } from "~utils/i18n"
 import { scrollWithinSettingsContent } from "~utils/settings-scroll"
 
@@ -140,6 +143,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const contentRef = useRef<HTMLDivElement>(null)
   const containerRef = useRef<HTMLDivElement>(null) // 容器引用
   const restoreFocusRef = useRef<HTMLElement | null>(null)
+  // 打开弹窗时触发元素是否处于键盘焦点；鼠标点开的关闭后不归还焦点，避免 ESC 关闭时凭空出现焦点环和 tooltip
+  const triggerHadFocusVisibleRef = useRef(false)
   const titleId = "ophel-settings-modal-title"
   const highlightTimerRef = useRef<number | undefined>(undefined)
   const highlightedElementRef = useRef<HTMLElement | null>(null)
@@ -163,6 +168,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     if (!isOpen) return
 
     restoreFocusRef.current = getDeepActiveElement()
+    triggerHadFocusVisibleRef.current = restoreFocusRef.current?.matches(":focus-visible") ?? false
     const focusTimer = window.setTimeout(() => {
       const container = containerRef.current
       if (!container) return
@@ -177,8 +183,10 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       window.clearTimeout(focusTimer)
       const restoreElement = restoreFocusRef.current
       restoreFocusRef.current = null
+      const shouldRestoreFocus = triggerHadFocusVisibleRef.current
+      triggerHadFocusVisibleRef.current = false
 
-      if (!restoreElement?.isConnected) {
+      if (!shouldRestoreFocus || !restoreElement?.isConnected) {
         return
       }
 
@@ -202,6 +210,8 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
+        // 内部浮层（下拉、快捷键录制、语言菜单）自行消费 Esc，只关最上层
+        if (isEventFromEscapeLayer(e)) return
         onClose()
         return
       }
@@ -484,7 +494,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                   setLocateRequest(null)
                 }}>
                 <span className="settings-nav-item-icon">
-                  <item.Icon size={22} />
+                  <item.Icon size={20} />
                 </span>
                 <span className={`settings-nav-item-label${item.beta ? " has-badge" : ""}`}>
                   {getLocalizedLabel(item.labelKey, item.label)}
@@ -499,9 +509,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 )}
               </button>
             ))}
-
-            {/* 左下角社区链接图标 */}
-            <SidebarCommunityLinks />
           </nav>
 
           {/* 侧边栏底部快捷设置 */}

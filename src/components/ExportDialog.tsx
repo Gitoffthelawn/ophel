@@ -17,6 +17,7 @@ import { t } from "~utils/i18n"
 import { useSettingsStore } from "~stores/settings-store"
 
 import { DialogOverlay } from "./ui/Dialog"
+import { Tooltip } from "./ui/Tooltip"
 
 const EXPORT_DIALOG_STYLES = `
   .gh-export-dialog {
@@ -178,12 +179,11 @@ const EXPORT_DIALOG_STYLES = `
     outline-offset: 2px;
   }
 
+  /* 选中：主色描边 + 淡底 + 主色字；不再叠外圈和加粗 */
   .gh-export-format-btn[data-active="true"] {
     border-color: var(--gh-primary, #4285f4);
     background: color-mix(in srgb, var(--gh-primary, #4285f4) 10%, var(--gh-bg, #ffffff));
-    color: var(--gh-primary, #4285f4);
-    font-weight: 600;
-    box-shadow: 0 0 0 1px var(--gh-primary, #4285f4);
+    color: var(--gh-primary-text, var(--gh-primary, #4285f4));
   }
 
   .gh-export-format-badge {
@@ -239,6 +239,15 @@ const EXPORT_DIALOG_STYLES = `
     box-sizing: border-box;
   }
 
+  /* 选中“复制大纲”时选项整体置灰：它不使用这些选项；不隐藏，避免切换时布局跳动 */
+  .gh-export-options-list[data-disabled="true"] {
+    opacity: 0.5;
+  }
+
+  .gh-export-options-list[data-disabled="true"] .gh-export-option-row {
+    cursor: not-allowed;
+  }
+
   .gh-export-option-row {
     display: flex;
     align-items: center;
@@ -280,7 +289,7 @@ const EXPORT_DIALOG_STYLES = `
   }
 
   .gh-export-divider-input {
-    width: 120px;
+    width: 80px;
     height: 28px;
     padding: 2px 10px;
     border: 1px solid var(--gh-input-border, var(--gh-border, #d1d5db));
@@ -315,25 +324,25 @@ const EXPORT_DIALOG_STYLES = `
     gap: 10px;
   }
 
+  /* 分段导出的唯一入口：主色淡底 + 主色描边 + 主色字，比“取消”醒目，又不和实心的“导出”抢 */
   .gh-export-segmented-link {
     display: inline-flex;
     align-items: center;
     gap: 6px;
     padding: 7px 12px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 550;
-    color: var(--gh-text-secondary, #6b7280);
-    background: var(--gh-bg-secondary, #f9fafb);
-    border: 1px solid var(--gh-border, #e5e7eb);
+    color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+    background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-bg, #ffffff));
+    border: 1px solid color-mix(in srgb, var(--gh-primary, #4285f4) 35%, var(--gh-border, #e5e7eb));
     border-radius: 8px;
     cursor: pointer;
     transition: all 0.15s ease;
   }
 
   .gh-export-segmented-link:hover:not(:disabled) {
-    color: var(--gh-primary, #4285f4);
-    border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 45%, var(--gh-border, #e5e7eb));
-    background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-bg, #ffffff));
+    border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 55%, var(--gh-border, #e5e7eb));
+    background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, var(--gh-bg, #ffffff));
   }
 
   .gh-export-segmented-link:disabled {
@@ -446,6 +455,8 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   }, [onClose, onOpenSettings])
 
   const [selectedFormat, setSelectedFormat] = useState<ExportFormat>(defaultFormat)
+  // “复制大纲”不是导出格式：单独记录选中状态，selectedFormat 保持不变，选项区因此不会因切换而跳变
+  const [outlineCopySelected, setOutlineCopySelected] = useState(false)
   const [includeThoughts, setIncludeThoughts] = useState<boolean>(
     settings.export?.includeThoughts ?? true,
   )
@@ -474,6 +485,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
     setCustomDivider(current.export?.exportMarkdownDivider ?? "---")
     setPackageZip(current.export?.packaging === "zip")
     setExportStyle(current.export?.exportStyle === "clean" ? "clean" : "standard")
+    setOutlineCopySelected(false)
   }, [isOpen])
 
   if (!isOpen) return null
@@ -481,6 +493,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
   const isMarkdownLike = selectedFormat === "markdown" || selectedFormat === "clipboard"
 
   const handleConfirm = async () => {
+    // 复制大纲由大纲 tab 暴露的能力完成，不走导出流程，也不使用下面的导出选项
+    if (outlineCopySelected) {
+      onClose()
+      void window.__ophelCopyFullOutline?.()
+      return
+    }
+
     setIsExporting(true)
     try {
       const packaging: ExportPackaging =
@@ -555,9 +574,11 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               key={item.format}
               type="button"
               className="gh-export-format-btn"
-              data-active={selectedFormat === item.format}
-              title={item.label}
-              onClick={() => setSelectedFormat(item.format)}>
+              data-active={!outlineCopySelected && selectedFormat === item.format}
+              onClick={() => {
+                setSelectedFormat(item.format)
+                setOutlineCopySelected(false)
+              }}>
               <span className="gh-export-format-label">
                 <item.Icon size={15} className="gh-export-format-icon" />
                 <span>{item.label}</span>
@@ -565,17 +586,13 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
               {item.badge && <span className="gh-export-format-badge">{item.badge}</span>}
             </button>
           ))}
-          {/* 复制大纲：即时动作（非导出格式），能力由大纲 tab 挂载期间暴露；未挂载时不显示 */}
+          {/* 复制大纲：与“复制 Markdown”一样先选中、再点底部“复制”；能力由大纲 tab 挂载期间暴露，未挂载时不显示 */}
           {typeof window.__ophelCopyFullOutline === "function" && (
             <button
               type="button"
               className="gh-export-format-btn"
-              title={t("outlineCopyFull")}
-              disabled={isExporting}
-              onClick={() => {
-                onClose()
-                void window.__ophelCopyFullOutline?.()
-              }}>
+              data-active={outlineCopySelected}
+              onClick={() => setOutlineCopySelected(true)}>
               <span className="gh-export-format-label">
                 <CopyOutlineIcon size={15} className="gh-export-format-icon" />
                 <span>{t("outlineCopyFull")}</span>
@@ -588,74 +605,91 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
       <div className="gh-export-section">
         <div className="gh-export-section-header">
           <div className="gh-export-section-title">{t("exportOptions")}</div>
-          <button
-            type="button"
-            className="gh-export-settings-btn"
-            title={t("exportSettings")}
-            aria-label={t("exportSettings")}
-            disabled={isExporting}
-            onClick={handleOpenExportSettings}>
-            <SettingsIcon size={14} />
-          </button>
+          <Tooltip content={t("exportSettings")}>
+            <button
+              type="button"
+              className="gh-export-settings-btn"
+              aria-label={t("exportSettings")}
+              disabled={isExporting}
+              onClick={handleOpenExportSettings}>
+              <SettingsIcon size={14} />
+            </button>
+          </Tooltip>
         </div>
-        <div className="gh-export-options-list">
-          <label className="gh-export-option-row">
-            <span>{t("exportIncludeThoughtsLabel")}</span>
-            <input
-              type="checkbox"
-              checked={includeThoughts}
-              onChange={(e) => setIncludeThoughts(e.target.checked)}
-            />
-          </label>
-
-          <label
-            className="gh-export-option-row"
-            data-disabled={selectedFormat === "json"}
-            title={selectedFormat === "json" ? t("exportShowIndexJsonUnsupported") : undefined}>
-            <span>{t("exportShowIndexLabel")}</span>
-            <input
-              type="checkbox"
-              checked={showIndex}
-              disabled={selectedFormat === "json"}
-              onChange={(e) => setShowIndex(e.target.checked)}
-            />
-          </label>
-
-          {isMarkdownLike && (
-            <div className="gh-export-divider-wrap">
-              <span>{t("exportMarkdownDividerLabel")}</span>
-              <input
-                type="text"
-                className="gh-export-divider-input"
-                value={customDivider}
-                onChange={(e) => setCustomDivider(e.target.value)}
-                placeholder="---"
-              />
-            </div>
-          )}
-
-          {selectedFormat === "markdown" && (
+        <Tooltip
+          content={t("exportOptionsOutlineCopyHint")}
+          disabled={!outlineCopySelected}
+          triggerStyle={{ display: "block" }}>
+          <div
+            className="gh-export-options-list"
+            data-disabled={outlineCopySelected}
+            aria-disabled={outlineCopySelected}>
             <label className="gh-export-option-row">
-              <span>{t("exportPackagingZipOption")}</span>
+              <span>{t("exportIncludeThoughtsLabel")}</span>
               <input
                 type="checkbox"
-                checked={packageZip}
-                onChange={(e) => setPackageZip(e.target.checked)}
+                checked={includeThoughts}
+                disabled={outlineCopySelected}
+                onChange={(e) => setIncludeThoughts(e.target.checked)}
               />
             </label>
-          )}
 
-          {isMarkdownLike && (
-            <label className="gh-export-option-row">
-              <span>{t("exportStyleCleanOption")}</span>
-              <input
-                type="checkbox"
-                checked={exportStyle === "clean"}
-                onChange={(e) => setExportStyle(e.target.checked ? "clean" : "standard")}
-              />
-            </label>
-          )}
-        </div>
+            <Tooltip
+              content={t("exportShowIndexJsonUnsupported")}
+              disabled={outlineCopySelected || selectedFormat !== "json"}
+              triggerStyle={{ display: "block" }}>
+              <label
+                className="gh-export-option-row"
+                data-disabled={!outlineCopySelected && selectedFormat === "json"}>
+                <span>{t("exportShowIndexLabel")}</span>
+                <input
+                  type="checkbox"
+                  checked={showIndex}
+                  disabled={outlineCopySelected || selectedFormat === "json"}
+                  onChange={(e) => setShowIndex(e.target.checked)}
+                />
+              </label>
+            </Tooltip>
+
+            {isMarkdownLike && (
+              <div className="gh-export-divider-wrap">
+                <span>{t("exportMarkdownDividerLabel")}</span>
+                <input
+                  type="text"
+                  className="gh-export-divider-input"
+                  value={customDivider}
+                  disabled={outlineCopySelected}
+                  onChange={(e) => setCustomDivider(e.target.value)}
+                  placeholder="---"
+                />
+              </div>
+            )}
+
+            {selectedFormat === "markdown" && (
+              <label className="gh-export-option-row">
+                <span>{t("exportPackagingZipOption")}</span>
+                <input
+                  type="checkbox"
+                  checked={packageZip}
+                  disabled={outlineCopySelected}
+                  onChange={(e) => setPackageZip(e.target.checked)}
+                />
+              </label>
+            )}
+
+            {isMarkdownLike && (
+              <label className="gh-export-option-row">
+                <span>{t("exportStyleCleanOption")}</span>
+                <input
+                  type="checkbox"
+                  checked={exportStyle === "clean"}
+                  disabled={outlineCopySelected}
+                  onChange={(e) => setExportStyle(e.target.checked ? "clean" : "standard")}
+                />
+              </label>
+            )}
+          </div>
+        </Tooltip>
       </div>
 
       <div className="gh-export-footer">
@@ -689,7 +723,7 @@ export const ExportDialog: React.FC<ExportDialogProps> = ({
             onClick={handleConfirm}>
             {isExporting
               ? t("exporting")
-              : selectedFormat === "clipboard"
+              : outlineCopySelected || selectedFormat === "clipboard"
                 ? t("copy")
                 : t("export")}
           </button>

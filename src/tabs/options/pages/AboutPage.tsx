@@ -2,7 +2,7 @@
  * 关于页面
  * 显示扩展信息、版本、链接等
  */
-import React, { useEffect, useState, useSyncExternalStore } from "react"
+import React, { useEffect, useMemo, useState, useSyncExternalStore } from "react"
 
 import { PlatformIcon } from "~components/PlatformIcon"
 import {
@@ -24,10 +24,12 @@ import {
   StarIcon,
 } from "~components/icons"
 import { SparkleIcon } from "~components/icons/SparkleIcon"
+import { Tooltip } from "~components/ui"
 import { ABOUT_SPONSOR_SETTING_ID } from "~constants"
 import { STORE_LINKS } from "~constants/store-links"
 import { useHasUnseenReleaseNotes } from "~hooks/useHasUnseenReleaseNotes"
 import { useSupportedAiPlatforms } from "~hooks/useSupportedAiPlatforms"
+import { isScriptCatUserscriptManager } from "~platform/utils"
 import { APP_DISPLAY_NAME, APP_VERSION, getAppIconUrl } from "~utils/config"
 import {
   AFDIAN_URL,
@@ -36,6 +38,7 @@ import {
   getDonateChannels,
   resolveSupportImageUrl,
 } from "~utils/donate-channels"
+import { getStoreInfo } from "~utils/getStoreInfo"
 import { getCurrentLang, subscribeI18nChanges, t } from "~utils/i18n"
 
 import { PageTitle } from "../components"
@@ -51,6 +54,54 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
   const donateChannels = getDonateChannels(language)
   const hasUnseenReleaseNotes = useHasUnseenReleaseNotes()
   const [sponsorPreview, setSponsorPreview] = useState<{ src: string; alt: string } | null>(null)
+  // 当前运行平台对应的商店单独一行并带「评分」；ScriptCat 管理器下优先 ScriptCat，其余与侧栏评分入口一致
+  const currentStoreUrl = useMemo(
+    () => (isScriptCatUserscriptManager() ? STORE_LINKS.scriptCat : getStoreInfo().url),
+    [],
+  )
+  const storeLinks = [
+    {
+      id: "chrome",
+      url: STORE_LINKS.chrome,
+      label: t("chromeStore"),
+      icon: <ChromeIcon size={18} />,
+    },
+    { id: "edge", url: STORE_LINKS.edge, label: t("edgeAddons"), icon: <EdgeIcon size={18} /> },
+    {
+      id: "firefox",
+      url: STORE_LINKS.firefox,
+      label: t("firefoxAddons"),
+      icon: <FirefoxIcon size={18} />,
+    },
+    {
+      id: "greasyFork",
+      url: STORE_LINKS.greasyFork,
+      label: t("greasyFork"),
+      icon: <GreasyForkIcon size={18} color="currentColor" />,
+    },
+    {
+      id: "scriptCat",
+      url: STORE_LINKS.scriptCat,
+      label: t("scriptCat"),
+      icon: <ScriptCatIcon size={18} color="#1296db" />,
+    },
+  ]
+  const currentStore = storeLinks.find((store) => store.url === currentStoreUrl)
+  const otherStores = storeLinks.filter((store) => store !== currentStore)
+
+  const renderStoreLink = (store: (typeof storeLinks)[number], isCurrent: boolean) => (
+    <a
+      key={store.id}
+      href={store.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={`about-store-link${isCurrent ? " is-current" : ""}`}>
+      {store.icon}
+      <span className="about-store-link-label">{store.label}</span>
+      {isCurrent ? <span className="about-store-link-cta">{t("reviewBtn")}</span> : null}
+      <ExternalLinkIcon size={12} />
+    </a>
+  )
 
   useEffect(() => {
     if (!sponsorPreview) return
@@ -146,7 +197,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
             rel="noopener noreferrer"
             className="about-link-card kofi-card"
             style={{ "--card-color": "#FF5E5B" } as React.CSSProperties}>
-            <div className="about-link-header" style={{ color: "var(--card-color)" }}>
+            <div className="about-link-header">
               <KofiIcon size={22} color="var(--card-color)" />
               <span style={{ fontWeight: 600 }}>{t("kofiSupport")}</span>
             </div>
@@ -171,9 +222,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
           style={{ "--card-color": "#3B82F6" } as React.CSSProperties}>
           <div className="about-link-header">
             <GlobeIcon size={22} color="var(--card-color)" />
-            <span style={{ fontWeight: 600, color: "var(--card-color)" }}>
-              {t("projectWebsite")}
-            </span>
+            <span style={{ fontWeight: 600 }}>{t("projectWebsite")}</span>
           </div>
           <div className="about-link-desc">{t("websiteDesc")}</div>
           <span className="about-link-btn" aria-hidden="true">
@@ -191,7 +240,7 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
           rel="noopener noreferrer"
           className="about-link-card discord-card"
           style={{ "--card-color": "#5865F2" } as React.CSSProperties}>
-          <div className="about-link-header" style={{ color: "var(--card-color)" }}>
+          <div className="about-link-header">
             <DiscordIcon size={22} color="var(--card-color)" />
             <span style={{ fontWeight: 600 }}>{t("discordCommunity")}</span>
           </div>
@@ -229,40 +278,38 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
               </span>
               <span className="about-sponsor-afdian-title">{t("afdianSupport")}</span>
             </a>
-            <div className="about-sponsor-qrs">
-              <button
-                type="button"
-                className="about-sponsor-qr about-sponsor-qr-zoom about-sponsor-qr-wechat"
-                onClick={() =>
-                  setSponsorPreview({
-                    src: resolveSupportImageUrl(donateChannels.wechatImagePath),
-                    alt: t("wechatPay"),
-                  })
-                }>
-                <img
-                  src={resolveSupportImageUrl(donateChannels.wechatImagePath)}
-                  alt={t("wechatPay")}
-                  className="about-sponsor-qr-img"
-                />
-                <span className="about-sponsor-qr-title">{t("wechatPay")}</span>
-              </button>
-              <button
-                type="button"
-                className="about-sponsor-qr about-sponsor-qr-zoom about-sponsor-qr-alipay"
-                onClick={() =>
-                  setSponsorPreview({
-                    src: resolveSupportImageUrl(donateChannels.alipayImagePath),
-                    alt: t("alipayPay"),
-                  })
-                }>
-                <img
-                  src={resolveSupportImageUrl(donateChannels.alipayImagePath)}
-                  alt={t("alipayPay")}
-                  className="about-sponsor-qr-img"
-                />
-                <span className="about-sponsor-qr-title">{t("alipayPay")}</span>
-              </button>
-            </div>
+            <button
+              type="button"
+              className="about-sponsor-qr about-sponsor-qr-zoom about-sponsor-qr-wechat"
+              onClick={() =>
+                setSponsorPreview({
+                  src: resolveSupportImageUrl(donateChannels.wechatImagePath),
+                  alt: t("wechatPay"),
+                })
+              }>
+              <img
+                src={resolveSupportImageUrl(donateChannels.wechatImagePath)}
+                alt={t("wechatPay")}
+                className="about-sponsor-qr-img"
+              />
+              <span className="about-sponsor-qr-title">{t("wechatPay")}</span>
+            </button>
+            <button
+              type="button"
+              className="about-sponsor-qr about-sponsor-qr-zoom about-sponsor-qr-alipay"
+              onClick={() =>
+                setSponsorPreview({
+                  src: resolveSupportImageUrl(donateChannels.alipayImagePath),
+                  alt: t("alipayPay"),
+                })
+              }>
+              <img
+                src={resolveSupportImageUrl(donateChannels.alipayImagePath)}
+                alt={t("alipayPay")}
+                className="about-sponsor-qr-img"
+              />
+              <span className="about-sponsor-qr-title">{t("alipayPay")}</span>
+            </button>
           </div>
           {sponsorPreview ? (
             <div
@@ -286,90 +333,17 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
       ) : null}
 
       <div className="about-section-title">{t("rateAndReview")}</div>
-      <div className="about-links-grid reviews-grid">
-        {/* Chrome Store */}
-        <a
-          href={STORE_LINKS.chrome}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="about-link-card">
-          <div className="about-link-header">
-            <ChromeIcon size={24} />
-            <span style={{ fontWeight: 600 }}>{t("chromeStore")}</span>
-          </div>
-          <span className="about-link-btn" aria-hidden="true">
-            {t("reviewBtn")}
-          </span>
-        </a>
-
-        {/* Edge Add-ons */}
-        <a
-          href={STORE_LINKS.edge}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="about-link-card">
-          <div className="about-link-header">
-            <EdgeIcon size={24} />
-            <span style={{ fontWeight: 600 }}>{t("edgeAddons")}</span>
-          </div>
-          <span className="about-link-btn" aria-hidden="true">
-            {t("reviewBtn")}
-          </span>
-        </a>
-
-        {/* Firefox Add-on */}
-        <a
-          href={STORE_LINKS.firefox}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="about-link-card">
-          <div className="about-link-header">
-            <FirefoxIcon size={24} />
-            <span style={{ fontWeight: 600 }}>{t("firefoxAddons")}</span>
-          </div>
-          <span className="about-link-btn" aria-hidden="true">
-            {t("reviewBtn")}
-          </span>
-        </a>
-
-        {/* GreasyFork */}
-        <a
-          href={STORE_LINKS.greasyFork}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="about-link-card">
-          <div className="about-link-header">
-            <GreasyForkIcon size={24} color="currentColor" />
-            <span style={{ fontWeight: 600, color: "var(--gh-text)" }}>{t("greasyFork")}</span>
-          </div>
-          <span className="about-link-btn" aria-hidden="true">
-            {t("reviewBtn")}
-          </span>
-        </a>
-
-        {/* ScriptCat */}
-        <a
-          href={STORE_LINKS.scriptCat}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="about-link-card">
-          <div className="about-link-header">
-            <ScriptCatIcon size={24} color="#1296db" />
-            <span style={{ fontWeight: 600, color: "var(--gh-text)" }}>{t("scriptCat")}</span>
-          </div>
-          <span className="about-link-btn" aria-hidden="true">
-            {t("reviewBtn")}
-          </span>
-        </a>
+      <div className="about-store-links">
+        {currentStore ? renderStoreLink(currentStore, true) : null}
+        <div className="about-store-links-grid">
+          {otherStores.map((store) => renderStoreLink(store, false))}
+        </div>
       </div>
 
       <div className="about-section-title">{t("aboutSupportedPlatforms")}</div>
       <div className="about-platforms-card">
-        <div className="about-platforms-header">
-          <div className="about-platforms-desc">
-            {t("aboutSupportedPlatformsDesc", { count: supportedPlatformsCount })}
-          </div>
-          <span className="about-platforms-count">{supportedPlatformsCount}</span>
+        <div className="about-platforms-desc">
+          {t("aboutSupportedPlatformsDesc", { count: supportedPlatformsCount })}
         </div>
         <div className="about-platforms-grid">
           {supportedPlatforms.map((platform) => {
@@ -394,16 +368,16 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
             }
 
             return (
-              <a
-                key={platform.id}
-                href={entryUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="about-platform-chip"
-                title={entryUrl}>
-                {icon}
-                <span>{platform.name}</span>
-              </a>
+              <Tooltip key={platform.id} content={entryUrl}>
+                <a
+                  href={entryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="about-platform-chip">
+                  {icon}
+                  <span>{platform.name}</span>
+                </a>
+              </Tooltip>
             )
           })}
         </div>
@@ -411,12 +385,14 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
 
       <div className="about-section-title">{t("techStack")}</div>
 
-      <div className="about-tech-grid">
-        <TechCard name="Plasmo" version="v0.89.0" desc={t("tsPlasmoDesc")} />
-        <TechCard name="React" version="v18.2.0" desc={t("tsReactDesc")} />
-        <TechCard name="TypeScript" version="v5.3.3" desc={t("tsTypescriptDesc")} />
-        <TechCard name="Zustand" version="v5.0.3" desc={t("tsZustandDesc")} />
-        <TechCard name="Vite" version="v5.0.0" desc={t("tsViteDesc")} />
+      <div className="about-tech-card">
+        <div className="about-tech-grid">
+          <TechItem name="Plasmo" version="v0.90.5" desc={t("tsPlasmoDesc")} />
+          <TechItem name="React" version="v18.3.1" desc={t("tsReactDesc")} />
+          <TechItem name="TypeScript" version="v5.3.3" desc={t("tsTypescriptDesc")} />
+          <TechItem name="Zustand" version="v5.0.10" desc={t("tsZustandDesc")} />
+          <TechItem name="Vite" version="v7.3.1" desc={t("tsViteDesc")} />
+        </div>
       </div>
 
       <div className="about-section-title">{t("credits")}</div>
@@ -449,8 +425,8 @@ const AboutPage: React.FC<AboutPageProps> = ({ onOpenReleaseNotes }) => {
   )
 }
 
-const TechCard = ({ name, version, desc }: { name: string; version: string; desc: string }) => (
-  <div className="about-tech-card">
+const TechItem = ({ name, version, desc }: { name: string; version: string; desc: string }) => (
+  <div className="about-tech-item">
     <div className="about-tech-header">
       <div className="about-tech-name">{name}</div>
       <div className="about-tech-version">{version}</div>

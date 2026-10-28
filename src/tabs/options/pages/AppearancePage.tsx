@@ -2,20 +2,18 @@
  * 外观主题页面
  * 包含：主题预置 | 自定义样式
  */
-import hljs from "highlight.js/lib/core"
-import css from "highlight.js/lib/languages/css"
 import React, { useEffect, useState } from "react"
 
 import {
   AppearanceIcon,
   CheckIcon,
-  ClearIcon,
   DeleteIcon,
   EditIcon,
+  PlusIcon,
   ThemeDarkIcon,
   ThemeLightIcon,
 } from "~components/icons"
-import { ConfirmDialog } from "~components/ui"
+import { ConfirmDialog, Tooltip } from "~components/ui"
 import { APPEARANCE_TAB_IDS } from "~constants"
 import { useSettingsStore } from "~stores/settings-store"
 import { t } from "~utils/i18n"
@@ -28,13 +26,10 @@ import {
   type ThemeVariables,
 } from "~utils/themes"
 import { showToast as showDomToast } from "~utils/toast"
-import { createSafeHTML } from "~utils/trusted-types"
 
 import { PageTitle, SettingCard, TabGroup, ToggleRow } from "../components"
-import { SafeCodeEditor } from "../components/SafeCodeEditor"
+import { CustomStyleEditorDialog } from "../components/CustomStyleEditorDialog"
 import { ThemePreview } from "../components/ThemePreview"
-
-hljs.registerLanguage("css", css)
 
 interface AppearancePageProps {
   siteId: string
@@ -78,8 +73,7 @@ const ThemeCard: React.FC<{
       type="button"
       className={`settings-theme-card ${isActive ? "active" : ""}`}
       onClick={onClick}
-      aria-pressed={isActive}
-      title={displayName}>
+      aria-pressed={isActive}>
       <div className="settings-theme-card-preview">
         <ThemePreview preset={preset} />
         {isActive ? (
@@ -325,6 +319,7 @@ const AppearancePage: React.FC<AppearancePageProps> = ({ siteId, initialTab }) =
             settingId="appearance-custom-styles">
             <div className="settings-custom-style-toolbar">
               <button
+                type="button"
                 className="settings-btn settings-btn-primary"
                 onClick={() => {
                   setEditingStyle({
@@ -335,7 +330,8 @@ const AppearancePage: React.FC<AppearancePageProps> = ({ siteId, initialTab }) =
                   })
                   setShowStyleEditor(true)
                 }}>
-                + {t("addCustomStyle")}
+                <PlusIcon size={16} />
+                {t("addCustomStyle")}
               </button>
             </div>
 
@@ -353,9 +349,7 @@ const AppearancePage: React.FC<AppearancePageProps> = ({ siteId, initialTab }) =
                         <div className="settings-custom-style-item-title">
                           {style.name || t("unnamedStyle")}
                         </div>
-                        <span
-                          className={`settings-custom-style-mode-badge ${style.mode}`}
-                          title={style.mode === "light" ? t("lightMode") : t("darkMode")}>
+                        <span className="settings-custom-style-mode-badge">
                           {style.mode === "light" ? (
                             <ThemeLightIcon size={12} />
                           ) : (
@@ -376,14 +370,15 @@ const AppearancePage: React.FC<AppearancePageProps> = ({ siteId, initialTab }) =
                         <EditIcon size={14} />
                         <span>{t("edit")}</span>
                       </button>
-                      <button
-                        type="button"
-                        className="settings-btn settings-btn-danger settings-icon-only-btn"
-                        onClick={() => setStyleToDelete(style.id)}
-                        aria-label={t("confirmDeleteStyle")}
-                        title={t("confirmDeleteStyle")}>
-                        <DeleteIcon size={14} />
-                      </button>
+                      <Tooltip content={t("deleteStyle")}>
+                        <button
+                          type="button"
+                          className="settings-btn settings-btn-danger settings-icon-only-btn"
+                          onClick={() => setStyleToDelete(style.id)}
+                          aria-label={t("deleteStyle")}>
+                          <DeleteIcon size={14} />
+                        </button>
+                      </Tooltip>
                     </div>
                   </article>
                 ))}
@@ -393,101 +388,14 @@ const AppearancePage: React.FC<AppearancePageProps> = ({ siteId, initialTab }) =
         </>
       )}
 
-      {/* 样式编辑器模态框 */}
+      {/* 样式编辑器：走共享 DialogOverlay */}
       {showStyleEditor && editingStyle && (
-        <div className="settings-style-editor-overlay">
-          <div className="settings-style-editor-modal">
-            <div className="settings-style-editor-header">
-              <h3 className="settings-style-editor-title">
-                {editingStyle.id ? t("editStyleTitle") : t("newStyle")}
-              </h3>
-              <button
-                type="button"
-                className="settings-style-editor-close"
-                onClick={() => setShowStyleEditor(false)}
-                aria-label={t("close")}
-                title={t("close")}>
-                <ClearIcon size={16} />
-              </button>
-            </div>
-
-            <div className="settings-style-editor-body">
-              <div className="settings-style-editor-field">
-                <label className="settings-style-editor-label">{t("styleNameLabel")}</label>
-                <input
-                  type="text"
-                  className="settings-input settings-style-editor-input"
-                  value={editingStyle.name}
-                  onChange={(e) => setEditingStyle({ ...editingStyle, name: e.target.value })}
-                  placeholder={t("enterStyleName")}
-                />
-              </div>
-
-              <div className="settings-style-editor-field">
-                <label className="settings-style-editor-label">{t("styleModeLabel")}</label>
-                <div className="settings-style-editor-radio-group">
-                  <label className="settings-style-editor-radio">
-                    <input
-                      type="radio"
-                      checked={editingStyle.mode === "light"}
-                      onChange={() => setEditingStyle({ ...editingStyle, mode: "light" })}
-                    />
-                    <span className="settings-style-editor-radio-text">
-                      <ThemeLightIcon size={14} />
-                      <span>{t("lightMode")}</span>
-                    </span>
-                  </label>
-                  <label className="settings-style-editor-radio">
-                    <input
-                      type="radio"
-                      checked={editingStyle.mode === "dark"}
-                      onChange={() => setEditingStyle({ ...editingStyle, mode: "dark" })}
-                    />
-                    <span className="settings-style-editor-radio-text">
-                      <ThemeDarkIcon size={14} />
-                      <span>{t("darkMode")}</span>
-                    </span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="settings-style-editor-code-section">
-                <label className="settings-style-editor-label">CSS {t("code")}</label>
-                <div className="settings-textarea settings-style-editor-code-frame">
-                  <SafeCodeEditor
-                    value={editingStyle.css}
-                    onValueChange={(code) => setEditingStyle({ ...editingStyle, css: code })}
-                    highlight={(code) =>
-                      createSafeHTML(hljs.highlight(code, { language: "css" }).value)
-                    }
-                    padding={12}
-                    style={{
-                      fontFamily: '"Menlo", "Monaco", "Consolas", monospace',
-                      fontSize: 13,
-                      minHeight: "100%",
-                    }}
-                    textareaClassName="focus-outline-none"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="settings-style-editor-footer">
-              <button
-                type="button"
-                className="settings-btn settings-btn-secondary"
-                onClick={() => setShowStyleEditor(false)}>
-                {t("cancel")}
-              </button>
-              <button
-                type="button"
-                className="settings-btn settings-btn-primary"
-                onClick={saveCustomStyle}>
-                {editingStyle.id ? t("save") : t("create")}
-              </button>
-            </div>
-          </div>
-        </div>
+        <CustomStyleEditorDialog
+          style={editingStyle}
+          onChange={setEditingStyle}
+          onSave={saveCustomStyle}
+          onClose={() => setShowStyleEditor(false)}
+        />
       )}
 
       {styleToDelete && (
