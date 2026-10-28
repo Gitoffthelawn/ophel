@@ -2256,51 +2256,6 @@ html[data-theme="dark"] .platform-icon-dark-invert {
   margin-top: 18px;
 }
 
-@media (max-width: 520px) {
-  .settings-pack-toolbar,
-  .settings-pack-item,
-  .settings-pack-import-footer,
-  .settings-pack-inline-error {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .settings-pack-controls {
-    justify-content: flex-start;
-  }
-
-  .settings-pack-section-head {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .settings-pack-section-tools {
-    width: 100%;
-  }
-
-  .settings-pack-search {
-    flex: 1 1 auto;
-  }
-
-  .settings-pack-source-input-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .settings-pack-source-apply {
-    width: 100%;
-  }
-
-  .settings-pack-source-actions {
-    align-items: stretch;
-  }
-
-  .settings-pack-source-actions .settings-pack-action-button {
-    flex: 1 1 auto;
-    justify-content: center;
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .settings-pack-action-button,
   .settings-pack-action-button .spinning,
@@ -3567,6 +3522,238 @@ html[data-theme="dark"] .platform-icon-dark-invert {
 
 .settings-modal-container .settings-content {
   padding-right: 48px; /* 为关闭按钮留出空间 */
+}
+
+/* ==================== 窄屏：全屏单栏、两级导航 ==================== */
+/* is-compact 由 JS 按 SETTINGS_COMPACT_MEDIA_QUERY 挂载（断点只在常量里定义一处）。
+   导航与页面分两屏：导航屏是全宽侧栏，页面屏是顶部返回栏加内容；
+   两屏的标题行同为 56px 高，右上角关闭按钮在两屏中垂直居中 */
+.settings-modal-container.is-compact {
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  border-radius: 0;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px)
+    env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+}
+
+.settings-layout.is-compact {
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+}
+
+.settings-modal-container.is-compact .settings-modal-actions {
+  top: calc(8px + env(safe-area-inset-top, 0px));
+  right: calc(8px + env(safe-area-inset-right, 0px));
+}
+
+/* 关闭按钮在触屏上要够大 */
+.settings-modal-container.is-compact .settings-modal-action-btn {
+  width: 40px;
+  height: 40px;
+}
+
+.is-compact[data-compact-pane="page"] .settings-sidebar,
+.is-compact[data-compact-pane="nav"] .settings-content {
+  display: none;
+}
+
+.is-compact .settings-sidebar,
+.settings-modal-container.is-compact .settings-sidebar {
+  width: 100%;
+  height: auto;
+  flex: 1;
+  min-height: 0;
+  border-right: none;
+  border-radius: 0;
+}
+
+.is-compact .settings-sidebar-header {
+  padding: 11px 64px 11px 16px;
+}
+
+.is-compact .settings-sidebar-nav {
+  padding: 8px 10px;
+}
+
+/* 导航屏的每一项都是进入下一屏的入口：加大点按高度，右侧用箭头提示可进入 */
+.is-compact .settings-nav-item {
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.is-compact .settings-nav-item::after {
+  content: "";
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  /* 带 Beta 徽标的项标签不撑满，箭头仍要贴右对齐 */
+  margin-left: auto;
+  margin-right: 4px;
+  border-top: 1.5px solid currentColor;
+  border-right: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  opacity: 0.45;
+}
+
+.is-compact .settings-content,
+.settings-modal-container.is-compact .settings-content {
+  flex: 1;
+  min-height: 0;
+  padding: 16px 16px 24px;
+}
+
+/* 吸顶栏的 top 偏移要抵消内容区上内边距：桌面是 24px，窄屏改为 16px 后同步收敛，
+   否则吸顶时标签轨道顶部会被裁掉一截 */
+.is-compact .settings-site-selector,
+.is-compact .settings-tab-group-container,
+.is-compact .settings-pack-toolbar {
+  top: -16px;
+}
+
+/* 设置行放不下「说明 + 控件」时换行：说明（首个子元素，可能是展开按钮包着的说明）
+   至少留 180px，宽控件（滑块、分段、下拉）落到下一行、与说明左对齐；
+   开关等窄控件仍与说明同行，由说明撑满剩余宽度把控件推到右侧 */
+.is-compact .settings-row {
+  flex-wrap: wrap;
+  column-gap: 12px;
+  row-gap: 10px;
+}
+
+.is-compact .settings-row > :first-child {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.is-compact .settings-row-control {
+  margin-left: 0;
+  max-width: 100%;
+}
+
+/* 卡片内边距吃掉宽度后，常见手机（360–390px）恰好差几像素排不下两列主题预览 */
+.is-compact .settings-theme-grid {
+  grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  gap: 12px;
+}
+
+/* 关于页主卡：窄屏下 logo 与文字并排会把简介挤成细长一列，改为上下排列 */
+.is-compact .about-hero-card {
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+}
+
+/* 窄屏导航屏里侧栏全宽，主题分段被拉宽：label 不再吃掉剩余空间
+   （UA 让 button 的 text-align: center 继承进 label，文字会在剩余空间里居中），
+   改为图标与文字作为一个整体居中，只保留固定间距 */
+.is-compact .settings-theme-segment .segment-label {
+  flex: 0 1 auto;
+}
+
+/* 适配中心列表项：窄屏保持「图标 + 信息 + 控件」同行；信息列至少 150px，
+   控件整体放不下时落到下一行并靠右，不再把图标、标题、控件逐项竖排 */
+.is-compact .settings-pack-item {
+  flex-wrap: wrap;
+  column-gap: 10px;
+  row-gap: 10px;
+}
+
+.is-compact .settings-pack-info {
+  flex: 1 1 150px;
+}
+
+.is-compact .settings-pack-controls {
+  margin-left: auto;
+}
+
+/* 标签栏与「使用指南」上下排列，标签组吃满整行，放不下的标签横向滚动 */
+.is-compact .settings-pack-toolbar {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* 在线适配库标题栏：标题与「搜索 + 导入」尽量同行，放不下时工具组占满一行、搜索框吃满剩余宽度 */
+.is-compact .settings-pack-section-head {
+  flex-wrap: wrap;
+}
+
+.is-compact .settings-pack-section-tools {
+  flex: 1 1 180px;
+  justify-content: flex-end;
+}
+
+.is-compact .settings-pack-search {
+  flex: 1 1 auto;
+}
+
+/* 更新源与错误条：窄屏下输入与按钮竖排，底部按钮组平分整行 */
+.is-compact .settings-pack-inline-error {
+  flex-wrap: wrap;
+}
+
+.is-compact .settings-pack-source-input-row {
+  flex-direction: column;
+}
+
+.is-compact .settings-pack-source-apply {
+  width: 100%;
+}
+
+.is-compact .settings-pack-source-actions .settings-pack-action-button {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.settings-compact-bar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  height: 56px;
+  box-sizing: border-box;
+  padding: 0 64px 0 8px;
+  border-bottom: 1px solid var(--gh-border, #e5e7eb);
+  background: var(--gh-surface, var(--gh-card-bg, #ffffff));
+}
+
+.settings-compact-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  padding: 0 12px 0 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease;
+}
+
+.settings-compact-back:hover {
+  background: var(--gh-hover, #f3f4f6);
+}
+
+.settings-compact-back:active {
+  transform: translateY(1px);
+}
+
+.settings-compact-back:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 42%, transparent);
+  outline-offset: 2px;
+}
+
+/* 复用向下箭头，旋转成返回箭头 */
+.settings-compact-back-icon {
+  transform: rotate(90deg);
 }
 
 /* ==================== About Page Refinement ==================== */
