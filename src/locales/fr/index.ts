@@ -1681,6 +1681,11 @@ Donnez le code puis un résumé des améliorations.`,
     "Entrée pour ouvrir · ↑↓ pour sélectionner · Tab pour les catégories · Esc pour fermer",
   globalSearchShortcutNudge: "La prochaine fois, utilisez {shortcut} pour ouvrir plus vite",
   doubleShiftToSearch: "Double Shift pour ouvrir la recherche globale",
+  globalSearchEnabledLabel: "Activer la recherche globale",
+  globalSearchEnabledDesc:
+    "Si désactivée, tous les moyens d'ouvrir la recherche globale sont désactivés et {shortcut} est rendu à la fonction native du site",
+  globalSearchEnabledDescNoShortcut:
+    "Si désactivée, tous les moyens d'ouvrir la recherche globale sont désactivés",
   globalSearchShortcutNudgeDismiss: "Ne plus me rappeler",
   globalSearchContextCurrentItem: "Élément {current}",
   globalSearchContextShownProgress: "Affichés {shown}/{total}",

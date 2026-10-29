@@ -1670,6 +1670,11 @@ Dame el código y luego un resumen de mejoras.`,
     "Enter para saltar · ↑↓ para seleccionar · Tab para categorías · Esc para cerrar",
   globalSearchShortcutNudge: "La próxima vez, usa {shortcut} para abrir más rápido",
   doubleShiftToSearch: "Doble Shift para abrir la búsqueda global",
+  globalSearchEnabledLabel: "Activar búsqueda global",
+  globalSearchEnabledDesc:
+    "Si se desactiva, todas las formas de abrir la búsqueda global quedan deshabilitadas y {shortcut} vuelve a la función nativa del sitio",
+  globalSearchEnabledDescNoShortcut:
+    "Si se desactiva, todas las formas de abrir la búsqueda global quedan deshabilitadas",
   globalSearchShortcutNudgeDismiss: "No volver a recordar",
   globalSearchContextCurrentItem: "Elemento {current}",
   globalSearchContextShownProgress: "Mostrados {shown}/{total}",

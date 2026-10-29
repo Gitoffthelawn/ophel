@@ -1660,6 +1660,10 @@ export const ko = {
   globalSearchFooterTips: "Enter 이동 · ↑↓ 선택 · Tab 카테고리 · Esc 닫기",
   globalSearchShortcutNudge: "다음부터는 {shortcut}로 빠르게 열 수 있어요",
   doubleShiftToSearch: "Shift 두 번으로 전역 검색 열기",
+  globalSearchEnabledLabel: "전역 검색 사용",
+  globalSearchEnabledDesc:
+    "끄면 전역 검색의 모든 실행 방법이 비활성화되고 {shortcut}는 사이트 기본 기능으로 돌아갑니다",
+  globalSearchEnabledDescNoShortcut: "끄면 전역 검색의 모든 실행 방법이 비활성화됩니다",
   globalSearchShortcutNudgeDismiss: "다시 알리지 않기",
 
   globalSearchContextCurrentItem: "{current}번째 항목",

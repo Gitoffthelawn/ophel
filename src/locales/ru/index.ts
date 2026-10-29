@@ -1628,6 +1628,11 @@ export const ru = {
   globalSearchFooterTips: "Enter — перейти · ↑↓ — выбрать · Tab — категории · Esc — закрыть",
   globalSearchShortcutNudge: "В следующий раз используйте {shortcut}, чтобы открыть быстрее",
   doubleShiftToSearch: "Двойной Shift для открытия глобального поиска",
+  globalSearchEnabledLabel: "Включить глобальный поиск",
+  globalSearchEnabledDesc:
+    "При отключении все способы открытия глобального поиска недоступны, а {shortcut} возвращается встроенной функции сайта",
+  globalSearchEnabledDescNoShortcut:
+    "При отключении все способы открытия глобального поиска недоступны",
   globalSearchShortcutNudgeDismiss: "Больше не напоминать",
   globalSearchContextCurrentItem: "Элемент {current}",
   globalSearchContextShownProgress: "Показано {shown}/{total}",

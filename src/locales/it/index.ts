@@ -1762,6 +1762,11 @@ export const it = {
     "Enter per saltare · ↑↓ per selezionare · Categoria scheda · Esc per chiudere",
   globalSearchShortcutNudge: "Premi {shortcut} per aprire la prossima volta",
   doubleShiftToSearch: "Doppio spostamento per aprire la ricerca globale",
+  globalSearchEnabledLabel: "Abilita ricerca globale",
+  globalSearchEnabledDesc:
+    "Se disattivata, tutti i modi per aprire la ricerca globale sono disabilitati e {shortcut} torna alla funzione nativa del sito",
+  globalSearchEnabledDescNoShortcut:
+    "Se disattivata, tutti i modi per aprire la ricerca globale sono disabilitati",
   globalSearchShortcutNudgeDismiss: "Non ricordarmelo",
   globalSearchContextCurrentItem: "Articolo {current}",
   globalSearchContextShownProgress: "Nella foto {shown}/{total}",
