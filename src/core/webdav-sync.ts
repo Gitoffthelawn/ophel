@@ -261,11 +261,16 @@ function generateBackupFileName(): string {
   return `${APP_NAME}_backup_${timestamp}.json`
 }
 
+// 失败详情，填进文案的 {detail}：HTTP 状态码或异常信息
+const httpStatusDetail = (status: number): string => `HTTP ${status}`
+const errorDetail = (err: unknown): string =>
+  err instanceof Error && err.message ? err.message : String(err)
+
 // 同步结果
 export interface SyncResult {
   success: boolean
   messageKey: string // 国际化键名
-  messageArgs?: Record<string, any> // 消息参数（如错误详情）
+  messageArgs?: Record<string, string> // 文案占位符参数，如连接测试和上传失败文案的 {detail}
   timestamp?: number
 }
 
@@ -285,9 +290,11 @@ export interface BackupFile {
 export class WebDAVSyncManager {
   private config: WebDAVConfig = DEFAULT_WEBDAV_CONFIG
   private autoSyncTimer: ReturnType<typeof setTimeout> | null = null
+  // 首次加载必须先于任何 setConfig 完成：它晚到时会把调用方刚设置的配置覆盖回已保存的值
+  private readonly initialLoad: Promise<WebDAVConfig>
 
   constructor() {
-    this.loadConfig()
+    this.initialLoad = this.loadConfig()
   }
 
   /**
@@ -325,6 +332,7 @@ export class WebDAVSyncManager {
    * @param persist 是否持久化到 storage (默认 true)
    */
   async setConfig(config: Partial<WebDAVConfig>, persist: boolean = true): Promise<void> {
+    await this.initialLoad
     this.config = { ...this.config, ...config }
     if (persist) {
       // 动态导入避免循环依赖
@@ -370,14 +378,14 @@ export class WebDAVSyncManager {
         return {
           success: false,
           messageKey: "webdavConnectionFailed",
-          messageArgs: { status: response.status },
+          messageArgs: { detail: httpStatusDetail(response.status) },
         }
       }
     } catch (err) {
       return {
         success: false,
         messageKey: "webdavConnectionFailed",
-        messageArgs: { error: String(err) },
+        messageArgs: { detail: errorDetail(err) },
       }
     }
   }
@@ -424,7 +432,7 @@ export class WebDAVSyncManager {
         return {
           success: false,
           messageKey: "webdavUploadFailed",
-          messageArgs: { status: response.status },
+          messageArgs: { detail: httpStatusDetail(response.status) },
         }
       }
     } catch (err) {
@@ -432,7 +440,7 @@ export class WebDAVSyncManager {
       return {
         success: false,
         messageKey: "webdavUploadFailed",
-        messageArgs: { error: String(err) },
+        messageArgs: { detail: errorDetail(err) },
       }
     }
   }
@@ -492,18 +500,12 @@ export class WebDAVSyncManager {
       if (response.ok || response.status === 204 || response.status === 404) {
         return { success: true, messageKey: "webdavDeleteSuccess" }
       } else {
-        return {
-          success: false,
-          messageKey: "webdavDeleteFailed",
-          messageArgs: { status: response.status },
-        }
+        console.warn(`[WebDAV] delete failed: HTTP ${response.status}`)
+        return { success: false, messageKey: "webdavDeleteFailed" }
       }
     } catch (err) {
-      return {
-        success: false,
-        messageKey: "webdavDeleteFailed",
-        messageArgs: { error: String(err) },
-      }
+      console.error("[WebDAV] delete failed:", err)
+      return { success: false, messageKey: "webdavDeleteFailed" }
     }
   }
 
@@ -536,11 +538,8 @@ export class WebDAVSyncManager {
 
       if (!response.ok) {
         await this.saveConfig({ lastSyncStatus: "failed" })
-        return {
-          success: false,
-          messageKey: "webdavDownloadFailed",
-          messageArgs: { status: response.status },
-        }
+        console.warn(`[WebDAV] download failed: HTTP ${response.status}`)
+        return { success: false, messageKey: "webdavDownloadFailed" }
       }
 
       const text = await response.text()
@@ -577,16 +576,13 @@ export class WebDAVSyncManager {
       }
       return { success: true, messageKey: "webdavDownloadSuccess", timestamp: now }
     } catch (err) {
+      console.error("[WebDAV] download failed:", err)
       if (restoreWriteStarted) {
         this.config = { ...this.config, lastSyncStatus: "failed" }
       } else {
         await this.saveConfig({ lastSyncStatus: "failed" })
       }
-      return {
-        success: false,
-        messageKey: "webdavDownloadFailed",
-        messageArgs: { error: String(err) },
-      }
+      return { success: false, messageKey: "webdavDownloadFailed" }
     }
   }
 
