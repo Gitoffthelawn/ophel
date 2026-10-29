@@ -11,6 +11,7 @@ import { useConversationsStore } from "~stores/conversations-store"
 import { useFoldersStore } from "~stores/folders-store"
 import { useSettingsStore } from "~stores/settings-store"
 import { useTagsStore } from "~stores/tags-store"
+import { getReadableTextColor } from "~utils/color"
 import { getCurrentLang, t } from "~utils/i18n"
 import { showToast } from "~utils/toast"
 
@@ -53,6 +54,8 @@ import { SelectDropdown, Tooltip } from "~components/ui"
 interface ConversationsTabProps {
   manager: ConversationManager
   onInteractionStateChange?: (isActive: boolean) => void
+  // 在当前页切换到所点会话后调用；触屏抽屉据此收起
+  onConversationOpen?: () => void
 }
 
 interface SearchResult {
@@ -147,6 +150,7 @@ const getSafeConversationOpenUrl = (conv: Conversation): string | null => {
 export const ConversationsTab: React.FC<ConversationsTabProps> = ({
   manager,
   onInteractionStateChange,
+  onConversationOpen,
 }) => {
   // 设置 - 使用 Zustand store，确保设置变更实时生效
   const { settings } = useSettingsStore()
@@ -697,8 +701,9 @@ export const ConversationsTab: React.FC<ConversationsTabProps> = ({
 
       // 使用适配器的 navigateToConversation 方法（SPA 导航）
       manager.siteAdapter?.navigateToConversation(conv.id, conv.url)
+      onConversationOpen?.()
     },
-    [batchMode, handleBatchSelect, manager],
+    [batchMode, handleBatchSelect, manager, onConversationOpen],
   )
 
   const handleOpenConversationInNewTab = useCallback((conv: Conversation) => {
@@ -837,7 +842,7 @@ export const ConversationsTab: React.FC<ConversationsTabProps> = ({
           <Tooltip content={t("conversationsBatchMode")}>
             <button
               type="button"
-              className={`conversations-toolbar-btn gh-panel-icon-btn batch-mode ${batchMode ? "active" : ""}`}
+              className={`conversations-toolbar-btn gh-panel-icon-btn ${batchMode ? "active-subtle" : ""}`}
               aria-label={t("conversationsBatchMode")}
               aria-pressed={batchMode}
               onClick={toggleBatchMode}>
@@ -988,16 +993,14 @@ export const ConversationsTab: React.FC<ConversationsTabProps> = ({
             </Tooltip>
           </div>
 
-          {/* 搜索结果计数 */}
-          {searchResult && (
-            <div className="conversations-result-bar visible">
-              {searchResult.totalCount} {t("conversationsSearchResult")}
-            </div>
-          )}
-
-          {/* 活动筛选胶囊：置顶 / 标签筛选可单独移除 */}
-          {(filterPinned || filterTagIds.size > 0) && (
+          {/* 结果数 + 活动筛选胶囊：置顶 / 标签筛选可单独移除 */}
+          {(searchResult || filterPinned || filterTagIds.size > 0) && (
             <div className="conversations-filter-chips">
+              {searchResult && (
+                <span className="conversations-result-count">
+                  {searchResult.totalCount} {t("conversationsSearchResult")}
+                </span>
+              )}
               {filterPinned && (
                 <button
                   type="button"
@@ -1214,7 +1217,11 @@ export const ConversationsTab: React.FC<ConversationsTabProps> = ({
                         {folder.icon}
                       </span>
 
-                      <Tooltip content={folderName} showOnlyWhenTruncated>
+                      {/* 触发层默认按全文撑宽，允许收缩后长文件夹名才会显示省略号，不压住右侧计数和菜单 */}
+                      <Tooltip
+                        content={folderName}
+                        showOnlyWhenTruncated
+                        triggerStyle={{ minWidth: 0 }}>
                         <span className="conversations-folder-name">
                           {searchQuery && searchResult?.folderMatches.has(folder.id)
                             ? highlightText(folderName, searchQuery)
@@ -1226,13 +1233,10 @@ export const ConversationsTab: React.FC<ConversationsTabProps> = ({
                     <div className="conversations-folder-controls">
                       <span className="conversations-folder-count">({count})</span>
 
+                      {/* 收件箱也有菜单（只含“全选此文件夹”），重命名、删除由 FolderMenu 按 isDefault 隐藏 */}
                       <button
                         className="conversations-folder-menu-btn"
-                        style={{
-                          userSelect: "none",
-                          visibility: folder.isDefault ? "hidden" : "visible",
-                          pointerEvents: folder.isDefault ? "none" : "auto",
-                        }}
+                        style={{ userSelect: "none" }}
                         onClick={(e) => {
                           e.stopPropagation()
                           onInteractionStateChange?.(true)
@@ -1750,7 +1754,7 @@ const ConversationItem = React.memo<ConversationItemProps>(
                   <span
                     key={tag.id}
                     className="conversations-tag"
-                    style={{ backgroundColor: tag.color }}>
+                    style={{ backgroundColor: tag.color, color: getReadableTextColor(tag.color) }}>
                     {tag.name}
                   </span>
                 ))}
@@ -1782,16 +1786,17 @@ const ConversationItem = React.memo<ConversationItemProps>(
         </div>
 
         <div className="conversations-item-meta">
-          <button
-            className="conversations-item-menu-btn"
-            title={t("more")}
-            onClick={(e) => {
-              e.stopPropagation()
-              onInteractionStateChange?.(true)
-              onMenuChange({ type: "conversation", conv, anchorEl: e.currentTarget })
-            }}>
-            <MoreHorizontalIcon size={20} />
-          </button>
+          <Tooltip content={t("more")}>
+            <button
+              className="conversations-item-menu-btn"
+              onClick={(e) => {
+                e.stopPropagation()
+                onInteractionStateChange?.(true)
+                onMenuChange({ type: "conversation", conv, anchorEl: e.currentTarget })
+              }}>
+              <MoreHorizontalIcon size={20} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     )

@@ -31,15 +31,15 @@ export const ja = {
   navPermissions: "権限管理",
   navBackup: "データと権限",
   navAbout: "Ophelについて",
+  navBack: "戻る",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "サイトごとにページレイアウト、モデルロック、専用機能を設定",
   siteSelectorLabel: "設定するサイト",
-  siteSettingsOtherSiteToast: "{site} の設定を編集中です。変更は現在のサイトには適用されません",
+  siteSettingsOtherSiteHint: "{site} の設定を編集中です。変更は現在のサイトには適用されません",
   currentSiteBadge: "現在のサイト",
   siteExclusiveSettingsLabel: "専用設定",
-  noSiteExclusiveSettings: "このサイトには専用設定がありません",
   communitySitePackBadge: "コミュニティパック（コア機能）",
   communitySitePackDesc:
     "このサイトはコミュニティパックによって対応しており、パックがサポートする機能のみ表示されます。",
@@ -59,7 +59,6 @@ export const ja = {
   sitePacksTabBuiltin: "内蔵サイト",
   builtinSitesDesc:
     "内蔵 AI サイトでの Ophel の有効状態を管理します。無効にすると、そのサイトではパネルとすべての拡張機能が読み込まれなくなります。開いているページは再読み込み後に完全に反映されます",
-  builtinSiteBadge: "内蔵",
   builtinSiteCurrentBadge: "現在のサイト",
   builtinSiteEnabledToast: "{site} を再度有効にしました",
   builtinSiteDisabledToast:
@@ -125,7 +124,7 @@ export const ja = {
   sitePacksCustomOriginsTitle: "カスタムサイトを追加",
   sitePacksCustomOriginsDesc:
     "自分でホストしている AI サイト（Open WebUI など）を追加し、どのパックで対応するかを選択します。",
-  sitePacksCustomOriginLabel: "HTTPS ドメイン",
+  sitePacksCustomOriginLabel: "サイトのアドレス",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "パック",
   sitePacksBindingPackPlaceholder: "インストール済みパックを選択",
@@ -232,7 +231,6 @@ export const ja = {
   userQueryWidthSettings: "ユーザー入力幅",
   scrollSettings: "スクロール設定",
   contentProcessing: "コンテンツ処理",
-  contentProcessingDesc: "AI回答の処理方法を設定",
   interactionEnhance: "インタラクション強化",
   interactionEnhanceDesc: "数式やテーブルの操作性を向上",
   exportSettings: "出力設定",
@@ -273,6 +271,7 @@ export const ja = {
   websiteDesc: "ドキュメントやガイドなどを確認",
   visitWebsite: "サイトを訪問",
   rateAndReview: "Ophelを応援",
+  rateAndReviewAction: "ストアで評価する",
   rateDesc:
     "Ophelを気に入っていただけましたら、ストアで5つ星評価をお願いします！開発の励みになります。",
   communityAndSupport: "コミュニティとサポート",
@@ -406,12 +405,16 @@ export const ja = {
   confirm: "確定",
   export: "エクスポート",
   clear: "クリア",
+  more: "その他",
+  default: "デフォルト",
+  unknown: "不明",
+  settingsTabsScrollLeft: "タブを左にスクロール",
+  settingsTabsScrollRight: "タブを右にスクロール",
   error: "エラー",
   operationFailed: "操作に失敗しました",
   deleteSuccess: "削除しました",
   deleteError: "削除に失敗しました",
   loadFailed: "読み込みに失敗しました",
-  selectFileOrPasteFirst: "ファイルを選択するか内容を貼り付けてください",
   restoreError: "復元に失敗しました",
   backupRestoreConfirmMsg:
     'バックアップ "{name}" を復元しますか？現在のデータは上書きされ、開いているAIページが更新されます。',
@@ -419,15 +422,13 @@ export const ja = {
     'クラウドバックアップ "{name}" を削除しますか？この操作は元に戻せません。',
   insertFailed: "挿入に失敗しました",
   maximize: "最大化",
-  browse: "参照...",
   clearAllData: "すべてのデータを消去",
-  clearAllDataDesc: "注意：すべてのローカル設定、プロンプト、会話データが削除されます。",
+  clearAllDataDesc: "ローカルの設定、プロンプト、会話データをすべて完全に削除します。",
   clearAllDataConfirm:
     "本当にすべてのデータを消去しますか？この操作は取り消せず、すべての設定、プロンプト、会話が削除されます！",
   clearSuccess: "消去完了。再読み込み中...",
   defaultDir: "デフォルトディレクトリ",
   dangerZone: "危険な操作",
-  dangerZoneDesc: "破壊的な操作（取り消し不可）",
   anchorPoint: "アンカー",
   updateAnchor: "アンカーを更新",
   goToAnchor: "アンカーへ戻る",
@@ -638,7 +639,7 @@ export const ja = {
   geminiMystuffOpenInNewTab: "新しいタブで開く",
   geminiMystuffLocateFailed: "元の会話位置を特定できませんでした",
 
-  userQueryWidthDesc: "ユーザーの発言バブルの最大幅を調整（サイトごとに設定）",
+  userQueryWidthDesc: "ユーザーの発言バブルの最大幅を調整",
   // Category management
   categoryManage: "カテゴリ管理",
   categoryEmpty: "カテゴリがありません。プロンプト作成時にカテゴリを指定して作成してください。",
@@ -769,11 +770,9 @@ export const ja = {
   pageWidthLabel: "ページ幅",
   pageWidthValueLabel: "幅の指定",
   pageWidthDesc:
-    "チャットページの幅をリアルタイムに調整します（サイトごとに設定）。スマート回避が有効な場合、実際の幅はパネルの安全領域によって制限されることがあります。",
-  enablePageWidth: "ページ幅の拡張を有効化",
+    "チャットページの幅をリアルタイムに調整します。スマート回避が有効な場合、実際の幅はパネルの安全領域によって制限されることがあります。",
   panelAvoidanceTitle: "スマート回避",
   betaBadge: "Beta",
-  panelAvoidanceLabel: "Ophel パネルを避ける",
   panelAvoidanceDesc:
     "パネル表示中に現在のサイトのコンテンツ領域を自動調整します。狭い画面では自動的に無効になります。",
   widthValue: "幅",
@@ -784,7 +783,6 @@ export const ja = {
   unitPercent: "パーセント (%)",
 
   // User Query Width Settings
-  enableUserQueryWidth: "ユーザー入力幅の拡張",
   enableUserQueryWidthDesc: "ユーザーの発言バブルの最大幅を調整します",
   userQueryWidthValueLabel: "入力幅",
   // Tab Settings
@@ -1088,9 +1086,8 @@ export const ja = {
   segmentedExportSearchPlaceholder: "セグメントを検索...",
   segmentedExportRangePlaceholder: "例: 1-3, 8",
   segmentedExportApplyRange: "範囲を適用",
-  segmentedExportSelectVisible: "表示中を選択",
-  segmentedExportClearVisible: "表示中を解除",
-  segmentedExportInvertVisible: "表示中を反転",
+  segmentedExportSelectAll: "すべて選択",
+  segmentedExportInvert: "選択を反転",
   segmentedExportNoMatches: "一致するセグメントはありません",
   segmentedExportSelected: "{selected} / {total} を選択中",
   segmentedExportModeZip: "ZIP（各セグメントを Markdown）",
@@ -1214,7 +1211,7 @@ export const ja = {
   webdavUploadBtn: "アップロード",
   webdavDownloadBtn: "ダウンロード",
   webdavDownloadConfirm: "ダウンロードすると現在のデータは上書きされます。続行しますか？",
-  webdavLastSync: "最終同期",
+  webdavLastSync: "前回の同期：{time}",
   webdavConnectionSuccess: "接続成功",
   webdavUploadSuccess: "アップロード成功",
   webdavDownloadSuccess: "ダウンロード成功",
@@ -1237,16 +1234,28 @@ export const ja = {
   importDataDesc: "バックアップファイルから復元します",
 
   fullBackup: "全データバックアップ",
-  fullBackupDesc: "すべてのアカウントデータと設定を書き出します（推奨）",
+  fullBackupDesc: "すべてのアカウントデータと設定を書き出します",
   promptsBackup: "プロンプトのみ",
   promptsBackupDesc: "プロンプトライブラリのみを書き出します（タグ・フォルダ除く）",
   settingsBackup: "設定のみ",
   settingsBackupDesc: "UIの設定と好みの設定のみを書き出します",
 
-  selectFile: "ファイルを選択",
   noFileSelected: "ファイルが選択されていません",
-  dataPreview: "データプレビュー",
-  pastePlaceholder: "JSONデータを貼り付けるか、上のファイル選択を使用してください...",
+  pastePlaceholder: "バックアップ JSON をここに貼り付け…",
+  recommendedBadge: "おすすめ",
+  backupDropZoneTitle: "バックアップファイルをドロップ、またはクリックして選択",
+  backupDropZoneHint: "Ophel で書き出した JSON バックアップに対応",
+  backupPasteJson: "JSON を貼り付け",
+  backupPastedSource: "貼り付けた JSON",
+  backupSummaryContents: "内容",
+  backupContentSettings: "設定",
+  backupContentPrompts: "プロンプト",
+  backupContentConversations: "会話とフォルダー",
+  backupContentReadingHistory: "閲覧履歴",
+  backupContentBookmarks: "お気に入り",
+  backupContentClaudeKeys: "Claude セッションキー",
+  backupContentUsage: "利用統計",
+  backupContentSitePacks: "サイトパック",
   importBtn: "インポート",
 
   webdavConfig: "WebDAV設定",
@@ -1272,6 +1281,11 @@ export const ja = {
   backupManagement: "バックアップ管理",
   backupNow: "バックアップ",
   defaultDirHint: "デフォルト: ophel",
+  showPassword: "パスワードを表示",
+  hidePassword: "パスワードを隠す",
+  webdavTesting: "テスト中…",
+  webdavUploading: "バックアップ中…",
+  webdavNeverSynced: "まだ同期していません",
   unsavedChanges: "未保存",
   restore: "復元",
   localBackup: "ローカルバックアップ",
@@ -1347,7 +1361,7 @@ export const ja = {
   globalShortcutUrlDesc: "グローバルショートカット {shortcut} を押したときに開くURL",
   resetShortcuts: "デフォルトに戻す",
   resetShortcutsConfirm: "すべてのショートカットを初期値に戻しますか？",
-  pressAnyKey: "キーを押してください...",
+  pressAnyKey: "キーを押してください（Esc で取消）",
   shortcutConflict: '競合: "{name}"',
   globalShortcutsTitle: "グローバルショートカット",
   globalShortcutsDesc: "ブラウザのどこでも動作します。拡張機能の管理画面から設定してください。",
@@ -1455,13 +1469,12 @@ export const ja = {
   modelSelectorNotFound: "モデル選択ボタンが見つかりませんでした",
 
   // ======== Claude Session Key Management ========
-  geminiSettingsTab: "Gemini専用",
   claudeSessionKeyTitle: "セッションキー管理",
   claudeSessionKeyDesc: "Claudeアカウントの管理と切り替え",
   claudeCurrentUsing: "現在:",
   claudeNoKeySelected: "未選択 - セッションキーを追加またはインポートしてください",
-  claudePleaseAddKey: "まずセッションキーを追加してください",
   claudeAddKey: "追加",
+  claudeKeyNameLabel: "名前",
   claudeImportFromBrowser: "ブラウザからインポート",
   claudeImportJSON: "JSONインポート",
   claudeExportJSON: "JSONエクスポート",
@@ -1476,7 +1489,6 @@ export const ja = {
   claudeKeyDelete: "削除",
   claudeKeyCopied: "クリップボードにコピーしました",
   claudeKeyCopyFailed: "コピー失敗",
-  claudeKeyDoubleTapCopy: "ダブルクリックでフルキーをコピー",
   claudeCopyKey: "Session Keyをコピー",
   claudeCopied: "コピー完了",
   claudeAlreadyUsing: "このセッションキーは既に使用中です",
@@ -1487,7 +1499,6 @@ export const ja = {
   claudeKeyDeleted: "削除しました",
   claudeKeyTesting: "テスト中",
   claudeGenerating: "AIが生成中のため、完了後に試してください",
-  claudeAddKeyNameTitle: "セッションキー追加 - 名前を入力",
   claudeAddKeyNamePlaceholder: "例: メインアカウント, サブ",
   claudeAddKeyValueTitle: "セッションキー追加 - キーを入力",
   claudeAddKeyValuePlaceholder: "sk-ant-sid01-...",
@@ -1519,8 +1530,6 @@ export const ja = {
   restoreSuccess: "復元成功、ページを更新します...",
 
   // ======== AI Studio 設定 ========
-  aistudioSettingsTitle: "AI Studio 設定",
-  aistudioSettingsDesc: "AI Studio ページ読み込み時のデフォルト動作を設定",
   aistudioDefaultModel: "デフォルトモデル",
   aistudioDefaultModelNone: "指定なし（システムデフォルト）",
   aistudioDefaultModelCustom: "カスタムモデルID...",
@@ -1543,8 +1552,6 @@ export const ja = {
   aistudioModelsError: "モデルリストの取得に失敗しました",
 
   // ======== ChatGPT 設定 ========
-  chatgptSettingsTitle: "ChatGPT 設定",
-  chatgptSettingsDesc: "ChatGPT ページのデフォルト動作を構成",
   chatgptMarkdownFixLabel: "Markdown 太字修正",
   chatgptMarkdownFixDesc: "ChatGPT の回答でレンダリングされない **太字** テキストを修正します",
   chatgptCodeBlockBatchMountLabel: "コードブロックの一括マウント",
@@ -1583,6 +1590,7 @@ export const ja = {
   exportStyleCleanOption: "クリーンスタイルを使用（装飾絵文字なし）",
   exportImageAlt: "画像",
   exportShowIndexJsonUnsupported: "JSON エクスポートでは番号付けはサポートされません",
+  exportOptionsOutlineCopyHint: "目次のコピーではこれらのオプションは使用されません",
   exportMarkdownDividerLabel: "Markdown 区切り線",
   exportMarkdownDividerDesc:
     "エクスポート時のメッセージ間の区切り文字列をカスタマイズ（デフォルト: ---）",
@@ -1795,21 +1803,17 @@ export const ja = {
   queueBatchImportSuccess: "{count}件のプロンプトをキューに追加しました",
   queueBatchImportEmpty: "追加できるプロンプトがありません",
   zenModeTitle: "禅モード",
-  zenModeLabel: "禅モードを有効にする",
-  zenModeDesc:
-    "サイドバーとナビゲーション要素を非表示にして、現在の会話に集中します（各サイトごとに個別に設定）",
+  zenModeDesc: "サイドバーとナビゲーション要素を非表示にして、現在の会話に集中します",
   zenModeExitButton: "禅モードを終了",
   zenModeExitButtonVisibleLabel: "終了ボタンを表示",
   zenModeExitButtonVisibleDesc:
     "オフにすると、ページ上の「禅モードを終了」ボタンを非表示にします。クイックボタンまたはショートカットから引き続き禅モードを終了できます。",
   cleanModeTitle: "クリーンモード",
-  cleanModeLabel: "クリーンモードを有効にする",
   cleanModeDesc:
-    "免責事項、広告、ダウンロードボタンなどの不要な要素を非表示にして、よりクリーンなインターフェースを実現します（各サイトごとに個別に設定）",
+    "免責事項、広告、ダウンロードボタンなどの不要な要素を非表示にして、よりクリーンなインターフェースを実現します",
   autoHideInputTitle: "入力欄の自動非表示",
-  autoHideInputLabel: "アイドル時に入力欄を自動折りたたみ",
   autoHideInputDesc:
-    "未送信テキストがない状態でカーソルが離れると入力欄を非表示にし、ホバーまたはフォーカス時に即座に展開します（サイトごとに個別設定）",
+    "未送信テキストがない状態でカーソルが離れると入力欄を非表示にし、ホバーまたはフォーカス時に即座に展開します",
   extensionUpdateNoticeKicker: "拡張機能を更新しました",
   extensionUpdateNotice:
     "Ophel Atlas が更新されました。最新バージョンを引き続き使うには、このページを再読み込みしてください。",
@@ -1870,7 +1874,7 @@ export const ja = {
   remoteConfigAutoUpdateDesc: "24 時間に 1 回までチェックします。",
   remoteConfigRegistrySourceLabel: "開発用 Registry ソース",
   remoteConfigRegistrySourceDesc:
-    "開発ビルドのみ使用できます。完全な index.json URL を入力し、空欄にすると既定のソースを使います。",
+    "完全な index.json URL を入力してください。空欄にすると既定のソースを使います。",
   remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
   remoteConfigRegistrySourceApplyButton: "適用",
   remoteConfigRegistrySourceApplied:
@@ -1890,6 +1894,7 @@ export const ja = {
   remoteConfigResettingButton: "復元中…",
   remoteConfigPrivacyDesc:
     "更新確認は静的 CDN への GET リクエストのみで、会話内容やアカウント情報は含みません。",
+  sitePacksAdvancedTitle: "詳細設定",
   remoteConfigCheckUpdated:
     "新しいアダプター設定をダウンロードしました。対象の AI ページを再読み込みすると適用されます。",
   remoteConfigCheckUpToDate: "アダプター設定は最新です。",
@@ -1910,7 +1915,7 @@ export const ja = {
     "ローカル Registry の確認に失敗（{url}）：{error}。pnpm registry:serve が起動しているか確認してください。",
   remoteConfigLocalRegistryUseButton: "ローカル Registry を使う",
   remoteConfigLocalRegistryHint:
-    "先に pnpm registry:serve を実行してから「{button}」を押してください。ローカル署名鍵は開発ビルドでのみ信頼されます。",
+    "先に pnpm registry:serve を実行してから「{button}」を押してください。ループバック（127.0.0.1 / localhost）のソースはすべてのビルドでローカル署名鍵を信頼します。",
   remoteConfigLocalRegistrySourceApplied:
     "ローカル Registry ソースに切り替え、更新確認を開始しました。",
   remoteConfigLocalRegistryPermissionDenied:

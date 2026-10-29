@@ -333,7 +333,7 @@ Grok 接入的差异点（`src/adapters/grok-history-outline.ts`、`src/adapters
 **当前状态：项目尚未建立测试体系。** 源码中无 test/spec 文件，`package.json` 中无测试相关命令或依赖（如 Jest、Vitest、Playwright）。
 
 建议优先引入的测试：
-1. **单元测试**：适配器的 `match()` / `getSiteId()` 逻辑、`backup-validator.ts`、`format.ts`、`syntax.ts`（搜索语法解析）
+1. **单元测试**：适配器的 `match()` / `getSiteId()` 逻辑、`backup-codec.ts`（备份解析与校验）、`format.ts`、`syntax.ts`（搜索语法解析）
 2. **集成测试**：`modules-init.ts` 的模块编排、`webdav-sync.ts` 的同步逻辑
 3. **E2E 测试**：使用 Playwright + 浏览器扩展测试框架验证核心用户流程
 
@@ -364,7 +364,7 @@ Grok 接入的差异点（`src/adapters/grok-history-outline.ts`、`src/adapters
 | 样式隔离  | Shadow DOM（`:host` 选择器 + 动态 style 注入）                        |
 | 命名前缀  | `--gh-*`（项目前身 Gemini Helper 缩写）                               |
 | 布局      | Flexbox 为主，Grid 辅助，固定定位用于浮动 UI                          |
-| 响应式    | 极少媒体查询，主要依赖 JS 动态类名（`.is-narrow`）                    |
+| 响应式    | 极少媒体查询，主要依赖 JS 动态类名（`.is-narrow`、`.is-compact`、`.is-drawer`、`.is-touch`），断点与触屏判定集中在 `src/constants/ui.ts` |
 | 现代特性  | `color-mix()`、`backdrop-filter`、View Transitions、`scrollbar-width` |
 
 ### 主题系统
@@ -400,12 +400,14 @@ src/utils/themes/
 | 文字颜色   | `--gh-text`, `--gh-text-secondary`, `--gh-text-tertiary`        |
 | 边框/交互  | `--gh-border`, `--gh-hover`, `--gh-active-bg`                   |
 | 输入框     | `--gh-input-bg`, `--gh-input-border`, `--gh-input-focus-border` |
-| 品牌色     | `--gh-primary`, `--gh-secondary`, `--gh-danger`                 |
+| 品牌色     | `--gh-primary`, `--gh-primary-text`, `--gh-secondary`, `--gh-danger` |
+| 头部       | `--gh-header-bg`, `--gh-header-text`, `--gh-glass-*`（头部图标） |
 | 阴影       | `--gh-shadow`, `--gh-shadow-sm`, `--gh-shadow-lg`               |
-| 文件夹色板 | `--gh-folder-bg-0` ~ `--gh-folder-bg-7`（10 个）                |
-| 大纲高亮   | `--gh-outline-locate-bg`, `--gh-outline-sync-*`                 |
-| 玻璃拟态   | `--gh-glass-*`                                                  |
-| 分类颜色   | `--gh-category-1` ~ `--gh-category-7`                           |
+| 设置页层级 | `--gh-canvas`（内容画布）, `--gh-surface`（侧栏与卡片）         |
+| 文件夹色板 | `--gh-folder-bg-0` ~ `--gh-folder-bg-7`（8 个）                 |
+| 大纲高亮   | `--gh-outline-locate-*`, `--gh-outline-sync-*`                  |
+
+派生变量：`--gh-primary-text`（默认等于主色）、`--gh-header-text`（默认白色）、`--gh-canvas` / `--gh-surface`（由 `--gh-bg` / `--gh-card-bg` 派生，深色另行派生）都在 `theme-variables.css` 给出默认值，预置主题只在需要时覆盖，自定义样式也可直接覆盖。大纲高亮色由每套预置单独给出与主色撞色的值，用来让当前位置一眼可见。
 
 **特殊前缀**：`--popup-*`（Popup 页面独立体系）、`--panel-width`（布局动态变量）、`--theme-x/y`（View Transitions 坐标）。
 

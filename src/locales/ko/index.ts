@@ -30,16 +30,16 @@ export const ko = {
   navPermissions: "권한 관리",
   navBackup: "데이터 및 권한",
   navAbout: "Ophel 정보",
+  navBack: "뒤로",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "사이트별로 페이지 레이아웃, 모델 잠금, 전용 기능을 설정합니다",
   siteSelectorLabel: "설정할 사이트",
-  siteSettingsOtherSiteToast:
+  siteSettingsOtherSiteHint:
     "{site} 설정을 구성하는 중입니다. 변경 사항은 현재 사이트에 적용되지 않습니다",
   currentSiteBadge: "현재 사이트",
   siteExclusiveSettingsLabel: "전용 설정",
-  noSiteExclusiveSettings: "이 사이트에는 전용 설정이 없습니다",
   communitySitePackBadge: "커뮤니티 팩(핵심 기능)",
   communitySitePackDesc: "이 사이트는 커뮤니티 팩으로 지원되며, 팩이 지원하는 기능만 표시됩니다.",
   sitePacksPageDesc: "사이트 팩을 설치하고 관리하여 Ophel이 더 많은 AI 사이트를 지원하도록 합니다.",
@@ -57,7 +57,6 @@ export const ko = {
   sitePacksTabBuiltin: "기본 제공 사이트",
   builtinSitesDesc:
     "기본 제공 AI 사이트에서 Ophel의 활성화 상태를 관리합니다. 비활성화하면 해당 사이트에서 패널과 모든 향상 기능이 로드되지 않으며, 열린 페이지는 새로 고침 후 완전히 적용됩니다",
-  builtinSiteBadge: "기본 제공",
   builtinSiteCurrentBadge: "현재 사이트",
   builtinSiteEnabledToast: "{site}을(를) 다시 활성화했습니다",
   builtinSiteDisabledToast:
@@ -124,7 +123,7 @@ export const ko = {
   sitePacksCustomOriginsTitle: "사용자 지정 사이트 추가",
   sitePacksCustomOriginsDesc:
     "직접 호스팅하는 AI 사이트(예: Open WebUI)를 추가하고 어떤 팩으로 지원할지 선택하세요.",
-  sitePacksCustomOriginLabel: "HTTPS 도메인",
+  sitePacksCustomOriginLabel: "사이트 주소",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "팩",
   sitePacksBindingPackPlaceholder: "설치된 팩 선택",
@@ -229,7 +228,6 @@ export const ko = {
   userQueryWidthSettings: "사용자 쿼리 너비",
   scrollSettings: "스크롤 설정",
   contentProcessing: "콘텐츠 처리",
-  contentProcessingDesc: "AI 응답 처리 방식 구성",
   interactionEnhance: "상호작용 강화",
   interactionEnhanceDesc: "수식 및 표 상호작용 강화",
   exportSettings: "내보내기 설정",
@@ -270,6 +268,7 @@ export const ko = {
   websiteDesc: "문서, 가이드 등 확인",
   visitWebsite: "웹사이트 방문",
   rateAndReview: "Ophel 응원하기",
+  rateAndReviewAction: "스토어에서 평가하기",
   rateDesc: "Ophel이 마음에 드신다면 스토어에서 별 5개 평가를 부탁드립니다! 개발에 큰 힘이 됩니다.",
   chromeStore: "Chrome 스토어",
   firefoxAddons: "Firefox 애드온",
@@ -399,12 +398,16 @@ export const ko = {
   confirm: "확인",
   export: "내보내기",
   clear: "지우기",
+  more: "더보기",
+  default: "기본값",
+  unknown: "알 수 없음",
+  settingsTabsScrollLeft: "탭을 왼쪽으로 스크롤",
+  settingsTabsScrollRight: "탭을 오른쪽으로 스크롤",
   error: "오류",
   operationFailed: "작업에 실패했습니다",
   deleteSuccess: "삭제되었습니다",
   deleteError: "삭제에 실패했습니다",
   loadFailed: "로드에 실패했습니다",
-  selectFileOrPasteFirst: "먼저 파일을 선택하거나 내용을 붙여넣으세요",
   restoreError: "복원에 실패했습니다",
   backupRestoreConfirmMsg:
     '백업 "{name}"(을)를 복원하시겠습니까? 현재 데이터가 덮어쓰여지고 열린 AI 페이지가 새로고침됩니다.',
@@ -412,15 +415,13 @@ export const ko = {
     '클라우드 백업 "{name}"(을)를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
   insertFailed: "삽입에 실패했습니다",
   maximize: "최대화",
-  browse: "찾아보기...",
   clearAllData: "모든 데이터 지우기",
-  clearAllDataDesc: "주의: 모든 로컬 설정, 프롬프트 및 대화가 삭제됩니다.",
+  clearAllDataDesc: "로컬의 모든 설정, 프롬프트, 대화 데이터를 영구적으로 삭제합니다.",
   clearAllDataConfirm:
     "모든 데이터를 지우시겠습니까? 이 작업은 되돌릴 수 없으며 모든 설정, 프롬프트, 대화가 삭제됩니다!",
   clearSuccess: "데이터가 삭제되었습니다. 새로고침 중...",
   defaultDir: "기본 디렉토리",
   dangerZone: "위험 구역",
-  dangerZoneDesc: "파괴적인 작업 (되돌릴 수 없음)",
   anchorPoint: "앵커",
   updateAnchor: "앵커 업데이트",
   goToAnchor: "앵커로 돌아가기",
@@ -628,7 +629,7 @@ export const ko = {
   geminiMystuffOpenInNewTab: "새 탭에서 열기",
   geminiMystuffLocateFailed: "원본 대화 위치 정보를 찾을 수 없습니다",
 
-  userQueryWidthDesc: "사용자 쿼리 버블 컨테이너의 최대 너비 조정 (사이트별)",
+  userQueryWidthDesc: "사용자 쿼리 버블 컨테이너의 최대 너비 조정",
   // Category management
   categoryManage: "카테고리 관리",
   categoryEmpty: "아직 카테고리가 없습니다. 프롬프트를 추가할 때 카테고리가 생성됩니다.",
@@ -755,11 +756,9 @@ export const ko = {
   pageWidthLabel: "페이지 너비",
   pageWidthValueLabel: "너비 값",
   pageWidthDesc:
-    "채팅 페이지 너비를 실시간으로 조정합니다(사이트별 구성). 스마트 회피가 켜져 있으면 실제 너비가 패널 안전 영역에 의해 제한될 수 있습니다.",
-  enablePageWidth: "페이지 너비 확장 활성화",
+    "채팅 페이지 너비를 실시간으로 조정합니다. 스마트 회피가 켜져 있으면 실제 너비가 패널 안전 영역에 의해 제한될 수 있습니다.",
   panelAvoidanceTitle: "스마트 회피",
   betaBadge: "Beta",
-  panelAvoidanceLabel: "Ophel 패널 피하기",
   panelAvoidanceDesc:
     "패널이 열려 있을 때 현재 사이트의 콘텐츠 영역을 자동으로 조정합니다. 좁은 화면에서는 자동으로 비활성화됩니다.",
   widthValue: "너비 값",
@@ -770,7 +769,6 @@ export const ko = {
   unitPercent: "백분율 (%)",
 
   // User Query Width Settings
-  enableUserQueryWidth: "사용자 쿼리 너비 확장 활성화",
   enableUserQueryWidthDesc: "사용자 쿼리 버블 컨테이너의 최대 너비 조정",
   userQueryWidthValueLabel: "쿼리 너비",
   // Tab Settings
@@ -1054,9 +1052,8 @@ export const ko = {
   segmentedExportSearchPlaceholder: "세그먼트 검색...",
   segmentedExportRangePlaceholder: "예: 1-3, 8",
   segmentedExportApplyRange: "범위 적용",
-  segmentedExportSelectVisible: "보이는 항목 선택",
-  segmentedExportClearVisible: "보이는 항목 해제",
-  segmentedExportInvertVisible: "보이는 항목 반전",
+  segmentedExportSelectAll: "모두 선택",
+  segmentedExportInvert: "선택 반전",
   segmentedExportNoMatches: "일치하는 세그먼트가 없습니다",
   segmentedExportSelected: "{selected} / {total} 선택됨",
   segmentedExportModeZip: "ZIP(세그먼트별 Markdown)",
@@ -1172,7 +1169,7 @@ export const ko = {
   webdavUploadBtn: "업로드",
   webdavDownloadBtn: "다운로드",
   webdavDownloadConfirm: "다운로드하면 현재 데이터를 덮어씁니다. 계속하시겠습니까?",
-  webdavLastSync: "최종 동기화",
+  webdavLastSync: "마지막 동기화: {time}",
   webdavConnectionSuccess: "연결 성공",
   webdavUploadSuccess: "업로드 성공",
   webdavDownloadSuccess: "다운로드 성공", // Modified from "Download successful, refreshing page"
@@ -1190,16 +1187,28 @@ export const ko = {
   importDataDesc: "백업 파일에서 데이터 복원",
 
   fullBackup: "전체 백업",
-  fullBackupDesc: "모든 계정 데이터 및 설정 내보내기 (권장)",
+  fullBackupDesc: "모든 계정 데이터와 설정을 내보냅니다",
   promptsBackup: "프롬프트만",
   promptsBackupDesc: "프롬프트 라이브러리만 내보내기 (태그/폴더 제외)",
   settingsBackup: "설정만",
   settingsBackupDesc: "UI 설정 및 기본 설정만 내보내기",
 
-  selectFile: "파일 선택",
   noFileSelected: "선택된 파일 없음",
-  dataPreview: "데이터 미리보기",
-  pastePlaceholder: "JSON 데이터를 붙여넣거나 위에서 파일을 선택하여 가져오세요...",
+  pastePlaceholder: "백업 JSON을 여기에 붙여넣으세요…",
+  recommendedBadge: "추천",
+  backupDropZoneTitle: "백업 파일을 끌어다 놓거나 클릭해 선택하세요",
+  backupDropZoneHint: "Ophel에서 내보낸 JSON 백업 파일을 지원합니다",
+  backupPasteJson: "JSON 붙여넣기",
+  backupPastedSource: "붙여넣은 JSON",
+  backupSummaryContents: "포함 항목",
+  backupContentSettings: "설정",
+  backupContentPrompts: "프롬프트",
+  backupContentConversations: "대화 및 폴더",
+  backupContentReadingHistory: "읽기 기록",
+  backupContentBookmarks: "즐겨찾기",
+  backupContentClaudeKeys: "Claude 세션 키",
+  backupContentUsage: "사용량 통계",
+  backupContentSitePacks: "사이트 팩",
   importBtn: "가져오기",
 
   webdavConfig: "WebDAV 구성",
@@ -1225,6 +1234,11 @@ export const ko = {
   backupManagement: "백업 관리",
   backupNow: "지금 백업",
   defaultDirHint: "기본값: ophel",
+  showPassword: "비밀번호 표시",
+  hidePassword: "비밀번호 숨기기",
+  webdavTesting: "테스트 중…",
+  webdavUploading: "백업 중…",
+  webdavNeverSynced: "아직 동기화하지 않았습니다",
   unsavedChanges: "저장 안 됨",
   restore: "복원",
   localBackup: "로컬 백업",
@@ -1300,7 +1314,7 @@ export const ko = {
   globalShortcutUrlDesc: "글로벌 단축키 {shortcut}를 누를 때 열리는 URL",
   resetShortcuts: "기본값으로 재설정",
   resetShortcutsConfirm: "모든 단축키를 기본값으로 재설정하시겠습니까?",
-  pressAnyKey: "키를 누르세요...",
+  pressAnyKey: "키를 누르세요 (Esc 취소)",
   shortcutConflict: '다음 단축키와 충돌: "{name}"',
   globalShortcutsTitle: "글로벌 단축키",
   globalShortcutsDesc:
@@ -1409,13 +1423,12 @@ export const ko = {
   modelSelectorNotFound: "모델 선택기를 찾을 수 없습니다",
 
   // ======== Claude Session Key Management ========
-  geminiSettingsTab: "Gemini 전용",
   claudeSessionKeyTitle: "세션 키 관리",
   claudeSessionKeyDesc: "Claude 계정 관리 및 전환",
   claudeCurrentUsing: "사용 중:",
   claudeNoKeySelected: "없음 - 세션 키를 추가하거나 가져오세요",
-  claudePleaseAddKey: "먼저 세션 키를 추가해 주세요",
   claudeAddKey: "추가",
+  claudeKeyNameLabel: "이름",
   claudeImportFromBrowser: "브라우저에서 가져오기",
   claudeImportJSON: "JSON 가져오기",
   claudeExportJSON: "JSON 내보내기",
@@ -1430,7 +1443,6 @@ export const ko = {
   claudeKeyDelete: "삭제",
   claudeKeyCopied: "클립보드에 복사되었습니다",
   claudeKeyCopyFailed: "복사 실패",
-  claudeKeyDoubleTapCopy: "풀 키를 복사하려면 더블 클릭",
   claudeCopyKey: "Session Key 복사",
   claudeCopied: "복사됨",
   claudeAlreadyUsing: "이미 이 세션 키를 사용 중입니다",
@@ -1441,7 +1453,6 @@ export const ko = {
   claudeKeyDeleted: "삭제됨",
   claudeKeyTesting: "테스트 중",
   claudeGenerating: "AI가 생성 중입니다. 나중에 다시 시도해 주세요.",
-  claudeAddKeyNameTitle: "세션 키 추가 - 이름 입력",
   claudeAddKeyNamePlaceholder: "예: 주 계정, 백업",
   claudeAddKeyValueTitle: "세션 키 추가 - 키 입력",
   claudeAddKeyValuePlaceholder: "sk-ant-sid01-...",
@@ -1473,8 +1484,6 @@ export const ko = {
   restoreSuccess: "복원 성공, 페이지가 새로 고침됩니다...",
 
   // ======== AI Studio 설정 ========
-  aistudioSettingsTitle: "AI Studio 설정",
-  aistudioSettingsDesc: "AI Studio 페이지 로드 시 기본 동작 구성",
   aistudioDefaultModel: "기본 모델",
   aistudioDefaultModelNone: "지정 안 함 (시스템 기본값 사용)",
   aistudioDefaultModelCustom: "사용자 정의 모델 ID...",
@@ -1496,8 +1505,6 @@ export const ko = {
   aistudioModelsError: "모델 목록을 가져오지 못했습니다",
 
   // ======== ChatGPT 설정 ========
-  chatgptSettingsTitle: "ChatGPT 설정",
-  chatgptSettingsDesc: "ChatGPT 페이지의 기본 동작 구성",
   chatgptMarkdownFixLabel: "Markdown 굵게 수정",
   chatgptMarkdownFixDesc: "ChatGPT 응답에서 렌더링되지 않은 **굵게** 텍스트를 수정합니다",
   chatgptCodeBlockBatchMountLabel: "코드 블록 일괄 마운트",
@@ -1536,6 +1543,7 @@ export const ko = {
   exportStyleCleanOption: "클린 스타일 (장식 이모지 제거)",
   exportImageAlt: "이미지",
   exportShowIndexJsonUnsupported: "JSON 내보내기에서는 번호 매기기가 지원되지 않습니다",
+  exportOptionsOutlineCopyHint: "개요 복사에는 이 옵션이 사용되지 않습니다",
   exportMarkdownDividerLabel: "Markdown 구분선",
   exportMarkdownDividerDesc: "내보낸 Markdown의 메시지 간 구분선 사용자 정의 (기본값: ---)",
   exportShowDialogLabel: "내보내기 전 옵션 대화 상자 표시",
@@ -1778,20 +1786,17 @@ export const ko = {
   queueBatchImportSuccess: "{count}개의 프롬프트를 대기열에 추가했습니다",
   queueBatchImportEmpty: "추가할 프롬프트가 없습니다",
   zenModeTitle: "선 모드",
-  zenModeLabel: "선 모드 활성화",
-  zenModeDesc: "사이드바 및 내비게이션 요소를 숨겨 현재 대화에 집중합니다 (각 사이트별 개별 설정)",
+  zenModeDesc: "사이드바 및 내비게이션 요소를 숨겨 현재 대화에 집중합니다",
   zenModeExitButton: "선 모드 종료",
   zenModeExitButtonVisibleLabel: "종료 버튼 표시",
   zenModeExitButtonVisibleDesc:
     "끄면 페이지의 선 모드 종료 버튼이 숨겨집니다. 빠른 버튼이나 단축키로 계속 선 모드를 종료할 수 있습니다.",
   cleanModeTitle: "클린 모드",
-  cleanModeLabel: "클린 모드 활성화",
   cleanModeDesc:
-    "면책 조항, 광고, 다운로드 버튼 등 불필요한 요소를 숨겨 더 깨끗한 인터페이스를 제공합니다 (각 사이트별 개별 설정)",
+    "면책 조항, 광고, 다운로드 버튼 등 불필요한 요소를 숨겨 더 깨끗한 인터페이스를 제공합니다",
   autoHideInputTitle: "입력창 자동 숨김",
-  autoHideInputLabel: "유휴 시 입력창 자동 접기",
   autoHideInputDesc:
-    "작성 중인 텍스트가 없는 상태에서 마우스가 벗어나면 입력창을 숨기고 마우스 오버나 포커스 시 즉시 확장합니다 (사이트별 독립 설정)",
+    "작성 중인 텍스트가 없는 상태에서 마우스가 벗어나면 입력창을 숨기고 마우스 오버나 포커스 시 즉시 확장합니다",
   extensionUpdateNoticeKicker: "확장 프로그램이 업데이트되었습니다",
   extensionUpdateNotice:
     "Ophel Atlas가 업데이트되었습니다. 최신 버전을 계속 사용하려면 이 페이지를 새로고침하세요.",
@@ -1852,7 +1857,7 @@ export const ko = {
   remoteConfigAutoUpdateDesc: "24시간에 최대 한 번 확인합니다.",
   remoteConfigRegistrySourceLabel: "개발용 Registry 소스",
   remoteConfigRegistrySourceDesc:
-    "개발 빌드에서만 사용할 수 있습니다. 전체 index.json URL을 입력하고 비워 두면 기본 소스를 사용합니다.",
+    "전체 index.json URL을 입력하세요. 비워 두면 기본 소스를 사용합니다.",
   remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
   remoteConfigRegistrySourceApplyButton: "적용",
   remoteConfigRegistrySourceApplied:
@@ -1872,6 +1877,7 @@ export const ko = {
   remoteConfigResettingButton: "복원 중…",
   remoteConfigPrivacyDesc:
     "업데이트 확인은 정적 CDN에 GET 요청만 보내며 대화나 계정 정보는 포함하지 않습니다.",
+  sitePacksAdvancedTitle: "고급",
   remoteConfigCheckUpdated:
     "새 어댑터 구성을 다운로드했습니다. 해당 AI 페이지를 새로고침하면 적용됩니다.",
   remoteConfigCheckUpToDate: "어댑터 구성이 최신 상태입니다.",
@@ -1892,7 +1898,7 @@ export const ko = {
     "로컬 레지스트리 확인 실패({url}): {error}. pnpm registry:serve 실행 여부를 확인하세요.",
   remoteConfigLocalRegistryUseButton: "로컬 레지스트리 사용",
   remoteConfigLocalRegistryHint:
-    "먼저 pnpm registry:serve를 실행한 뒤 “{button}”을 누르세요. 로컬 서명 키는 개발 빌드에서만 신뢰됩니다.",
+    "먼저 pnpm registry:serve를 실행한 뒤 “{button}”을 누르세요. 루프백(127.0.0.1 / localhost) 소스는 모든 빌드에서 로컬 서명 키를 신뢰합니다.",
   remoteConfigLocalRegistrySourceApplied:
     "로컬 레지스트리 소스로 전환하고 업데이트 확인을 시작했습니다.",
   remoteConfigLocalRegistryPermissionDenied:

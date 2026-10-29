@@ -18,7 +18,7 @@
   /* === 文字颜色 === */
   --gh-text: #1f2937;
   --gh-text-secondary: #6b7280;
-  --gh-text-tertiary: #9ca3af;
+  --gh-text-tertiary: #8d94a1;
   --gh-text-on-primary: #ffffff;
 
   /* === 边框 === */
@@ -45,6 +45,8 @@
 
   /* === 品牌色 === */
   --gh-primary: #4285f4;
+  /* 主色用作文字/图标时的可读版本；浅色主色的预置会单独加深 */
+  --gh-primary-text: var(--gh-primary);
   --gh-secondary: #34a853;
   --gh-danger: #ef4444;
   --gh-brand-gradient: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
@@ -52,6 +54,8 @@
 
   /* === 语义化组件变量 === */
   --gh-header-bg: linear-gradient(135deg, #4285f4 0%, #34a853 100%);
+  /* 头部标题与品牌图标；头部背景偏浅的预置改为深色 */
+  --gh-header-text: #ffffff;
   --gh-tag-active-bg: #4285f4;
   --gh-checkbox-bg: #4f46e5;
 
@@ -106,6 +110,10 @@
   --gh-card-bg: #ffffff;
   --gh-card-border: #e5e7eb;
 
+  /* === 设置页层级：画布在下、面（侧栏与卡片）在上 === */
+  --gh-surface: var(--gh-card-bg);
+  --gh-canvas: color-mix(in srgb, var(--gh-bg) 96%, var(--gh-text));
+
   /* === 选中项渐变背景 === */
   --gh-selected-gradient: linear-gradient(
     135deg,
@@ -140,15 +148,6 @@
 
   /* === 滑块圆点颜色 === */
   --gh-slider-dot-bg: #d1d5db;
-
-  /* === 分类颜色（柔和背景色） === */
-  --gh-category-1: #fecaca; /* 红 */
-  --gh-category-2: #fed7aa; /* 橙 */
-  --gh-category-3: #fef08a; /* 黄 */
-  --gh-category-4: #bbf7d0; /* 绿 */
-  --gh-category-5: #a5f3fc; /* 青 */
-  --gh-category-6: #c7d2fe; /* 蓝紫 */
-  --gh-category-7: #f5d0fe; /* 粉紫 */
 }
 
 /* ==================== 深色模式 ==================== */
@@ -272,15 +271,17 @@ html[data-theme="dark"] {
   --gh-card-bg: #0b0b0b;
   --gh-card-border: #333333;
 
-  /* === 分类颜色（深色模式 - 半透明） === */
-  --gh-category-1: rgba(248, 113, 113, 0.3); /* 红 */
-  --gh-category-2: rgba(251, 146, 60, 0.3); /* 橙 */
-  --gh-category-3: rgba(250, 204, 21, 0.3); /* 黄 */
-  --gh-category-4: rgba(74, 222, 128, 0.3); /* 绿 */
-  --gh-category-5: rgba(34, 211, 238, 0.3); /* 青 */
-  --gh-category-6: rgba(129, 140, 248, 0.3); /* 蓝紫 */
-  --gh-category-7: rgba(232, 121, 249, 0.3); /* 粉紫 */
+  /* === 设置页层级（深色模式）：面比画布亮，各深色主题方向一致 === */
+  --gh-surface: color-mix(in srgb, var(--gh-bg) 92%, #ffffff);
+  --gh-canvas: color-mix(in srgb, var(--gh-bg) 78%, #000000);
 
   /* === 品牌色（深色模式） === */
   --gh-brand-gradient: linear-gradient(135deg, #8ab4f8 0%, #81c995 100%);
+}
+
+/* Shadow DOM 内的深色模式：ThemeManager 会在 host 上写入 data-theme。
+   预置主题注入的变量不含以下派生令牌，因此在这里按深色规则派生（单独成条，避免与文档选择器混写） */
+:host([data-theme="dark"]) {
+  --gh-surface: color-mix(in srgb, var(--gh-bg) 92%, #ffffff);
+  --gh-canvas: color-mix(in srgb, var(--gh-bg) 78%, #000000);
 }

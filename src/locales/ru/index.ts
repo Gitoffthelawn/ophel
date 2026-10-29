@@ -31,16 +31,16 @@ export const ru = {
   navPermissions: "Доступа",
   navBackup: "Данные и разрешения",
   navAbout: "О проекте",
+  navBack: "Назад",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc:
     "Настройка макета страницы, блокировки модели и специальных функций для каждого сайта",
   siteSelectorLabel: "Настраиваемый сайт",
-  siteSettingsOtherSiteToast: "Настройка {site}; изменения не затронут текущий сайт",
+  siteSettingsOtherSiteHint: "Настройка {site}; изменения не затронут текущий сайт",
   currentSiteBadge: "Текущий сайт",
   siteExclusiveSettingsLabel: "Специальные настройки",
-  noSiteExclusiveSettings: "Для этого сайта нет специальных настроек",
   communitySitePackBadge: "Пакет сообщества (основные функции)",
   communitySitePackDesc:
     "Этот сайт поддерживается пакетом сообщества. Отображаются только поддерживаемые им функции.",
@@ -60,7 +60,6 @@ export const ru = {
   sitePacksTabBuiltin: "Встроенные сайты",
   builtinSitesDesc:
     "Управляйте тем, на каких встроенных ИИ-сайтах работает Ophel. После отключения панель и все улучшения больше не загружаются на этом сайте; перезагрузите открытые страницы, чтобы изменение полностью вступило в силу",
-  builtinSiteBadge: "Встроенный",
   builtinSiteCurrentBadge: "Текущий сайт",
   builtinSiteEnabledToast: "{site} снова включён",
   builtinSiteDisabledToast:
@@ -126,7 +125,7 @@ export const ru = {
   sitePacksCustomOriginsTitle: "Добавить свой сайт",
   sitePacksCustomOriginsDesc:
     "Добавьте собственный ИИ-сайт (например, Open WebUI) и выберите пакет, который его поддерживает.",
-  sitePacksCustomOriginLabel: "HTTPS-домен",
+  sitePacksCustomOriginLabel: "Адрес сайта",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "Пакет",
   sitePacksBindingPackPlaceholder: "Выберите установленный пакет",
@@ -229,7 +228,6 @@ export const ru = {
   userQueryWidthSettings: "Ширина запроса",
   scrollSettings: "Прокрутка",
   contentProcessing: "Обработка контента",
-  contentProcessingDesc: "Как обрабатывать ответы ИИ",
   interactionEnhance: "Улучшение интерфейса",
   interactionEnhanceDesc: "Улучшенные таблицы и формулы",
   exportSettings: "Экспорт",
@@ -270,6 +268,7 @@ export const ru = {
   websiteDesc: "Документация и руководства",
   visitWebsite: "Перейти на сайт",
   rateAndReview: "Нравится Ophel?",
+  rateAndReviewAction: "Оценить Ophel",
   rateDesc: "Если вам нравится Ophel, пожалуйста, поставьте нам 5 звезд! Это очень помогает нам.",
   chromeStore: "Интернет-магазин Chrome",
   firefoxAddons: "Дополнение Firefox",
@@ -400,12 +399,16 @@ export const ru = {
   confirm: "ОК",
   export: "Экспорт",
   clear: "Очистить",
+  more: "Ещё",
+  default: "По умолчанию",
+  unknown: "Неизвестно",
+  settingsTabsScrollLeft: "Прокрутить вкладки влево",
+  settingsTabsScrollRight: "Прокрутить вкладки вправо",
   error: "Ошибка",
   operationFailed: "Операция не удалась",
   deleteSuccess: "Удалено успешно",
   deleteError: "Не удалось удалить",
   loadFailed: "Не удалось загрузить",
-  selectFileOrPasteFirst: "Сначала выберите файл или вставьте содержимое",
   restoreError: "Не удалось восстановить",
   backupRestoreConfirmMsg:
     'Восстановить резервную копию "{name}"? Текущие данные будут перезаписаны, открытые страницы ИИ будут обновлены.',
@@ -413,14 +416,12 @@ export const ru = {
     'Удалить облачную резервную копию "{name}"? Это действие необратимо.',
   insertFailed: "Не удалось вставить",
   maximize: "Развернуть",
-  browse: "Обзор...",
   clearAllData: "Удалить все",
-  clearAllDataDesc: "Внимание: Все настройки и данные будут стерты.",
+  clearAllDataDesc: "Безвозвратно удаляет все локальные настройки, промпты и чаты.",
   clearAllDataConfirm: "Удалить все данные? Это действие необратимо.",
   clearSuccess: "Очищено, перезагрузка...",
   defaultDir: "Папка по умолчанию",
   dangerZone: "Опасная зона",
-  dangerZoneDesc: "Необратимые действия",
   anchorPoint: "Якорь",
   updateAnchor: "Обновить якорь",
   goToAnchor: "Вернуться к якорю",
@@ -629,7 +630,7 @@ export const ru = {
   geminiMystuffOpenInNewTab: "Открыть в новой вкладке",
   geminiMystuffLocateFailed: "Не удалось найти исходное место беседы",
 
-  userQueryWidthDesc: "Ширина пузыря сообщения (на сайт)",
+  userQueryWidthDesc: "Ширина пузыря сообщения",
   // Category management
   categoryManage: "Категории",
   categoryEmpty: "Категорий пока нет.",
@@ -756,11 +757,9 @@ export const ru = {
   pageWidthLabel: "Ширина страницы",
   pageWidthValueLabel: "Значение",
   pageWidthDesc:
-    "Настраивает ширину страницы чата в реальном времени (отдельно для каждого сайта). Когда включен умный обход, фактическая ширина может быть ограничена безопасной областью панели.",
-  enablePageWidth: "Включить расширение",
+    "Настраивает ширину страницы чата в реальном времени. Когда включен умный обход, фактическая ширина может быть ограничена безопасной областью панели.",
   panelAvoidanceTitle: "Умный обход",
   betaBadge: "Beta",
-  panelAvoidanceLabel: "Обходить панель Ophel",
   panelAvoidanceDesc:
     "Автоматически подстраивает область контента текущего сайта, пока панель открыта; отключается на узких экранах.",
   widthValue: "Ширина",
@@ -771,7 +770,6 @@ export const ru = {
   unitPercent: "Проценты (%)",
 
   // User Query Width Settings
-  enableUserQueryWidth: "Ширина моих сообщений",
   enableUserQueryWidthDesc: "Расширить пузырь запроса",
   userQueryWidthValueLabel: "Ширина",
   // Tab Settings
@@ -1057,9 +1055,8 @@ export const ru = {
   segmentedExportSearchPlaceholder: "Поиск сегментов...",
   segmentedExportRangePlaceholder: "например 1-3, 8",
   segmentedExportApplyRange: "Применить диапазон",
-  segmentedExportSelectVisible: "Выбрать видимые",
-  segmentedExportClearVisible: "Очистить видимые",
-  segmentedExportInvertVisible: "Инвертировать видимые",
+  segmentedExportSelectAll: "Выбрать все",
+  segmentedExportInvert: "Инвертировать",
   segmentedExportNoMatches: "Нет сегментов",
   segmentedExportSelected: "Выбрано {selected} / {total}",
   segmentedExportModeZip: "ZIP (Markdown для каждого сегмента)",
@@ -1175,7 +1172,7 @@ export const ru = {
   webdavUploadBtn: "Залить",
   webdavDownloadBtn: "Скачать",
   webdavDownloadConfirm: "Скачивание сотрет текущие данные. Ок?",
-  webdavLastSync: "Последняя",
+  webdavLastSync: "Последняя синхронизация: {time}",
   webdavConnectionSuccess: "ОК",
   webdavUploadSuccess: "Залито",
   webdavDownloadSuccess: "Скачано",
@@ -1193,16 +1190,28 @@ export const ru = {
   importDataDesc: "Вернуть из файла",
 
   fullBackup: "Всё сразу",
-  fullBackupDesc: "Вообще всё (Рекомендуется)",
+  fullBackupDesc: "Экспортирует все данные аккаунта и настройки.",
   promptsBackup: "Только промпты",
   promptsBackupDesc: "Без папок и тегов",
   settingsBackup: "Только настройки",
   settingsBackupDesc: "Внешний вид и вкусы",
 
-  selectFile: "Файл",
   noFileSelected: "Нет",
-  dataPreview: "Превью",
-  pastePlaceholder: "Сюда JSON или выберите выше...",
+  pastePlaceholder: "Вставьте сюда JSON резервной копии…",
+  recommendedBadge: "Рекомендуется",
+  backupDropZoneTitle: "Перетащите сюда файл резервной копии или нажмите, чтобы выбрать",
+  backupDropZoneHint: "Поддерживаются резервные копии JSON, экспортированные из Ophel",
+  backupPasteJson: "Вставить JSON",
+  backupPastedSource: "Вставленный JSON",
+  backupSummaryContents: "Содержит",
+  backupContentSettings: "Настройки",
+  backupContentPrompts: "Промпты",
+  backupContentConversations: "Чаты и папки",
+  backupContentReadingHistory: "История чтения",
+  backupContentBookmarks: "Избранное",
+  backupContentClaudeKeys: "Ключи сессий Claude",
+  backupContentUsage: "Статистика использования",
+  backupContentSitePacks: "Пакеты сайтов",
   importBtn: "Жми",
 
   webdavConfig: "WebDAV",
@@ -1228,6 +1237,11 @@ export const ru = {
   backupManagement: "Менеджер",
   backupNow: "Сделать сейчас",
   defaultDirHint: "По умолчанию: ophel",
+  showPassword: "Показать пароль",
+  hidePassword: "Скрыть пароль",
+  webdavTesting: "Проверка…",
+  webdavUploading: "Резервное копирование…",
+  webdavNeverSynced: "Ещё не синхронизировано",
   unsavedChanges: "Не сохранено",
   restore: "Вернуть",
   localBackup: "Файл",
@@ -1299,7 +1313,7 @@ export const ru = {
   globalShortcutUrlDesc: "Что открывать через {shortcut}",
   resetShortcuts: "Сброс в ноль",
   resetShortcutsConfirm: "Сбросить все клавиши?",
-  pressAnyKey: "Жми на любую...",
+  pressAnyKey: "Нажмите клавиши · Esc — отмена",
   shortcutConflict: 'Конфликтует с "{name}"',
   globalShortcutsTitle: "Глобальные",
   globalShortcutsDesc: "Везде в браузере. Настройка в Chrome.",
@@ -1407,13 +1421,12 @@ export const ru = {
   modelSelectorNotFound: "Нет селектора",
 
   // ======== Claude Session Key Management ========
-  geminiSettingsTab: "Только Gemini",
   claudeSessionKeyTitle: "Сессии Claude",
   claudeSessionKeyDesc: "Аккаунты",
   claudeCurrentUsing: "В деле:",
   claudeNoKeySelected: "Пусто - добавьте",
-  claudePleaseAddKey: "Нужен аккаунт",
   claudeAddKey: "Добавить",
+  claudeKeyNameLabel: "Имя",
   claudeImportFromBrowser: "Из браузера",
   claudeImportJSON: "Из JSON",
   claudeExportJSON: "В JSON",
@@ -1428,7 +1441,6 @@ export const ru = {
   claudeKeyDelete: "Удалить",
   claudeKeyCopied: "Ключ в буфере",
   claudeKeyCopyFailed: "Ошибка",
-  claudeKeyDoubleTapCopy: "Клик-клик для копии",
   claudeCopyKey: "Копировать",
   claudeCopied: "Готово",
   claudeAlreadyUsing: "Уже включен",
@@ -1439,7 +1451,6 @@ export const ru = {
   claudeKeyDeleted: "Удалено",
   claudeKeyTesting: "Тест...",
   claudeGenerating: "ИИ пишет, ждите",
-  claudeAddKeyNameTitle: "Имя",
   claudeAddKeyNamePlaceholder: "Напр.: Основа, Доп",
   claudeAddKeyValueTitle: "Ключ",
   claudeAddKeyValuePlaceholder: "sk-ant-sid01-...",
@@ -1471,8 +1482,6 @@ export const ru = {
   restoreSuccess: "Восстановление успешно, страница обновится...",
 
   // ======== Настройки AI Studio ========
-  aistudioSettingsTitle: "Настройки AI Studio",
-  aistudioSettingsDesc: "Настройте поведение по умолчанию при загрузке страницы AI Studio",
   aistudioDefaultModel: "Модель по умолчанию",
   aistudioDefaultModelNone: "Не указано (использовать системную)",
   aistudioDefaultModelCustom: "Пользовательский ID модели...",
@@ -1497,8 +1506,6 @@ export const ru = {
   aistudioModelsError: "Ошибка получения списка моделей",
 
   // ======== Настройки ChatGPT ========
-  chatgptSettingsTitle: "Настройки ChatGPT",
-  chatgptSettingsDesc: "Настроить поведение по умолчанию для страницы ChatGPT",
   chatgptMarkdownFixLabel: "Исправление жирного Markdown",
   chatgptMarkdownFixDesc: "Исправить нерендеренный **жирный** текст в ответах ChatGPT",
   chatgptCodeBlockBatchMountLabel: "Пакетное монтирование блоков кода",
@@ -1711,6 +1718,7 @@ export const ru = {
   exportStyleCleanOption: "Чистый стиль (без декоративных эмодзи)",
   exportImageAlt: "Изображение",
   exportShowIndexJsonUnsupported: "Нумерация не поддерживается при экспорте в JSON",
+  exportOptionsOutlineCopyHint: "Копирование плана не использует эти параметры",
   exportMarkdownDividerLabel: "Разделитель Markdown",
   exportMarkdownDividerDesc:
     "Пользовательский разделитель между сообщениями в экспортированном Markdown (по умолчанию: ---)",
@@ -1784,21 +1792,17 @@ export const ru = {
   queueBatchImportSuccess: "В очередь добавлено: {count}",
   queueBatchImportEmpty: "Нет промптов для добавления",
   zenModeTitle: "Дзен-режим",
-  zenModeLabel: "Включить дзен-режим",
-  zenModeDesc:
-    "Скрыть боковую панель и элементы навигации для концентрации на текущем разговоре (настраивается индивидуально для каждого сайта)",
+  zenModeDesc: "Скрыть боковую панель и элементы навигации для концентрации на текущем разговоре",
   zenModeExitButton: "Выйти из дзен-режима",
   zenModeExitButtonVisibleLabel: "Показывать кнопку выхода",
   zenModeExitButtonVisibleDesc:
     "Если отключено, кнопка выхода из дзен-режима на странице скрывается; выйти из дзен-режима по-прежнему можно через быструю кнопку или сочетание клавиш.",
   cleanModeTitle: "Режим очистки",
-  cleanModeLabel: "Включить режим очистки",
   cleanModeDesc:
-    "Скрыть отказ от ответственности, рекламу, кнопки загрузки и другие лишние элементы для более чистого интерфейса (настраивается индивидуально для каждого сайта)",
+    "Скрыть отказ от ответственности, рекламу, кнопки загрузки и другие лишние элементы для более чистого интерфейса",
   autoHideInputTitle: "Автоскрытие поля ввода",
-  autoHideInputLabel: "Автоматически сворачивать поле ввода при бездействии",
   autoHideInputDesc:
-    "Сворачивает и скрывает поле ввода, когда курсор убран и нет черновика; раскрывается при наведении или фокусе (настраивается для каждого сайта)",
+    "Сворачивает и скрывает поле ввода, когда курсор убран и нет черновика; раскрывается при наведении или фокусе",
   extensionUpdateNoticeKicker: "Расширение обновлено",
   extensionUpdateNotice:
     "Ophel Atlas обновлён. Перезагрузите эту страницу, чтобы продолжить пользоваться последней версией.",
@@ -1866,7 +1870,7 @@ export const ru = {
   remoteConfigAutoUpdateDesc: "Проверяет не чаще одного раза в 24 часа.",
   remoteConfigRegistrySourceLabel: "Источник Registry для разработки",
   remoteConfigRegistrySourceDesc:
-    "Доступно только в dev-сборках. Укажите полный URL index.json; оставьте поле пустым, чтобы использовать источники по умолчанию.",
+    "Укажите полный URL index.json; оставьте поле пустым, чтобы использовать источники по умолчанию.",
   remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
   remoteConfigRegistrySourceApplyButton: "Применить",
   remoteConfigRegistrySourceApplied:
@@ -1886,6 +1890,7 @@ export const ru = {
   remoteConfigResettingButton: "Возврат…",
   remoteConfigPrivacyDesc:
     "Проверки отправляют только GET-запросы к статическим CDN, без переписки и данных аккаунта.",
+  sitePacksAdvancedTitle: "Дополнительно",
   remoteConfigCheckUpdated:
     "Новые конфигурации загружены. Обновите соответствующие страницы AI, чтобы применить их.",
   remoteConfigCheckUpToDate: "Конфигурации адаптеров актуальны.",
@@ -1907,7 +1912,7 @@ export const ru = {
     "Проверка локального registry не удалась ({url}): {error}. Убедитесь, что запущен pnpm registry:serve.",
   remoteConfigLocalRegistryUseButton: "Использовать локальный registry",
   remoteConfigLocalRegistryHint:
-    "Сначала запустите pnpm registry:serve, затем нажмите «{button}». Локальный ключ подписи доверяется только dev-сборкам.",
+    "Сначала запустите pnpm registry:serve, затем нажмите «{button}». Loopback-источники (127.0.0.1 / localhost) доверяют локальному ключу подписи во всех сборках.",
   remoteConfigLocalRegistrySourceApplied:
     "Переключено на локальный registry и запущена проверка обновлений.",
   remoteConfigLocalRegistryPermissionDenied:

@@ -508,7 +508,8 @@
 .gh-panel-header {
   /* 使用 CSS 变量，支持动态主题切换 */
   background: var(--gh-header-bg, linear-gradient(135deg, #4285f4 0%, #34a853 100%));
-  color: white;
+  /* 标题与品牌图标（currentColor）跟随主题：浅色头部背景的预置会给深色 */
+  color: var(--gh-header-text, #ffffff);
   /* 整个 header 区域可拖动，按住后切换为抓取手势 */
   cursor: grab;
   position: relative;
@@ -781,7 +782,7 @@
   gap: 6px;
   padding: 7px 10px;
   border-bottom: 1px solid var(--gh-border, #e5e7eb);
-  background: color-mix(in srgb, var(--gh-bg-secondary, #f9fafb) 86%, var(--gh-bg, #ffffff));
+  background: var(--gh-bg, #ffffff);
 }
 
 .gh-panel-toolbar {
@@ -789,6 +790,12 @@
   align-items: center;
   gap: 6px;
   min-width: 0;
+}
+
+/* 提示词 tab：有分类 chips 行时，搜索行与 chips 合并为一个控制区块，
+   去掉中间分隔线（chips 行自带底线）；Chains 视图无 chips，保留搜索行底线 */
+.gh-prompts-tool-stack.has-category-bar {
+  border-bottom: none;
 }
 
 .gh-panel-toolbar-group {
@@ -814,9 +821,10 @@
   width: 30px;
   height: 30px;
   padding: 0;
-  border: 1px solid var(--gh-input-border, #d1d5db);
+  /* 静止时不画边框：工具栏读作一组图标，悬停与激活再给底色 */
+  border: 1px solid transparent;
   border-radius: 8px;
-  background: color-mix(in srgb, var(--gh-bg, #ffffff) 92%, transparent);
+  background: transparent;
   color: var(--gh-text-secondary, #6b7280);
   box-sizing: border-box;
   cursor: pointer;
@@ -837,15 +845,12 @@
 .outline-toolbar-btn {
   width: 28px;
   height: 28px;
-  border-radius: 7px;
 }
 
 .gh-panel-icon-btn:hover,
 .outline-toolbar-btn:hover {
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 36%, var(--gh-input-border, #d1d5db));
-  color: var(--gh-primary, #4285f4);
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, var(--gh-bg, #ffffff));
-  transform: translateY(-1px);
+  color: var(--gh-text, #1f2937);
+  background: var(--gh-hover, #f3f4f6);
 }
 
 .gh-panel-icon-btn:active,
@@ -862,6 +867,7 @@
 .gh-panel-icon-btn:disabled,
 .outline-toolbar-btn:disabled {
   color: var(--gh-text-disabled, #9ca3af);
+  background: transparent;
   cursor: not-allowed;
   opacity: 0.5;
   transform: none;
@@ -881,22 +887,19 @@
 
 .gh-panel-icon-btn.active-subtle,
 .outline-toolbar-btn.active-subtle {
-  border-color: var(--gh-primary, #4285f4);
-  color: var(--gh-primary, #4285f4);
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 13%, var(--gh-bg, #ffffff));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gh-primary, #4285f4) 8%, transparent);
+  border-color: transparent;
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, var(--gh-bg, #ffffff));
 }
 
-/* 导出入口：主题淡色微强调底色 + 周期性柔和微光扫过 + hover 适度加深微浮与箭头微动效 */
+/* 导出入口：图标用主色与其它工具按钮区分 + 首次引导期间的微光扫过 + hover 淡色底与箭头微动效 */
 .outline-toolbar-btn.export-accent {
   position: relative;
   overflow: hidden;
-  margin-left: 4px;
-  border: 1px solid
-    color-mix(in srgb, var(--gh-primary, #4285f4) 38%, var(--gh-input-border, #d1d5db));
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 7%, var(--gh-bg, #ffffff));
-  color: var(--gh-primary, #4285f4);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--gh-primary, #4285f4) 8%, transparent);
+  margin-left: 2px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
   transition:
     transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
     box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
@@ -941,16 +944,13 @@
 }
 
 .outline-toolbar-btn.export-accent:hover {
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 65%, var(--gh-input-border, #d1d5db));
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 15%, var(--gh-bg, #ffffff));
-  color: var(--gh-primary, #4285f4);
-  transform: translateY(-1.5px);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--gh-primary, #4285f4) 22%, transparent);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-bg, #ffffff));
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
 }
 
 .outline-toolbar-btn.export-accent:active {
-  transform: translateY(0) scale(0.96);
-  box-shadow: 0 1px 2px color-mix(in srgb, var(--gh-primary, #4285f4) 12%, transparent);
+  transform: scale(0.96);
 }
 
 .outline-toolbar-btn.export-accent:focus-visible {
@@ -1018,10 +1018,7 @@
   height: 100%;
   min-width: 0;
   padding: 0 28px;
-  border: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 9px;
   box-sizing: border-box;
-  background: color-mix(in srgb, var(--gh-input-bg, #ffffff) 94%, transparent);
   color: var(--gh-text, #1f2937);
   font: inherit;
   font-size: 13px;
@@ -1037,7 +1034,31 @@
   color: var(--gh-text-tertiary, #9ca3af);
 }
 
-.gh-panel-search-input:focus {
+/* 大纲搜索框的清除按钮只在输入后出现：空态时把右侧留白还给占位文字，避免窄面板下被截断 */
+.outline-search-input.gh-panel-search-input:placeholder-shown {
+  padding-right: 10px;
+}
+
+/* 面板里的填充式输入控件共用这一份：三个标签页的搜索框（大纲、提示词是输入框本身，对话页是带筛选按钮的
+   外层容器）和对话页的文件夹选择框。静止时用文字色混出淡底、不画边框，浅色主题压暗、深色主题提亮，
+   各主题与工具栏的区分度一致；聚焦时换成输入框底色，加主色边框与外圈 */
+.gh-panel-search-input,
+.gh-panel-search--segmented,
+.conversations-folder-select {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 6%, var(--gh-bg, #ffffff));
+}
+
+.gh-panel-search-input:hover,
+.gh-panel-search--segmented:hover,
+.conversations-folder-select:hover {
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 9%, var(--gh-bg, #ffffff));
+}
+
+.gh-panel-search-input:focus,
+.gh-panel-search--segmented:focus-within,
+.conversations-folder-select:focus {
   border-color: var(--gh-primary, #4285f4);
   background: var(--gh-input-bg, #ffffff);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--gh-primary, #4285f4) 18%, transparent);
@@ -1064,10 +1085,11 @@
     transform 0.18s ease;
 }
 
+/* 按钮都在填充底上：用半透明叠色，静止底、悬停底、聚焦后的输入框底上都看得出 */
 .gh-panel-search-action:hover,
 .gh-panel-search-action:focus-visible {
   color: var(--gh-text, #374151);
-  background: var(--gh-hover, #f3f4f6);
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 8%, transparent);
 }
 
 .gh-panel-search-action:focus-visible {
@@ -1077,6 +1099,17 @@
 
 .gh-panel-search-action:active {
   transform: scale(0.96);
+}
+
+/* 按钮外层套了 Tooltip 触发器时，绝对定位挪到触发器上：否则触发器塌成 0×0，提示会偏离按钮 */
+.gh-panel-search-action-anchor {
+  position: absolute;
+  right: 3px;
+  z-index: 1;
+}
+
+.gh-panel-search-action-anchor > .gh-panel-search-action {
+  position: static;
 }
 
 .gh-panel-menu-anchor {
@@ -1133,28 +1166,23 @@
   outline-offset: -2px;
 }
 
+/* 带内联操作按钮的搜索框：外观（底色、边框、聚焦）与 .gh-panel-search-input 共用上面那一份，
+   这里只管布局：输入框占满剩余宽度，按钮依次排在右侧 */
 .gh-panel-search--segmented {
-  height: 32px;
   overflow: hidden;
-  border: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 10px;
-  background: var(--gh-input-bg, #ffffff);
   transition:
     border-color 0.18s ease,
-    box-shadow 0.18s ease;
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
 }
 
-.gh-panel-search--segmented:focus-within {
-  border-color: var(--gh-primary, #4285f4);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gh-primary, #4285f4) 18%, transparent);
-}
-
+/* 与大纲搜索框的清除按钮同一形态：圆角小按钮、不画分隔线 */
 .gh-panel-search--segmented .gh-panel-search-action {
   position: static;
-  width: 30px;
-  height: 100%;
-  border-left: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 0;
+  width: 24px;
+  height: 24px;
+  margin-right: 2px;
+  border-radius: 6px;
   flex-shrink: 0;
 }
 
@@ -1172,9 +1200,10 @@
   box-shadow: none !important;
 }
 
+/* 筛选已开启：主色图标 + 半透明主色淡底（与工具栏激活按钮同一配方），叠在填充底上深浅主题都看得出 */
 .gh-panel-search-action.active {
-  color: var(--gh-primary, #4285f4);
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-bg, #ffffff));
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
 }
 
 .gh-panel-search-action:disabled,
@@ -1205,13 +1234,6 @@
   height: var(--gh-outline-item-height);
   min-height: var(--gh-outline-item-height);
   box-sizing: border-box;
-}
-
-.outline-list-virtual .outline-item.highlight {
-  border-width: 1px !important;
-  box-shadow:
-    0 0 0 1px var(--gh-outline-locate-border),
-    inset 0 0 8px var(--gh-outline-locate-shadow);
 }
 
 .outline-empty-state {
@@ -1400,7 +1422,7 @@
 /* 单个大纲项 */
 .outline-item {
   padding: 6px 10px;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
   background: transparent;
   border: 1px solid transparent;
@@ -1422,24 +1444,12 @@
   background: var(--gh-hover, #f3f4f6);
 }
 
-/* 定位高亮效果 (Locate Current) - EMERALD GREEN */
-/* 定位高亮效果 (Locate Current) - EMERALD GREEN */
+/* 定位高亮（Locate Current）：每套主题自带的撞色描边与淡底，外圈短暂呼吸后保持到高亮结束 */
 .outline-item.highlight {
-  /* 背景与边框 */
   background: var(--gh-outline-locate-bg) !important;
-  border: 2px solid var(--gh-outline-locate-border) !important;
-
-  /* 强制圆角一致，覆盖 sync-highlight 的直角样式 */
-  border-radius: 6px !important;
-
-  /* 视觉效果 */
-  box-shadow: inset 0 0 8px var(--gh-outline-locate-shadow);
+  border: 1px solid var(--gh-outline-locate-border) !important;
+  border-radius: 8px !important;
   animation: outlineLocatePulse 0.6s ease-in-out 2;
-
-  /* 确保右侧边框宽度一致 (防止 sync-highlight 的 3px 覆盖) */
-  border-right-width: 2px !important;
-  border-right-style: solid !important;
-  border-right-color: var(--gh-outline-locate-border) !important;
 }
 
 /* ===== 功能技巧高亮动画 ===== */
@@ -1487,30 +1497,35 @@
 @keyframes outlineLocatePulse {
   0%,
   100% {
-    transform: scale(1);
-    box-shadow: inset 0 0 8px var(--gh-outline-locate-shadow);
+    box-shadow: 0 0 0 0 var(--gh-outline-locate-shadow);
   }
   50% {
-    transform: scale(1.02);
-    /* 呼吸时增强光晕 */
-    box-shadow:
-      inset 0 0 12px var(--gh-outline-locate-shadow),
-      0 0 8px var(--gh-outline-locate-shadow);
+    /* 只用外圈呼吸提示位置，不缩放整行，避免文字抖动 */
+    box-shadow: 0 0 0 4px var(--gh-outline-locate-shadow);
   }
 }
 
-/* 同步滚动高亮 */
-.outline-item.sync-highlight {
-  background: var(--gh-outline-sync-bg) !important;
-  border-right: 3px solid var(--gh-outline-sync-border) !important;
-  border-radius: 4px 0 0 4px;
-}
-
-/* 同步滚动高亮 - 通过 DOM 操作添加（用于父级回退） */
+/* 同步滚动高亮（sync-highlight-visible 由 DOM 操作添加，用于父级回退）：
+   每套主题自带的撞色淡底，让“当前位置”在一排主色提问行里一眼可见 */
+.outline-item.sync-highlight,
 .outline-item.sync-highlight-visible {
   background: var(--gh-outline-sync-bg) !important;
-  border-right: 3px solid var(--gh-outline-sync-border) !important;
-  border-radius: 4px 0 0 4px;
+}
+
+/* 标题行的当前位置再加一条左侧短直色条：与提问行色条同形状、同位置，只是换成撞色。
+   用独立元素画直条，不用 inset 阴影（会顺着圆角弯成月牙形） */
+.outline-item.sync-highlight:not(.user-query-node)::before,
+.outline-item.sync-highlight-visible:not(.user-query-node)::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 22px;
+  border-radius: 0 3px 3px 0;
+  background-color: var(--gh-outline-sync-border);
+  pointer-events: none;
 }
 
 /* 折叠箭头 */
@@ -1521,7 +1536,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  color: #9ca3af;
+  color: var(--gh-text-secondary, #6b7280);
   cursor: pointer;
   transition:
     background-color 0.2s ease,
@@ -1536,14 +1551,14 @@
 }
 
 .outline-item-toggle:hover {
-  color: var(--gh-border-active);
+  color: var(--gh-primary-text, var(--gh-border-active));
   /* 用 currentColor 低透明度着色：在行 hover 底色上仍可分辨，深浅主题下都是"提亮"而非发黑 */
   background-color: color-mix(in srgb, currentColor 12%, transparent);
 }
 
 .outline-item-toggle.expanded {
   transform: rotate(90deg);
-  color: var(--gh-border-active);
+  color: var(--gh-primary-text, var(--gh-border-active));
 }
 
 .outline-item-toggle.invisible {
@@ -1592,21 +1607,21 @@
 .outline-level-6 {
   padding-left: 100px;
   font-size: 12px;
-  color: #9ca3af;
+  color: var(--gh-text-tertiary, #9ca3af);
+}
+
+/* 提问分组内的一级标题（只有挂在提问下面时 level-1 才会出现在 depth ≥ 1 的虚拟行里）：
+   字号字重低于提问行，避免子级比父级更大更粗 */
+.outline-virtual-row:not([data-depth="0"]) .outline-item.outline-level-1 {
+  font-size: 13px;
+  font-weight: 500;
 }
 
 /* ============= 用户提问节点样式 ============= */
-/* ============= 用户提问节点样式 (Focus Card - Theme Adaptive) ============= */
 .outline-item.user-query-node {
-  /* 背景适配：使用更柔和的浅底色，突出当前激活项 */
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 6%, var(--gh-bg-secondary, #f9fafb));
-
-  /* 边框适配：四边完整，微弱主色勾边 */
-  border: 1px solid
-    color-mix(in srgb, var(--gh-border, #e5e7eb) 75%, var(--gh-primary, #4285f4) 25%);
-
-  /* 阴影：移除硬编码的白色内发光, 使用通用阴影变量 */
-  box-shadow: var(--gh-shadow-sm);
+  /* 淡主色底 + 左侧短色条区分提问；不画边框和阴影，描边只留给“定位”状态 */
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 7%, var(--gh-bg, #ffffff));
+  border: 1px solid transparent;
 
   /* 字体与排版 */
   font-weight: 600;
@@ -1635,15 +1650,13 @@
 .outline-item.user-query-node::before {
   content: "";
   position: absolute;
-  left: 3px;
+  left: 0;
   top: 50%;
   transform: translateY(-50%);
-  width: 4px;
-  height: 18px;
-  border-radius: 4px;
+  width: 3px;
+  height: 16px;
+  border-radius: 0 3px 3px 0;
   background-color: var(--gh-primary, #4285f4);
-  /* 使用透明度阴影，适应深色背景 */
-  box-shadow: 0 1px 4px color-mix(in srgb, var(--gh-primary, #4285f4) 40%, transparent);
   transition:
     background-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -1654,91 +1667,39 @@
   margin-top: 0;
 }
 
-/* Hover 状态 */
+/* Hover 状态：底色加深一档，色条略拉长 */
 .outline-item.user-query-node:hover {
-  /* Hover 时微加深混合比例 */
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 10%, var(--gh-bg-secondary, #f9fafb));
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 45%, transparent);
-  /* 悬浮阴影 */
-  box-shadow: var(--gh-shadow-brand);
-  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 11%, var(--gh-bg, #ffffff));
 }
 
-.outline-list-virtual .outline-item.user-query-node:hover {
-  transform: none;
-}
-
-/* Hover 时指示器 */
 .outline-item.user-query-node:hover::before {
-  height: 22px;
-  background-color: var(--gh-primary, #4285f4);
-  box-shadow: 0 0 10px color-mix(in srgb, var(--gh-primary, #4285f4) 60%, transparent);
+  height: 20px;
 }
 
 /* ============= 状态覆盖：同步高亮 (Sync) ============= */
-/* ============= 状态覆盖：同步高亮 (Sync) ============= */
-/* 必须使用 !important 覆盖通用的 .outline-item.sync-highlight 样式 */
+/* 提问行的“当前位置”：底色换成撞色淡底，左侧色条换成撞色并拉长；不画描边环。
+   通用 .outline-item.sync-highlight 的背景带 !important，这里同样需要 !important 覆盖。
+   数字徽章保持原样：多数撞色偏亮，拿来做底色或文字都不够清楚 */
 .outline-item.user-query-node.sync-highlight,
 .outline-item.user-query-node.sync-highlight-visible {
-  /* 覆盖通用高亮样式的竖条与直角 */
-  border-right: none !important;
-  border-radius: 8px !important;
-
-  /* 卡片式高亮：边框变色 + 呼吸光晕 */
-  border: 1px solid var(--gh-outline-sync-border) !important;
-  box-shadow:
-    0 0 0 1px var(--gh-outline-sync-border),
-    var(--gh-shadow-sm) !important;
-
-  /* 背景稍微加深，混合同步色 */
-  background: color-mix(in srgb, var(--gh-outline-sync-bg) 40%, var(--gh-bg)) !important;
+  background: var(--gh-outline-sync-bg) !important;
 }
 
-/* 同步高亮时，视觉锚点变色 */
 .outline-item.user-query-node.sync-highlight::before,
 .outline-item.user-query-node.sync-highlight-visible::before {
-  background-color: var(--gh-outline-sync-border) !important;
-  box-shadow: 0 0 6px color-mix(in srgb, var(--gh-outline-sync-border) 60%, transparent) !important;
-}
-
-/* 同步高亮时，徽章变色 */
-.outline-item.user-query-node.sync-highlight .user-query-badge-number,
-.outline-item.user-query-node.sync-highlight-visible .user-query-badge-number {
-  color: var(--gh-outline-sync-border) !important;
-  border-color: var(--gh-outline-sync-border) !important;
-  background: var(--gh-bg) !important;
+  height: 22px;
+  background-color: var(--gh-outline-sync-border);
 }
 
 /* ============= 状态覆盖：定位高亮 (Locate) ============= */
+/* 撞色描边、圆角与外圈呼吸来自通用 .outline-item.highlight，这里只换底色和色条 */
 .outline-item.user-query-node.highlight {
-  /* 去除可能的冲突样式 */
-  border-right: none !important;
-  border-radius: 8px !important;
-
-  /* 强烈的定位高亮：双层边框光晕 */
-  border: 1px solid var(--gh-outline-locate-border) !important;
-  box-shadow:
-    0 0 0 2px var(--gh-outline-locate-shadow),
-    var(--gh-shadow-lg) !important;
-
-  /* 背景混合定位色 */
-  background: color-mix(in srgb, var(--gh-outline-locate-bg) 50%, var(--gh-bg)) !important;
-
-  /* 保持动画 */
-  animation: outlineLocatePulse 0.6s ease-in-out 2;
+  background: var(--gh-outline-locate-bg) !important;
 }
 
-/* 定位高亮时，视觉锚点变色 */
 .outline-item.user-query-node.highlight::before {
-  background-color: var(--gh-outline-locate-border) !important;
-  box-shadow: 0 0 8px var(--gh-outline-locate-shadow) !important;
-}
-
-/* 定位高亮时，徽章变色 */
-.outline-item.user-query-node.highlight .user-query-badge-number {
-  color: var(--gh-bg) !important;
-  background: var(--gh-outline-locate-border) !important;
-  border-color: var(--gh-outline-locate-border) !important;
+  height: 22px;
+  background-color: var(--gh-outline-locate-border);
 }
 
 /* 用户问题徽章 */
@@ -1749,7 +1710,7 @@
   justify-content: center;
   width: 24px;
   height: 24px;
-  margin-right: 2px;
+  margin-right: 5px;
   flex-shrink: 0;
 }
 
@@ -1766,14 +1727,14 @@
 
 .outline-item.user-query-node .user-query-badge-number {
   position: absolute;
-  bottom: -2px;
-  right: -4px;
-  min-width: 12px;
-  height: 12px;
-  padding: 0 2px;
-  font-size: 8px;
+  bottom: -3px;
+  right: -5px;
+  min-width: 13px;
+  height: 13px;
+  padding: 0 3px;
+  font-size: 10px;
   font-weight: 700;
-  line-height: 12px;
+  line-height: 13px;
   text-align: center;
   color: var(--gh-badge-text, #4b5563);
   background: var(--gh-badge-bg, #ffffff);
@@ -2125,6 +2086,197 @@
   }
 }
 
+/* ============= 触屏：吸附把手与侧边抽屉 ============= */
+
+/* 触屏吸附收起时整块面板移出视口：12px 边条点不准，还会把点按漏给面板里的条目，
+   展开入口统一交给下面的把手 */
+.gh-root.is-touch .gh-main-panel.edge-snapped-left:not(.edge-peek) {
+  left: calc(0px - var(--panel-width, 320px) - 24px) !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+.gh-root.is-touch .gh-main-panel.edge-snapped-right:not(.edge-peek) {
+  right: calc(0px - var(--panel-width, 320px) - 24px) !important;
+  box-shadow: none !important;
+  pointer-events: none;
+}
+
+/* 吸附把手：贴边的品牌色拉手，点按展开面板。层级低于快捷按钮组：两者都贴右侧居中，
+   用户关闭「面板展开时隐藏按钮组」时按钮组压住把手内侧，按钮保持可点，把手外侧仍可点 */
+.gh-edge-touch-handle {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 9997;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 64px;
+  padding: 0;
+  border: 1px solid var(--gh-brand-border, transparent);
+  background: var(--gh-header-bg, linear-gradient(135deg, #4285f4 0%, #34a853 100%));
+  color: var(--gh-header-text, #ffffff);
+  box-shadow: var(--gh-btn-shadow, 0 2px 6px rgba(0, 0, 0, 0.15));
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.15s ease;
+}
+
+/* 可见部分偏窄，向页面内侧扩出点按热区，凑足 44px 以上的触控尺寸 */
+.gh-edge-touch-handle::before {
+  content: "";
+  position: absolute;
+  top: -12px;
+  bottom: -12px;
+}
+
+.gh-edge-touch-handle.right {
+  right: 0;
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+}
+
+.gh-edge-touch-handle.right::before {
+  left: -16px;
+  right: 0;
+}
+
+.gh-edge-touch-handle.left {
+  left: 0;
+  border-left: none;
+  border-radius: 0 12px 12px 0;
+}
+
+.gh-edge-touch-handle.left::before {
+  left: 0;
+  right: -16px;
+}
+
+.gh-edge-touch-handle:active {
+  opacity: 0.82;
+}
+
+.gh-edge-touch-handle:focus-visible {
+  outline: 2px solid var(--gh-primary, #4285f4);
+  outline-offset: 2px;
+}
+
+/* 侧边抽屉：触屏窄屏下的面板形态。定位与尺寸一律 !important —— 拖拽、模式切换等逻辑
+   会向面板写入行内定位，抽屉形态始终贴边全高；入场动画用独立的 translate 属性，
+   不与 transform 冲突，并和主题背景动画并列 */
+.gh-main-panel.is-drawer {
+  position: fixed !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-height: 0;
+  width: min(var(--panel-width, 320px), 88vw) !important;
+  max-width: 88vw;
+  transform: none !important;
+  z-index: 10002;
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: var(--gh-shadow-lg, 0 20px 60px rgba(0, 0, 0, 0.3));
+}
+
+.gh-main-panel.is-drawer.drawer-right {
+  left: auto !important;
+  right: 0 !important;
+  border-width: 0 0 0 1px;
+  border-radius: 16px 0 0 16px;
+  padding-right: env(safe-area-inset-right, 0px);
+  animation:
+    gh-drawer-in-right 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    var(--gh-bg-animation, none);
+}
+
+.gh-main-panel.is-drawer.drawer-left {
+  left: 0 !important;
+  right: auto !important;
+  border-width: 0 1px 0 0;
+  border-radius: 0 16px 16px 0;
+  padding-left: env(safe-area-inset-left, 0px);
+  animation:
+    gh-drawer-in-left 0.26s cubic-bezier(0.2, 0.8, 0.2, 1),
+    var(--gh-bg-animation, none);
+}
+
+/* 抽屉内的列表滚到头时不带动背后的页面一起滚 */
+.gh-main-panel.is-drawer,
+.gh-main-panel.is-drawer * {
+  overscroll-behavior: contain;
+}
+
+.gh-main-panel.is-drawer .gh-panel-header {
+  cursor: default;
+  border-radius: 0;
+}
+
+/* 非抽屉形态的顶栏可拖动：禁止触屏在顶栏上发起页面滚动，否则拖动会被系统手势打断 */
+.gh-main-panel:not(.is-drawer) .gh-panel-header {
+  touch-action: none;
+}
+
+.gh-panel-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 10001;
+  background: var(--gh-overlay-bg, rgba(0, 0, 0, 0.5));
+  /* 挡住在遮罩上发起的滚动，避免抽屉打开时误滚背后的页面 */
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+  animation: gh-drawer-scrim-in 0.2s ease;
+}
+
+@keyframes gh-drawer-in-right {
+  from {
+    translate: 100% 0;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes gh-drawer-in-left {
+  from {
+    translate: -100% 0;
+  }
+
+  to {
+    translate: 0 0;
+  }
+}
+
+@keyframes gh-drawer-scrim-in {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gh-main-panel.is-drawer.drawer-right,
+  .gh-main-panel.is-drawer.drawer-left {
+    animation: var(--gh-bg-animation, none);
+  }
+
+  .gh-panel-drawer-scrim {
+    animation: none;
+  }
+
+  .gh-edge-touch-handle {
+    transition: none;
+  }
+}
+
 @keyframes gh-popover-enter {
   from {
     opacity: 0;
@@ -2372,19 +2524,26 @@
   position: relative;
 }
 
-.quick-prompt-btn:hover {
-  transform: translateY(-1px) scale(1.04);
+/* 悬停只加深底色、不上浮缩放：一列 8 个图标逐个跳动会很吵，与面板列表的平稳悬停保持一致。
+   :where() 不增加优先级，激活态（.active）等后续规则在悬停时仍然生效 */
+.quick-prompt-btn:hover:where(:not(:disabled)) {
   background: color-mix(in srgb, var(--gh-text) 6%, transparent);
   color: var(--gh-text, #111827);
 }
 
-.quick-prompt-btn:active {
-  transform: translateY(0) scale(0.97);
+.quick-prompt-btn:active:where(:not(:disabled)) {
+  transform: scale(0.97);
 }
 
 .quick-prompt-btn:focus-visible {
   outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 34%, transparent);
   outline-offset: 2px;
+}
+
+/* 无锚点时的返回锚点按钮等：置灰且不响应悬停 */
+.quick-prompt-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 .quick-prompt-btn.active {
@@ -2410,7 +2569,6 @@
   background: color-mix(in srgb, var(--gh-primary) 24%, transparent);
   color: var(--gh-primary) !important;
   box-shadow: 0 4px 16px color-mix(in srgb, var(--gh-primary) 35%, transparent);
-  transform: translateY(-1px) scale(1.04);
 }
 
 .quick-prompt-btn.panel-btn:hover svg {
@@ -2425,7 +2583,7 @@
   color: var(--gh-primary);
 }
 
-/* 工具箱悬浮菜单按钮：打开时保留旋转反馈，表示工具箱处于展开状态 */
+/* 工具箱悬浮菜单按钮：打开时保留旋转反馈，表示工具箱处于展开状态（DESIGN.md 保留动效） */
 .quick-prompt-btn.tools-trigger-btn {
   transition:
     background 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
@@ -2435,9 +2593,9 @@
 }
 
 .quick-prompt-btn.tools-trigger-btn.active {
-  background: var(--gh-primary);
-  color: var(--gh-text-on-primary, white);
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--gh-primary) 40%, transparent);
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, var(--gh-bg, #ffffff));
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--gh-primary, #4285f4) 18%, transparent);
   animation: tools-spin 3s linear infinite;
   transform: scale(1.03);
 }
@@ -2641,15 +2799,11 @@
   gap: 8px;
   padding: 10px 14px;
   border-top: 1px solid var(--gh-border, #e5e7eb);
-  background: color-mix(in srgb, var(--gh-bg-secondary, #f9fafb) 92%, transparent);
+  background: var(--gh-bg, #ffffff);
 }
 
 .gh-panel-footer-action {
   width: 100%;
-}
-
-.gh-panel-footer-anchor {
-  color: var(--gh-footer-text, var(--gh-text-on-primary, white));
 }
 
 .gh-panel-footer-anchor .anchor-tap-wrapper,
@@ -2670,18 +2824,17 @@
   width: 100%;
   height: 32px;
   border-radius: 8px;
-  border: 1px solid
-    color-mix(in srgb, var(--gh-border, #e5e7eb) 80%, var(--gh-primary, #4285f4) 20%);
+  /* 底栏是工具动作，静止时与工具栏一样不画边框和阴影 */
+  border: 1px solid transparent;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 13px;
   font-weight: 500;
-  color: var(--gh-text, #374151);
+  color: var(--gh-text-secondary, #6b7280);
   gap: 5px;
-  background: color-mix(in srgb, var(--gh-bg, #ffffff) 90%, var(--gh-bg-secondary, #f3f4f6));
-  box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.08));
+  background: transparent;
   transition:
     color 0.16s ease,
     background 0.16s ease,
@@ -2691,15 +2844,12 @@
 }
 
 .scroll-nav-btn:hover {
-  color: var(--gh-primary, #4285f4);
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 45%, var(--gh-border, #e5e7eb));
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 9%, var(--gh-bg, #ffffff));
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
+  color: var(--gh-text, #1f2937);
+  background: var(--gh-hover, #f3f4f6);
 }
 
 .scroll-nav-btn:active {
-  transform: translateY(0) scale(0.97);
+  transform: scale(0.97);
 }
 
 .scroll-nav-btn:focus-visible {
@@ -2720,7 +2870,7 @@
 }
 
 .scroll-nav-btn.anchor-btn:hover {
-  color: var(--gh-primary, #4285f4);
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
 }
 
 .scroll-nav-btn.anchor-btn:not(:disabled):hover .gh-panel-footer-anchor-icon {
@@ -2731,7 +2881,7 @@
 .scroll-nav-btn:disabled {
   opacity: 0.4;
   cursor: default;
-  box-shadow: none;
+  background: transparent;
 }
 
 .scroll-nav-btn:disabled:hover {
@@ -2767,6 +2917,7 @@
   .gh-panel-resize-handle,
   .outline-toolbar-btn,
   .gh-panel-search-input,
+  .gh-panel-search--segmented,
   .gh-panel-search-action,
   .gh-panel-menu-item,
   .quick-prompt-btn,
@@ -2777,14 +2928,6 @@
   .outline-item,
   .outline-item-toggle,
   .outline-item-copy-btn,
-  .gh-chain-editor,
-  .gh-chain-step-row,
-  .gh-chain-step-delete-btn,
-  .gh-chain-step-inline-input,
-  .gh-chain-step-prompt-select,
-  .gh-chain-step-mode-btn,
-  .gh-chain-preview-toggle,
-  .gh-chain-preview-nav-btn,
   .gh-theme-card,
   .gh-theme-check,
   .gh-update-notice,
@@ -2835,10 +2978,13 @@
 /* ============= 提示词 Tab 样式 ============= */
 
 /* 提示词卡片悬停效果 */
-.prompt-item:hover {
-  border-color: var(--gh-primary, #4285f4) !important;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--gh-primary, #4285f4) 15%, transparent);
-  transform: translateY(-2px);
+/* 悬停只加深描边，不上浮、不加阴影（与大纲、对话列表的平稳悬停一致）；选中卡片保留主色描边 */
+.prompt-item:not(.selected):hover {
+  border-color: color-mix(
+    in srgb,
+    var(--gh-primary, #4285f4) 45%,
+    var(--gh-border, #e5e7eb)
+  ) !important;
 }
 
 .prompt-item.drop-above,
@@ -2931,27 +3077,6 @@
   display: none !important;
 }
 
-/* 分类标签悬停效果 */
-.category-tag:hover {
-  background: var(--gh-border, #e5e7eb) !important;
-}
-
-.category-tag.active:hover {
-  background: var(--gh-primary, #4285f4) !important;
-}
-
-/* 分类管理按钮悬停效果 */
-.category-manage-btn:hover {
-  border-color: var(--gh-primary, #4285f4) !important;
-  color: var(--gh-primary, #4285f4) !important;
-}
-
-/* 添加按钮悬停效果 */
-.add-prompt-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
-}
-
 /* 弹窗动画 */
 @keyframes fadeIn {
   from {
@@ -3022,28 +3147,14 @@
   color: var(--gh-text-danger, #ef4444);
 }
 
+/* 置顶已开启：主色淡底 + 主色图标（与工具栏激活按钮同一配方） */
 .prompt-action-btn.active {
-  background: var(--gh-primary, #4285f4) !important;
-  color: white;
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent) !important;
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
 }
 
 .prompt-modal-content {
   background: var(--gh-bg, #ffffff) !important;
-}
-
-.gh-prompt-platform-filter-btn {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  background: var(--gh-hover, #f3f4f6);
-  color: var(--gh-text-secondary, #4b5563);
-  line-height: 1;
-  cursor: pointer;
 }
 
 .gh-prompt-platform-filter-btn:focus-visible,
@@ -3083,58 +3194,39 @@
   transform: translateY(1px);
 }
 
-/* 提示词/提示词链底部添加按钮 (Theme-Adaptive Option A) */
+/* 提示词 / 提示词链列表底部的添加按钮：普通实线描边按钮，属于工具动作，不用虚线框、不上浮 */
 .gh-prompt-add-container {
   padding: 10px 12px 12px;
 }
 
 .gh-prompt-add-btn {
   width: 100%;
-  height: 38px;
+  height: 36px;
   padding: 0 16px;
   border-radius: 8px;
-  border: 1px dashed color-mix(in srgb, var(--gh-primary, #4285f4) 38%, var(--gh-border, #e5e7eb));
-  background: color-mix(
-    in srgb,
-    var(--gh-primary, #4285f4) 6%,
-    var(--gh-card-bg, var(--gh-bg, #ffffff))
-  );
-  color: var(--gh-primary, #4285f4);
-  font-size: 13.5px;
+  border: 1px solid var(--gh-border, #e5e7eb);
+  background: transparent;
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+  font-size: 13px;
   font-weight: 500;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  box-shadow: var(--gh-shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.04));
   transition:
     background-color 0.18s ease,
     border-color 0.18s ease,
-    color 0.18s ease,
-    transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.18s ease;
+    transform 0.15s ease;
 }
 
 .gh-prompt-add-btn:hover {
-  background: color-mix(
-    in srgb,
-    var(--gh-primary, #4285f4) 12%,
-    var(--gh-card-bg, var(--gh-bg, #ffffff))
-  );
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 55%, var(--gh-border, #e5e7eb));
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, transparent);
+  border-color: color-mix(in srgb, var(--gh-primary, #4285f4) 40%, var(--gh-border, #e5e7eb));
 }
 
 .gh-prompt-add-btn:active {
-  transform: translateY(0) scale(0.985);
-  background: color-mix(
-    in srgb,
-    var(--gh-primary, #4285f4) 18%,
-    var(--gh-card-bg, var(--gh-bg, #ffffff))
-  );
+  transform: scale(0.985);
 }
 
 .gh-prompt-add-btn:focus-visible {
@@ -3151,15 +3243,70 @@
   justify-content: center;
 }
 
+/* 分类筛选胶囊：中性淡底，选中用主色淡底 + 主色字（与工具栏激活按钮同一配方）。
+   不再按分类名哈希分配彩色底：颜色不表达任何含义，深色主题下还会变成浅色块 */
+.gh-prompt-category-chip {
+  flex-shrink: 0;
+  max-width: 120px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 5%, transparent);
+  color: var(--gh-text-secondary, #6b7280);
+  font: inherit;
+  font-size: 12px;
+  line-height: 16px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.gh-prompt-category-chip:hover {
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 9%, transparent);
+  color: var(--gh-text, #1f2937);
+}
+
+.gh-prompt-category-chip:focus-visible,
+.gh-prompt-library-switch-btn:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.gh-prompt-category-chip.is-active {
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 14%, transparent);
+  color: var(--gh-primary-text, var(--gh-primary, #4285f4));
+}
+
+/* 卡片标题旁的变量数：变量图标 + 数字的小角标，悬停提示列出全部变量 */
+.gh-prompt-variable-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 18px;
+  padding: 0 6px 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 6%, transparent);
+  color: var(--gh-text-secondary, #6b7280);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/* 提示词 / Chains 视图切换：与设置页分段控件同一形态（凹下的轨道 + 凸起的选中项）。
+   轨道与面板搜索框同色；选中项在浅色主题为白色、深色主题明显提亮，深浅都比轨道亮一档 */
 .gh-prompt-library-switch {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
   height: 30px;
-  padding: 2px;
-  border: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--gh-input-bg, #ffffff) 94%, transparent);
+  padding: 3px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--gh-text, #1f2937) 6%, var(--gh-bg, #ffffff));
   gap: 2px;
   box-sizing: border-box;
 }
@@ -3168,7 +3315,7 @@
   min-width: 40px;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid transparent;
+  border: none;
   border-radius: 6px;
   background: transparent;
   color: var(--gh-text-secondary, #6b7280);
@@ -3185,15 +3332,13 @@
 }
 
 .gh-prompt-library-switch-btn:hover:not([data-active="true"]) {
-  color: var(--gh-primary, #4285f4);
-  background: color-mix(in srgb, var(--gh-primary, #4285f4) 8%, transparent);
+  color: var(--gh-text, #1f2937);
 }
 
 .gh-prompt-library-switch-btn[data-active="true"] {
-  background: var(--gh-primary, #4285f4);
-  color: var(--gh-text-on-primary, #ffffff);
-  border-color: var(--gh-primary, #4285f4);
-  box-shadow: 0 1px 4px rgba(66, 133, 244, 0.25);
+  background: color-mix(in srgb, var(--gh-bg, #ffffff) 78%, #ffffff);
+  color: var(--gh-text, #1f2937);
+  box-shadow: var(--gh-shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.1));
 }
 
 .gh-chain-card {
@@ -3501,279 +3646,6 @@
   background: color-mix(in srgb, var(--gh-primary, #4285f4) 12%, var(--gh-bg, #ffffff));
 }
 
-.gh-chain-editor {
-  width: min(680px, 92vw);
-  max-height: 86vh;
-  padding: 0 !important;
-  border-radius: 12px;
-  box-shadow: var(--gh-shadow-lg, 0 20px 50px rgba(0, 0, 0, 0.3));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  animation: slideUp 0.25s ease-out;
-}
-
-.gh-chain-editor-header,
-.gh-chain-editor-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--gh-border, #e5e7eb);
-}
-
-.gh-chain-editor-footer {
-  justify-content: flex-end;
-  border-top: 1px solid var(--gh-border, #e5e7eb);
-  border-bottom: none;
-}
-
-.gh-chain-editor-title {
-  color: var(--gh-text, #1f2937);
-  font-size: 16px;
-  font-weight: 650;
-}
-
-.gh-chain-editor-subtitle,
-.gh-chain-section-subtitle,
-.gh-chain-field-help {
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.gh-chain-editor-close {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: var(--gh-hover, #f3f4f6);
-  color: var(--gh-text-secondary, #6b7280);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gh-chain-editor-scroll {
-  min-height: 0;
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 18px;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
-  scrollbar-width: thin;
-  scrollbar-color: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 64%, transparent) transparent;
-}
-
-.gh-chain-editor-scroll::-webkit-scrollbar {
-  width: 10px;
-}
-
-.gh-chain-editor-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.gh-chain-editor-scroll::-webkit-scrollbar-thumb {
-  min-height: 42px;
-  border: 3px solid transparent;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 56%, transparent);
-  background-clip: content-box;
-}
-
-.gh-chain-editor-scroll::-webkit-scrollbar-thumb:hover {
-  background: color-mix(in srgb, var(--gh-text-secondary, #6b7280) 72%, transparent);
-  background-clip: content-box;
-}
-
-.gh-chain-form-grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 12px;
-}
-
-.gh-chain-field {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-  color: var(--gh-text, #374151);
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.gh-chain-field input,
-.gh-chain-field textarea,
-.gh-chain-step-row select {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 7px;
-  background: var(--gh-input-bg, var(--gh-bg, #ffffff));
-  color: var(--gh-text, #1f2937);
-  font: inherit;
-  font-size: 13px;
-  outline: none;
-}
-
-.gh-chain-field input,
-.gh-chain-step-row select {
-  height: 34px;
-  padding: 0 10px;
-}
-
-.gh-chain-field textarea {
-  min-height: 74px;
-  padding: 8px 10px;
-  resize: vertical;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.gh-chain-field input:focus,
-.gh-chain-field textarea:focus,
-.gh-chain-step-row select:focus {
-  border-color: var(--gh-primary, #4285f4);
-  box-shadow: 0 0 0 2px rgba(66, 133, 244, 0.12);
-}
-
-.gh-chain-icon-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.gh-chain-visibility-toggle {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  max-width: 100%;
-  padding: 5px 8px 5px 6px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 999px;
-  background: var(--gh-bg-secondary, #f9fafb);
-  color: var(--gh-text, #374151);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.gh-chain-visibility-toggle input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.gh-chain-visibility-switch {
-  position: relative;
-  width: 28px;
-  height: 16px;
-  flex: 0 0 28px;
-  border-radius: 999px;
-  background: var(--gh-border, #d1d5db);
-  transition: background 0.16s;
-}
-
-.gh-chain-visibility-switch::after {
-  content: "";
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #ffffff;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
-  transition: transform 0.16s;
-}
-
-.gh-chain-visibility-toggle input:checked + .gh-chain-visibility-switch {
-  background: var(--gh-primary, #4285f4);
-}
-
-.gh-chain-visibility-toggle input:checked + .gh-chain-visibility-switch::after {
-  transform: translateX(12px);
-}
-
-.gh-chain-visibility-toggle-text {
-  min-width: 0;
-  line-height: 1.25;
-}
-
-.gh-chain-icon-control-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gh-chain-icon-preview {
-  min-width: 0;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 44px;
-  padding: 10px 14px;
-  box-sizing: border-box;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--gh-bg-secondary, #f9fafb);
-  color: var(--gh-text-secondary, #6b7280);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.gh-chain-icon-preview.empty {
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-weight: 400;
-}
-
-.gh-chain-icon-preview-svg {
-  width: 22px;
-  height: 22px;
-  flex: 0 0 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.gh-chain-icon-preview-svg svg {
-  width: 22px;
-  height: 22px;
-}
-
-.gh-chain-icon-select-btn {
-  min-height: 44px;
-  padding: 0 18px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--gh-bg, #ffffff);
-  color: var(--gh-primary, #3b82f6);
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition:
-    background 0.16s,
-    border-color 0.16s;
-}
-
-.gh-chain-icon-select-btn:hover {
-  border-color: var(--gh-primary, #3b82f6);
-  background: var(--gh-primary-light, #eff6ff);
-}
-
-.gh-chain-editor-section {
-  margin-top: 14px;
-  padding-top: 14px;
-  border-top: 1px solid var(--gh-border, #e5e7eb);
-}
-
 .gh-chain-queue-gate {
   display: flex;
   align-items: stretch;
@@ -3785,10 +3657,6 @@
   border: 1px solid color-mix(in srgb, var(--gh-primary, #4285f4) 22%, var(--gh-border, #e5e7eb));
   border-radius: 8px;
   background: color-mix(in srgb, var(--gh-primary, #4285f4) 7%, var(--gh-bg, #ffffff));
-}
-
-.gh-chain-queue-gate.editor {
-  margin-bottom: 14px;
 }
 
 .gh-chain-queue-gate-copy {
@@ -3818,518 +3686,12 @@
   flex-wrap: wrap;
 }
 
-.gh-chain-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
-}
-
-.gh-chain-section-title {
-  color: var(--gh-text, #1f2937);
-  font-size: 13px;
-  font-weight: 650;
-}
-
-.gh-chain-step-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.gh-chain-step-row {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  padding: 14px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 10px;
-  background: var(--gh-bg, #ffffff);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition:
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
-}
-
-.gh-chain-step-row.dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.gh-chain-step-row:hover {
-  border-color: var(--gh-border-hover, #d1d5db);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-}
-
-.gh-chain-step-header-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.gh-chain-step-drag-handle {
-  width: 16px;
-  height: 20px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--gh-text-tertiary, #c5c8cc);
-  cursor: grab;
-  user-select: none;
-  flex-shrink: 0;
-  transition: color 0.15s;
-}
-
-.gh-chain-step-drag-handle:hover {
-  color: var(--gh-text-secondary, #6b7280);
-}
-
-.gh-chain-step-row.dragging .gh-chain-step-drag-handle {
-  cursor: grabbing;
-}
-
-.gh-chain-step-index {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--gh-primary, #4285f4);
-  color: #ffffff;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 11px;
-  font-weight: 700;
-  flex-shrink: 0;
-}
-
-.gh-chain-step-delete-btn {
-  width: 28px;
-  height: 28px;
-  margin-left: auto;
-  flex-shrink: 0;
-  border-radius: 7px;
-  border: none;
-  background: transparent;
-  color: var(--gh-text-tertiary, #d1d5db);
-  opacity: 0 !important;
-  transition:
-    background 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  position: relative;
-}
-
-.gh-chain-step-row:hover .gh-chain-step-delete-btn {
-  opacity: 1 !important;
-}
-
-.gh-chain-step-delete-btn:hover {
-  background: rgba(254, 226, 226, 1);
-  color: var(--gh-text-danger, #ef4444);
-  transform: scale(1.05);
-}
-
-.gh-chain-step-delete-btn:active {
-  transform: scale(0.95);
-  background: rgba(254, 202, 202, 1);
-}
-
-.gh-chain-step-delete-btn svg {
-  width: 16px;
-  height: 16px;
-  stroke-width: 2.5;
-}
-
-.gh-chain-step-input-row {
-  width: 100%;
-}
-
-.gh-chain-step-inline-input {
-  width: 100%;
-  box-sizing: border-box;
-  min-height: 80px;
-  padding: 10px 12px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--gh-bg-secondary, #f9fafb);
-  color: var(--gh-text, #1f2937);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 12px;
-  line-height: 1.55;
-  resize: vertical;
-  outline: none;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s,
-    color 0.15s;
-}
-
-.gh-chain-step-inline-input:focus {
-  border-color: var(--gh-primary, #4285f4);
-  background: var(--gh-bg, #ffffff);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.08);
-}
-
-.gh-chain-step-inline-input::placeholder {
-  color: var(--gh-text-tertiary, #9ca3af);
-}
-
-.gh-chain-step-prompt-select {
-  width: 100%;
-  height: 36px;
-  padding: 0 10px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 8px;
-  background: var(--gh-bg-secondary, #f9fafb);
-  color: var(--gh-text, #1f2937);
-  font-size: 13px;
-  outline: none;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    box-shadow 0.15s,
-    color 0.15s;
-  cursor: pointer;
-}
-
-.gh-chain-step-prompt-select:focus {
-  border-color: var(--gh-primary, #4285f4);
-  background: var(--gh-bg, #ffffff);
-  box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.08);
-}
-
-.gh-chain-step-mode-switch {
-  display: flex;
-  padding: 2px;
-  border-radius: 7px;
-  background: var(--gh-bg-secondary, #f3f4f6);
-  border: 1px solid var(--gh-border, #e5e7eb);
-  gap: 0;
-  flex: 0 0 auto;
-}
-
-.gh-chain-step-mode-btn {
-  padding: 4px 10px;
-  border: none;
-  border-radius: 5px;
-  background: transparent;
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.15s ease,
-    box-shadow 0.15s ease,
-    color 0.15s ease;
-  white-space: nowrap;
-  line-height: 1.4;
-}
-
-.gh-chain-step-mode-btn:hover {
-  color: var(--gh-text-secondary, #6b7280);
-}
-
-.gh-chain-step-mode-btn.active {
-  background: var(--gh-bg, #ffffff);
-  color: var(--gh-text, #1f2937);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-}
-
-.gh-chain-step-content {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.gh-chain-step-actions {
-  display: flex;
-  gap: 2px;
-}
-
-.gh-chain-step-empty {
-  padding: 20px;
-  border: 1.5px dashed var(--gh-border, #d1d5db);
-  border-radius: 10px;
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-size: 13px;
-  text-align: center;
-}
-
-.gh-chain-variable-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.gh-chain-variable-chip,
-.gh-chain-variable-muted {
-  padding: 4px 7px;
-  border-radius: 999px;
-  font-size: 12px;
-  line-height: 1.25;
-}
-
-.gh-chain-variable-chip {
-  border: 1px solid rgba(66, 133, 244, 0.25);
-  background: rgba(66, 133, 244, 0.08);
-  color: var(--gh-primary, #4285f4);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-}
-
-.gh-chain-variable-chip.custom {
-  border-color: var(--gh-border, #e5e7eb);
-  background: var(--gh-bg-secondary, #f9fafb);
-  color: var(--gh-text-secondary, #6b7280);
-}
-
-.gh-chain-variable-muted {
-  color: var(--gh-text-tertiary, #9ca3af);
-}
-
-.gh-chain-preview-toggle {
-  padding: 5px 12px;
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 6px;
-  background: var(--gh-bg, #ffffff);
-  color: var(--gh-text-secondary, #6b7280);
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition:
-    background 0.15s,
-    color 0.15s;
-}
-
-.gh-chain-preview-toggle:hover {
-  background: var(--gh-hover, #f3f4f6);
-  color: var(--gh-text, #1f2937);
-}
-
-.gh-chain-preview-nav-float {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 12px;
-  margin: 12px 0 0;
-  border-radius: 8px;
-  background: var(--gh-bg, rgba(255, 255, 255, 0.92));
-  backdrop-filter: blur(8px);
-  border: 1px solid var(--gh-border, #e5e7eb);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  flex-wrap: wrap;
-}
-
-.gh-chain-preview-nav-label {
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-right: 4px;
-  flex-shrink: 0;
-}
-
-.gh-chain-preview-nav-btn {
-  min-width: 28px;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid transparent;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--gh-text-secondary, #6b7280);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition:
-    background 0.15s,
-    border-color 0.15s,
-    color 0.15s;
-  gap: 4px;
-  max-width: 140px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gh-chain-preview-nav-btn:hover {
-  background: rgba(66, 133, 244, 0.08);
-  color: var(--gh-primary, #4285f4);
-}
-
-.gh-chain-preview-nav-btn .nav-btn-num {
-  flex-shrink: 0;
-  width: 18px;
-  height: 18px;
-  border-radius: 4px;
-  background: var(--gh-bg-secondary, #f3f4f6);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.gh-chain-preview-nav-btn .nav-btn-title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
-}
-
-.gh-chain-preview-nav-btn:hover .nav-btn-num {
-  background: rgba(66, 133, 244, 0.15);
-  color: var(--gh-primary, #4285f4);
-}
-
-.gh-chain-preview-content {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 8px;
-  padding-bottom: 4px;
-}
-
-.gh-chain-preview-step {
-  border: 1px solid var(--gh-border, #e5e7eb);
-  border-radius: 10px;
-  overflow: hidden;
-  background: var(--gh-bg, #ffffff);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-  transition: box-shadow 0.15s;
-}
-
-.gh-chain-preview-step:hover {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
-}
-
-.gh-chain-preview-step-header {
-  padding: 10px 14px;
-  background: var(--gh-bg-secondary, #f9fafb);
-  border-bottom: 1px solid var(--gh-border, #e5e7eb);
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.gh-chain-preview-step-number {
-  width: 22px;
-  height: 22px;
-  border-radius: 6px;
-  background: var(--gh-primary, #4285f4);
-  color: #ffffff;
-  font-size: 11px;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.gh-chain-preview-step-title {
-  color: var(--gh-text, #1f2937);
-  font-size: 13px;
-  font-weight: 600;
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.gh-chain-preview-step-body {
-  padding: 14px;
-  color: var(--gh-text, #1f2937);
-  font-size: 13px;
-  line-height: 1.6;
-  word-break: break-word;
-  max-height: 360px;
-  overflow-y: auto;
-}
-
-.gh-chain-preview-step-body p {
-  margin: 0 0 0.75em;
-}
-
-.gh-chain-preview-step-body p:last-child {
-  margin-bottom: 0;
-}
-
-.gh-chain-preview-step-body code {
-  padding: 2px 5px;
-  border-radius: 4px;
-  background: var(--gh-bg-secondary, #f3f4f6);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.88em;
-}
-
-.gh-chain-preview-step-body pre {
-  margin: 0.75em 0;
-  padding: 12px;
-  border-radius: 8px;
-  background: var(--gh-bg-secondary, #f3f4f6);
-  overflow-x: auto;
-}
-
-.gh-chain-preview-step-body pre code {
-  padding: 0;
-  background: none;
-}
-
-.gh-chain-preview-step-body blockquote {
-  margin: 0.75em 0;
-  padding: 8px 14px;
-  border-left: 3px solid var(--gh-primary, #4285f4);
-  background: rgba(66, 133, 244, 0.04);
-  border-radius: 0 6px 6px 0;
-  color: var(--gh-text-secondary, #6b7280);
-}
-
-.gh-chain-preview-empty {
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-style: italic;
-}
-
 .prompt-action-btn:disabled {
   opacity: 0.35;
   cursor: not-allowed;
 }
 
 @media (max-width: 520px) {
-  .gh-chain-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .gh-chain-icon-header,
-  .gh-chain-icon-control-row {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .gh-chain-visibility-toggle,
-  .gh-chain-icon-select-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
   .gh-chain-card {
     grid-template-columns: 1fr;
   }
@@ -4345,21 +3707,6 @@
     grid-row: auto;
     align-self: flex-end;
     justify-self: end;
-  }
-
-  .gh-chain-step-header-row {
-    flex-wrap: wrap;
-  }
-
-  .gh-chain-step-mode-switch {
-    order: 10;
-    width: 100%;
-    margin-top: 4px;
-  }
-
-  .gh-chain-preview-nav-float {
-    position: static;
-    backdrop-filter: none;
   }
 }
 

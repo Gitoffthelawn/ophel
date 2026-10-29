@@ -13,7 +13,7 @@
 
 ### 2.1 设置弹窗
 
-`SettingsModal.tsx` 使用 `NAV_IDS` 和本地 `NAV_ITEMS` 组织一级导航：
+`SettingsModal.tsx` 与独立 Options 页共用 `src/tabs/options/settings-nav.ts` 的 `SETTINGS_NAV_ITEMS` 组织一级导航，侧栏统一由 `src/tabs/options/components/SettingsSidebar.tsx` 渲染：
 
 - 基本设置：`GeneralPage`
 - 外观主题：`AppearancePage`
@@ -28,19 +28,18 @@
 
 ### 2.2 独立 Options 页面
 
-`src/tabs/options.tsx` 当前提供：
+`src/tabs/options.tsx` 使用同一份导航定义与顺序。独立页面检测不到内容脚本中的 `__ophelThemeManager` 时，会隐藏外观主题入口；油猴脚本环境隐藏数据与权限页内的权限 tab。
 
-- 基本设置：`GeneralPage`
-- 功能模块：`FeaturesPage`
-- 站点设置：`SiteSettingsPage`
-- 适配中心：`SitePacksPage`
-- 外观主题：`AppearancePage`
-- 数据与权限：`BackupPage`
-- 关于：`AboutPage`
+### 2.3 窄屏两级导航
 
-独立页面检测不到内容脚本中的 `__ophelThemeManager` 时，会隐藏外观主题入口；油猴脚本环境隐藏数据与权限页内的权限 tab。
+视口不超过 `SETTINGS_COMPACT_MEDIA_QUERY`（640px，定义在 `src/constants/ui.ts`）时，两个入口都由 `useSettingsCompactNav()` 切换为全屏单栏：
 
-### 2.3 深链与设置搜索
+- 导航屏：侧栏全宽，每项右侧带进入箭头；设置弹窗右上角保留关闭按钮，不提供最大化。
+- 页面屏：顶部 `SettingsCompactBar`（返回）加页面内容；设置行放不下「说明 + 控件」时控件换到下一行。
+- 设置弹窗每次关闭时复位到导航屏；外部导航请求（深链、设置搜索、`ophel:navigateSettingsPage`）直接进入页面屏。独立页 URL 带 `page` 参数时同样直接进入页面屏。
+- 布局只认 JS 挂载的 `.is-compact` 与 `data-compact-pane`，断点不在 CSS 里重复定义。
+
+### 2.4 深链与设置搜索
 
 - 深链解析集中在 `src/constants/ui.ts` 的 `resolveSettingsNavigateDetail()`。
 - 设置搜索索引使用同文件中的 `SETTING_ID_ROUTE_MAP`、`SETTING_ID_ROUTE_RULES`、`SETTING_ID_ALIASES` 和 `SETTINGS_SEARCH_ITEMS`。
@@ -50,8 +49,8 @@
 
 - `GeneralPage`：语言、面板行为、快捷按钮、工具箱菜单。
 - `FeaturesPage`：大纲、对话、提示词、标签页行为、提醒、内容增强、阅读历史和用量统计。
-- `SiteSettingsPage`：站点选择器（内置站点 + 当前社区适配包实例，面板内当前站点置顶）+ 选中站点的聚合设置视图，按「页面布局 / 模型锁定 / 站点专属」分组；布局类设置按站点 key 存储，未单独配置的站点读取时回退到 `_default` 兜底值；模型锁定仅展示当前选中站点的一行配置；Gemini/AI Studio/ChatGPT/Claude 有专属设置分组。深链的 `subTab` 直接承载站点 id。
-- `SitePacksPage`：按 `SITE_PACKS_TAB_IDS` 分为三个 tab——已安装（启停/卸载/检查更新）、自定义站点（自定义 origin、自动识别、油猴 @match 补充）、获取与更新（自动更新、检查更新、内置配置补丁与回滚、在线适配库、本地 JSON 导入）。两处“检查更新”是同一操作（全量检查并同步所有在线适配库包，检查即更新）；不设单包刷新按钮——它实际也是全量检查，语义有误导。适配配置更新原先位于基本设置，已并入此页。
+- `SiteSettingsPage`：站点选择器（内置站点 + 当前社区适配包实例，面板内当前站点置顶；选中非当前站点时，选择器栏常驻一行说明）+ 选中站点的聚合设置视图，按「页面布局 / 模型锁定 / 专属设置」三个分组，每组一个分组标题加一张卡，卡内不再重复标题。页面布局是一张卡：智能避让在首行，其后是页面宽度、用户问题宽度、禅模式、净化模式，Gemini 另有自动隐藏输入框；宽度滑块与「显示退出按钮」是缩进在上级开关下方的从属行（`SettingRow` 的 `has-sub` / `is-sub`），上级开关关闭时从属行置灰、点击提示先开启。布局类设置按站点 key 存储，未单独配置的站点读取时回退到 `_default` 兜底值（写入走 `buildSiteLayoutPatch`，存储结构不变）；模型锁定仅展示当前选中站点的一行配置；Gemini / AI Studio / ChatGPT 的专属设置分别是 `GeminiSettings` / `AIStudioSettings` / `ChatGPTSettings`，Claude 为 `ClaudeSettings`。深链的 `subTab` 直接承载站点 id；`site-settings-layout`、`site-settings-model-lock` 是供设置搜索定位的分组锚点。
+- `SitePacksPage`：按 `SITE_PACKS_TAB_IDS` 分为四个 tab——内置站点（启停、跳转站点设置）、已安装（启停/卸载/检查更新）、自定义站点（自定义 origin、自动识别、油猴 @match 补充）、获取与更新（页首更新状态条：自动更新、上次检查与立即检查；在线适配库，标题栏含搜索与本地 JSON 导入；默认折叠的「高级」：内置配置补丁导入与回滚）。深链定位到折叠区内的设置项时，`scrollWithinSettingsContent` 会先展开所在的 `<details>`。两处“检查更新”是同一操作（全量检查并同步所有在线适配库包，检查即更新）；不设单包刷新按钮——它实际也是全量检查，语义有误导。适配配置更新原先位于基本设置，已并入此页。
 - `ShortcutsPage`：快捷键总开关、全局 URL 和各动作绑定。
 - `AppearancePage`：主题同步、预置主题和自定义样式。
 - `BackupPage`：本地备份/恢复、WebDAV 配置与同步操作，以及权限 tab（`PermissionsPage`，扩展权限状态与可选权限申请/撤销）。

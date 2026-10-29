@@ -28,7 +28,14 @@ import {
   SlidersHorizontalIcon,
 } from "~components/icons"
 import { PlatformIcon } from "~components/PlatformIcon"
-import { Button, Input, SelectDropdown, Switch, type SelectDropdownOption } from "~components/ui"
+import {
+  Button,
+  Input,
+  SelectDropdown,
+  Switch,
+  Tooltip,
+  type SelectDropdownOption,
+} from "~components/ui"
 import { NAV_IDS, SITE_PACKS_TAB_IDS, sitePackInstalledSettingId } from "~constants"
 import { SUPPORTED_AI_PLATFORMS } from "~constants/defaults"
 import {
@@ -71,9 +78,9 @@ import {
   getBuiltinSiteEntryUrls,
   orderBuiltinSitesByCurrentUrl,
 } from "~tabs/options/builtin-sites-list"
-import { PageTitle, SettingRow, TabGroup, ToggleRow } from "~tabs/options/components"
-import { IS_DEVELOPMENT_BUILD } from "~utils/config"
-import { getCurrentLang, subscribeI18nChanges, t } from "~utils/i18n"
+import { PageTitle, TabGroup } from "~tabs/options/components"
+import { formatDateTime } from "~utils/format"
+import { getCurrentLang, getCurrentLocale, subscribeI18nChanges, t } from "~utils/i18n"
 import { scrollWithinSettingsContent } from "~utils/settings-scroll"
 import { showToast } from "~utils/toast"
 
@@ -92,6 +99,9 @@ const getSitePackGuideUrl = (lang: string): string =>
   lang.startsWith("zh") ? SITE_PACK_GUIDE_URL_ZH : SITE_PACK_GUIDE_URL_EN
 
 const ERROR_TOAST_DURATION = 3500
+
+// 元信息行里可截断的匹配规则：Tooltip 触发层默认按全文撑宽，限制在行宽内省略号才会生效
+const TRUNCATED_META_TRIGGER_STYLE: React.CSSProperties = { minWidth: 0, maxWidth: "100%" }
 
 const builtinPlatformNames = new Map(
   SUPPORTED_AI_PLATFORMS.map(({ id, name }) => [id as string, name] as const),
@@ -349,12 +359,6 @@ const getRegistryAvailabilityTone = (
   if (availability === "incompatible") return "warning"
   return "success"
 }
-
-const formatCheckTime = (timestamp: number): string =>
-  new Intl.DateTimeFormat(getCurrentLang(), {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(timestamp))
 
 const notify = (message: string) => showToast(message)
 const notifyError = (message: string) => showToast(message, ERROR_TOAST_DURATION)
@@ -773,6 +777,12 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
     [loadOriginBindings, packManager, syncRuntimeStatus],
   )
 
+  /** 跳到「获取与更新」并定位在线适配库；没有适配包的空状态共用 */
+  const openRegistry = () => {
+    setActiveTab(SITE_PACKS_TAB_IDS.UPDATES)
+    setPendingLocateId("site-packs-registry")
+  }
+
   const handleSaveOriginBinding = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const key = "binding:save"
@@ -781,7 +791,9 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
     try {
       const origin = canonicalizeSitePackBindingOrigin(normalizeBindingOriginInput(bindingOrigin))
       if (!installedById.has(bindingPackId)) {
-        throw new Error(t("sitePacksBindingPackRequired"))
+        throw new Error(
+          t(installedPacks.length === 0 ? "sitePacksNoInstalled" : "sitePacksBindingPackRequired"),
+        )
       }
       const binding: SitePackOriginBinding = { mode: "explicit", packId: bindingPackId }
 
@@ -1512,15 +1524,16 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
         </div>
         <div className="settings-pack-info">
           <div className="settings-pack-title-line">
-            <button
-              type="button"
-              className="settings-pack-origin-link"
-              title={`${t("sitePacksOpenSite")}: ${origin}`}
-              aria-label={`${t("sitePacksOpenSite")}: ${origin}`}
-              onClick={() => platform.openTab(origin)}>
-              <span className="settings-pack-origin">{origin}</span>
-              <ExternalLinkIcon size={12} />
-            </button>
+            <Tooltip content={`${t("sitePacksOpenSite")}: ${origin}`}>
+              <button
+                type="button"
+                className="settings-pack-origin-link"
+                aria-label={`${t("sitePacksOpenSite")}: ${origin}`}
+                onClick={() => platform.openTab(origin)}>
+                <span className="settings-pack-origin">{origin}</span>
+                <ExternalLinkIcon size={12} />
+              </button>
+            </Tooltip>
             <span className={`settings-pack-badge ${status.tone}`}>{status.label}</span>
           </div>
           <div className="settings-pack-meta">
@@ -1528,24 +1541,26 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
           </div>
         </div>
         <div className="settings-pack-controls">
-          <button
-            type="button"
-            className="settings-pack-icon-btn"
-            disabled={busy || isBindingBusy}
-            title={t("edit")}
-            aria-label={`${t("edit")}: ${origin}`}
-            onClick={() => handleEditOriginBinding(origin, binding)}>
-            <EditIcon size={15} />
-          </button>
-          <button
-            type="button"
-            className="settings-pack-icon-btn danger"
-            disabled={busy || isBindingBusy}
-            title={t("delete")}
-            aria-label={`${t("delete")}: ${origin}`}
-            onClick={() => void handleRemoveOriginBinding(origin)}>
-            <DeleteIcon size={15} />
-          </button>
+          <Tooltip content={t("edit")}>
+            <button
+              type="button"
+              className="settings-pack-icon-btn"
+              disabled={busy || isBindingBusy}
+              aria-label={`${t("edit")}: ${origin}`}
+              onClick={() => handleEditOriginBinding(origin, binding)}>
+              <EditIcon size={15} />
+            </button>
+          </Tooltip>
+          <Tooltip content={t("delete")}>
+            <button
+              type="button"
+              className="settings-pack-icon-btn danger"
+              disabled={busy || isBindingBusy}
+              aria-label={`${t("delete")}: ${origin}`}
+              onClick={() => void handleRemoveOriginBinding(origin)}>
+              <DeleteIcon size={15} />
+            </button>
+          </Tooltip>
         </div>
       </div>
     )
@@ -1594,7 +1609,6 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
         <div className="settings-pack-info">
           <div className="settings-pack-title-line">
             <strong>{site.name}</strong>
-            <span className="settings-pack-badge">{t("builtinSiteBadge")}</span>
             {isCurrentSite && (
               <span className="settings-pack-badge current">{t("builtinSiteCurrentBadge")}</span>
             )}
@@ -1617,14 +1631,15 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
           </div>
         </div>
         <div className="settings-pack-controls">
-          <button
-            type="button"
-            className="settings-pack-icon-btn ghost"
-            title={t("navSiteSettings")}
-            aria-label={`${site.name}: ${t("navSiteSettings")}`}
-            onClick={() => handleOpenSiteSettings(site.id)}>
-            <SlidersHorizontalIcon size={15} />
-          </button>
+          <Tooltip content={t("navSiteSettings")}>
+            <button
+              type="button"
+              className="settings-pack-icon-btn ghost"
+              aria-label={`${site.name}: ${t("navSiteSettings")}`}
+              onClick={() => handleOpenSiteSettings(site.id)}>
+              <SlidersHorizontalIcon size={15} />
+            </button>
+          </Tooltip>
           <Switch
             size="sm"
             checked={!isDisabled}
@@ -1635,6 +1650,14 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
       </div>
     )
   }
+
+  // 包描述多是同一句模板，只占一行；被截断时悬停查看全文。
+  // Tooltip 触发层默认 inline-flex 会按全文撑宽，这里改成块级才能截断
+  const renderPackDescription = (description: string) => (
+    <Tooltip content={description} showOnlyWhenTruncated triggerStyle={{ display: "block" }}>
+      <p className="settings-pack-description">{description}</p>
+    </Tooltip>
+  )
 
   const renderInstalledPack = (pack: InstalledSitePack) => {
     const packId = pack.manifest.id
@@ -1667,13 +1690,15 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
         </div>
         <div className="settings-pack-info">
           <div className="settings-pack-title-line">
-            <strong title={packId}>{name}</strong>
+            <Tooltip content={packId}>
+              <strong>{name}</strong>
+            </Tooltip>
             {needsBinding && (
               <span className="settings-pack-badge warning">{t("sitePacksNeedsBindingBadge")}</span>
             )}
             {status && <span className={`settings-pack-badge ${status.tone}`}>{status.label}</span>}
           </div>
-          {description && <p className="settings-pack-description">{description}</p>}
+          {description && renderPackDescription(description)}
           <div className="settings-pack-meta">
             <span className="settings-pack-version">v{pack.manifest.version}</span>
             <span className="settings-pack-source">
@@ -1681,19 +1706,23 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
             </span>
             {firstMatch &&
               (firstSiteUrl ? (
-                <button
-                  type="button"
-                  className="settings-pack-origin-link"
-                  title={firstMatch}
-                  aria-label={`${t("sitePacksOpenSite")}: ${firstSiteUrl}`}
-                  onClick={() => platform.openTab(firstSiteUrl)}>
-                  <span className="settings-pack-origin">{firstSiteUrl}</span>
-                  <ExternalLinkIcon size={12} />
-                </button>
+                <Tooltip content={firstMatch}>
+                  <button
+                    type="button"
+                    className="settings-pack-origin-link"
+                    aria-label={`${t("sitePacksOpenSite")}: ${firstSiteUrl}`}
+                    onClick={() => platform.openTab(firstSiteUrl)}>
+                    <span className="settings-pack-origin">{firstSiteUrl}</span>
+                    <ExternalLinkIcon size={12} />
+                  </button>
+                </Tooltip>
               ) : (
-                <code className="settings-pack-match" title={firstMatch}>
-                  {firstMatch}
-                </code>
+                <Tooltip
+                  content={firstMatch}
+                  showOnlyWhenTruncated
+                  triggerStyle={TRUNCATED_META_TRIGGER_STYLE}>
+                  <code className="settings-pack-match">{firstMatch}</code>
+                </Tooltip>
               ))}
             {needsBinding && (
               <button
@@ -1707,27 +1736,29 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
         </div>
         <div className="settings-pack-controls">
           {firstSiteUrl && (
+            <Tooltip content={t("sitePacksOpenSite")}>
+              <button
+                type="button"
+                className="settings-pack-icon-btn"
+                aria-label={`${t("sitePacksOpenSite")}: ${name}`}
+                onClick={() => platform.openTab(firstSiteUrl)}>
+                <ExternalLinkIcon size={15} />
+              </button>
+            </Tooltip>
+          )}
+          <Tooltip content={t("sitePacksUninstall")}>
             <button
               type="button"
-              className="settings-pack-icon-btn"
-              title={t("sitePacksOpenSite")}
-              aria-label={`${t("sitePacksOpenSite")}: ${name}`}
-              onClick={() => platform.openTab(firstSiteUrl)}>
-              <ExternalLinkIcon size={15} />
+              className="settings-pack-icon-btn danger"
+              disabled={isBusy}
+              aria-label={`${t("sitePacksUninstall")}: ${name}`}
+              onClick={(event) => {
+                confirmationTriggerRef.current = event.currentTarget
+                setConfirmation({ type: "uninstall", pack })
+              }}>
+              <DeleteIcon size={15} />
             </button>
-          )}
-          <button
-            type="button"
-            className="settings-pack-icon-btn danger"
-            disabled={isBusy}
-            title={t("sitePacksUninstall")}
-            aria-label={`${t("sitePacksUninstall")}: ${name}`}
-            onClick={(event) => {
-              confirmationTriggerRef.current = event.currentTarget
-              setConfirmation({ type: "uninstall", pack })
-            }}>
-            <DeleteIcon size={15} />
-          </button>
+          </Tooltip>
           <Switch
             size="sm"
             checked={pack.enabled}
@@ -1772,7 +1803,9 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
         </div>
         <div className="settings-pack-info">
           <div className="settings-pack-title-line">
-            <strong title={view.id}>{view.name}</strong>
+            <Tooltip content={view.id}>
+              <strong>{view.name}</strong>
+            </Tooltip>
             {isSelfHosted && (
               <span className="settings-pack-badge">{t("sitePacksSelfHostedBadge")}</span>
             )}
@@ -1783,24 +1816,28 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
               </span>
             )}
           </div>
-          {view.description && <p className="settings-pack-description">{view.description}</p>}
+          {view.description && renderPackDescription(view.description)}
           <div className="settings-pack-meta">
             <span className="settings-pack-version">v{version}</span>
             {firstMatch &&
               (firstSiteUrl ? (
-                <button
-                  type="button"
-                  className="settings-pack-origin-link"
-                  title={firstMatch}
-                  aria-label={`${t("sitePacksOpenSite")}: ${firstSiteUrl}`}
-                  onClick={() => platform.openTab(firstSiteUrl)}>
-                  <span className="settings-pack-origin">{firstSiteUrl}</span>
-                  <ExternalLinkIcon size={12} />
-                </button>
+                <Tooltip content={firstMatch}>
+                  <button
+                    type="button"
+                    className="settings-pack-origin-link"
+                    aria-label={`${t("sitePacksOpenSite")}: ${firstSiteUrl}`}
+                    onClick={() => platform.openTab(firstSiteUrl)}>
+                    <span className="settings-pack-origin">{firstSiteUrl}</span>
+                    <ExternalLinkIcon size={12} />
+                  </button>
+                </Tooltip>
               ) : (
-                <code className="settings-pack-match" title={firstMatch}>
-                  {firstMatch}
-                </code>
+                <Tooltip
+                  content={firstMatch}
+                  showOnlyWhenTruncated
+                  triggerStyle={TRUNCATED_META_TRIGGER_STYLE}>
+                  <code className="settings-pack-match">{firstMatch}</code>
+                </Tooltip>
               ))}
             {isSelfHosted && <span>{t("sitePacksSelfHostedHint")}</span>}
             {view.availability === "incompatible" && (
@@ -1854,7 +1891,7 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
       </span>
       <span className="settings-pack-check-time">
         {t("remoteConfigLastCheckTime", {
-          time: formatCheckTime(lastCheckAt),
+          time: formatDateTime(lastCheckAt, getCurrentLocale()),
         })}
       </span>
     </span>
@@ -1939,14 +1976,7 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
               </div>
               <strong>{t("sitePacksNoInstalled")}</strong>
               <div className="settings-pack-empty-actions">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="primary"
-                  onClick={() => {
-                    setActiveTab(SITE_PACKS_TAB_IDS.UPDATES)
-                    setPendingLocateId("site-packs-registry")
-                  }}>
+                <Button type="button" size="sm" variant="primary" onClick={openRegistry}>
                   {t("sitePacksRegistryTitle")}
                 </Button>
                 <Button
@@ -2035,8 +2065,15 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
                   options={bindingPackOptions}
                   value={bindingPackId}
                   placeholder={t("sitePacksBindingPackPlaceholder")}
-                  emptyText={t("sitePacksBindingPackPlaceholder")}
-                  disabled={isBindingBusy || bindingPackOptions.length === 0}
+                  emptyText={
+                    <div className="settings-pack-select-empty">
+                      <span>{t("sitePacksNoInstalled")}</span>
+                      <Button type="button" size="sm" variant="primary" onClick={openRegistry}>
+                        {t("sitePacksRegistryTitle")}
+                      </Button>
+                    </div>
+                  }
+                  disabled={isBindingBusy || isInstalledLoading}
                   ariaLabel={t("sitePacksBindingPackLabel")}
                   onChange={setBindingPackId}
                 />
@@ -2094,22 +2131,87 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
 
       {activeTab === SITE_PACKS_TAB_IDS.UPDATES && (
         <>
+          {/* 更新状态条放在页首：开关、上次检查与立即检查不再被长列表压到页面底部。
+              首行只放开关和「立即检查」，状态与说明缩进排在开关文字下方，长语言下按钮也不会被挤到下一行 */}
+          <section
+            className="settings-card settings-pack-update-bar"
+            data-setting-id="remote-config-status">
+            <div className="settings-pack-update-bar-row">
+              <div
+                className="settings-pack-update-toggle"
+                data-setting-id="remote-config-auto-update">
+                <Switch
+                  size="sm"
+                  checked={settings.remoteConfig?.autoUpdate ?? true}
+                  ariaLabel={t("remoteConfigAutoUpdateLabel")}
+                  onChange={() =>
+                    updateNestedSetting(
+                      "remoteConfig",
+                      "autoUpdate",
+                      !(settings.remoteConfig?.autoUpdate ?? true),
+                    )
+                  }
+                />
+                <span>{t("remoteConfigAutoUpdateLabel")}</span>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                className="settings-pack-action-button"
+                data-setting-id="remote-config-check-now"
+                disabled={isRegistryBusy}
+                onClick={() => void refreshRegistry()}>
+                <RefreshIcon size={14} className={isCheckingRegistry ? "spinning" : ""} />
+                {isCheckingRegistry
+                  ? t("remoteConfigCheckingButton")
+                  : t("remoteConfigCheckNowButton")}
+              </Button>
+            </div>
+            <div className="settings-pack-update-details">
+              <div className="settings-pack-update-summary">
+                {registryStatusSummary}
+                <span className="settings-pack-update-cadence">
+                  {t("remoteConfigAutoUpdateDesc")}
+                </span>
+              </div>
+              <p className="settings-pack-update-note">{t("remoteConfigPrivacyDesc")}</p>
+            </div>
+          </section>
+
           <section className="settings-card" data-setting-id="site-packs-registry">
             <div className="settings-pack-section-head">
               <div className="settings-card-title">{t("sitePacksRegistryTitle")}</div>
-              {registryViews.length > 0 && (
-                <div className="settings-pack-search">
-                  <Input
-                    type="search"
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={registryQuery}
-                    placeholder={t("sitePacksRegistrySearchPlaceholder")}
-                    aria-label={t("sitePacksRegistrySearchPlaceholder")}
-                    onChange={(event) => setRegistryQuery(event.target.value)}
-                  />
-                </div>
-              )}
+              <div className="settings-pack-section-tools">
+                {registryViews.length > 0 && (
+                  <div className="settings-pack-search">
+                    <Input
+                      type="search"
+                      autoComplete="off"
+                      spellCheck={false}
+                      value={registryQuery}
+                      placeholder={t("sitePacksRegistrySearchPlaceholder")}
+                      aria-label={t("sitePacksRegistrySearchPlaceholder")}
+                      onChange={(event) => setRegistryQuery(event.target.value)}
+                    />
+                  </div>
+                )}
+                {/* 窄宽度时先压缩搜索框，导入按钮保持完整宽度 */}
+                <Tooltip content={t("sitePacksLocalImportDesc")} triggerStyle={{ flexShrink: 0 }}>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    className="settings-pack-action-button"
+                    data-setting-id="site-packs-local-import"
+                    data-site-pack-import-trigger="persistent"
+                    disabled={isImportBusy}
+                    onClick={(event) => openImportPicker(event.currentTarget)}>
+                    <ImportIcon size={14} />
+                    {t("importBtn")}
+                  </Button>
+                </Tooltip>
+              </div>
             </div>
 
             {registryError && (
@@ -2139,65 +2241,16 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
             )}
           </section>
 
-          <section
-            className="settings-card settings-pack-import-card"
-            data-setting-id="site-packs-local-import">
-            <div className="settings-pack-import-row">
-              <div className="settings-pack-icon" aria-hidden="true">
-                <ImportIcon size={20} />
-              </div>
-              <div className="settings-pack-import-text">
-                <div className="settings-card-title">{t("sitePacksLocalImportTitle")}</div>
-                <div className="settings-card-desc">{t("sitePacksLocalImportDesc")}</div>
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="settings-pack-action-button"
-                data-site-pack-import-trigger="persistent"
-                disabled={isImportBusy}
-                onClick={(event) => openImportPicker(event.currentTarget)}>
-                <ImportIcon size={14} />
-                {t("importBtn")}
-              </Button>
-            </div>
-          </section>
-
-          <section className="settings-card" data-setting-id="remote-config-status">
-            <div className="settings-card-title">{t("remoteConfigSettingsTitle")}</div>
-
-            <ToggleRow
-              label={t("remoteConfigAutoUpdateLabel")}
-              description={t("remoteConfigAutoUpdateDesc")}
-              settingId="remote-config-auto-update"
-              checked={settings.remoteConfig?.autoUpdate ?? true}
-              onChange={() =>
-                updateNestedSetting(
-                  "remoteConfig",
-                  "autoUpdate",
-                  !(settings.remoteConfig?.autoUpdate ?? true),
-                )
-              }
-            />
-
-            <SettingRow
-              label={t("remoteConfigCheckNowLabel")}
-              description={registryStatusSummary}
-              settingId="remote-config-check-now">
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="settings-pack-action-button"
-                disabled={isRegistryBusy}
-                onClick={() => void refreshRegistry()}>
-                <RefreshIcon size={14} className={isCheckingRegistry ? "spinning" : ""} />
-                {isCheckingRegistry
-                  ? t("remoteConfigCheckingButton")
-                  : t("remoteConfigCheckNowButton")}
-              </Button>
-            </SettingRow>
+          {/* 内置站点热修补丁是给贡献者用的，收进默认折叠的「高级」；收起时仍显示当前补丁状态 */}
+          <details className="settings-card settings-pack-advanced">
+            <summary className="settings-pack-advanced-summary">
+              <span className="settings-pack-advanced-title">{t("sitePacksAdvancedTitle")}</span>
+              <span className="settings-pack-advanced-status">
+                {activePatches.length > 0
+                  ? `${t("remoteConfigActivePatchesLabel")} · ${activePatches.length}`
+                  : t("remoteConfigUsingBuiltin")}
+              </span>
+            </summary>
 
             <div className="settings-pack-patches" data-setting-id="remote-config-active-patches">
               <div className="settings-pack-section-head">
@@ -2221,12 +2274,7 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
                   {t("remoteConfigLocalPatchImportButton")}
                 </Button>
               </div>
-              {activePatches.length === 0 ? (
-                <div className="settings-pack-patch-empty">
-                  <span className="settings-pack-patch-empty-dot" aria-hidden="true" />
-                  <span>{t("remoteConfigUsingBuiltin")}</span>
-                </div>
-              ) : (
+              {activePatches.length > 0 && (
                 <div className="settings-pack-list">
                   {activePatches.map((patch) => (
                     <div className="settings-pack-item" key={`${patch.source}:${patch.siteId}`}>
@@ -2242,17 +2290,13 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
                           </span>
                         </div>
                         <div className="settings-pack-meta">
-                          <span
-                            className="settings-pack-version"
-                            title={t("remoteConfigPatchVersionLabel")}>
-                            v{patch.patchVersion}
-                          </span>
+                          <Tooltip content={t("remoteConfigPatchVersionLabel")}>
+                            <span className="settings-pack-version">v{patch.patchVersion}</span>
+                          </Tooltip>
                           <span>
                             {t("remoteConfigBaseVersionLabel")} {patch.baseConfigVersion}
                           </span>
-                          {patch.fileName ? (
-                            <span title={patch.fileName}>{patch.fileName}</span>
-                          ) : null}
+                          {patch.fileName ? <span>{patch.fileName}</span> : null}
                         </div>
                       </div>
                       <div className="settings-pack-controls">
@@ -2290,130 +2334,121 @@ const SitePacksPage: React.FC<SitePacksPageProps> = ({ initialTab }) => {
                 </div>
               )}
             </div>
+          </details>
 
-            <div className="settings-pack-privacy-note">
-              <InfoIcon size={13} aria-hidden="true" />
-              <span>{t("remoteConfigPrivacyDesc")}</span>
+          <section
+            className="settings-card settings-pack-dev-card"
+            data-setting-id="remote-config-registry-source">
+            <div className="settings-pack-dev-head">
+              <label className="settings-card-title" htmlFor="remote-config-registry-source-input">
+                {t("remoteConfigRegistrySourceLabel")}
+              </label>
+              <span className="settings-pack-badge warning">DEV</span>
             </div>
-          </section>
+            <p className="settings-pack-source-desc">{t("remoteConfigRegistrySourceDesc")}</p>
 
-          {IS_DEVELOPMENT_BUILD && (
-            <section
-              className="settings-card settings-pack-dev-card"
-              data-setting-id="remote-config-registry-source">
-              <div className="settings-pack-dev-head">
-                <label
-                  className="settings-card-title"
-                  htmlFor="remote-config-registry-source-input">
-                  {t("remoteConfigRegistrySourceLabel")}
-                </label>
-                <span className="settings-pack-badge warning">DEV</span>
-              </div>
-              <p className="settings-pack-source-desc">{t("remoteConfigRegistrySourceDesc")}</p>
-
-              <div className="settings-pack-dev-status-row">
-                <span className="settings-pack-dev-status-label">
-                  {t("remoteConfigRegistryActiveSourceLabel")}:
+            <div className="settings-pack-dev-status-row">
+              <span className="settings-pack-dev-status-label">
+                {t("remoteConfigRegistryActiveSourceLabel")}:
+              </span>
+              <code className="settings-pack-dev-status-code">
+                {remoteState?.active?.sourceUrl ?? t("remoteConfigRegistryActiveSourceDefault")}
+              </code>
+              {remoteState?.active?.index.registryRevision !== undefined && (
+                <span className="settings-pack-badge success">
+                  rev {remoteState.active.index.registryRevision}
                 </span>
-                <code className="settings-pack-dev-status-code">
-                  {remoteState?.active?.sourceUrl ?? t("remoteConfigRegistryActiveSourceDefault")}
-                </code>
-                {remoteState?.active?.index.registryRevision !== undefined && (
-                  <span className="settings-pack-badge success">
-                    rev {remoteState.active.index.registryRevision}
-                  </span>
-                )}
-                {configuredRegistrySource && (
-                  <span className="settings-pack-badge warning">
-                    {t("remoteConfigRegistryOverrideLabel")}
-                  </span>
-                )}
-              </div>
-
-              {remoteState?.lastError?.message && (
-                <div className="settings-pack-dev-error-box" role="status">
-                  <span className="settings-pack-dev-error-indicator" aria-hidden="true" />
-                  <span>
-                    <strong>{t("remoteConfigRegistryLastErrorLabel")}:</strong>{" "}
-                    {remoteState.lastError.message}
-                  </span>
-                </div>
               )}
-
-              <div className="settings-pack-source-controls">
-                <div className="settings-pack-source-input-row">
-                  <Input
-                    id="remote-config-registry-source-input"
-                    type="text"
-                    inputMode="url"
-                    autoComplete="off"
-                    spellCheck={false}
-                    value={registrySourceInput}
-                    placeholder={t("remoteConfigRegistrySourcePlaceholder")}
-                    aria-invalid={registrySourceError ? "true" : undefined}
-                    disabled={isRegistryBusy}
-                    onChange={(event) => {
-                      setRegistrySourceInput(event.target.value)
-                      setRegistrySourceError(null)
-                    }}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="settings-pack-action-button settings-pack-source-apply"
-                    disabled={
-                      isRegistryBusy ||
-                      (registrySourceInput.trim() === configuredRegistrySource &&
-                        !isReapplyableLoopbackRegistrySource(registrySourceInput))
-                    }
-                    onClick={() => void handleApplyRegistrySource({ forceCheck: true })}>
-                    {t("remoteConfigRegistrySourceApplyButton")}
-                  </Button>
-                </div>
-                <div className="settings-pack-source-actions">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="settings-pack-action-button"
-                    disabled={isRegistryBusy}
-                    onClick={() => void handleUseLocalRegistrySource()}>
-                    {t("remoteConfigLocalRegistryUseButton")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="settings-pack-action-button"
-                    disabled={isRegistryBusy}
-                    onClick={() => void handleRestoreDefaultRegistrySource()}>
-                    {t("remoteConfigRegistryRestoreDefaultsButton")}
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="settings-pack-action-button"
-                    disabled={isRegistryBusy || (!remoteState?.active && !remoteState?.lastError)}
-                    onClick={() => void handleClearRegistryCache()}>
-                    {t("remoteConfigRegistryCacheClearButton")}
-                  </Button>
-                </div>
-              </div>
-              <p className="settings-pack-source-desc settings-pack-source-hint">
-                {t("remoteConfigLocalRegistryHint", {
-                  button: t("remoteConfigLocalRegistryUseButton"),
-                })}
-              </p>
-              {registrySourceError && (
-                <div className="settings-pack-dev-error-box" role="alert">
-                  <span className="settings-pack-dev-error-indicator" aria-hidden="true" />
-                  <span>{registrySourceError}</span>
-                </div>
+              {configuredRegistrySource && (
+                <span className="settings-pack-badge warning">
+                  {t("remoteConfigRegistryOverrideLabel")}
+                </span>
               )}
-            </section>
-          )}
+            </div>
+
+            {remoteState?.lastError?.message && (
+              <div className="settings-pack-dev-error-box" role="status">
+                <span className="settings-pack-dev-error-indicator" aria-hidden="true" />
+                <span>
+                  <strong>{t("remoteConfigRegistryLastErrorLabel")}:</strong>{" "}
+                  {remoteState.lastError.message}
+                </span>
+              </div>
+            )}
+
+            <div className="settings-pack-source-controls">
+              <div className="settings-pack-source-input-row">
+                <Input
+                  id="remote-config-registry-source-input"
+                  type="text"
+                  inputMode="url"
+                  autoComplete="off"
+                  spellCheck={false}
+                  value={registrySourceInput}
+                  placeholder={t("remoteConfigRegistrySourcePlaceholder")}
+                  aria-invalid={registrySourceError ? "true" : undefined}
+                  disabled={isRegistryBusy}
+                  onChange={(event) => {
+                    setRegistrySourceInput(event.target.value)
+                    setRegistrySourceError(null)
+                  }}
+                />
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="settings-pack-action-button settings-pack-source-apply"
+                  disabled={
+                    isRegistryBusy ||
+                    (registrySourceInput.trim() === configuredRegistrySource &&
+                      !isReapplyableLoopbackRegistrySource(registrySourceInput))
+                  }
+                  onClick={() => void handleApplyRegistrySource({ forceCheck: true })}>
+                  {t("remoteConfigRegistrySourceApplyButton")}
+                </Button>
+              </div>
+              <div className="settings-pack-source-actions">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="settings-pack-action-button"
+                  disabled={isRegistryBusy}
+                  onClick={() => void handleUseLocalRegistrySource()}>
+                  {t("remoteConfigLocalRegistryUseButton")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="settings-pack-action-button"
+                  disabled={isRegistryBusy}
+                  onClick={() => void handleRestoreDefaultRegistrySource()}>
+                  {t("remoteConfigRegistryRestoreDefaultsButton")}
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  className="settings-pack-action-button"
+                  disabled={isRegistryBusy || (!remoteState?.active && !remoteState?.lastError)}
+                  onClick={() => void handleClearRegistryCache()}>
+                  {t("remoteConfigRegistryCacheClearButton")}
+                </Button>
+              </div>
+            </div>
+            <p className="settings-pack-source-desc settings-pack-source-hint">
+              {t("remoteConfigLocalRegistryHint", {
+                button: t("remoteConfigLocalRegistryUseButton"),
+              })}
+            </p>
+            {registrySourceError && (
+              <div className="settings-pack-dev-error-box" role="alert">
+                <span className="settings-pack-dev-error-indicator" aria-hidden="true" />
+                <span>{registrySourceError}</span>
+              </div>
+            )}
+          </section>
         </>
       )}
 

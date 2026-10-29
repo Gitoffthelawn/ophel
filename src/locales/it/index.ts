@@ -31,16 +31,16 @@ export const it = {
   navPermissions: "Autorizzazioni",
   navBackup: "Dati e autorizzazioni",
   navAbout: "Informazioni",
+  navBack: "Indietro",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Configura layout di pagina, blocco modello e funzioni specifiche per sito",
   siteSelectorLabel: "Sito da configurare",
-  siteSettingsOtherSiteToast:
+  siteSettingsOtherSiteHint:
     "Modifica delle impostazioni di {site}; le modifiche non influiscono sul sito corrente",
   currentSiteBadge: "Sito corrente",
   siteExclusiveSettingsLabel: "Specifiche del sito",
-  noSiteExclusiveSettings: "Nessuna impostazione specifica per questo sito",
   communitySitePackBadge: "Pacchetto della community (funzioni principali)",
   communitySitePackDesc:
     "Questo sito è supportato da un pacchetto della community. Vengono mostrate solo le funzioni che supporta.",
@@ -59,7 +59,6 @@ export const it = {
   sitePacksTabBuiltin: "Siti integrati",
   builtinSitesDesc:
     "Gestisci dove Ophel è attivo sui siti AI integrati. Una volta disattivato, il pannello e tutte le funzionalità non vengono più caricati su quel sito; ricarica le pagine aperte per applicare completamente la modifica",
-  builtinSiteBadge: "Integrato",
   builtinSiteCurrentBadge: "Sito attuale",
   builtinSiteEnabledToast: "{site} riattivato",
   builtinSiteDisabledToast:
@@ -127,7 +126,7 @@ export const it = {
   sitePacksCustomOriginsTitle: "Aggiungi un sito personalizzato",
   sitePacksCustomOriginsDesc:
     "Aggiungi il tuo sito di IA self-hosted (ad es. Open WebUI) e scegli quale pacchetto lo supporta.",
-  sitePacksCustomOriginLabel: "Origine HTTPS",
+  sitePacksCustomOriginLabel: "Indirizzo del sito",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "Pacchetto",
   sitePacksBindingPackPlaceholder: "Scegli un pack installato",
@@ -240,7 +239,6 @@ export const it = {
   userQueryWidthSettings: "Larghezza query utente",
   scrollSettings: "Scorri Impostazioni",
   contentProcessing: "Elaborazione dei contenuti",
-  contentProcessingDesc: "Configura il modo in cui vengono elaborate le risposte dell'IA",
   interactionEnhance: "Miglioramenti dell'interazione",
   interactionEnhanceDesc: "Migliora le interazioni tra formule e tabelle",
   exportSettings: "Impostazioni di esportazione",
@@ -278,6 +276,7 @@ export const it = {
   githubRepository: "Archivio GitHub",
   communityAndSupport: "Comunità e supporto",
   rateAndReview: "Ti piace Ophel?",
+  rateAndReviewAction: "Valuta Ophel",
   rateDesc:
     "Se ti piace usare Ophel, ti preghiamo di darci una valutazione a 5 stelle! Ci aiuta molto.",
   chromeStore: "Chrome Negozio",
@@ -416,12 +415,16 @@ export const it = {
   confirm: "Conferma",
   export: "Esporta",
   clear: "Chiaro",
+  more: "Altro",
+  default: "Predefinito",
+  unknown: "Sconosciuto",
+  settingsTabsScrollLeft: "Scorri le schede a sinistra",
+  settingsTabsScrollRight: "Scorri le schede a destra",
   error: "Errore",
   operationFailed: "Operazione fallita",
   deleteSuccess: "Eliminato con successo",
   deleteError: "Eliminazione non riuscita",
   loadFailed: "Caricamento non riuscito",
-  selectFileOrPasteFirst: "Seleziona prima un file o incolla il contenuto",
   restoreError: "Ripristino non riuscito",
   backupRestoreConfirmMsg:
     'Ripristinare il backup "{name}"? I dati correnti verranno sovrascritti e le pagine AI aperte verranno aggiornate.',
@@ -429,16 +432,14 @@ export const it = {
     'Eliminare il backup nel cloud "{name}"? Questa azione è irreversibile.',
   insertFailed: "Inserimento non riuscito",
   maximize: "Massimizzare",
-  browse: "Sfoglia...",
   clearAllData: "Cancella tutti i dati",
   clearAllDataDesc:
-    "Attenzione: questa operazione rimuoverà tutte le impostazioni locali, i messaggi e le conversazioni.",
+    "Elimina definitivamente tutte le impostazioni, i suggerimenti e le chat locali.",
   clearAllDataConfirm:
     "Sei sicuro di voler cancellare tutti i dati? Il funzionamento è irreversibile e tutte le impostazioni, i messaggi e le conversazioni verranno eliminati!",
   clearSuccess: "Dati cancellati, aggiornamento...",
   defaultDir: "Directory predefinita",
   dangerZone: "Zona pericolosa",
-  dangerZoneDesc: "Operazioni distruttive (irreversibili)",
   anchorPoint: "Ancora",
   updateAnchor: "Aggiorna ancoraggio",
   goToAnchor: "Ritorno all'ancora",
@@ -654,7 +655,7 @@ export const it = {
   geminiMystuffLocateFailed: "Posizione della conversazione originale non trovata",
 
   userQueryWidthDesc:
-    "Regola la larghezza massima del contenitore dei fumetti delle query degli utenti (per sito)",
+    "Regola la larghezza massima del contenitore dei fumetti delle query degli utenti",
   // Category management
   categoryManage: "Gestione delle categorie",
   categoryEmpty:
@@ -783,6 +784,7 @@ export const it = {
   exportStyleCleanOption: "Usa stile pulito (senza emoji decorativi)",
   exportImageAlt: "Immagine",
   exportShowIndexJsonUnsupported: "La numerazione non è supportata nell'esportazione JSON",
+  exportOptionsOutlineCopyHint: "Copia contorno non usa queste opzioni",
   exportMarkdownDividerLabel: "Separatore Markdown",
   exportMarkdownDividerDesc:
     "Separatore personalizzato tra i messaggi nel Markdown esportato (predefinito: ---)",
@@ -827,11 +829,9 @@ export const it = {
   pageWidthLabel: "Larghezza della pagina",
   pageWidthValueLabel: "Valore larghezza",
   pageWidthDesc:
-    "Regola la larghezza della pagina della chat in tempo reale (configurata per sito). Quando l'evitamento intelligente è attivo, la larghezza effettiva può essere limitata dall'area sicura del pannello.",
-  enablePageWidth: "Abilita l'ampliamento della pagina",
+    "Regola la larghezza della pagina della chat in tempo reale. Quando l'evitamento intelligente è attivo, la larghezza effettiva può essere limitata dall'area sicura del pannello.",
   panelAvoidanceTitle: "Evitamento intelligente",
   betaBadge: "Beta",
-  panelAvoidanceLabel: "Evita il pannello Ophel",
   panelAvoidanceDesc:
     "Regola automaticamente l'area dei contenuti del sito corrente mentre il pannello è aperto; disattivato sugli schermi stretti.",
   widthValue: "Valore larghezza",
@@ -842,7 +842,6 @@ export const it = {
   unitPercent: "Percentuale (%)",
 
   // User Query Width Settings
-  enableUserQueryWidth: "Abilita l'ampliamento delle query utente",
   enableUserQueryWidthDesc:
     "Regola la larghezza massima dei contenitori dei fumetti delle query degli utenti",
   userQueryWidthValueLabel: "Larghezza della query",
@@ -1182,9 +1181,8 @@ export const it = {
   segmentedExportSearchPlaceholder: "Cerca segmenti...",
   segmentedExportRangePlaceholder: "per esempio. 1-3, 8",
   segmentedExportApplyRange: "Applica intervallo",
-  segmentedExportSelectVisible: "Seleziona visibile",
-  segmentedExportClearVisible: "Chiaramente visibile",
-  segmentedExportInvertVisible: "Inverti visibile",
+  segmentedExportSelectAll: "Seleziona tutto",
+  segmentedExportInvert: "Inverti",
   segmentedExportNoMatches: "Nessun segmento corrispondente",
   segmentedExportSelected: "{selected} / {total} selezionati",
   segmentedExportModeZip: "ZIP (uno Markdown per segmento)",
@@ -1314,7 +1312,7 @@ export const it = {
   webdavUploadBtn: "Carica",
   webdavDownloadBtn: "Scarica",
   webdavDownloadConfirm: "Il download sovrascriverà i dati correnti. Continuare?",
-  webdavLastSync: "Ultima sincronizzazione",
+  webdavLastSync: "Ultima sincronizzazione: {time}",
   webdavConnectionSuccess: "Connessione riuscita",
   webdavUploadSuccess: "Caricamento riuscito",
   webdavDownloadSuccess: "Download riuscito", // Modified from "Download successful, refreshing page"
@@ -1337,16 +1335,28 @@ export const it = {
   importDataDesc: "Ripristina i dati dal file di backup",
 
   fullBackup: "Backup completo",
-  fullBackupDesc: "Esporta tutti i dati e le impostazioni dell'account. Raccomandato.",
+  fullBackupDesc: "Esporta tutti i dati e le impostazioni dell'account.",
   promptsBackup: "Solo suggerimenti",
   promptsBackupDesc: "Esporta solo la libreria dei prompt (senza tag/cartelle)",
   settingsBackup: "Solo impostazioni",
   settingsBackupDesc: "Esporta solo le impostazioni e le preferenze dell'interfaccia utente",
 
-  selectFile: "Seleziona File",
   noFileSelected: "Nessun file selezionato",
-  dataPreview: "Anteprima dei dati",
-  pastePlaceholder: "Incolla i dati JSON o importali tramite il selettore file sopra...",
+  pastePlaceholder: "Incolla qui il JSON del backup…",
+  recommendedBadge: "Consigliato",
+  backupDropZoneTitle: "Trascina qui un file di backup o fai clic per sceglierlo",
+  backupDropZoneHint: "Supporta i backup JSON esportati da Ophel",
+  backupPasteJson: "Incolla JSON",
+  backupPastedSource: "JSON incollato",
+  backupSummaryContents: "Contenuto",
+  backupContentSettings: "Impostazioni",
+  backupContentPrompts: "Suggerimenti",
+  backupContentConversations: "Chat e cartelle",
+  backupContentReadingHistory: "Cronologia di lettura",
+  backupContentBookmarks: "Preferiti",
+  backupContentClaudeKeys: "Chiavi di sessione Claude",
+  backupContentUsage: "Statistiche di utilizzo",
+  backupContentSitePacks: "Pacchetti sito",
   importBtn: "Importa",
 
   webdavConfig: "Configurazione WebDAV",
@@ -1374,6 +1384,11 @@ export const it = {
   backupManagement: "Gestione del backup",
   backupNow: "Esegui il backup ora",
   defaultDirHint: "Predefinito: ophel",
+  showPassword: "Mostra password",
+  hidePassword: "Nascondi password",
+  webdavTesting: "Verifica in corso…",
+  webdavUploading: "Backup in corso…",
+  webdavNeverSynced: "Non ancora sincronizzato",
   unsavedChanges: "Non salvato",
   restore: "Ripristina",
   localBackup: "Backup locale",
@@ -1438,7 +1453,7 @@ export const it = {
   resetShortcuts: "Ripristina le impostazioni predefinite",
   resetShortcutsConfirm:
     "Sei sicuro di voler reimpostare tutte le scorciatoie sui valori predefiniti?",
-  pressAnyKey: "Premere un tasto qualsiasi...",
+  pressAnyKey: "Premi i tasti · Esc per annullare",
   shortcutConflict: 'Conflitti con "{name}"',
   globalShortcutsTitle: "Scorciatoie globali",
   globalShortcutsDesc:
@@ -1551,13 +1566,12 @@ export const it = {
   modelSelectorNotFound: "Selettore del modello non trovato",
 
   // ======== Claude Session Key Management ========
-  geminiSettingsTab: "Gemini Esclusivo",
   claudeSessionKeyTitle: "Gestione delle chiavi di sessione",
   claudeSessionKeyDesc: "Gestisci e cambia i tuoi account Claude",
   claudeCurrentUsing: "Corrente:",
   claudeNoKeySelected: "Nessuno: aggiungi o importa una chiave di sessione",
-  claudePleaseAddKey: "Aggiungi prima una chiave di sessione",
   claudeAddKey: "Aggiungi",
+  claudeKeyNameLabel: "Nome",
   claudeImportFromBrowser: "Importa dal browser",
   claudeImportJSON: "Importa JSON",
   claudeExportJSON: "Esporta JSON",
@@ -1572,7 +1586,6 @@ export const it = {
   claudeKeyDelete: "Elimina",
   claudeKeyCopied: "Copiato negli appunti",
   claudeKeyCopyFailed: "Copia non riuscita",
-  claudeKeyDoubleTapCopy: "Fare doppio clic per copiare la chiave completa",
   claudeCopyKey: "Copia chiave di sessione",
   claudeCopied: "Copiato",
   claudeAlreadyUsing: "Stai già utilizzando questa chiave di sessione",
@@ -1583,7 +1596,6 @@ export const it = {
   claudeKeyDeleted: "Eliminato",
   claudeKeyTesting: "Test",
   claudeGenerating: "L'intelligenza artificiale sta generando, riprova più tardi",
-  claudeAddKeyNameTitle: "Aggiungi chiave di sessione: inserisci nome",
   claudeAddKeyNamePlaceholder: "ad esempio, Account principale, Backup",
   claudeAddKeyValueTitle: "Aggiungi chiave di sessione: inserisci chiave",
   claudeAddKeyValuePlaceholder: "sk-ant-sid01-...",
@@ -1616,9 +1628,6 @@ export const it = {
   restoreSuccess: "Ripristino riuscito, la pagina si aggiornerà...",
 
   // ======== AI Studio Settings ========
-  aistudioSettingsTitle: "Impostazioni AI Studio",
-  aistudioSettingsDesc:
-    "Configura il comportamento predefinito al caricamento della pagina AI Studio",
   aistudioDefaultModel: "Modello predefinito",
   aistudioDefaultModelNone: "Non specificato (utilizza l'impostazione predefinita del sistema)",
   aistudioDefaultModelCustom: "ID modello personalizzato...",
@@ -1648,8 +1657,6 @@ export const it = {
   aistudioModelsError: "Impossibile recuperare l'elenco dei modelli",
 
   // ======== ChatGPT Settings ========
-  chatgptSettingsTitle: "ChatGPT Impostazioni",
-  chatgptSettingsDesc: "Configura il comportamento predefinito per la pagina ChatGPT",
   chatgptMarkdownFixLabel: "Markdown Correzione audace",
   chatgptMarkdownFixDesc:
     "Correzione del testo in **grassetto** non visualizzato nelle risposte ChatGPT",
@@ -1859,21 +1866,18 @@ export const it = {
   queueBatchImportSuccess: "Aggiunti i prompt {count} alla coda",
   queueBatchImportEmpty: "Nessuna richiesta disponibile da aggiungere",
   zenModeTitle: "Zen Mode",
-  zenModeLabel: "Abilita Zen Mode",
   zenModeDesc:
-    "Nascondi la barra laterale e gli elementi di navigazione per concentrarti sulla conversazione corrente (configurata in modo indipendente per ciascun sito)",
+    "Nascondi la barra laterale e gli elementi di navigazione per concentrarti sulla conversazione corrente",
   zenModeExitButton: "Esci da Zen Mode",
   zenModeExitButtonVisibleLabel: "Mostra il pulsante di uscita",
   zenModeExitButtonVisibleDesc:
     "Quando è disattivato, il pulsante Esci Zen Mode sulla pagina è nascosto; puoi comunque uscire da Zen Mode dal pulsante rapido o dalla scorciatoia.",
   cleanModeTitle: "Modalità pulita",
-  cleanModeLabel: "Abilita la modalità pulita",
   cleanModeDesc:
-    "Nascondi disclaimer, annunci, pulsanti di download e altri elementi inutili per un'interfaccia più pulita (configurata in modo indipendente per ciascun sito)",
+    "Nascondi disclaimer, annunci, pulsanti di download e altri elementi inutili per un'interfaccia più pulita",
   autoHideInputTitle: "Nascondi automaticamente l'input",
-  autoHideInputLabel: "Comprimi automaticamente l'input quando inattivo",
   autoHideInputDesc:
-    "Comprime e nasconde la casella di input quando il cursore si allontana e non c'è testo in bozza; si espande al passaggio del mouse o al focus (configurato per sito)",
+    "Comprime e nasconde la casella di input quando il cursore si allontana e non c'è testo in bozza; si espande al passaggio del mouse o al focus",
   extensionUpdateNoticeKicker: "Estensione aggiornata",
   extensionUpdateNotice:
     "Ophel Atlas è stato aggiornato. Ricarica questa pagina per continuare a utilizzare la versione più recente.",
@@ -1942,7 +1946,7 @@ export const it = {
   remoteConfigAutoUpdateDesc: "Controlla al massimo una volta ogni 24 ore.",
   remoteConfigRegistrySourceLabel: "Sorgente Registry di sviluppo",
   remoteConfigRegistrySourceDesc:
-    "Disponibile solo nelle build di sviluppo. Inserisci un URL completo di index.json; lascia vuoto per usare le sorgenti predefinite.",
+    "Inserisci un URL completo di index.json; lascia vuoto per usare le sorgenti predefinite.",
   remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
   remoteConfigRegistrySourceApplyButton: "Applica",
   remoteConfigRegistrySourceApplied:
@@ -1962,6 +1966,7 @@ export const it = {
   remoteConfigResettingButton: "Ripristino…",
   remoteConfigPrivacyDesc:
     "I controlli inviano solo richieste GET a CDN statiche, senza conversazioni né dati dell'account.",
+  sitePacksAdvancedTitle: "Avanzate",
   remoteConfigCheckUpdated:
     "Sono state scaricate nuove configurazioni. Aggiorna le pagine AI corrispondenti per applicarle.",
   remoteConfigCheckUpToDate: "Le configurazioni degli adattatori sono aggiornate.",
@@ -1983,7 +1988,7 @@ export const it = {
     "Controllo registry locale non riuscito ({url}): {error}. Verifica che pnpm registry:serve sia in esecuzione.",
   remoteConfigLocalRegistryUseButton: "Usa registry locale",
   remoteConfigLocalRegistryHint:
-    "Esegui prima pnpm registry:serve, poi premi “{button}”. Solo le build di sviluppo si fidano della chiave di firma locale.",
+    "Esegui prima pnpm registry:serve, poi premi “{button}”. Le sorgenti loopback (127.0.0.1 / localhost) si fidano della chiave di firma locale in tutte le build.",
   remoteConfigLocalRegistrySourceApplied:
     "Passato all’origine registry locale e avviato il controllo aggiornamenti.",
   remoteConfigLocalRegistryPermissionDenied:

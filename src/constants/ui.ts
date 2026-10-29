@@ -30,6 +30,15 @@ export const TAB_IDS = {
 
 export type TabId = (typeof TAB_IDS)[keyof typeof TAB_IDS]
 
+// ==================== 输入方式与窄屏 ====================
+// 触屏为主要输入：没有悬停、指针粗。悬停展开、拖拽吸附等鼠标交互在这里要换成点按
+export const TOUCH_INPUT_MEDIA_QUERY = "(hover: none) and (pointer: coarse)"
+// 触屏下面板改为侧边抽屉的视口上限；与页面避让的最小视口宽度（768px）一致，
+// 窄于此页面无法为面板让位，面板只能临时盖在页面上
+export const PANEL_DRAWER_MEDIA_QUERY = "(max-width: 767px)"
+// 设置弹窗与 Options 页改为全屏单栏、两级导航的视口上限
+export const SETTINGS_COMPACT_MEDIA_QUERY = "(max-width: 640px)"
+
 // ==================== Settings Navigation IDs ====================
 export const NAV_IDS = {
   GENERAL: "general",
@@ -145,8 +154,6 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     subTab: FEATURES_TAB_IDS.GLOBAL_SEARCH,
   },
   // 站点设置页已无 tab 结构：站点即二级维度，subTab 直接承载站点 id
-  "subtab-site-settings-layout": { page: NAV_IDS.SITE_SETTINGS },
-  "subtab-site-settings-model-lock": { page: NAV_IDS.SITE_SETTINGS },
   "subtab-site-settings-gemini": { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini" },
   "subtab-site-settings-aistudio": { page: NAV_IDS.SITE_SETTINGS, subTab: "aistudio" },
   "subtab-site-settings-chatgpt": { page: NAV_IDS.SITE_SETTINGS, subTab: "chatgpt" },
@@ -220,8 +227,6 @@ export const SETTING_ID_ROUTE_MAP: Record<string, SettingRoute> = {
     subTab: FEATURES_TAB_IDS.READING_HISTORY,
   },
   "content-interaction-card": { page: NAV_IDS.FEATURES, subTab: FEATURES_TAB_IDS.CONTENT },
-  "layout-clean-mode-card": { page: NAV_IDS.SITE_SETTINGS },
-  "layout-auto-hide-input-card": { page: NAV_IDS.SITE_SETTINGS },
   "backup-export-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "backup-import-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
   "backup-reset-card": { page: NAV_IDS.BACKUP, subTab: BACKUP_TAB_IDS.LOCAL },
@@ -406,6 +411,7 @@ const SETTING_ID_ROUTE_RULES: SettingRouteRule[] = [
   { prefix: "shortcuts-", route: { page: NAV_IDS.SHORTCUTS } },
   { prefix: "shortcut-binding-", route: { page: NAV_IDS.SHORTCUTS } },
   { prefix: "layout-", route: { page: NAV_IDS.SITE_SETTINGS } },
+  { prefix: "site-settings-", route: { page: NAV_IDS.SITE_SETTINGS } },
   { prefix: "gemini-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "gemini" } },
   { prefix: "aistudio-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "aistudio" } },
   { prefix: "chatgpt-", route: { page: NAV_IDS.SITE_SETTINGS, subTab: "chatgpt" } },
@@ -639,6 +645,7 @@ const PAGE_TAB_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
       "布局",
       "宽度",
       "模型锁定",
+      "专属设置",
       "gemini",
       "chatgpt",
       "claude",
@@ -877,26 +884,6 @@ const SUB_TAB_SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
     ],
   },
   // 站点设置
-  {
-    settingId: "subtab-site-settings-layout",
-    title: "页面布局",
-    keywords: [
-      "layout",
-      "width",
-      "zen mode",
-      "clean mode",
-      "布局",
-      "页面宽度",
-      "用户问题宽度",
-      "禅模式",
-      "净化模式",
-    ],
-  },
-  {
-    settingId: "subtab-site-settings-model-lock",
-    title: "模型锁定",
-    keywords: ["model lock", "lock", "模型锁定", "锁定模型", "默认模型"],
-  },
   {
     settingId: "subtab-site-settings-gemini",
     title: "Gemini",
@@ -1169,35 +1156,16 @@ const SETTING_CARD_SEARCH_ITEMS: SettingsSearchItem[] = [
       "图表渲染",
     ],
   },
+  // 站点设置页的分组锚点：每个分组一张卡，具体设置项见下方的行级条目
   {
-    settingId: "layout-panel-avoidance-card",
-    title: "面板避让设置",
-    keywords: ["panel avoidance", "avoidance", "面板避让", "避让侧边栏", "防遮挡"],
+    settingId: "site-settings-layout",
+    title: "页面布局",
+    keywords: ["page layout", "layout", "页面布局", "布局"],
   },
   {
-    settingId: "layout-page-width-card",
-    title: "页面宽度设置",
-    keywords: ["page width", "layout", "页面宽度", "自适应宽度", "页面布局"],
-  },
-  {
-    settingId: "layout-user-query-width-card",
-    title: "用户问题宽度设置",
-    keywords: ["user query width", "query width", "用户问题宽度", "提问宽度", "输入宽度"],
-  },
-  {
-    settingId: "layout-zen-mode-card",
-    title: "禅模式设置",
-    keywords: ["zen mode", "distraction free", "禅模式", "专注模式", "无干扰"],
-  },
-  {
-    settingId: "layout-clean-mode-card",
-    title: "净化模式设置",
-    keywords: ["clean mode", "distraction free", "净化模式", "隐藏侧栏", "去杂质"],
-  },
-  {
-    settingId: "layout-auto-hide-input-card",
-    title: "自动隐藏输入框设置",
-    keywords: ["auto hide input", "collapse input", "自动隐藏输入框", "折叠输入框", "输入框收合"],
+    settingId: "site-settings-model-lock",
+    title: "模型锁定",
+    keywords: ["model lock", "lock", "模型锁定", "锁定模型", "默认模型"],
   },
   {
     settingId: "gemini-settings-card",
@@ -1247,7 +1215,19 @@ const SETTING_CARD_SEARCH_ITEMS: SettingsSearchItem[] = [
   {
     settingId: "site-pack-custom-origin",
     title: "自定义域名覆盖",
-    keywords: ["custom origin", "domains", "自定义域名", "域名覆盖", "绑定"],
+    keywords: [
+      "custom origin",
+      "custom site",
+      "site address",
+      "domains",
+      "http",
+      "https",
+      "自定义域名",
+      "自定义站点",
+      "站点地址",
+      "域名覆盖",
+      "绑定",
+    ],
   },
   {
     settingId: "backup-export-card",
@@ -1388,13 +1368,31 @@ const ADDITIONAL_SETTING_SEARCH_ITEMS: SettingsSearchItem[] = [
   },
   {
     settingId: "layout-clean-mode-enabled",
-    title: "开启净化模式",
-    keywords: ["clean mode", "distraction free", "净化模式", "去杂质", "纯净模式"],
+    title: "净化模式",
+    keywords: [
+      "clean mode",
+      "distraction free",
+      "disclaimer",
+      "净化模式",
+      "去杂质",
+      "纯净模式",
+      "隐藏侧栏",
+      "免责声明",
+      "去广告",
+    ],
   },
   {
     settingId: "layout-auto-hide-input-enabled",
-    title: "开启自动隐藏输入框",
-    keywords: ["auto hide input", "collapse input", "自动隐藏", "折叠输入框", "闲置隐藏"],
+    title: "自动隐藏输入框",
+    keywords: [
+      "auto hide input",
+      "collapse input",
+      "自动隐藏输入框",
+      "自动隐藏",
+      "折叠输入框",
+      "输入框收合",
+      "闲置隐藏",
+    ],
   },
   {
     settingId: "chatgpt-code-block-batch-mount",
@@ -1881,8 +1879,8 @@ export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
   },
   {
     settingId: "layout-page-width-enabled",
-    title: "页面宽度覆盖",
-    keywords: ["layout", "page width", "页面宽度"],
+    title: "页面宽度控制",
+    keywords: ["layout", "page width", "页面宽度", "页面加宽", "加宽", "自适应宽度", "宽屏"],
   },
   {
     settingId: "layout-page-width-value",
@@ -1891,13 +1889,33 @@ export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
   },
   {
     settingId: "layout-panel-avoidance-enabled",
-    title: "智能避让 Ophel 面板",
-    keywords: ["layout", "panel avoidance", "smart layout", "遮挡", "避让", "面板"],
+    title: "智能避让",
+    keywords: [
+      "layout",
+      "panel avoidance",
+      "avoidance",
+      "smart layout",
+      "智能避让",
+      "面板避让",
+      "避让侧边栏",
+      "防遮挡",
+      "遮挡",
+      "避让",
+      "面板",
+    ],
   },
   {
     settingId: "layout-user-query-width-enabled",
-    title: "用户问题宽度覆盖",
-    keywords: ["layout", "user query width", "提问宽度"],
+    title: "用户问题宽度",
+    keywords: [
+      "layout",
+      "user query width",
+      "query width",
+      "用户问题宽度",
+      "用户问题加宽",
+      "提问宽度",
+      "输入宽度",
+    ],
   },
   {
     settingId: "layout-user-query-width-value",
@@ -1906,8 +1924,19 @@ export const SETTINGS_SEARCH_ITEMS: SettingsSearchItem[] = [
   },
   {
     settingId: "layout-zen-mode-enabled",
-    title: "布局：启用禅模式 (Zen Mode)",
-    keywords: ["layout", "zen mode", "禅模式", "disclaimer", "免责声明", "隐藏"],
+    title: "禅模式",
+    keywords: [
+      "layout",
+      "zen mode",
+      "distraction free",
+      "禅模式",
+      "专注模式",
+      "无干扰",
+      "隐藏侧栏",
+      "disclaimer",
+      "免责声明",
+      "隐藏",
+    ],
   },
   {
     settingId: "layout-zen-mode-exit-button-visible",
@@ -2356,14 +2385,6 @@ export const TOAST_DURATION = {
   SHORT: 1500,
   MEDIUM: 2000,
   LONG: 3000,
-} as const
-
-// ==================== 状态颜色 ====================
-export const STATUS_COLORS = {
-  SUCCESS: "#10b981", // green-500
-  ERROR: "#ef4444", // red-500
-  WARNING: "#f59e0b", // amber-500
-  INFO: "var(--gh-text-secondary)",
 } as const
 
 // ==================== 通知声音预设 ====================

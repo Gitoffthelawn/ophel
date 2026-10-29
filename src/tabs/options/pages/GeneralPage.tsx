@@ -50,6 +50,7 @@ const SortableItem: React.FC<{
   onDragEnd?: () => void
   onDrop: (e: React.DragEvent, index: number) => void
   isDragging?: boolean
+  dropPosition?: "before" | "after" | null
 }> = ({
   iconNode,
   label,
@@ -63,9 +64,12 @@ const SortableItem: React.FC<{
   onDragEnd,
   onDrop,
   isDragging = false,
+  dropPosition = null,
 }) => (
   <div
-    className={`settings-sortable-item ${isDragging ? "is-dragging" : ""}`}
+    className={`settings-sortable-item ${isDragging ? "is-dragging" : ""} ${
+      dropPosition === "before" ? "drop-above" : dropPosition === "after" ? "drop-below" : ""
+    }`}
     draggable
     onDragStart={(e) => onDragStart(e, index)}
     onDragOver={(e) => onDragOver(e, index)}
@@ -119,6 +123,12 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
   const [draggedItem, setDraggedItem] = useState<{ type: "tab" | "button"; index: number } | null>(
     null,
   )
+  // 拖拽落点提示（目标项 + 插入到其上方/下方）
+  const [dropTarget, setDropTarget] = useState<{
+    type: "tab" | "button"
+    index: number
+    position: "before" | "after"
+  } | null>(null)
 
   const buildPanelPreview = (key: keyof typeof settings.panel, value: number) => ({
     panel: {
@@ -166,6 +176,11 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
 
   const handleHoverWidthChange = (val: number) => {
     setSettings(buildPanelPreview("hoverWidth", val))
+  }
+
+  // 拖动快捷按钮组滑块时实时预览，松手后再写入设置
+  const handleQuickButtonsPreview = (key: "proximityRadius" | "opacity", value: number) => {
+    setPreviewSettings({ quickButtons: { ...settings.quickButtons, [key]: value } })
   }
 
   const activateHoverWidthPreview = () => {
@@ -253,10 +268,30 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
     e.dataTransfer.setData("text/plain", `${type}:${index}`)
   }
 
+  // 按光标在目标项的上/下半区判定插入位置
+  const getDropPosition = (e: React.DragEvent): "before" | "after" => {
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
+    return e.clientY < rect.top + rect.height / 2 ? "before" : "after"
+  }
+
   // 处理拖拽经过
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = (e: React.DragEvent, type: "tab" | "button", index: number) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = "move"
+
+    if (!draggedItem || draggedItem.type !== type || draggedItem.index === index) {
+      if (dropTarget) setDropTarget(null)
+      return
+    }
+
+    const position = getDropPosition(e)
+    if (
+      dropTarget?.type !== type ||
+      dropTarget.index !== index ||
+      dropTarget.position !== position
+    ) {
+      setDropTarget({ type, index, position })
+    }
   }
 
   // 处理放置 - Tab 排序
@@ -264,13 +299,21 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
     e.preventDefault()
     if (!draggedItem || draggedItem.type !== "tab") return
     const fromIndex = draggedItem.index
-    if (fromIndex === targetIndex) return
+    if (fromIndex === targetIndex) {
+      setDraggedItem(null)
+      setDropTarget(null)
+      return
+    }
 
     const newOrder = [...(settings.features?.order || DEFAULT_SETTINGS.features.order)]
     const [moved] = newOrder.splice(fromIndex, 1)
-    newOrder.splice(targetIndex, 0, moved)
+    let insertIndex = targetIndex
+    if (fromIndex < insertIndex) insertIndex--
+    if (getDropPosition(e) === "after") insertIndex++
+    newOrder.splice(insertIndex, 0, moved)
     updateNestedSetting("features", "order", newOrder)
     setDraggedItem(null)
+    setDropTarget(null)
   }
 
   // 处理放置 - 按钮排序
@@ -278,18 +321,27 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
     e.preventDefault()
     if (!draggedItem || draggedItem.type !== "button") return
     const fromIndex = draggedItem.index
-    if (fromIndex === targetIndex) return
+    if (fromIndex === targetIndex) {
+      setDraggedItem(null)
+      setDropTarget(null)
+      return
+    }
 
     const newButtons = [...(settings.quickButtons?.collapsed || [])]
     const [moved] = newButtons.splice(fromIndex, 1)
-    newButtons.splice(targetIndex, 0, moved)
+    let insertIndex = targetIndex
+    if (fromIndex < insertIndex) insertIndex--
+    if (getDropPosition(e) === "after") insertIndex++
+    newButtons.splice(insertIndex, 0, moved)
     updateNestedSetting("quickButtons", "collapsed", newButtons)
     setDraggedItem(null)
+    setDropTarget(null)
   }
 
   // 处理拖拽结束
   const handleDragEnd = () => {
     setDraggedItem(null)
+    setDropTarget(null)
   }
 
   // 切换按钮启用状态
@@ -317,7 +369,8 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
 
       {/* ========== 面板 Tab ========== */}
       {activeTab === "panel" && (
-        <SettingCard title={t("panelSettings")} settingId="panel-settings-card">
+        // 卡片标题与当前分段“面板”同名，省掉一层重复标题；全局搜索仍按 settingId 定位到这张卡片
+        <SettingCard settingId="panel-settings-card">
           {/* 面板模式 */}
           <div
             className={`settings-panel-mode-accordion ${isPanelModeAdvancedVisible ? "open" : ""}`}
@@ -350,13 +403,7 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                   </div>
                 </div>
               )}
-              <div
-                style={{
-                  display: "inline-flex",
-                  borderRadius: "6px",
-                  overflow: "hidden",
-                  border: "1px solid var(--gh-border, #e5e7eb)",
-                }}>
+              <div className="settings-segmented">
                 {(
                   [
                     {
@@ -370,31 +417,13 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                       Icon: FloatingModeIcon,
                     },
                   ] as const
-                ).map((option, index) => (
+                ).map((option) => (
                   <button
                     type="button"
                     key={option.value}
+                    className="settings-segmented-item"
                     aria-pressed={(settings.panel?.panelMode ?? "floating") === option.value}
-                    onClick={() => updateNestedSetting("panel", "panelMode", option.value)}
-                    style={{
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      padding: "4px 12px",
-                      fontSize: "13px",
-                      border: "none",
-                      borderLeft: index > 0 ? "1px solid var(--gh-border, #e5e7eb)" : "none",
-                      cursor: "pointer",
-                      background:
-                        (settings.panel?.panelMode ?? "floating") === option.value
-                          ? "var(--gh-primary, #4285f4)"
-                          : "var(--gh-bg, #fff)",
-                      color:
-                        (settings.panel?.panelMode ?? "floating") === option.value
-                          ? "#fff"
-                          : "var(--gh-text-secondary, #6b7280)",
-                      transition: "all 0.2s",
-                    }}>
+                    onClick={() => updateNestedSetting("panel", "panelMode", option.value)}>
                     <option.Icon size={14} />
                     {option.label}
                   </button>
@@ -411,44 +440,23 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                     <div className="settings-row-label">{t("edgeTriggerModeLabel")}</div>
                     <div className="settings-row-desc">{t("edgeTriggerModeDesc")}</div>
                   </div>
-                  <div
-                    style={{
-                      display: "inline-flex",
-                      borderRadius: "6px",
-                      overflow: "hidden",
-                      border: "1px solid var(--gh-border, #e5e7eb)",
-                    }}>
+                  <div className="settings-segmented">
                     {(
                       [
                         { value: "handle", label: t("edgeTriggerModeHandle") },
                         { value: "hidden", label: t("edgeTriggerModeHidden") },
                       ] as const
-                    ).map((option, index) => (
+                    ).map((option) => (
                       <button
                         type="button"
                         key={option.value}
+                        className="settings-segmented-item"
                         aria-pressed={
                           (settings.panel?.edgeTriggerMode ?? "handle") === option.value
                         }
                         onClick={() =>
                           updateNestedSetting("panel", "edgeTriggerMode", option.value)
-                        }
-                        style={{
-                          padding: "4px 12px",
-                          fontSize: "13px",
-                          border: "none",
-                          borderLeft: index > 0 ? "1px solid var(--gh-border, #e5e7eb)" : "none",
-                          cursor: "pointer",
-                          background:
-                            (settings.panel?.edgeTriggerMode ?? "handle") === option.value
-                              ? "var(--gh-primary, #4285f4)"
-                              : "var(--gh-bg, #fff)",
-                          color:
-                            (settings.panel?.edgeTriggerMode ?? "handle") === option.value
-                              ? "#fff"
-                              : "var(--gh-text-secondary, #6b7280)",
-                          transition: "all 0.2s",
-                        }}>
+                        }>
                         {option.label}
                       </button>
                     ))}
@@ -463,50 +471,19 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
             label={t("defaultPositionLabel")}
             description={t("defaultPositionDesc")}
             settingId="panel-default-position">
-            <div
-              style={{
-                display: "inline-flex",
-                borderRadius: "6px",
-                overflow: "hidden",
-                border: "1px solid var(--gh-border, #e5e7eb)",
-              }}>
+            <div className="settings-segmented">
               <button
-                onClick={() => updateNestedSetting("panel", "defaultPosition", "left")}
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "13px",
-                  border: "none",
-                  cursor: "pointer",
-                  background:
-                    (settings.panel?.defaultPosition || "right") === "left"
-                      ? "var(--gh-primary, #4285f4)"
-                      : "var(--gh-bg, #fff)",
-                  color:
-                    (settings.panel?.defaultPosition || "right") === "left"
-                      ? "#fff"
-                      : "var(--gh-text-secondary, #6b7280)",
-                  transition: "all 0.2s",
-                }}>
+                type="button"
+                className="settings-segmented-item"
+                aria-pressed={(settings.panel?.defaultPosition || "right") === "left"}
+                onClick={() => updateNestedSetting("panel", "defaultPosition", "left")}>
                 {t("defaultPositionLeft")}
               </button>
               <button
-                onClick={() => updateNestedSetting("panel", "defaultPosition", "right")}
-                style={{
-                  padding: "4px 12px",
-                  fontSize: "13px",
-                  border: "none",
-                  borderLeft: "1px solid var(--gh-border, #e5e7eb)",
-                  cursor: "pointer",
-                  background:
-                    (settings.panel?.defaultPosition || "right") === "right"
-                      ? "var(--gh-primary, #4285f4)"
-                      : "var(--gh-bg, #fff)",
-                  color:
-                    (settings.panel?.defaultPosition || "right") === "right"
-                      ? "#fff"
-                      : "var(--gh-text-secondary, #6b7280)",
-                  transition: "all 0.2s",
-                }}>
+                type="button"
+                className="settings-segmented-item"
+                aria-pressed={(settings.panel?.defaultPosition || "right") === "right"}
+                onClick={() => updateNestedSetting("panel", "defaultPosition", "right")}>
                 {t("defaultPositionRight")}
               </button>
             </div>
@@ -749,10 +726,15 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                         updateDeepSetting("features", "conversations", "enabled", !isEnabled)
                     }}
                     onDragStart={(e) => handleDragStart(e, "tab", index)}
-                    onDragOver={handleDragOver}
+                    onDragOver={(e) => handleDragOver(e, "tab", index)}
                     onDragEnd={handleDragEnd}
                     onDrop={handleTabDrop}
                     isDragging={draggedItem?.type === "tab" && draggedItem?.index === index}
+                    dropPosition={
+                      dropTarget?.type === "tab" && dropTarget.index === index
+                        ? dropTarget.position
+                        : null
+                    }
                   />
                 )
               })}
@@ -790,47 +772,39 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
               label={t("quickButtonsProximityRadiusLabel")}
               description={t("quickButtonsProximityRadiusDesc")}
               settingId="quick-buttons-proximity-radius">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input
-                  type="range"
-                  min="0"
-                  max="300"
-                  step="10"
-                  value={settings.quickButtons?.proximityRadius ?? 150}
-                  onChange={(e) =>
-                    updateNestedSetting(
-                      "quickButtons",
-                      "proximityRadius",
-                      parseInt(e.target.value, 10),
-                    )
-                  }
-                  style={{ width: "120px" }}
-                />
-                <span style={{ fontSize: "12px", minWidth: "36px" }}>
-                  {settings.quickButtons?.proximityRadius ?? 150}px
-                </span>
-              </div>
+              <Slider
+                value={
+                  settings.quickButtons?.proximityRadius ??
+                  DEFAULT_SETTINGS.quickButtons.proximityRadius
+                }
+                onChange={(value) => updateNestedSetting("quickButtons", "proximityRadius", value)}
+                onPreviewChange={(value) => handleQuickButtonsPreview("proximityRadius", value)}
+                onCancelPreview={clearPreviewSettings}
+                min={0}
+                max={300}
+                step={10}
+                unit="px"
+                defaultValue={DEFAULT_SETTINGS.quickButtons.proximityRadius}
+                formatValue={(value) => `${value}px`}
+                ariaLabel={t("quickButtonsProximityRadiusLabel")}
+              />
             </SettingRow>
             <SettingRow
               label={t("quickButtonsOpacityLabel")}
               description={t("quickButtonsOpacityDesc")}
               settingId="quick-buttons-opacity">
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <input
-                  type="range"
-                  min="0.4"
-                  max="1"
-                  step="0.05"
-                  value={settings.quickButtons?.opacity ?? 1}
-                  onChange={(e) =>
-                    updateNestedSetting("quickButtons", "opacity", parseFloat(e.target.value))
-                  }
-                  style={{ width: "120px" }}
-                />
-                <span style={{ fontSize: "12px", minWidth: "36px" }}>
-                  {Math.round((settings.quickButtons?.opacity ?? 1) * 100)}%
-                </span>
-              </div>
+              <Slider
+                value={settings.quickButtons?.opacity ?? DEFAULT_SETTINGS.quickButtons.opacity}
+                onChange={(value) => updateNestedSetting("quickButtons", "opacity", value)}
+                onPreviewChange={(value) => handleQuickButtonsPreview("opacity", value)}
+                onCancelPreview={clearPreviewSettings}
+                min={0.4}
+                max={1}
+                step={0.05}
+                defaultValue={DEFAULT_SETTINGS.quickButtons.opacity}
+                formatValue={(value) => `${Math.round(value * 100)}%`}
+                ariaLabel={t("quickButtonsOpacityLabel")}
+              />
             </SettingRow>
           </SettingCard>
           <SettingCard
@@ -859,10 +833,15 @@ const GeneralPage: React.FC<GeneralPageProps> = ({
                   showToggle={def.canToggle}
                   onToggle={() => toggleButton(index)}
                   onDragStart={(e) => handleDragStart(e, "button", index)}
-                  onDragOver={handleDragOver}
+                  onDragOver={(e) => handleDragOver(e, "button", index)}
                   onDragEnd={handleDragEnd}
                   onDrop={handleButtonDrop}
                   isDragging={draggedItem?.type === "button" && draggedItem?.index === index}
+                  dropPosition={
+                    dropTarget?.type === "button" && dropTarget.index === index
+                      ? dropTarget.position
+                      : null
+                  }
                 />
               )
             })}

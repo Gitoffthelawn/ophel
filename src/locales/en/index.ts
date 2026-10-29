@@ -31,16 +31,16 @@ export const en = {
   navPermissions: "Permissions",
   navBackup: "Data & Permissions",
   navAbout: "About",
+  navBack: "Back",
 
   // ======== Options Page Titles & Descriptions ========
   // Site Settings
   siteSettingsPageDesc: "Configure page layout, model lock, and site-specific features per site",
   siteSelectorLabel: "Configure site",
-  siteSettingsOtherSiteToast:
+  siteSettingsOtherSiteHint:
     "Configuring settings for {site}; changes won't affect the current site",
   currentSiteBadge: "Current site",
   siteExclusiveSettingsLabel: "Site-specific",
-  noSiteExclusiveSettings: "No site-specific settings for this site yet",
   communitySitePackBadge: "Community pack (core features)",
   communitySitePackDesc:
     "This site is powered by a community pack. Only the features it supports are shown.",
@@ -59,7 +59,6 @@ export const en = {
   sitePacksTabBuiltin: "Built-in sites",
   builtinSitesDesc:
     "Manage where Ophel runs on built-in AI sites. Once disabled, the panel and all enhancements no longer load on that site; reload open pages for the change to take full effect.",
-  builtinSiteBadge: "Built-in",
   builtinSiteCurrentBadge: "Current site",
   builtinSiteEnabledToast: "{site} re-enabled",
   builtinSiteDisabledToast:
@@ -125,7 +124,7 @@ export const en = {
   sitePacksCustomOriginsTitle: "Add a custom site",
   sitePacksCustomOriginsDesc:
     "Add your self-hosted AI site (e.g. Open WebUI) and choose which pack supports it.",
-  sitePacksCustomOriginLabel: "HTTPS origin",
+  sitePacksCustomOriginLabel: "Site address",
   sitePacksCustomOriginPlaceholder: "https://chat.example.com",
   sitePacksBindingPackLabel: "Pack",
   sitePacksBindingPackPlaceholder: "Choose an installed pack",
@@ -233,7 +232,6 @@ export const en = {
   userQueryWidthSettings: "User Query Width",
   scrollSettings: "Scroll Settings",
   contentProcessing: "Content Processing",
-  contentProcessingDesc: "Configure how AI responses are processed",
   interactionEnhance: "Interaction Enhancements",
   interactionEnhanceDesc: "Enhance formula and table interactions",
   exportSettings: "Export Settings",
@@ -270,6 +268,7 @@ export const en = {
   githubRepository: "GitHub Repository",
   communityAndSupport: "Community & Support",
   rateAndReview: "Love Ophel?",
+  rateAndReviewAction: "Rate Ophel",
   rateDesc: "If you enjoy using Ophel, please give us a 5-star rating! It helps us a lot.",
   chromeStore: "Chrome Store",
   firefoxAddons: "Firefox Add-on",
@@ -407,27 +406,29 @@ export const en = {
   confirm: "Confirm",
   export: "Export",
   clear: "Clear",
+  more: "More",
+  default: "Default",
+  unknown: "Unknown",
+  settingsTabsScrollLeft: "Scroll tabs left",
+  settingsTabsScrollRight: "Scroll tabs right",
   error: "Error",
   operationFailed: "Operation failed",
   deleteSuccess: "Deleted successfully",
   deleteError: "Delete failed",
   loadFailed: "Load failed",
-  selectFileOrPasteFirst: "Please select a file or paste content first",
   restoreError: "Restore failed",
   backupRestoreConfirmMsg:
     'Restore backup "{name}"? Current data will be overwritten, and open AI pages will refresh.',
   backupDeleteCloudConfirmMsg: 'Delete cloud backup "{name}"? This action is irreversible.',
   insertFailed: "Insert failed",
   maximize: "Maximize",
-  browse: "Browse...",
   clearAllData: "Clear All Data",
-  clearAllDataDesc: "Caution: This will remove all local settings, prompts and chats.",
+  clearAllDataDesc: "Permanently deletes all local settings, prompts and chats.",
   clearAllDataConfirm:
     "Are you sure you want to clear all data? This works is irreversible and all settings, prompts, chats will be deleted!",
   clearSuccess: "Data cleared, refreshing...",
   defaultDir: "Default Directory",
   dangerZone: "Danger Zone",
-  dangerZoneDesc: "Destructive operations (Irreversible)",
   anchorPoint: "Anchor",
   updateAnchor: "Update Anchor",
   goToAnchor: "Return to Anchor",
@@ -639,7 +640,7 @@ export const en = {
   geminiMystuffOpenInNewTab: "Open in new tab",
   geminiMystuffLocateFailed: "Original chat location not found",
 
-  userQueryWidthDesc: "Adjust max width of user query bubble container (per site)",
+  userQueryWidthDesc: "Adjust max width of user query bubble container",
   // Category management
   categoryManage: "Category Management",
   categoryEmpty: "No categories yet. Categories are created when you add prompts.",
@@ -761,6 +762,7 @@ export const en = {
   exportStyleCleanOption: "Use clean style (no decorative emojis)",
   exportImageAlt: "Image",
   exportShowIndexJsonUnsupported: "Turn numbers are not supported in JSON export",
+  exportOptionsOutlineCopyHint: "Copy outline doesn't use these options",
   exportMarkdownDividerLabel: "Markdown Divider",
   exportMarkdownDividerDesc:
     "Custom divider string between messages in exported Markdown (default: ---)",
@@ -803,11 +805,9 @@ export const en = {
   pageWidthLabel: "Page Width",
   pageWidthValueLabel: "Width Value",
   pageWidthDesc:
-    "Adjust the chat page width in real time (configured per site). When Smart Avoidance is enabled, the actual width may be limited by the panel safe area.",
-  enablePageWidth: "Enable Page Widening",
+    "Adjust the chat page width in real time. When Smart Avoidance is enabled, the actual width may be limited by the panel safe area.",
   panelAvoidanceTitle: "Smart Avoidance",
   betaBadge: "Beta",
-  panelAvoidanceLabel: "Avoid Ophel panel",
   panelAvoidanceDesc:
     "Automatically adjusts the current site's content area while the panel is open; disabled on narrow screens.",
   widthValue: "Width Value",
@@ -818,7 +818,6 @@ export const en = {
   unitPercent: "Percentage (%)",
 
   // User Query Width Settings
-  enableUserQueryWidth: "Enable User Query Widening",
   enableUserQueryWidthDesc: "Adjust the max-width of user query bubble containers",
   userQueryWidthValueLabel: "Query Width",
   // Tab Settings
@@ -1133,9 +1132,8 @@ export const en = {
   segmentedExportSearchPlaceholder: "Search segments...",
   segmentedExportRangePlaceholder: "e.g. 1-3, 8",
   segmentedExportApplyRange: "Apply range",
-  segmentedExportSelectVisible: "Select visible",
-  segmentedExportClearVisible: "Clear visible",
-  segmentedExportInvertVisible: "Invert visible",
+  segmentedExportSelectAll: "Select all",
+  segmentedExportInvert: "Invert",
   segmentedExportNoMatches: "No matching segments",
   segmentedExportSelected: "Selected {selected} / {total}",
   segmentedExportModeZip: "ZIP (one Markdown per segment)",
@@ -1259,7 +1257,7 @@ export const en = {
   webdavUploadBtn: "Upload",
   webdavDownloadBtn: "Download",
   webdavDownloadConfirm: "Download will overwrite current data. Continue?",
-  webdavLastSync: "Last sync",
+  webdavLastSync: "Last synced: {time}",
   webdavConnectionSuccess: "Connection successful",
   webdavUploadSuccess: "Upload successful",
   webdavDownloadSuccess: "Download successful", // Modified from "Download successful, refreshing page"
@@ -1282,16 +1280,28 @@ export const en = {
   importDataDesc: "Restore data from backup file",
 
   fullBackup: "Full Backup",
-  fullBackupDesc: "Export all account data and settings. Recommended.",
+  fullBackupDesc: "Export all account data and settings.",
   promptsBackup: "Prompts Only",
   promptsBackupDesc: "Export prompts library only (without tags/folders)",
   settingsBackup: "Settings Only",
   settingsBackupDesc: "Export UI settings and preferences only",
 
-  selectFile: "Select File",
   noFileSelected: "No file selected",
-  dataPreview: "Data Preview",
-  pastePlaceholder: "Paste JSON data or import via file selector above...",
+  pastePlaceholder: "Paste backup JSON here…",
+  recommendedBadge: "Recommended",
+  backupDropZoneTitle: "Drop a backup file here, or click to choose",
+  backupDropZoneHint: "Accepts JSON backups exported by Ophel",
+  backupPasteJson: "Paste JSON",
+  backupPastedSource: "Pasted JSON",
+  backupSummaryContents: "Includes",
+  backupContentSettings: "Settings",
+  backupContentPrompts: "Prompts",
+  backupContentConversations: "Chats & folders",
+  backupContentReadingHistory: "Reading history",
+  backupContentBookmarks: "Favorites",
+  backupContentClaudeKeys: "Claude session keys",
+  backupContentUsage: "Usage stats",
+  backupContentSitePacks: "Site packs",
   importBtn: "Import",
 
   webdavConfig: "WebDAV Configuration",
@@ -1317,6 +1327,11 @@ export const en = {
   backupManagement: "Backup Management",
   backupNow: "Backup Now",
   defaultDirHint: "Default: ophel",
+  showPassword: "Show password",
+  hidePassword: "Hide password",
+  webdavTesting: "Testing…",
+  webdavUploading: "Backing up…",
+  webdavNeverSynced: "Not synced yet",
   unsavedChanges: "Unsaved",
   restore: "Restore",
   localBackup: "Local Backup",
@@ -1393,7 +1408,7 @@ Please output the optimized code block directly, followed by a brief summary of 
   globalShortcutUrlDesc: "URL to open when pressing global shortcut {shortcut}",
   resetShortcuts: "Reset to Defaults",
   resetShortcutsConfirm: "Are you sure you want to reset all shortcuts to default values?",
-  pressAnyKey: "Press any key...",
+  pressAnyKey: "Press keys · Esc to cancel",
   shortcutConflict: 'Conflicts with "{name}"',
   globalShortcutsTitle: "Global Shortcuts",
   globalShortcutsDesc: "Work on any browser page. Configure them in browser extension settings.",
@@ -1504,13 +1519,12 @@ Please output the optimized code block directly, followed by a brief summary of 
   modelSelectorNotFound: "Model selector not found",
 
   // ======== Claude Session Key Management ========
-  geminiSettingsTab: "Gemini Exclusive",
   claudeSessionKeyTitle: "Session Key Management",
   claudeSessionKeyDesc: "Manage and switch your Claude accounts",
   claudeCurrentUsing: "Current:",
   claudeNoKeySelected: "None - Please add or import a Session Key",
-  claudePleaseAddKey: "Please add a Session Key first",
   claudeAddKey: "Add",
+  claudeKeyNameLabel: "Name",
   claudeImportFromBrowser: "Import from Browser",
   claudeImportJSON: "Import JSON",
   claudeExportJSON: "Export JSON",
@@ -1525,7 +1539,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   claudeKeyDelete: "Delete",
   claudeKeyCopied: "Copied to clipboard",
   claudeKeyCopyFailed: "Copy failed",
-  claudeKeyDoubleTapCopy: "Double-click to copy full key",
   claudeCopyKey: "Copy Session Key",
   claudeCopied: "Copied",
   claudeAlreadyUsing: "Already using this session key",
@@ -1536,7 +1549,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   claudeKeyDeleted: "Deleted",
   claudeKeyTesting: "Testing",
   claudeGenerating: "AI is generating, please try again later",
-  claudeAddKeyNameTitle: "Add Session Key - Enter Name",
   claudeAddKeyNamePlaceholder: "e.g., Main Account, Backup",
   claudeAddKeyValueTitle: "Add Session Key - Enter Key",
   claudeAddKeyValuePlaceholder: "sk-ant-sid01-...",
@@ -1568,8 +1580,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   restoreSuccess: "Restore successful, page will refresh...",
 
   // ======== AI Studio Settings ========
-  aistudioSettingsTitle: "AI Studio Settings",
-  aistudioSettingsDesc: "Configure default behavior when AI Studio page loads",
   aistudioDefaultModel: "Default Model",
   aistudioDefaultModelNone: "Not specified (use system default)",
   aistudioDefaultModelCustom: "Custom Model ID...",
@@ -1593,8 +1603,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   aistudioModelsError: "Failed to fetch model list",
 
   // ======== ChatGPT Settings ========
-  chatgptSettingsTitle: "ChatGPT Settings",
-  chatgptSettingsDesc: "Configure default behavior for ChatGPT page",
   chatgptMarkdownFixLabel: "Markdown Bold Fix",
   chatgptMarkdownFixDesc: "Fix unrendered **bold** text in ChatGPT responses",
   chatgptCodeBlockBatchMountLabel: "Code Block Batch Mount",
@@ -1796,21 +1804,17 @@ Please output the optimized code block directly, followed by a brief summary of 
   queueBatchImportSuccess: "Added {count} prompt(s) to queue",
   queueBatchImportEmpty: "No prompts available to add",
   zenModeTitle: "Zen Mode",
-  zenModeLabel: "Enable Zen Mode",
-  zenModeDesc:
-    "Hide sidebar and navigation elements to focus on the current chat (configured independently for each site)",
+  zenModeDesc: "Hide sidebar and navigation elements to focus on the current chat",
   zenModeExitButton: "Exit Zen Mode",
   zenModeExitButtonVisibleLabel: "Show exit button",
   zenModeExitButtonVisibleDesc:
     "When off, the on-page Exit Zen Mode button is hidden; you can still leave Zen Mode from the quick button or shortcut.",
   cleanModeTitle: "Clean Mode",
-  cleanModeLabel: "Enable Clean Mode",
   cleanModeDesc:
-    "Hide disclaimers, ads, download buttons, and other clutter for a cleaner interface (configured independently for each site)",
+    "Hide disclaimers, ads, download buttons, and other clutter for a cleaner interface",
   autoHideInputTitle: "Auto-hide Input",
-  autoHideInputLabel: "Auto-collapse input when idle",
   autoHideInputDesc:
-    "Collapses and hides the input box when the cursor moves away with no drafted text; expands on hover or focus (configured independently for each site)",
+    "Collapses and hides the input box when the cursor moves away with no drafted text; expands on hover or focus",
   extensionUpdateNoticeKicker: "Extension updated",
   extensionUpdateNotice:
     "Ophel Atlas has been updated. Reload this page to keep using the latest version.",
@@ -1874,7 +1878,7 @@ Please output the optimized code block directly, followed by a brief summary of 
   remoteConfigAutoUpdateDesc: "Checks at most once every 24 hours.",
   remoteConfigRegistrySourceLabel: "Development registry source",
   remoteConfigRegistrySourceDesc:
-    "Development builds only. Enter a full index.json URL; leave blank to use the default sources.",
+    "Enter a full index.json URL; leave blank to use the default sources.",
   remoteConfigRegistrySourcePlaceholder: "https://staging.example.com/index.json",
   remoteConfigRegistrySourceApplyButton: "Apply",
   remoteConfigRegistrySourceApplied: "Development registry source saved; checking for updates now.",
@@ -1893,6 +1897,7 @@ Please output the optimized code block directly, followed by a brief summary of 
   remoteConfigResettingButton: "Resetting…",
   remoteConfigPrivacyDesc:
     "Update checks only send GET requests to static CDNs. No chat or account data is included.",
+  sitePacksAdvancedTitle: "Advanced",
   remoteConfigCheckUpdated:
     "New adapter configurations were downloaded. Refresh the matching AI pages to apply them.",
   remoteConfigCheckUpToDate: "Your adapter configurations are up to date.",
@@ -1913,7 +1918,7 @@ Please output the optimized code block directly, followed by a brief summary of 
     "Local registry check failed ({url}): {error}. Make sure pnpm registry:serve is running.",
   remoteConfigLocalRegistryUseButton: "Use local registry",
   remoteConfigLocalRegistryHint:
-    "Run pnpm registry:serve first, then click “{button}”. Only development builds trust the local signing key.",
+    "Run pnpm registry:serve first, then click “{button}”. Loopback sources (127.0.0.1 / localhost) trust the local signing key in all builds.",
   remoteConfigLocalRegistrySourceApplied:
     "Switched to the local registry source and started an update check.",
   remoteConfigLocalRegistryPermissionDenied:
