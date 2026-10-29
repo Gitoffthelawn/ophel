@@ -19,7 +19,6 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - **Simpler settings menu** — The settings menu now has 8 entries instead of 10: global search settings moved to Features, and permissions moved to Data & Permissions. (#988)
 - **Consistent hover tooltips** — Hover hints across the panel, settings, and dialogs now use the same styled tooltip instead of the browser's default look. (#989)
 - **Phone and tablet support** — On phones, the panel now slides in from the side and closes after you jump to a heading, switch chats, or use a prompt. (#990)
-- **Settings text cleanup** — Removed repeated descriptions from the Settings pages and reworded unclear labels in plain language. (#999)
 
 ### 🐛 Bug Fixes
 
