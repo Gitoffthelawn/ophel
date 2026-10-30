@@ -251,7 +251,13 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     : ""
   const isDoubleShiftSearchShortcutEnabled =
     settings?.globalSearch?.doubleShift ?? DEFAULT_SETTINGS.globalSearch.doubleShift
+  const isGlobalSearchEnabled =
+    settings?.globalSearch?.enabled ?? DEFAULT_SETTINGS.globalSearch.enabled
   const globalSearchShortcutHintLabel = useMemo(() => {
+    if (!isGlobalSearchEnabled) {
+      return ""
+    }
+
     const labels: string[] = []
 
     if (globalSearchPrimaryShortcutLabel) {
@@ -262,7 +268,7 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
 
     return labels.join(" / ")
-  }, [globalSearchPrimaryShortcutLabel, isDoubleShiftSearchShortcutEnabled])
+  }, [globalSearchPrimaryShortcutLabel, isDoubleShiftSearchShortcutEnabled, isGlobalSearchEnabled])
   const passThroughModifierLabel = isMacLike ? "⌘" : "Ctrl"
   const resolveShortcutLabel = useCallback(
     (actionId: ShortcutActionId): string | null => {
@@ -1691,13 +1697,21 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
     }
 
     const label = resolvedGlobalSearchResultCategoryLabels[activeItem.category]
+    // 全部视图里序号按所在分组计数，与「已显示 x/y」同一口径；单分类视图里两者本就相同
+    const activeGroup =
+      activeGlobalSearchCategory === "all"
+        ? groupedGlobalSearchResults.find((group) => group.category === activeItem.category)
+        : undefined
+    const currentPosition = activeGroup
+      ? activeGroup.items.findIndex((item) => item.id === activeItem.id) + 1
+      : activeVisibleGlobalSearchIndex + 1
     const currentItemText = formatLocalizedText(
       {
         key: "globalSearchContextCurrentItem",
         fallback: "第 {current} 项",
       },
       {
-        current: String(activeVisibleGlobalSearchIndex + 1),
+        current: String(currentPosition),
       },
     )
 
@@ -1715,10 +1729,6 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
         )}`,
       }
     }
-
-    const activeGroup = groupedGlobalSearchResults.find(
-      (group) => group.category === activeItem.category,
-    )
 
     if (!activeGroup) {
       return {
@@ -1794,6 +1804,11 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
 
   const openGlobalSettingsSearch = useCallback(
     (source: GlobalSearchOpenSource = "ui") => {
+      // 全局搜索总开关关闭时，所有入口统一不响应
+      if (!(settingsRef.current?.globalSearch?.enabled ?? true)) {
+        return
+      }
+
       globalSearchOpenSourceRef.current = source
 
       if (isSettingsOpenRef.current) {
@@ -2174,6 +2189,10 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
   }, [isGlobalSettingsSearchOpen])
 
   const openGlobalSearchByShortcut = useCallback(() => {
+    if (!(settingsRef.current?.globalSearch?.enabled ?? true)) {
+      return
+    }
+
     if (isGlobalSettingsSearchOpenRef.current) {
       return
     }
@@ -2202,10 +2221,16 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
 
       const now = Date.now()
       // Use settingsRef to get the latest settings without re-binding listener
+      const isGlobalSearchEnabled =
+        settingsRef.current?.globalSearch?.enabled ?? DEFAULT_SETTINGS.globalSearch.enabled
       const isDoubleShiftEnabled =
         settingsRef.current?.globalSearch?.doubleShift ?? DEFAULT_SETTINGS.globalSearch.doubleShift
 
-      if (isDoubleShiftEnabled && now - lastShiftPressedAtRef.current <= 360) {
+      if (
+        isGlobalSearchEnabled &&
+        isDoubleShiftEnabled &&
+        now - lastShiftPressedAtRef.current <= 360
+      ) {
         event.preventDefault()
         event.stopPropagation()
         lastShiftPressedAtRef.current = 0
@@ -2225,6 +2250,10 @@ export const App: React.FC<AppProps> = ({ adapter: propAdapter }) => {
 
   useEffect(() => {
     const handleOpenSearchEvent = () => {
+      if (!(settingsRef.current?.globalSearch?.enabled ?? true)) {
+        return
+      }
+
       openGlobalSettingsSearch("event")
     }
 

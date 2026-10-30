@@ -83,7 +83,6 @@ export const en = {
   sitePacksSourceRegistry: "Online library",
   sitePacksSourceLocal: "Local import",
   sitePacksStatusAvailable: "Available",
-  sitePacksStatusMatchRequired: "Match rule needed",
   sitePacksStatusDisabled: "Disabled",
   sitePacksStatusIncompatible: "Incompatible",
   sitePacksStatusPackMissing: "Pack missing",
@@ -150,10 +149,7 @@ export const en = {
   sitePacksMatchGuideAction: "View setup guide",
   sitePacksBindingPackRequired: "Choose an installed pack first.",
 
-  generalPageDesc: "Configure extension behavior and interface",
-  appearancePageDesc: "Customize visual styles and themes",
   pageContentPageDesc: "Adjust page layout and content display",
-  featuresPageDesc: "Configure extension feature modules",
   backupPageDesc: "Manage data backup, cloud sync, and extension permissions",
   aboutPageDesc: "AI's Benefit, Within Reach.",
   tsPlasmoDesc: "Browser Extension Framework",
@@ -175,6 +171,7 @@ export const en = {
   granted: "Granted",
   notGranted: "Not Granted",
   revoke: "Revoke",
+  revokePermissionTitle: "Revoke Permission",
   grant: "Grant",
   allowRecommended: "Allow (Recommended)",
   required: "Required",
@@ -233,14 +230,9 @@ export const en = {
   scrollSettings: "Scroll Settings",
   contentProcessing: "Content Processing",
   interactionEnhance: "Interaction Enhancements",
-  interactionEnhanceDesc: "Enhance formula and table interactions",
   exportSettings: "Export Settings",
 
   // ======== Features ========
-  outlineSettingsDesc: "Configure outline generation and follow behavior",
-  outlineUpdateIntervalDesc: "Auto-update interval for outline (seconds)",
-  conversationsSettingsDesc: "Configure chat sync and display",
-  readingHistoryDesc: "Track and restore chat reading positions",
   day: "day",
   days: "days",
   forever: "Forever",
@@ -262,8 +254,7 @@ export const en = {
   aboutDescription:
     "{appName} is a browser extension for AI platforms like ChatGPT, Claude, Gemini, DeepSeek, and Doubao, extendable to more sites via adapter packs (JSON rules). It offers chat management, multi-format export, smart outlines, global search, and prompt queues, plus reading progress restore, formula rendering and copy, completion alerts, model lock, and page layout tuning, with themes, Zen mode, and WebDAV sync to keep your AI interactions smooth and enjoyable.",
   aboutSupportedPlatforms: "Supported Platforms",
-  aboutSupportedPlatformsDesc:
-    "Currently covers {count} AI platforms, kept in sync with popup detection and quick access.",
+  aboutSupportedPlatformsDesc: "Currently supports {count} AI platforms.",
   projectLinks: "Project Links",
   githubRepository: "GitHub Repository",
   communityAndSupport: "Community & Support",
@@ -298,26 +289,16 @@ export const en = {
   // ======== Common Buttons/Labels ========
   tabBehaviorTitle: "Tab Behavior",
   notificationSettings: "Post-Completion Actions",
-  usageMonitorSettingsTitle: "Local Usage Counter & Estimate",
-  usageMonitorSettingsDesc:
-    "Show local send counts, threshold progress, and rough token estimates near the input box.",
-  usageMonitorExplainLocalOnly:
-    "Note: this is a local-only estimate. The extension does not know the official remaining quota or the server-side true limit.",
-  usageMonitorExplainNoBackend:
-    "Behavior: it only stores counts locally and renders a lightweight panel near the composer. It does not write any extra state to the site's backend.",
-  usageMonitorExplainReset:
-    "Reset: platform quota reset times may drift and are not always tied to local midnight. Auto reset is off by default; manual reset is the safer default.",
-  usageMonitorExplainRender:
-    "The panel is rendered above the current composer and reserves space for the page content. If rendering looks abnormal right after enabling it, refreshing the page should stabilize the layout.",
-  usageMonitorEnabledLabel: "Enable local advanced-model counter and estimate",
+  usageMonitorSettingsTitle: "Advanced Model Usage Estimate",
+  usageMonitorEnabledLabel: "Show usage estimate",
   usageMonitorEnabledDesc:
-    "Use a lightweight local panel near the composer to estimate usage for the current account without changing site behavior.",
-  usageMonitorDailyLimitLabel: "Estimated daily chat limit",
+    "Shows the number of messages sent from this device and an estimated token count above the input box. Ophel can't see the site's real quota, so treat the numbers as a rough guide. If the display looks off, refresh the page.",
+  usageMonitorDailyLimitLabel: "Daily send limit",
   usageMonitorDailyLimitDesc:
-    "Used for the 80% / 100% warning thresholds. This is only a local estimate.",
-  usageMonitorAutoResetLabel: "Enable auto reset",
+    "You'll be warned at 80% and 100% of this number. It's your own reference value, not the site's real limit.",
+  usageMonitorAutoResetLabel: "Reset automatically every day",
   usageMonitorAutoResetDesc:
-    "Experimental: reset automatically when the local date changes. Disabled by default because actual platform reset times may vary.",
+    "Clears the count at local midnight each day. Sites may reset their quota at a different time, so this is off by default.",
   usageMonitorTodayUsed: "Used Today",
   usageMonitorLocallyUsed: "Locally Counted",
   usageMonitorInputChars: "Input Chars",
@@ -333,7 +314,7 @@ export const en = {
   usageMonitorManualMode: "Manual Mode",
   usageMonitorChartTitle: "Usage History",
   usageMonitorChartDesc:
-    "Aggregated from local send events. View counts or estimated tokens by hour, day, or month.",
+    "View send counts or estimated tokens by hour, day, or month, based on records kept on this device.",
   usageMonitorChartHour: "Hour",
   usageMonitorChartDay: "Day",
   usageMonitorChartMonth: "Month",
@@ -346,27 +327,22 @@ export const en = {
   usageMonitorChartMetricConversation: "Loaded Context",
   usageMonitorChartMetricOutput: "Output Tokens",
   usageMonitorChartDelta: "vs previous",
+  usageMonitorChartMax: "Max",
   usageMonitorChartMaxConversation: "Max loaded context",
   usageMonitorChartMaxRequest: "Max single request",
   usageMonitorChartMaxRoundTrip: "Max single round trip",
   usageMonitorChartMaxOutput: "Max single output",
-  usageMonitorChartScrollHint: "Scroll horizontally to view the full timeline",
   usageMonitorChartEmpty: "No history yet",
   enablePrerequisiteToast: 'Please enable "{setting}" first',
-  privacyModeTitle: "Privacy Mode",
+  privacyModeTitle: "Tab Privacy",
   collapsedButtonsOrderTitle: "Quick Buttons",
   quickButtonsOpacityLabel: "Quick buttons opacity",
-  quickButtonsOpacityDesc: "Adjust overall opacity of the quick buttons",
   quickButtonsProximityRadiusLabel: "Proximity wake distance",
   quickButtonsProximityRadiusDesc:
     "Auto-expand the quick buttons when the cursor enters this range (px). Set to 0 to expand only on direct hover",
   quickButtonsHideWhenPanelOpenLabel: "Hide quick buttons when panel is open",
-  quickButtonsHideWhenPanelOpenDesc:
-    "Automatically hide the quick buttons group when the panel is expanded; restores when the panel is closed",
 
   quickButtonsBehaviorTitle: "Quick Buttons Behavior",
-  quickButtonsBehaviorDesc:
-    "Adjust the appearance and interaction behavior of the quick buttons group",
   // ======== Continue existing translations ========
   searchPlaceholder: "Search prompts...",
   addPrompt: "Add New Prompt",
@@ -383,7 +359,7 @@ export const en = {
   tip1: "Long press {modifier} to enter passthrough mode and interact with content beneath the panel",
 
   tip3: "Press {shortcut} to view {link}",
-  tip4: "{shortcut} opens {link} to find anything",
+  tip4: "{shortcut} opens {link} to search across the outline, chats, prompts and settings",
   tipGlobalSearchLink: "global search",
   tipShortcutsLink: "all keyboard shortcuts",
   tip5: "Install packs in {sitePacks} to bring Ophel to more AI sites",
@@ -422,10 +398,11 @@ export const en = {
   backupDeleteCloudConfirmMsg: 'Delete cloud backup "{name}"? This action is irreversible.',
   insertFailed: "Insert failed",
   maximize: "Maximize",
+  restoreWindow: "Restore",
   clearAllData: "Clear All Data",
   clearAllDataDesc: "Permanently deletes all local settings, prompts and chats.",
   clearAllDataConfirm:
-    "Are you sure you want to clear all data? This works is irreversible and all settings, prompts, chats will be deleted!",
+    "Clear all data? Your settings, prompts, chats and more will be deleted and can't be recovered. Consider exporting a backup first.",
   clearSuccess: "Data cleared, refreshing...",
   defaultDir: "Default Directory",
   dangerZone: "Danger Zone",
@@ -471,7 +448,6 @@ export const en = {
   promptMergeSuccess: "Merged: {updated} updated, {added} added",
   promptDeleteConfirm: "This prompt will be permanently deleted.",
   promptSettingsTitle: "Prompts Settings",
-  promptSettingsDesc: "Configure interactions in the prompts tab",
   promptSubmitShortcutLabel: "Send shortcut",
   promptSubmitShortcutDesc: "Applies to both manual send and prompt auto-send.",
   promptSubmitShortcutEnter: "Enter",
@@ -486,11 +462,11 @@ export const en = {
   promptSplitLinesToQueue: "Split lines and add to queue",
   promptQueueEnableHint: "Please enable Prompt Queue first",
   promptEnqueueEmpty: "Nothing to queue",
-  promptsViewPrompts: "Prompts",
-  promptsViewChains: "Chains",
+  promptsViewPrompts: "Single",
+  promptsViewChains: "Chain",
   chainSearchPlaceholder: "Search chains",
   chainTitleRequired: "Enter a chain name",
-  chainStepRequired: "Select at least one prompt step",
+  chainStepRequired: "Add at least one step with content",
   chainUpdated: "Chain updated",
   chainAdded: "Chain added",
   chainMissingPrompt: "Missing prompt",
@@ -498,12 +474,8 @@ export const en = {
   chainEmptyDescription: "Create a chain to queue multiple prompts in order.",
   chainNoSteps: "No steps",
   chainStepCount: "{count} step(s)",
-  chainShownInPopover: "Shown in selection popover",
-  chainHiddenInPopover: "Hidden from selection popover",
   chainVariablesCount: "{count} variable(s)",
   chainVariablesNone: "No extra variables",
-  chainNoPrompts: "Create prompts first",
-  chainNoPromptsDescription: "Chains are built from existing prompts and need at least one prompt.",
   chainDuplicated: "Chain duplicated",
   chainDeleteConfirm: "This chain will be permanently deleted.",
   chainAdd: "Add Chain",
@@ -513,7 +485,6 @@ export const en = {
   chainName: "Name",
   chainNamePlaceholder: "e.g., quote, summarize, and follow up",
   chainDescription: "Description",
-  chainIconSelected: "Icon selected",
   chainIconNotSelected: "No icon selected",
   chainIconSelect: "Select icon",
   chainIconSearchPlaceholder: "Search icons... (e.g., translate, summary)",
@@ -560,11 +531,15 @@ export const en = {
   chainIconPresetCalculate: "Calculate",
   chainIconPresetStatistics: "Statistics",
   chainDescriptionPlaceholder: "Briefly describe what this chain does",
-  chainIconSvg: "SVG icon",
+  chainIconSvg: "Icon",
   chainIconSvgPlaceholder: '<svg viewBox="0 0 24 24">...</svg>',
   chainIconSvgHelp:
     "Only safe SVG nodes and attributes are kept. Leave empty for the default icon.",
-  chainShowInPopover: "Show in selection popover",
+  chainShowInPopover: "Show in selection toolbar",
+  chainHideFromPopover: "Hide from selection toolbar",
+  chainHiddenBadge: "Not in selection toolbar",
+  chainDuplicate: "Duplicate",
+  chainPopoverUsageHint: "Select text in the chat, then click it in the selection toolbar to run.",
   chainQueueRequiredTitle: "Enable Prompt Queue",
   chainQueueRequiredDescription:
     "Chains need Prompt Queue to run steps in sequence. You can still create a draft first and enable it later.",
@@ -582,15 +557,19 @@ export const en = {
   chainQuickQuoteViewSettings: "View settings",
   chainQuickQuoteEnabledToast: "Selection quote enabled",
   chainSteps: "Steps",
-  chainStepsHelp: "Each step selects an existing prompt and is queued in order.",
+  chainStepsHelp: "Each step uses an existing prompt or text you type, and is queued in order.",
   chainStepModePrompt: "Use existing prompt",
   chainStepModeInline: "Direct input",
   chainStepInlinePlaceholder:
     "Enter prompt content directly (supports {{selection}} and {{quote}} variables)",
   chainAddStep: "Add step",
   chainSelectPrompt: "Select prompt",
-  chainVariablesPreview: "Variables preview",
+  chainVariablesPreview: "Variables",
+  chainVariablesBuiltin: "Built-in (filled automatically, click to insert)",
+  chainVariablesManual: "Fill in manually",
+  chainInsertVariableNoTarget: "Nowhere to insert. Add a “Direct input” step first",
   chainExecutionPreview: "Execution preview",
+  chainPreviewSampleSelection: "Selected text from conversation",
   chainStep: "Step",
   chainStepContentEmpty: "No content (step not configured)",
   expand: "Expand",
@@ -600,11 +579,12 @@ export const en = {
   quickQuoteInserted: "Quote inserted",
   quickQuoteChainQueued: "Added {count} item(s) to queue",
   quickQuoteQuote: "Quote",
+  quickQuoteQuoteHint: "Insert the selected text as a quote in the input box",
+  quickQuoteReplyHint:
+    "Put the selected text as a quote, with a reply instruction, into the input box",
   quickQuoteReply: "Quote Reply",
   quickQuoteChainQueueSource: "Chain: {title} · {index}/{total}",
   quickQuoteSettingsTitle: "Selection Quote",
-  quickQuoteSettingsDesc:
-    "Control whether Ophel shows its selection quote popover on compatible sites.",
   quickQuoteEnabledLabel: "Ophel selection quote",
   quickQuoteEnabledDesc:
     "When enabled, compatible sites show the Ophel quote popover after text selection. Sites with native quote popovers are left to the site.",
@@ -621,6 +601,24 @@ export const en = {
   panelSettingsTitle: "Panel Settings",
   settingOn: "ON",
   settingOff: "OFF",
+  // Hidden pages
+  hiddenPathsTitle: "Hide Ophel on specific pages",
+  hiddenPathsDesc:
+    "On the pages below, Ophel's panel and quick buttons are hidden and its shortcuts don't work. Everything comes back when you leave them.",
+  hiddenPathsPlaceholder: "e.g. /artifact/*",
+  hiddenPathsRegexPlaceholder: "e.g. ^/(artifact|share)/",
+  hiddenPathsHint:
+    "Enter the part of the URL after the domain; * matches anything. You can also paste a full URL.",
+  hiddenPathsRegexHint:
+    "The regex is matched against the part of the URL after the domain, e.g. /artifact/abc.",
+  hiddenPathsUseRegex: "Use regular expression",
+  hiddenPathsRegexBadge: "Regex",
+  hiddenPathsUseCurrentPage: "Use current page",
+  hiddenPathsHidesCurrentPage:
+    "This rule includes the current page. Ophel will disappear from this page as soon as you add it.",
+  hiddenPathsInvalidUrl: "This URL couldn't be recognized",
+  hiddenPathsInvalidRegex: "Not a valid regular expression",
+  hiddenPathsDuplicate: "This rule has already been added",
   // Model Lock
   modelLockTitle: "Model Lock",
   modelLockEnabledLabel: "Enable Model Lock",
@@ -640,7 +638,7 @@ export const en = {
   geminiMystuffOpenInNewTab: "Open in new tab",
   geminiMystuffLocateFailed: "Original chat location not found",
 
-  userQueryWidthDesc: "Adjust max width of user query bubble container",
+  userQueryWidthDesc: "Adjust the maximum width of user query bubbles",
   // Category management
   categoryManage: "Category Management",
   categoryEmpty: "No categories yet. Categories are created when you add prompts.",
@@ -669,9 +667,9 @@ export const en = {
   themeSettings: "Theme Settings",
   currentThemeMode: "Current Mode",
   themeSettingsDesc: "Choose presets for light and dark mode",
-  syncNativePageThemeLabel: "Sync Native Page Colors",
+  syncNativePageThemeLabel: "Sync Site Page Colors",
   syncNativePageThemeDesc:
-    "The site's light/dark mode always follows Ophel. Enable this to also adjust some native element colors (works only on some sites).",
+    "The site's light/dark mode always follows Ophel. Turn this on to also adjust the colors of some of the site's own interface elements (supported on some sites only).",
   themeLight: "Light",
   themeSystem: "System",
   customCSS: "Custom Styles",
@@ -694,10 +692,8 @@ export const en = {
   styleNameRequired: "Please enter style name",
   newStyle: "New Style",
   editStyleTitle: "Edit Style",
-  lightModePreset: "Light Mode",
-  lightModePresetDesc: "Effective only in Light Mode",
-  darkModePreset: "Dark Mode",
-  darkModePresetDesc: "Effective only in Dark Mode",
+  lightModePreset: "Light Mode Theme",
+  darkModePreset: "Dark Mode Theme",
   primaryColor: "Primary",
   secondaryColor: "Secondary",
   // Theme preset names
@@ -748,7 +744,6 @@ export const en = {
   exportCustomModelName: "Custom AI Name",
   exportCustomModelNameDesc: "Display name for AI in exports (Default: Site Name)",
   exportFilenameTimestamp: "Add Timestamp to Filename",
-  exportFilenameTimestampDesc: "Add a timestamp to the end of the exported filename",
   exportIncludeThoughtsLabel: "Include Thoughts in Export",
   exportThoughtCollapsedLabel: "Thinking process",
   exportIncludeThoughtsDesc:
@@ -805,7 +800,7 @@ export const en = {
   pageWidthLabel: "Page Width",
   pageWidthValueLabel: "Width Value",
   pageWidthDesc:
-    "Adjust the chat page width in real time. When Smart Avoidance is enabled, the actual width may be limited by the panel safe area.",
+    "Adjust the chat page width in real time. With Smart Avoidance on, the page makes room for an open panel, so the actual width may be slightly smaller.",
   panelAvoidanceTitle: "Smart Avoidance",
   betaBadge: "Beta",
   panelAvoidanceDesc:
@@ -856,8 +851,9 @@ export const en = {
   notifyWhenFocusedDesc: "Send notifications even when the current page is visible",
   autoFocusLabel: "Auto Focus the Window",
   autoFocusDesc: "Bring window to front when generation completes",
-  privacyModeLabel: "Privacy Mode",
-  privacyModeDesc: "Hide real chat title, show decoy title",
+  privacyModeLabel: "Hide Tab Title",
+  privacyModeDesc:
+    "Replaces the browser tab title with the decoy title below. Page content isn't affected.",
   privacyTitleLabel: "Decoy Title",
   privacyTitlePlaceholder: "e.g., Google, Work Document",
   titleFormatLabel: "Title Format",
@@ -881,7 +877,6 @@ export const en = {
   bookmarkSettings: "Bookmark Settings",
 
   bookmarkModeDisableLevel: "Cannot adjust levels in bookmark mode",
-  bookmarkSettingsDesc: "Bookmark related settings",
   inlineBookmarkModeLabel: "Inline Bookmark Icons",
   inlineBookmarkModeDesc: "Control visibility of bookmark icons next to page headings",
   panelBookmarkModeLabel: "Panel Bookmark Icons",
@@ -914,7 +909,7 @@ export const en = {
   syncingConversations: "Syncing chats...",
   grokSyncingConversations: "Syncing chats, please wait...",
   // Tab Order Settings
-  tabOrderSettings: "Interface Layout",
+  tabOrderSettings: "Tab Order",
   tabOrderDesc: "Adjust the display order of panel tabs (drag handle to reorder)",
   tabOrderAtLeastOne: "At least one feature tab must remain enabled",
   moveUp: "Move Up",
@@ -972,8 +967,7 @@ export const en = {
   floatingToolbarClearGhostConfirm: "Clear {count} invalid bookmarks in this session?",
   floatingToolbarClearGhostEmpty: "No invalid bookmarks to clear.",
   showCollapsedThemeDesc: "Display theme toggle button in sidebar when panel is collapsed",
-  collapsedButtonsOrderDesc:
-    "Adjust the display order of collapsed panel buttons (drag handle to reorder)",
+  collapsedButtonsOrderDesc: "Drag the handle to reorder the quick buttons.",
   preventAutoScrollLabel: "Prevent auto-scroll",
   preventAutoScrollDesc: "Stop page from auto-scrolling to bottom during AI generation",
   // Panel Mode
@@ -1005,7 +999,6 @@ export const en = {
   defaultEdgeDistanceLabel: "Default Margin",
   defaultEdgeDistanceDesc: "Default distance from the browser window edge after page refresh",
   panelWidthLabel: "Panel Width",
-  panelWidthDesc: "Width of the panel (px)",
   panelResizeOnHoverLabel: "Widen on hover",
   panelResizeOnHoverDesc:
     "Temporarily widen the floating panel while the pointer is over it, then restore the normal width",
@@ -1030,9 +1023,10 @@ export const en = {
   toggleConversations: "Toggle Chats",
   // Conversations
   tabConversations: "Chats",
-  conversationsEmpty: "No chats yet",
-  conversationsEmptyHint: "Click sync button above to import from sidebar",
+  conversationsEmpty: "No conversations yet",
+  conversationsEmptyHint: "New chats go into this folder",
   conversationsSync: "Sync",
+  conversationsSyncTooltip: "Import new chats from this site",
   conversationsSyncing: "Syncing...",
   conversationsSynced: "Synced",
   conversationsAddFolder: "New Folder",
@@ -1051,11 +1045,13 @@ export const en = {
   conversationsFolderName: "Name",
   conversationsFolderNamePlaceholder: "Enter folder name",
   conversationsSyncEmpty: "No chats found",
-  conversationsSyncNoChange: "No new chats",
+  conversationsSyncNoChange: "“{folder}” is up to date",
+  conversationsSyncUpdated: "Updated {updated} chats",
+  conversationsSyncRemoved: "Removed {removed} local records",
   conversationsSyncNoSidebarItems:
     "No chats detected in sidebar. Expand/open the sidebar and try again.",
-  conversationsSyncResult:
-    "Sync complete: {scanned} scanned, {added} added, {updated} updated, {deleted} deleted",
+  conversationsSyncResult: "Synced {added} chats to “{folder}”",
+  conversationsSyncTargetChanged: "New chats will go to “{folder}”",
   conversationsUnsupportedTitle: "{site} chats not supported",
   conversationsUnsupportedDesc:
     "Current site restrictions prevent reliably fetching the chat list.",
@@ -1069,7 +1065,8 @@ export const en = {
   minutesAgo: "min ago",
   hoursAgo: "hr ago",
   daysAgo: "days ago",
-  conversationsSelectFolder: "Select Sync Folder",
+  conversationsSelectFolder: "Sync folder",
+  conversationsSyncFolderMenuTitle: "Save new chats to",
   conversationsSelectAllFolder: "Select all in this folder",
   conversationsMoveTo: "Move Chat",
   conversationsSetTag: "Set Tag",
@@ -1081,12 +1078,12 @@ export const en = {
   // Conversation Settings
   conversationsSettingsTitle: "Chat Settings",
   conversationsSyncUnpinLabel: "Sync Unpin Status",
-  conversationsSyncUnpinDesc: "Unpin local chat if unpinned in cloud during sync",
+  conversationsSyncUnpinDesc: "When syncing, unpin local chats that were unpinned on the site.",
   folderRainbowLabel: "Folder Rainbow Colors",
   folderRainbowDesc: "Assign different background colors to folders",
-  conversationsSyncDeleteLabel: "Sync Delete Cloud",
+  conversationsSyncDeleteLabel: "Also delete the chat on the site",
   conversationsSyncDeleteDesc:
-    "Delete cloud chat on the corresponding site when deleting local record",
+    "When you delete a chat in Ophel, the original chat on the site is deleted too. This can't be undone.",
   conversationsSyncRenameLabel: "Sync Rename Cloud",
   conversationsSyncRenameDesc: "Update {site} sidebar title when renaming locally",
   conversationsCustomIcon: "Custom Icon",
@@ -1205,7 +1202,7 @@ export const en = {
   importDataBtn: "Import Data",
   exportError: "Export failed: ",
   importConfirm:
-    "Are you sure you want to import data? This will overwrite all current settings and data.",
+    "Importing will overwrite your current data with the data included in this backup.",
   importSuccess: "Import successful! The page will refresh to apply new settings.",
   importError: "Import failed: ",
   invalidBackupFile: "Invalid backup file format",
@@ -1261,10 +1258,12 @@ export const en = {
   webdavConnectionSuccess: "Connection successful",
   webdavUploadSuccess: "Upload successful",
   webdavDownloadSuccess: "Download successful", // Modified from "Download successful, refreshing page"
-  webdavConfigIncomplete: "Please complete WebDAV configuration first", // Modified from "Please complete WebDAV configuration"
+  webdavConfigIncomplete: "Enter the WebDAV address, username and password first.",
   webdavAuthFailed: "Authentication failed, please check username and password",
-  webdavConnectionFailed: "Connection failed",
-  webdavUploadFailed: "Upload failed",
+  webdavConnectionFailed:
+    "Connection failed ({detail}). Check the WebDAV address and your network.",
+  webdavUploadFailed:
+    "Upload failed ({detail}). Check account permissions, the directory and your network.",
   webdavDownloadFailed: "Download failed",
   webdavFileNotFound: "Remote file not found",
   webdavInvalidFormat: "Invalid backup file format",
@@ -1280,7 +1279,8 @@ export const en = {
   importDataDesc: "Restore data from backup file",
 
   fullBackup: "Full Backup",
-  fullBackupDesc: "Export all account data and settings.",
+  fullBackupDesc:
+    "Export all data and settings. Includes Claude Session Keys, so keep the file safe.",
   promptsBackup: "Prompts Only",
   promptsBackupDesc: "Export prompts library only (without tags/folders)",
   settingsBackup: "Settings Only",
@@ -1397,13 +1397,11 @@ Please output the optimized code block directly, followed by a brief summary of 
 
   // ======== Shortcuts Settings Page ========
   navShortcuts: "Keyboard Shortcuts",
-  shortcutsPageDesc: "Configure keyboard shortcuts for quick actions",
   shortcutsInteractionGroup: "Independent Settings",
   shortcutsInteractionGroupDesc:
     "Settings in this group are always active and are not affected by the Enable Custom Shortcuts toggle",
   shortcutsGlobalSettings: "Shortcut Settings",
   enableShortcuts: "Enable Custom Shortcuts",
-  enableShortcutsDesc: "Enable or disable all custom keyboard shortcuts",
   globalShortcutUrl: "Global Shortcut URL",
   globalShortcutUrlDesc: "URL to open when pressing global shortcut {shortcut}",
   resetShortcuts: "Reset to Defaults",
@@ -1528,6 +1526,8 @@ Please output the optimized code block directly, followed by a brief summary of 
   claudeImportFromBrowser: "Import from Browser",
   claudeImportJSON: "Import JSON",
   claudeExportJSON: "Export JSON",
+  claudeExportWarning:
+    "The exported file contains full Session Keys. They work like account logins, so keep the file safe and don't share it.",
   claudeNoKeys: "No Session Keys",
   claudeNoKeysHint: "Click 'Add' or 'Import from Browser' to get started",
   claudeKeyValid: "Valid",
@@ -1605,12 +1605,12 @@ Please output the optimized code block directly, followed by a brief summary of 
   // ======== ChatGPT Settings ========
   chatgptMarkdownFixLabel: "Markdown Bold Fix",
   chatgptMarkdownFixDesc: "Fix unrendered **bold** text in ChatGPT responses",
-  chatgptCodeBlockBatchMountLabel: "Code Block Batch Mount",
+  chatgptCodeBlockBatchMountLabel: "Load Code Blocks in Batches",
   chatgptCodeBlockBatchMountDesc:
-    "Mount code editors in batches when opening or switching long chats to reduce page freezes",
-  chatgptStreamingRenderOptimizeLabel: "Streaming Render Optimization",
+    "Load code blocks in batches when opening or switching long chats, to reduce page freezes",
+  chatgptStreamingRenderOptimizeLabel: "Reduce Animations While Generating",
   chatgptStreamingRenderOptimizeDesc:
-    "Pause animations and transitions in the message area while a response is being generated to reduce rendering overhead",
+    "Pause animations and transitions in the message area while a response is being generated, to reduce lag",
   chatgptDisableBackdropBlurLabel: "Disable Backdrop Blur",
   chatgptDisableBackdropBlurDesc:
     "Turn off backdrop blur effects to reduce frame drops when scrolling long chats; slightly changes the page appearance",
@@ -1646,7 +1646,6 @@ Please output the optimized code block directly, followed by a brief summary of 
   // Toolbox Menu
   toolboxMenu: "Toolbox",
   toolboxMenuTitle: "Toolbox Menu",
-  toolboxMenuDesc: "Configure which features appear in the toolbox popup menu",
 
   // Global Settings Search
   globalSearchCategoryAll: "All",
@@ -1690,14 +1689,11 @@ Please output the optimized code block directly, followed by a brief summary of 
   globalSearchEmptyCurrentSession: "No results in current session",
   globalSearchCategoriesLabel: "Global search categories",
   globalSearchMatchingSettingsTitle: "Search Matching",
-  globalSearchMatchingSettingsDesc: "Configure how Search Everywhere matches search results",
   globalSearchShortcutSettingLabel: "Global Search shortcut",
   globalSearchShortcutSettingDesc:
     "Jump to keyboard shortcut settings to customize or disable the Global Search shortcut.",
   globalSearchShortcutSettingAction: "Go to settings",
   globalSearchPromptSettingsTitle: "Prompt Behavior",
-  globalSearchPromptSettingsDesc:
-    "Choose what happens when pressing Enter on a prompt result in Search Everywhere",
   globalSearchPromptEnterBehaviorLabel: "Search Everywhere prompt Enter behavior",
   globalSearchPromptEnterBehaviorDesc:
     "Smart: insert directly when no variable, open variable dialog when needed; Locate only: switch to Prompts and locate the item.",
@@ -1705,13 +1701,16 @@ Please output the optimized code block directly, followed by a brief summary of 
   globalSearchPromptEnterBehaviorLocate: "Locate Only",
   globalSearchEnableFuzzySearchLabel: "Enable fuzzy search",
   globalSearchEnableFuzzySearchDesc:
-    "When enabled, Search Everywhere uses fuzzy matching for title, folder, tag, prompt content, and setting identifiers.",
+    "When enabled, Search Everywhere uses fuzzy matching for titles, folders, tags, prompt content, and settings.",
   globalSearchFuzzySearchToggle: "Fuzzy",
   globalSearchFuzzySearchToggleAria: "Toggle fuzzy search",
   globalSearchFooterTips: "Enter to jump · ↑↓ to select · Tab category · Esc to close",
   globalSearchShortcutNudge: "Press {shortcut} to open next time",
   doubleShiftToSearch: "Double Shift to open Global Search",
-  doubleShiftToSearchDesc: "Press Shift twice quickly to open Global Search",
+  globalSearchEnabledLabel: "Enable Global Search",
+  globalSearchEnabledDesc:
+    "When off, all ways to open Global Search are disabled and {shortcut} is returned to the site's native feature",
+  globalSearchEnabledDescNoShortcut: "When off, all ways to open Global Search are disabled",
   globalSearchShortcutNudgeDismiss: "Don't remind me",
   globalSearchContextCurrentItem: "Item {current}",
   globalSearchContextShownProgress: "Shown {shown}/{total}",
@@ -1765,6 +1764,8 @@ Please output the optimized code block directly, followed by a brief summary of 
   queueRemove: "Remove",
   queuePlaceholderIdle: "Type a prompt, {key} to send...",
   queuePlaceholderBusy: "AI is generating, {key} to enqueue...",
+  queueSend: "Send",
+  queueEnqueue: "Add to queue",
   queueStatusIdle: "AI Idle",
   queueStatusBusy: "AI Generating",
   queueSettingLabel: "Prompt Queue",
@@ -1779,14 +1780,24 @@ Please output the optimized code block directly, followed by a brief summary of 
   queueBatchImportTitle: "Batch Add to Queue",
   queueBatchImportDesc:
     "Paste multiple prompts, split them by the selected rule, and add them to the queue.",
+  queueBatchImportDescLibrary:
+    "Select prompts from your library and add them to the queue using the chosen mode.",
   queueBatchTextTab: "Text",
   queueBatchLibraryTab: "Prompt Library",
   queueBatchLibraryModeLabel: "Add mode",
   queueBatchLibraryModeSingle: "Each prompt as one item",
+  queueBatchLibraryModeLine: "Split each prompt by line",
   queueBatchLibrarySearchLabel: "Prompt Library",
   queueBatchLibrarySearchPlaceholder: "Search prompts",
   queueBatchLibraryEmpty: "No prompts found",
-  queueBatchLibraryVariablePrompt: "Fill variables from the Prompt tab before adding to queue",
+  queueBatchLibraryVariablePrompt:
+    "Prompts with variables will ask you to fill them in after you click Add to Queue.",
+  queueBatchVariableFillEmpty:
+    "“{title}” is empty after filling in the variables. Fill in at least one",
+  queueBatchLibraryVariableBadge: "Has variables",
+  queueBatchLibraryLimitHint: "Showing the first {count}. Use search to narrow the list.",
+  queueBatchLibrarySelectAll: "Select all",
+  queueBatchLibrarySelectedCount: "{selected} of {total} selected",
   queueBatchSplitModeLabel: "Split Mode",
   queueBatchSplitModeLine: "Split by Line",
   queueBatchSplitModeDelimiter: "Custom Delimiter",
@@ -1798,7 +1809,8 @@ Please output the optimized code block directly, followed by a brief summary of 
     "Paste multiple prompts here. Each segment will be queued after splitting.",
   queueBatchPreviewTitle: "Preview",
   queueBatchPreviewCount: "{count} prompt(s) will be imported",
-  queueBatchPreviewEmpty: "No importable content yet",
+  queueBatchPreviewEmptyLibrary: "Select prompts to see a preview here",
+  queueBatchPreviewEmptyText: "Paste content to see a preview here",
   queueBatchPreviewMore: "{count} more not shown",
   queueBatchImportAction: "Add to Queue",
   queueBatchImportSuccess: "Added {count} prompt(s) to queue",
@@ -1840,9 +1852,9 @@ Please output the optimized code block directly, followed by a brief summary of 
   "featureTip-panel-mode-toggle-title": "Switch Panel Mode",
   "featureTip-panel-mode-toggle-desc": "Quickly switch between floating and edge-snap mode",
   "featureTip-panel-mode-toggle-path":
-    "Press {shortcut}, or double-click the title bar, to quickly switch the panel display mode",
+    "Press {shortcut}, or double-click the title bar, to switch between Floating and Auto Snap modes",
   "featureTip-panel-mode-toggle-path-dblclick":
-    "Double-click the panel title bar to quickly switch the panel display mode",
+    "Double-click the panel title bar to switch between Floating and Auto Snap modes",
   "featureTip-shortcuts-title": "Keyboard Shortcuts Overview",
   "featureTip-shortcuts-desc": "View and customize all keyboard shortcuts",
   "featureTip-shortcuts-path": "{shortcut} to open shortcuts overview",
@@ -1875,7 +1887,8 @@ Please output the optimized code block directly, followed by a brief summary of 
   // Adapter configuration updates
   remoteConfigSettingsTitle: "Adapter Configuration Updates",
   remoteConfigAutoUpdateLabel: "Automatically update adapter configurations",
-  remoteConfigAutoUpdateDesc: "Checks at most once every 24 hours.",
+  remoteConfigAutoUpdateDesc:
+    "Downloads the latest rules for built-in sites to fix breakage after a site changes. Checks at most once every 24 hours.",
   remoteConfigRegistrySourceLabel: "Development registry source",
   remoteConfigRegistrySourceDesc:
     "Enter a full index.json URL; leave blank to use the default sources.",
@@ -1896,8 +1909,8 @@ Please output the optimized code block directly, followed by a brief summary of 
   remoteConfigResetBuiltinButton: "Reset to built-in",
   remoteConfigResettingButton: "Resetting…",
   remoteConfigPrivacyDesc:
-    "Update checks only send GET requests to static CDNs. No chat or account data is included.",
-  sitePacksAdvancedTitle: "Advanced",
+    "Update checks only download configuration files. No chat or account data is uploaded.",
+  sitePacksAdvancedTitle: "Developer options",
   remoteConfigCheckUpdated:
     "New adapter configurations were downloaded. Refresh the matching AI pages to apply them.",
   remoteConfigCheckUpToDate: "Your adapter configurations are up to date.",

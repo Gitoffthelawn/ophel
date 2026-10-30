@@ -83,6 +83,8 @@ export const DEFAULT_SETTINGS: Settings = {
 
   disabledSites: [],
 
+  hiddenPaths: {},
+
   remoteConfig: {
     autoUpdate: true,
     registrySourceUrl: "",
@@ -247,6 +249,7 @@ export const DEFAULT_SETTINGS: Settings = {
   },
 
   globalSearch: {
+    enabled: true,
     promptEnterBehavior: "smart",
     enableFuzzySearch: false,
     doubleShift: false,

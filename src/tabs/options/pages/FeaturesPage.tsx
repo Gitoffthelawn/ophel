@@ -3,7 +3,7 @@
  * 包含：标签页、提醒、内容处理、大纲、对话、模型锁定、阅读历史
  * 使用顶部 Tab 切换
  */
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import { FeaturesIcon } from "~components/icons"
 import { Button, NumberInput, PlaceholderInput, SelectDropdown, Slider } from "~components/ui"
@@ -339,6 +339,7 @@ const UsageHistoryChart: React.FC<{ siteId: string }> = ({ siteId }) => {
                 key={value}
                 size="sm"
                 variant={metric === value ? "primary" : "secondary"}
+                title={value === "roundTripTokens" ? t("usageMonitorRoundTripDesc") : undefined}
                 onClick={() => setMetric(value)}>
                 {label}
               </Button>
@@ -364,11 +365,8 @@ const UsageHistoryChart: React.FC<{ siteId: string }> = ({ siteId }) => {
           <strong style={{ color: "var(--gh-text, #374151)" }}>{selectedSiteLabel}</strong>
         </div>
         <div style={{ fontSize: "12px", color: "var(--gh-text-secondary, #6b7280)" }}>
-          <span>MAX: </span>
+          <span>{t("usageMonitorChartMax")}: </span>
           <strong style={{ color: "var(--gh-text, #374151)" }}>{maxValue}</strong>
-        </div>
-        <div style={{ fontSize: "12px", color: "var(--gh-text-secondary, #6b7280)" }}>
-          <span>{t("usageMonitorChartScrollHint")}</span>
         </div>
       </div>
 
@@ -594,6 +592,8 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
   const { settings, updateDeepSetting, updateNestedSetting } = useSettingsStore()
 
   // 全局搜索 tab：当前键位展示与快捷键跳转
+  const globalSearchEnabled =
+    settings?.globalSearch?.enabled ?? DEFAULT_SETTINGS.globalSearch.enabled
   const doubleShiftToSearch =
     settings?.globalSearch?.doubleShift ?? DEFAULT_SETTINGS.globalSearch.doubleShift
   const enableFuzzySearch = settings?.globalSearch?.enableFuzzySearch ?? false
@@ -605,9 +605,32 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       ? null
       : userGlobalSearchBinding || DEFAULT_KEYBINDINGS[SHORTCUT_ACTIONS.OPEN_GLOBAL_SEARCH]
   const isMacLike = isMacOS()
-  const globalSearchShortcutParts = globalSearchBinding
-    ? getShortcutParts(globalSearchBinding, isMacLike)
-    : []
+  const globalSearchShortcutParts = useMemo(
+    () => (globalSearchBinding ? getShortcutParts(globalSearchBinding, isMacLike) : []),
+    [globalSearchBinding, isMacLike],
+  )
+
+  // 描述里内嵌当前实际生效的快捷键，键位被改绑后文案不会过期；
+  // 用户已移除绑定时没有按键可交还，退回到不提快捷键的版本
+  const globalSearchEnabledDesc = useMemo<React.ReactNode>(() => {
+    if (globalSearchShortcutParts.length === 0) {
+      return t("globalSearchEnabledDescNoShortcut")
+    }
+
+    const [before, after = ""] = t("globalSearchEnabledDesc").split("{shortcut}")
+    return (
+      <>
+        {before}
+        {globalSearchShortcutParts.map((part, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && !isMacLike && <span className="settings-kbd-separator">+</span>}
+            <kbd className="settings-kbd">{part}</kbd>
+          </React.Fragment>
+        ))}
+        {after}
+      </>
+    )
+  }, [globalSearchShortcutParts, isMacLike])
 
   const handleNavigateToGlobalSearchShortcut = () => {
     window.dispatchEvent(
@@ -943,26 +966,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
     </SettingCard>
   )
   const usageMonitorCard = (
-    <SettingCard
-      title={t("usageMonitorSettingsTitle")}
-      description={t("usageMonitorSettingsDesc")}
-      settingId="usage-monitor-card">
-      <div
-        style={{
-          marginBottom: "12px",
-          padding: "10px 12px",
-          borderRadius: "10px",
-          border: "1px solid var(--gh-border, #e5e7eb)",
-          background: "var(--gh-bg-secondary, #f9fafb)",
-          color: "var(--gh-text-secondary, #6b7280)",
-          fontSize: "12px",
-          lineHeight: 1.6,
-        }}>
-        <div>{t("usageMonitorExplainLocalOnly")}</div>
-        <div>{t("usageMonitorExplainNoBackend")}</div>
-        <div>{t("usageMonitorExplainReset")}</div>
-      </div>
-
+    <SettingCard title={t("usageMonitorSettingsTitle")} settingId="usage-monitor-card">
       <ToggleRow
         label={t("usageMonitorEnabledLabel")}
         description={t("usageMonitorEnabledDesc")}
@@ -972,21 +976,6 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
           updateNestedSetting("usageMonitor", "enabled", !(settings.usageMonitor?.enabled ?? false))
         }
       />
-
-      <div
-        style={{
-          marginTop: "-2px",
-          marginBottom: "12px",
-          padding: "10px 12px",
-          borderRadius: "10px",
-          border: "1px solid var(--gh-border-active, #6366f1)",
-          background: "var(--gh-user-query-bg, rgba(66, 133, 244, 0.08))",
-          color: "var(--gh-text, #374151)",
-          fontSize: "12px",
-          lineHeight: 1.55,
-        }}>
-        {t("usageMonitorExplainRender")}
-      </div>
 
       <SettingRow
         label={t("usageMonitorDailyLimitLabel")}
@@ -1006,7 +995,13 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       </SettingRow>
 
       <ToggleRow
-        label={t("usageMonitorAutoResetLabel")}
+        label={
+          <span className="settings-row-label-with-badge">
+            <span>{t("usageMonitorAutoResetLabel")}</span>
+            <span className="settings-beta-badge">{t("betaBadge")}</span>
+          </span>
+        }
+        ariaLabel={t("usageMonitorAutoResetLabel")}
         description={t("usageMonitorAutoResetDesc")}
         settingId="usage-monitor-auto-reset"
         checked={settings.usageMonitor?.autoResetEnabled ?? false}
@@ -1028,7 +1023,6 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
   return (
     <div>
       <PageTitle title={t("navFeatures")} Icon={FeaturesIcon} />
-      <p className="settings-page-desc">{t("featuresPageDesc")}</p>
 
       <TabGroup tabs={tabs} activeTab={activeTab} onTabChange={setActiveTab} />
 
@@ -1148,10 +1142,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       {/* ========== 大纲 Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.OUTLINE && (
         <>
-          <SettingCard
-            title={t("outlineSettings")}
-            description={t("outlineSettingsDesc")}
-            settingId="outline-settings-card">
+          <SettingCard title={t("outlineSettings")} settingId="outline-settings-card">
             <ToggleRow
               label={t("outlineAutoUpdateLabel")}
               description={t("outlineAutoUpdateDesc")}
@@ -1167,10 +1158,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
               }
             />
 
-            <SettingRow
-              label={t("outlineUpdateIntervalLabel")}
-              description={t("outlineUpdateIntervalDesc")}
-              settingId="outline-update-interval">
+            <SettingRow label={t("outlineUpdateIntervalLabel")} settingId="outline-update-interval">
               <NumberInput
                 value={settings.features?.outline?.updateInterval ?? 2}
                 onChange={(val) => updateDeepSetting("features", "outline", "updateInterval", val)}
@@ -1229,10 +1217,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
           </SettingCard>
 
           {/* 收藏图标设置卡片 */}
-          <SettingCard
-            title={t("bookmarkSettings")}
-            description={t("bookmarkSettingsDesc")}
-            settingId="bookmark-settings-card">
+          <SettingCard title={t("bookmarkSettings")} settingId="bookmark-settings-card">
             <SettingRow
               label={t("inlineBookmarkModeLabel")}
               description={t("inlineBookmarkModeDesc")}
@@ -1376,7 +1361,6 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
             <ToggleRow
               label={t("exportFilenameTimestamp")}
-              description={t("exportFilenameTimestampDesc")}
               settingId="export-filename-timestamp"
               checked={settings.export?.exportFilenameTimestamp ?? false}
               onChange={() =>
@@ -1446,7 +1430,6 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
           <SettingCard
             title={t("conversationsSettingsTitle")}
-            description={t("conversationsSettingsDesc")}
             settingId="conversations-settings-card">
             <ToggleRow
               label={t("folderRainbowLabel")}
@@ -1497,10 +1480,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
       {/* ========== Prompt Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.PROMPTS && (
         <>
-          <SettingCard
-            title={t("promptSettingsTitle")}
-            description={t("promptSettingsDesc")}
-            settingId="prompts-settings-card">
+          <SettingCard title={t("promptSettingsTitle")} settingId="prompts-settings-card">
             <ToggleRow
               label={t("promptDoubleClickSendLabel")}
               description={t("promptDoubleClickSendDesc")}
@@ -1551,10 +1531,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
             />
           </SettingCard>
 
-          <SettingCard
-            title={t("quickQuoteSettingsTitle")}
-            description={t("quickQuoteSettingsDesc")}
-            settingId="quick-quote-settings-card">
+          <SettingCard title={t("quickQuoteSettingsTitle")} settingId="quick-quote-settings-card">
             <ToggleRow
               label={t("quickQuoteEnabledLabel")}
               description={t("quickQuoteEnabledDesc")}
@@ -1575,10 +1552,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
       {/* ========== Reading History Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.READING_HISTORY && (
-        <SettingCard
-          title={t("readingHistoryTitle")}
-          description={t("readingHistoryDesc")}
-          settingId="reading-history-card">
+        <SettingCard title={t("readingHistoryTitle")} settingId="reading-history-card">
           <ToggleRow
             label={t("readingHistoryPersistenceLabel")}
             description={t("readingHistoryPersistenceDesc")}
@@ -1633,10 +1607,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
       {/* ========== 内容交互 Tab ========== */}
       {activeTab === FEATURES_TAB_IDS.CONTENT && (
-        <SettingCard
-          title={t("interactionEnhance")}
-          description={t("interactionEnhanceDesc")}
-          settingId="content-interaction-card">
+        <SettingCard title={t("interactionEnhance")} settingId="content-interaction-card">
           <ToggleRow
             label={t("assistantMermaidLabel")}
             description={t("assistantMermaidDesc")}
@@ -1727,11 +1698,20 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
         <>
           <SettingCard
             title={t("globalSearchMatchingSettingsTitle")}
-            description={t("globalSearchMatchingSettingsDesc")}
             settingId="global-search-matching-card">
+            <ToggleRow
+              label={t("globalSearchEnabledLabel")}
+              description={globalSearchEnabledDesc}
+              checked={globalSearchEnabled}
+              onChange={() => updateNestedSetting("globalSearch", "enabled", !globalSearchEnabled)}
+              settingId="global-search-enabled"
+            />
+
             <SettingRow
               label={t("globalSearchShortcutSettingLabel")}
               description={t("globalSearchShortcutSettingDesc")}
+              disabled={!globalSearchEnabled}
+              onDisabledClick={() => showPrerequisiteToast(t("globalSearchEnabledLabel"))}
               settingId="global-search-shortcut-setting-link">
               <span className="settings-global-search-shortcut">
                 {globalSearchShortcutParts.map((part, index) => (
@@ -1755,6 +1735,7 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
               </span>
               <button
                 className="settings-btn settings-btn-secondary"
+                disabled={!globalSearchEnabled}
                 onClick={handleNavigateToGlobalSearchShortcut}>
                 {t("globalSearchShortcutSettingAction")}
               </button>
@@ -1762,8 +1743,9 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
             <ToggleRow
               label={t("doubleShiftToSearch")}
-              description={t("doubleShiftToSearchDesc")}
               checked={doubleShiftToSearch}
+              disabled={!globalSearchEnabled}
+              onDisabledClick={() => showPrerequisiteToast(t("globalSearchEnabledLabel"))}
               onChange={() =>
                 updateNestedSetting("globalSearch", "doubleShift", !doubleShiftToSearch)
               }
@@ -1774,6 +1756,8 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
               label={t("globalSearchEnableFuzzySearchLabel")}
               description={t("globalSearchEnableFuzzySearchDesc")}
               checked={enableFuzzySearch}
+              disabled={!globalSearchEnabled}
+              onDisabledClick={() => showPrerequisiteToast(t("globalSearchEnabledLabel"))}
               onChange={() =>
                 updateNestedSetting("globalSearch", "enableFuzzySearch", !enableFuzzySearch)
               }
@@ -1783,15 +1767,17 @@ const FeaturesPage: React.FC<FeaturesPageProps> = ({ siteId, initialTab }) => {
 
           <SettingCard
             title={t("globalSearchPromptSettingsTitle")}
-            description={t("globalSearchPromptSettingsDesc")}
             settingId="global-search-prompt-card">
             <SettingRow
               label={t("globalSearchPromptEnterBehaviorLabel")}
               description={t("globalSearchPromptEnterBehaviorDesc")}
+              disabled={!globalSearchEnabled}
+              onDisabledClick={() => showPrerequisiteToast(t("globalSearchEnabledLabel"))}
               settingId="global-search-prompt-enter-behavior">
               <SelectDropdown
                 className="settings-select-dropdown"
                 buttonClassName="settings-select"
+                disabled={!globalSearchEnabled}
                 options={[
                   { value: "smart", label: t("globalSearchPromptEnterBehaviorSmart") },
                   { value: "locate", label: t("globalSearchPromptEnterBehaviorLocate") },

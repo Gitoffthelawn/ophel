@@ -81,7 +81,6 @@ export const ko = {
   sitePacksSourceRegistry: "온라인",
   sitePacksSourceLocal: "로컬 가져오기",
   sitePacksStatusAvailable: "사용 가능",
-  sitePacksStatusMatchRequired: "일치 규칙 필요",
   sitePacksStatusDisabled: "비활성화됨",
   sitePacksStatusIncompatible: "호환되지 않음",
   sitePacksStatusPackMissing: "팩 없음",
@@ -149,10 +148,7 @@ export const ko = {
   sitePacksMatchGuideAction: "추가 방법 보기",
   sitePacksBindingPackRequired: "먼저 설치된 팩을 선택하세요.",
 
-  generalPageDesc: "확장 프로그램 동작 및 인터페이스 구성",
-  appearancePageDesc: "시각적 스타일 및 테마 사용자 정의",
   pageContentPageDesc: "페이지 레이아웃 및 콘텐츠 표시 조정",
-  featuresPageDesc: "확장 프로그램 기능 모듈 구성",
   backupPageDesc: "데이터 백업, 클라우드 동기화 및 확장 권한 관리",
   aboutPageDesc: "AI의 혜택을 더 가까이.",
   tsPlasmoDesc: "브라우저 확장 프로그램 프레임워크",
@@ -174,6 +170,7 @@ export const ko = {
   granted: "허용됨",
   notGranted: "허용되지 않음",
   revoke: "취소",
+  revokePermissionTitle: "권한 취소",
   grant: "허용",
   allowRecommended: "허용(권장)",
   required: "필수",
@@ -229,14 +226,9 @@ export const ko = {
   scrollSettings: "스크롤 설정",
   contentProcessing: "콘텐츠 처리",
   interactionEnhance: "상호작용 강화",
-  interactionEnhanceDesc: "수식 및 표 상호작용 강화",
   exportSettings: "내보내기 설정",
 
   // ======== Features ========
-  outlineSettingsDesc: "개요 생성 및 따라가기 동작 구성",
-  outlineUpdateIntervalDesc: "개요 자동 업데이트 간격(초)",
-  conversationsSettingsDesc: "대화 동기화 및 표시 구성",
-  readingHistoryDesc: "대화 읽기 위치 추적 및 복원",
   day: "일",
   days: "일",
   forever: "영구히",
@@ -258,8 +250,7 @@ export const ko = {
   aboutDescription:
     "{appName}은 ChatGPT, Claude, Gemini, DeepSeek, Doubao 등 AI 플랫폼을 위한 브라우저 확장 프로그램으로, 어댑터 팩(JSON 규칙)으로 지원 사이트를 확장할 수 있습니다. 대화 관리, 다중 형식보내기, 스마트 개요, 전역 검색, 프롬프트 큐 같은 생산성 도구와 함께 읽기 진행 복원, 수식 렌더링·복사, 완료 알림, 모델 잠금, 페이지 레이아웃 조정 같은 편의 기능을 제공하며, 테마, Zen 모드, WebDAV 동기화도 지원하여 더욱 매끄러운 AI 경험을 제공합니다.",
   aboutSupportedPlatforms: "지원 플랫폼",
-  aboutSupportedPlatformsDesc:
-    "현재 {count}개의 AI 플랫폼을 지원하며, 팝업의 사이트 감지 및 빠른 접근 목록과 같은 기준을 사용합니다.",
+  aboutSupportedPlatformsDesc: "현재 {count}개의 AI 플랫폼을 지원합니다.",
   projectLinks: "프로젝트 링크",
   githubRepository: "GitHub 저장소",
   githubDesc: "GitHub에서 스타를 눌러 개발을 응원해 주세요",
@@ -293,26 +284,16 @@ export const ko = {
   // ======== Common Buttons/Labels ========
   tabBehaviorTitle: "탭 동작",
   notificationSettings: "완료 후 동작",
-  usageMonitorSettingsTitle: "로컬 사용 카운터 및 추정",
-  usageMonitorSettingsDesc:
-    "입력창 근처에 로컬 전송 횟수, 임계값 진행률, 대략적인 토큰 추정치를 표시합니다.",
-  usageMonitorExplainLocalOnly:
-    "참고: 이것은 로컬 전용 추정치입니다. 확장 프로그램은 공식 남은 할당량이나 서버 측 실제 한도를 알지 못합니다.",
-  usageMonitorExplainNoBackend:
-    "동작: 카운트는 로컬에만 저장되고 입력창 근처에 가벼운 패널만 표시됩니다. 사이트 백엔드에 추가 상태를 기록하지 않습니다.",
-  usageMonitorExplainReset:
-    "초기화: 플랫폼의 실제 초기화 시점은 달라질 수 있으며 항상 로컬 자정과 일치하지 않습니다. 자동 초기화는 기본적으로 꺼져 있으며, 수동 초기화가 더 안전한 기본값입니다.",
-  usageMonitorExplainRender:
-    "패널은 현재 입력창 위에 렌더링되며 페이지 콘텐츠를 위한 공간을 확보합니다. 켠 직후 렌더링이 이상해 보이면 페이지를 새로고침하면 레이아웃이 안정됩니다.",
-  usageMonitorEnabledLabel: "고급 모델용 로컬 카운터 및 추정 활성화",
+  usageMonitorSettingsTitle: "고급 모델 사용량 추정",
+  usageMonitorEnabledLabel: "사용량 추정 표시",
   usageMonitorEnabledDesc:
-    "입력창 근처의 가벼운 로컬 패널로 사이트 동작을 바꾸지 않고 현재 계정의 사용량을 추정합니다.",
-  usageMonitorDailyLimitLabel: "일일 대화 횟수 추정 한도",
+    "입력창 위에 이 기기에서 보낸 횟수와 토큰 추정치를 표시합니다. Ophel은 사이트의 실제 한도를 알 수 없으므로 수치는 참고용입니다. 표시가 이상하면 페이지를 새로고침하세요.",
+  usageMonitorDailyLimitLabel: "일일 전송 횟수 한도",
   usageMonitorDailyLimitDesc:
-    "80% / 100% 경고 임계값 계산에 사용됩니다. 이는 로컬 추정치일 뿐입니다.",
-  usageMonitorAutoResetLabel: "자동 초기화 활성화",
+    "이 횟수의 80%와 100%에 도달하면 경고합니다. 직접 정하는 참고값이며 사이트의 실제 한도가 아닙니다.",
+  usageMonitorAutoResetLabel: "매일 자동 초기화",
   usageMonitorAutoResetDesc:
-    "실험적 기능: 로컬 날짜가 바뀌면 자동으로 초기화합니다. 실제 플랫폼 초기화 시점은 달라질 수 있어 기본적으로 비활성화되어 있습니다.",
+    "로컬 날짜가 바뀌는 0시에 매일 초기화합니다. 사이트의 실제 초기화 시점은 다를 수 있어 기본적으로 꺼져 있습니다.",
   usageMonitorTodayUsed: "오늘 사용",
   usageMonitorLocallyUsed: "로컬 기록",
   usageMonitorInputChars: "입력 문자",
@@ -327,7 +308,7 @@ export const ko = {
   usageMonitorManualMode: "수동 모드",
   usageMonitorChartTitle: "사용 기록",
   usageMonitorChartDesc:
-    "로컬 전송 이벤트를 집계해 표시합니다. 시간, 일, 월 단위로 횟수 또는 추정 토큰을 볼 수 있습니다.",
+    "시간, 일, 월 단위로 전송 횟수 또는 토큰 추정치를 볼 수 있습니다. 이 기기에 저장된 기록을 기반으로 합니다.",
   usageMonitorChartHour: "시간",
   usageMonitorChartDay: "일",
   usageMonitorChartMonth: "월",
@@ -339,27 +320,23 @@ export const ko = {
   usageMonitorChartMetricRoundTrip: "왕복",
   usageMonitorChartMetricConversation: "로드된 컨텍스트",
   usageMonitorChartMetricOutput: "출력 토큰",
-  usageMonitorChartDelta: "이전 버킷 대비",
+  usageMonitorChartDelta: "이전 기간 대비",
+  usageMonitorChartMax: "최댓값",
   usageMonitorChartMaxConversation: "최대 로드된 컨텍스트",
   usageMonitorChartMaxRequest: "최대 단일 요청",
   usageMonitorChartMaxRoundTrip: "최대 단일 왕복",
   usageMonitorChartMaxOutput: "최대 단일 출력",
-  usageMonitorChartScrollHint: "가로로 스크롤해 전체 타임라인을 볼 수 있습니다",
   usageMonitorChartEmpty: "아직 기록이 없습니다",
   enablePrerequisiteToast: '먼저 "{setting}"을(를) 켜 주세요',
-  privacyModeTitle: "개인정보 보호 모드",
+  privacyModeTitle: "탭 개인정보 보호",
   collapsedButtonsOrderTitle: "퀵 버튼",
   quickButtonsOpacityLabel: "빠른 버튼 불투명도",
-  quickButtonsOpacityDesc: "빠른 버튼 그룹 전체의 불투명도를 조절합니다",
   quickButtonsProximityRadiusLabel: "근접 감지 거리",
   quickButtonsProximityRadiusDesc:
     "마우스가 이 범위(px)에 들어오면 빠른 버튼을 자동으로 펼칩니다. 0으로 설정하면 직접 호버 시에만 펼칩니다",
   quickButtonsHideWhenPanelOpenLabel: "패널 열릴 때 빠른 버튼 숨기기",
-  quickButtonsHideWhenPanelOpenDesc:
-    "패널이 열릴 때 빠른 버튼 그룹을 자동으로 숨기고, 패널이 닫히면 다시 표시합니다",
 
   quickButtonsBehaviorTitle: "빠른 버튼 동작",
-  quickButtonsBehaviorDesc: "빠른 버튼 그룹의 외관 및 동작 설정을 조절합니다",
   // ======== Continue existing translations ========
   searchPlaceholder: "프롬프트 검색...",
   addPrompt: "새 프롬프트 추가",
@@ -375,7 +352,7 @@ export const ko = {
   snapToEdge: "가장자리에 스냅",
   tip1: "{modifier} 길게 누르면 패널을 투과하여 아래 콘텐츠를 조작할 수 있습니다",
   tip3: "{shortcut} 을 누르면 {link}를 확인할 수 있습니다",
-  tip4: "{shortcut}로 {link}를 열어 모든 항목 검색",
+  tip4: "{shortcut}로 {link}을 열어 개요, 대화, 프롬프트, 설정을 한 번에 검색",
   tipGlobalSearchLink: "글로벌 검색",
   tipShortcutsLink: "모든 단축키",
   tip5: "{sitePacks}에서 팩을 설치하면 더 많은 AI 사이트에서 Ophel을 사용할 수 있습니다",
@@ -415,10 +392,11 @@ export const ko = {
     '클라우드 백업 "{name}"(을)를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
   insertFailed: "삽입에 실패했습니다",
   maximize: "최대화",
+  restoreWindow: "이전 크기로 복원",
   clearAllData: "모든 데이터 지우기",
   clearAllDataDesc: "로컬의 모든 설정, 프롬프트, 대화 데이터를 영구적으로 삭제합니다.",
   clearAllDataConfirm:
-    "모든 데이터를 지우시겠습니까? 이 작업은 되돌릴 수 없으며 모든 설정, 프롬프트, 대화가 삭제됩니다!",
+    "모든 데이터를 지우시겠습니까? 설정, 프롬프트, 대화 등이 모두 삭제되며 복구할 수 없습니다. 먼저 백업을 내보내 두는 것을 권장합니다.",
   clearSuccess: "데이터가 삭제되었습니다. 새로고침 중...",
   defaultDir: "기본 디렉토리",
   dangerZone: "위험 구역",
@@ -464,7 +442,6 @@ export const ko = {
   promptMergeSuccess: "병합됨: {updated}개 업데이트, {added}개 추가",
   promptDeleteConfirm: "이 프롬프트는 영구적으로 삭제됩니다.",
   promptSettingsTitle: "프롬프트 설정",
-  promptSettingsDesc: "프롬프트 탭의 상호작용을 설정합니다",
   promptSubmitShortcutLabel: "전송 단축키",
   promptSubmitShortcutDesc: "수동 전송과 프롬프트 자동 전송 모두에 적용됩니다.",
   promptSubmitShortcutEnter: "Enter",
@@ -479,25 +456,20 @@ export const ko = {
   promptSplitLinesToQueue: "줄 단위로 나누어 대기열에 추가",
   promptQueueEnableHint: "먼저 프롬프트 대기열 기능을 활성화하세요",
   promptEnqueueEmpty: "대기열에 추가할 내용이 없습니다",
-  promptsViewPrompts: "프롬프트",
-  promptsViewChains: "Chains",
-  chainSearchPlaceholder: "Chains 검색",
+  promptsViewPrompts: "단일",
+  promptsViewChains: "Chain",
+  chainSearchPlaceholder: "Chain 검색",
   chainTitleRequired: "Chain 이름을 입력하세요",
-  chainStepRequired: "프롬프트 단계를 하나 이상 선택하세요",
+  chainStepRequired: "내용이 있는 단계를 하나 이상 추가하세요",
   chainUpdated: "Chain이 업데이트되었습니다",
   chainAdded: "Chain이 추가되었습니다",
   chainMissingPrompt: "프롬프트를 찾을 수 없음",
-  chainEmpty: "아직 Chains가 없습니다",
+  chainEmpty: "아직 Chain이 없습니다",
   chainEmptyDescription: "Chain을 만들어 여러 프롬프트를 순서대로 대기열에 추가하세요.",
   chainNoSteps: "단계 없음",
   chainStepCount: "{count}개 단계",
-  chainShownInPopover: "선택 팝오버에 표시",
-  chainHiddenInPopover: "선택 팝오버에서 숨김",
   chainVariablesCount: "{count}개 변수",
   chainVariablesNone: "추가 변수가 없습니다",
-  chainNoPrompts: "먼저 프롬프트를 만드세요",
-  chainNoPromptsDescription:
-    "Chain은 기존 프롬프트로 구성되므로 하나 이상의 프롬프트가 필요합니다.",
   chainDuplicated: "Chain이 복제되었습니다",
   chainDeleteConfirm: "이 Chain은 영구적으로 삭제됩니다.",
   chainAdd: "Chain 추가",
@@ -508,10 +480,9 @@ export const ko = {
   chainNamePlaceholder: "예: 인용 후 요약 및 후속 질문",
   chainDescription: "설명",
   chainDescriptionPlaceholder: "이 Chain의 용도를 간단히 설명하세요",
-  chainIconSvg: "SVG 아이콘",
+  chainIconSvg: "아이콘",
   chainIconSvgPlaceholder: '<svg viewBox="0 0 24 24">...</svg>',
   chainIconSvgHelp: "안전한 SVG 노드와 속성만 유지됩니다. 비워두면 기본 아이콘을 사용합니다.",
-  chainIconSelected: "아이콘 선택됨",
   chainIconNotSelected: "아이콘 선택 안 됨",
   chainIconSelect: "아이콘 선택",
   chainIconSearchPlaceholder: "아이콘 검색... (예: 번역, translate)",
@@ -557,7 +528,11 @@ export const ko = {
   chainIconPresetData: "데이터",
   chainIconPresetCalculate: "계산",
   chainIconPresetStatistics: "통계",
-  chainShowInPopover: "선택 팝오버에 표시",
+  chainShowInPopover: "선택 도구 모음에 표시",
+  chainHideFromPopover: "선택 도구 모음에서 숨기기",
+  chainHiddenBadge: "선택 도구 모음에 숨김",
+  chainDuplicate: "사본 만들기",
+  chainPopoverUsageHint: "대화 내용을 선택한 뒤 선택 도구 모음에서 클릭하면 실행됩니다.",
   chainQueueRequiredTitle: "프롬프트 대기열 활성화",
   chainQueueRequiredDescription:
     "Chain이 단계를 순서대로 실행하려면 프롬프트 대기열이 필요합니다. 먼저 초안을 만들고 나중에 활성화할 수도 있습니다.",
@@ -575,15 +550,20 @@ export const ko = {
   chainQuickQuoteViewSettings: "설정 보기",
   chainQuickQuoteEnabledToast: "선택 인용이 활성화되었습니다",
   chainSteps: "단계",
-  chainStepsHelp: "각 단계에서 기존 프롬프트를 선택하며 실행 시 순서대로 대기열에 추가됩니다.",
+  chainStepsHelp:
+    "각 단계에서 기존 프롬프트를 선택하거나 직접 입력하며, 실행 시 순서대로 대기열에 추가됩니다.",
   chainStepModePrompt: "기존 프롬프트 사용",
   chainStepModeInline: "직접 입력",
   chainStepInlinePlaceholder:
     "프롬프트 내용을 직접 입력하세요({{selection}} 및 {{quote}} 변수 지원)",
   chainAddStep: "단계 추가",
   chainSelectPrompt: "프롬프트 선택",
-  chainVariablesPreview: "변수 미리보기",
+  chainVariablesPreview: "변수",
+  chainVariablesBuiltin: "기본 제공(자동 입력, 클릭하여 삽입)",
+  chainVariablesManual: "직접 입력",
+  chainInsertVariableNoTarget: "삽입할 위치가 없습니다. 먼저 “직접 입력” 단계를 추가하세요",
   chainExecutionPreview: "실행 미리보기",
+  chainPreviewSampleSelection: "대화에서 선택한 텍스트",
   chainStep: "단계",
   chainStepContentEmpty: "내용 없음(단계가 설정되지 않음)",
   expand: "펼치기",
@@ -593,10 +573,11 @@ export const ko = {
   quickQuoteInserted: "인용이 삽입되었습니다",
   quickQuoteChainQueued: "{count}개 항목을 대기열에 추가했습니다",
   quickQuoteQuote: "인용",
+  quickQuoteQuoteHint: "선택한 텍스트를 인용으로 입력창에 삽입합니다",
+  quickQuoteReplyHint: "선택한 텍스트를 인용하고 답변 지시와 함께 입력창에 넣습니다",
   quickQuoteReply: "인용 답변",
   quickQuoteChainQueueSource: "Chain: {title} · {index}/{total}",
   quickQuoteSettingsTitle: "선택 영역 인용",
-  quickQuoteSettingsDesc: "호환 사이트에서 Ophel 선택 영역 인용 팝오버를 표시할지 제어합니다.",
   quickQuoteEnabledLabel: "Ophel 선택 영역 인용",
   quickQuoteEnabledDesc:
     "켜면 호환 사이트에서 텍스트 선택 후 Ophel 인용 팝오버가 표시됩니다. 기본 인용 팝오버가 있는 사이트는 사이트 자체에 맡깁니다.",
@@ -613,6 +594,23 @@ export const ko = {
   panelSettingsTitle: "패널 설정",
   settingOn: "켜짐",
   settingOff: "꺼짐",
+  // Hidden pages
+  hiddenPathsTitle: "특정 페이지에서 Ophel 숨기기",
+  hiddenPathsDesc:
+    "아래 페이지에서는 Ophel 패널과 빠른 버튼이 표시되지 않고 단축키도 작동하지 않습니다. 페이지를 벗어나면 다시 나타납니다.",
+  hiddenPathsPlaceholder: "예: /artifact/*",
+  hiddenPathsRegexPlaceholder: "예: ^/(artifact|share)/",
+  hiddenPathsHint:
+    "URL에서 도메인 뒤의 부분을 입력하세요. *는 어떤 내용이든 일치합니다. 전체 URL을 그대로 붙여 넣어도 됩니다.",
+  hiddenPathsRegexHint: "정규식은 URL에서 도메인 뒤의 부분(예: /artifact/abc)과 비교됩니다.",
+  hiddenPathsUseRegex: "정규식 사용",
+  hiddenPathsRegexBadge: "정규식",
+  hiddenPathsUseCurrentPage: "현재 페이지 입력",
+  hiddenPathsHidesCurrentPage:
+    "이 규칙에는 현재 페이지도 포함됩니다. 추가하면 이 페이지에서 Ophel이 바로 사라집니다.",
+  hiddenPathsInvalidUrl: "이 URL을 인식할 수 없습니다",
+  hiddenPathsInvalidRegex: "유효한 정규식이 아닙니다",
+  hiddenPathsDuplicate: "이미 추가된 규칙입니다",
   // Model Lock
   modelLockTitle: "모델 잠금",
   modelLockEnabledLabel: "모델 잠금 활성화",
@@ -629,7 +627,7 @@ export const ko = {
   geminiMystuffOpenInNewTab: "새 탭에서 열기",
   geminiMystuffLocateFailed: "원본 대화 위치 정보를 찾을 수 없습니다",
 
-  userQueryWidthDesc: "사용자 쿼리 버블 컨테이너의 최대 너비 조정",
+  userQueryWidthDesc: "사용자 쿼리 버블의 최대 너비 조정",
   // Category management
   categoryManage: "카테고리 관리",
   categoryEmpty: "아직 카테고리가 없습니다. 프롬프트를 추가할 때 카테고리가 생성됩니다.",
@@ -658,9 +656,9 @@ export const ko = {
   themeSettings: "테마 설정",
   currentThemeMode: "현재 모드",
   themeSettingsDesc: "라이트 및 다크 모드용 프리셋 선택",
-  syncNativePageThemeLabel: "네이티브 페이지 색상 동기화",
+  syncNativePageThemeLabel: "사이트 페이지 색상 동기화",
   syncNativePageThemeDesc:
-    "사이트의 라이트/다크 모드는 항상 Ophel을 따릅니다. 이 옵션을 켜면 일부 기본 요소 색상도 함께 조정합니다(일부 사이트에서만 동작).",
+    "사이트의 라이트/다크 모드는 항상 Ophel을 따릅니다. 이 옵션을 켜면 사이트 자체의 일부 화면 요소 색상도 함께 조정합니다(일부 사이트에서만 지원).",
   themeLight: "라이트",
   themeSystem: "시스템",
   customCSS: "사용자 정의 스타일",
@@ -683,10 +681,8 @@ export const ko = {
   styleNameRequired: "스타일 이름을 입력하세요",
   newStyle: "새 스타일",
   editStyleTitle: "스타일 편집",
-  lightModePreset: "라이트 모드",
-  lightModePresetDesc: "라이트 모드에서만 적용됨",
-  darkModePreset: "다크 모드",
-  darkModePresetDesc: "다크 모드에서만 적용됨",
+  lightModePreset: "라이트 모드 테마",
+  darkModePreset: "다크 모드 테마",
   primaryColor: "주요 색상",
   secondaryColor: "보조 색상",
   // Theme preset names
@@ -756,7 +752,7 @@ export const ko = {
   pageWidthLabel: "페이지 너비",
   pageWidthValueLabel: "너비 값",
   pageWidthDesc:
-    "채팅 페이지 너비를 실시간으로 조정합니다. 스마트 회피가 켜져 있으면 실제 너비가 패널 안전 영역에 의해 제한될 수 있습니다.",
+    "채팅 페이지 너비를 실시간으로 조정합니다. 스마트 회피가 켜져 있으면 패널이 열릴 때 페이지가 공간을 비워 주므로 실제 너비가 조금 줄어들 수 있습니다.",
   panelAvoidanceTitle: "스마트 회피",
   betaBadge: "Beta",
   panelAvoidanceDesc:
@@ -805,8 +801,8 @@ export const ko = {
   notifyWhenFocusedDesc: "현재 페이지가 표시 중일 때도 알림 전송",
   autoFocusLabel: "창 자동 전면 표시",
   autoFocusDesc: "생성이 완료되면 창을 맨 앞으로 가져옴",
-  privacyModeLabel: "개인정보 보호 모드",
-  privacyModeDesc: "실제 대화 제목을 숨기고 가짜 제목 표시",
+  privacyModeLabel: "탭 제목 숨기기",
+  privacyModeDesc: "브라우저 탭 제목을 아래의 가짜 제목으로 바꿉니다. 페이지 내용은 그대로입니다.",
   privacyTitleLabel: "가짜 제목",
   privacyTitlePlaceholder: "예: Google, 업무 문서",
   titleFormatLabel: "제목 형식",
@@ -825,7 +821,6 @@ export const ko = {
   outlineSettings: "개요 설정",
   bookmarkSettings: "북마크 설정",
   bookmarkModeDisableLevel: "북마크 모드에서는 레벨을 조정할 수 없습니다",
-  bookmarkSettingsDesc: "북마크 관련 설정",
   inlineBookmarkModeLabel: "북마크 아이콘",
   inlineBookmarkModeDesc: "제목 옆 아이콘 표시 방식 제어",
   panelBookmarkModeLabel: "패널 북마크 아이콘",
@@ -856,7 +851,7 @@ export const ko = {
   syncingConversations: "대화 동기화 중...",
   grokSyncingConversations: "대화 목록을 동기화하는 중입니다. 잠시만 기다려 주세요...",
   // Tab Order Settings
-  tabOrderSettings: "인터페이스 레이아웃",
+  tabOrderSettings: "탭 순서",
   tabOrderDesc: "패널 탭의 표시 순서 조정 (드래그하여 재정렬)",
   tabOrderAtLeastOne: "최소 하나의 기능 탭을 유지해야 합니다",
   moveUp: "위로 이동",
@@ -903,7 +898,7 @@ export const ko = {
   floatingToolbarClearGhostConfirm: "이 세션의 유효하지 않은 북마크 {count}개를 삭제하시겠습니까?",
   floatingToolbarClearGhostEmpty: "삭제할 유효하지 않은 북마크가 없습니다.",
   showCollapsedThemeDesc: "패널을 접었을 때 사이드바에 테마 전환 버튼 표시",
-  collapsedButtonsOrderDesc: "접힌 패널 버튼의 표시 순서 조정 (드래그하여 재정렬)",
+  collapsedButtonsOrderDesc: "핸들을 드래그해 퀵 버튼의 표시 순서를 바꿉니다.",
   preventAutoScrollLabel: "자동 스크롤 방지",
   preventAutoScrollDesc: "AI 생성 중에 페이지가 하단으로 자동 스크롤되는 것을 방지",
   // Panel Mode
@@ -936,7 +931,6 @@ export const ko = {
   defaultEdgeDistanceLabel: "기본 여백",
   defaultEdgeDistanceDesc: "페이지 새로고침 후 브라우저 창 가장자리로부터의 기본 거리",
   panelWidthLabel: "패널 너비",
-  panelWidthDesc: "패널의 너비 (px)",
   panelResizeOnHoverLabel: "호버 시 넓히기",
   panelResizeOnHoverDesc:
     "포인터가 플로팅 패널 위에 있을 때만 임시로 넓히고, 벗어나면 기본 너비로 돌아갑니다",
@@ -951,9 +945,10 @@ export const ko = {
   toggleConversations: "대화 전환",
   // Conversations
   tabConversations: "대화",
-  conversationsEmpty: "대화가 아직 없습니다",
-  conversationsEmptyHint: "사이드바에서 가져오려면 위 동기화 버튼을 클릭하세요",
+  conversationsEmpty: "아직 대화가 없습니다",
+  conversationsEmptyHint: "새 대화는 이 폴더에 저장됩니다",
   conversationsSync: "동기화",
+  conversationsSyncTooltip: "현재 사이트에서 새 대화 가져오기",
   conversationsSyncing: "동기화 중...",
   conversationsSynced: "동기화됨",
   conversationsAddFolder: "새 폴더",
@@ -972,11 +967,13 @@ export const ko = {
   conversationsFolderName: "이름",
   conversationsFolderNamePlaceholder: "폴더 이름 입력",
   conversationsSyncEmpty: "대화를 찾을 수 없습니다",
-  conversationsSyncNoChange: "새로운 대화가 없습니다",
+  conversationsSyncNoChange: "“{folder}”이(가) 최신 상태입니다",
+  conversationsSyncUpdated: "{updated}개 대화를 업데이트했습니다",
+  conversationsSyncRemoved: "로컬 기록 {removed}개를 제거했습니다",
   conversationsSyncNoSidebarItems:
     "사이드바에서 대화를 찾지 못했습니다. 사이드바를 열고 다시 시도해 주세요.",
-  conversationsSyncResult:
-    "동기화 완료: {scanned}개 확인, {added}개 추가, {updated}개 업데이트, {deleted}개 삭제",
+  conversationsSyncResult: "{added}개 대화를 “{folder}”에 동기화했습니다",
+  conversationsSyncTargetChanged: "새 대화는 “{folder}”에 저장됩니다",
   conversationsUnsupportedTitle: "{site} 대화 미지원",
   conversationsUnsupportedDesc: "사이트 제한으로 대화 목록을 안정적으로 가져올 수 없습니다",
   conversationsUnsupportedSync: "{site} 대화 동기화는 지원되지 않습니다",
@@ -989,7 +986,8 @@ export const ko = {
   minutesAgo: "분 전",
   hoursAgo: "시간 전",
   daysAgo: "일 전",
-  conversationsSelectFolder: "동기화 폴더 선택",
+  conversationsSelectFolder: "동기화 폴더",
+  conversationsSyncFolderMenuTitle: "새 대화 저장 위치",
   conversationsSelectAllFolder: "이 폴더 모두 선택",
   conversationsMoveTo: "대화 이동",
   conversationsSetTag: "태그 설정",
@@ -1002,11 +1000,13 @@ export const ko = {
   // Conversation Settings
   conversationsSettingsTitle: "대화 설정",
   conversationsSyncUnpinLabel: "고정 해제 상태 동기화",
-  conversationsSyncUnpinDesc: "동기화 중 클라우드에서 고정 해제된 경우 로컬 대화도 고정 해제",
+  conversationsSyncUnpinDesc:
+    "동기화할 때 사이트에서 고정 해제된 대화는 로컬에서도 고정 해제합니다",
   folderRainbowLabel: "폴더 무지개 색상",
   folderRainbowDesc: "폴더에 서로 다른 배경색 할당",
-  conversationsSyncDeleteLabel: "삭제 동기화 (클라우드)",
-  conversationsSyncDeleteDesc: "로컬 기록 삭제 시 해당 사이트의 클라우드 대화도 함께 삭제",
+  conversationsSyncDeleteLabel: "사이트의 대화도 함께 삭제",
+  conversationsSyncDeleteDesc:
+    "Ophel에서 대화를 삭제하면 사이트의 원본 대화도 함께 삭제됩니다. 되돌릴 수 없습니다.",
   conversationsSyncRenameLabel: "이름 변경 동기화 (클라우드)",
   conversationsSyncRenameDesc: "로컬에서 이름 변경 시 {site} 사이드바 제목 업데이트",
   conversationsCustomIcon: "사용자 정의 아이콘",
@@ -1118,7 +1118,7 @@ export const ko = {
   exportDataBtn: "모든 데이터 내보내기",
   importDataBtn: "데이터 가져오기",
   exportError: "내보내기 실패: ",
-  importConfirm: "데이터를 가져오시겠습니까? 현재 모든 설정과 데이터가 덮어씌워집니다.",
+  importConfirm: "가져오면 백업에 포함된 데이터가 현재 데이터를 덮어씁니다.",
   importSuccess: "가져오기 성공! 새 설정을 적용하기 위해 페이지가 새로고침됩니다.",
   importError: "가져오기 실패: ",
   invalidBackupFile: "잘못된 백업 파일 형식",
@@ -1173,10 +1173,10 @@ export const ko = {
   webdavConnectionSuccess: "연결 성공",
   webdavUploadSuccess: "업로드 성공",
   webdavDownloadSuccess: "다운로드 성공", // Modified from "Download successful, refreshing page"
-  webdavConfigIncomplete: "먼저 WebDAV 구성을 완료하세요", // Modified from "Please complete WebDAV configuration"
+  webdavConfigIncomplete: "WebDAV 주소, 사용자 이름, 비밀번호를 입력하세요",
   webdavAuthFailed: "인증 실패. 사용자 이름과 비밀번호를 확인하세요",
-  webdavConnectionFailed: "연결 실패",
-  webdavUploadFailed: "업로드 실패",
+  webdavConnectionFailed: "연결에 실패했습니다({detail}). WebDAV 주소와 네트워크를 확인하세요",
+  webdavUploadFailed: "업로드에 실패했습니다({detail}). 계정 권한, 폴더, 네트워크를 확인하세요",
   webdavDownloadFailed: "다운로드 실패",
   webdavFileNotFound: "원격 파일을 찾을 수 없습니다",
   webdavInvalidFormat: "잘못된 백업 파일 형식",
@@ -1187,7 +1187,8 @@ export const ko = {
   importDataDesc: "백업 파일에서 데이터 복원",
 
   fullBackup: "전체 백업",
-  fullBackupDesc: "모든 계정 데이터와 설정을 내보냅니다",
+  fullBackupDesc:
+    "모든 데이터와 설정을 내보냅니다. Claude Session Key도 포함되므로 파일을 안전하게 보관하세요.",
   promptsBackup: "프롬프트만",
   promptsBackupDesc: "프롬프트 라이브러리만 내보내기 (태그/폴더 제외)",
   settingsBackup: "설정만",
@@ -1303,13 +1304,11 @@ export const ko = {
 
   // ======== Shortcuts Settings Page ========
   navShortcuts: "키보드 단축키",
-  shortcutsPageDesc: "빠른 작업을 위한 키보드 단축키 구성",
   shortcutsInteractionGroup: "독립 설정",
   shortcutsInteractionGroupDesc:
     '이 그룹의 설정은 항상 적용되며 "사용자 정의 단축키 활성화" 토글의 영향을 받지 않습니다',
   shortcutsGlobalSettings: "단축키 설정",
   enableShortcuts: "사용자 정의 단축키 활성화",
-  enableShortcutsDesc: "모든 사용자 정의 키보드 단축키를 활성화 또는 비활성화",
   globalShortcutUrl: "글로벌 단축키 URL",
   globalShortcutUrlDesc: "글로벌 단축키 {shortcut}를 누를 때 열리는 URL",
   resetShortcuts: "기본값으로 재설정",
@@ -1432,6 +1431,8 @@ export const ko = {
   claudeImportFromBrowser: "브라우저에서 가져오기",
   claudeImportJSON: "JSON 가져오기",
   claudeExportJSON: "JSON 내보내기",
+  claudeExportWarning:
+    "내보낸 파일에는 Session Key가 그대로 들어 있습니다. 계정 로그인 정보와 같으니 안전하게 보관하고 다른 사람과 공유하지 마세요.",
   claudeNoKeys: "세션 키 없음",
   claudeNoKeysHint: "시작하려면 '추가' 또는 '브라우저에서 가져오기'를 클릭하세요",
   claudeKeyValid: "유효함",
@@ -1507,12 +1508,12 @@ export const ko = {
   // ======== ChatGPT 설정 ========
   chatgptMarkdownFixLabel: "Markdown 굵게 수정",
   chatgptMarkdownFixDesc: "ChatGPT 응답에서 렌더링되지 않은 **굵게** 텍스트를 수정합니다",
-  chatgptCodeBlockBatchMountLabel: "코드 블록 일괄 마운트",
+  chatgptCodeBlockBatchMountLabel: "코드 블록 나눠서 불러오기",
   chatgptCodeBlockBatchMountDesc:
-    "긴 대화를 열거나 전환할 때 코드 에디터를 일괄로 마운트하여 페이지 멈춤을 줄입니다",
-  chatgptStreamingRenderOptimizeLabel: "스트리밍 렌더링 최적화",
+    "긴 대화를 열거나 전환할 때 코드 블록을 나눠서 불러와 페이지 멈춤을 줄입니다",
+  chatgptStreamingRenderOptimizeLabel: "생성 중 애니메이션 줄이기",
   chatgptStreamingRenderOptimizeDesc:
-    "응답 생성 중 메시지 영역의 애니메이션과 전환 효과를 일시 중지하여 렌더링 부하를 줄입니다",
+    "응답 생성 중 메시지 영역의 애니메이션과 전환 효과를 일시 중지해 버벅임을 줄입니다",
   chatgptDisableBackdropBlurLabel: "배경 블러 비활성화",
   chatgptDisableBackdropBlurDesc:
     "배경 블러 효과를 꺼서 긴 대화 스크롤 시 프레임 드롭을 줄입니다. 페이지 모습이 약간 달라집니다",
@@ -1529,7 +1530,6 @@ export const ko = {
   exportCustomModelName: "사용자 지정 AI 이름",
   exportCustomModelNameDesc: "내보내기 시 표시될 AI 이름 (기본값: 사이트 이름)",
   exportFilenameTimestamp: "내보내기 파일명에 타임스탬프 추가",
-  exportFilenameTimestampDesc: "내보낸 파일명 끝에 타임스탬프를 추가합니다",
   exportIncludeThoughtsLabel: "내보내기에 사고 과정 포함",
   exportThoughtCollapsedLabel: "사고 과정",
   exportIncludeThoughtsDesc:
@@ -1599,7 +1599,6 @@ export const ko = {
   // 도구함 메뉴
   toolboxMenu: "도구함",
   toolboxMenuTitle: "도구함 메뉴",
-  toolboxMenuDesc: "도구함 팝업 메뉴에 표시할 기능 설정",
 
   // Global Settings Search
   globalSearchCategoryAll: "전체",
@@ -1643,14 +1642,11 @@ export const ko = {
   globalSearchEmptyCurrentSession: "현재 세션에 결과가 없습니다",
   globalSearchCategoriesLabel: "전체 검색 카테고리",
   globalSearchMatchingSettingsTitle: "검색 매칭",
-  globalSearchMatchingSettingsDesc: "Search Everywhere가 검색 결과를 매칭하는 방식을 설정합니다",
   globalSearchShortcutSettingLabel: "전역 검색 단축키",
   globalSearchShortcutSettingDesc:
     "단축키 설정으로 이동해 전역 검색 단축키를 사용자 지정하거나 비활성화합니다.",
   globalSearchShortcutSettingAction: "설정으로 이동",
   globalSearchPromptSettingsTitle: "프롬프트 동작",
-  globalSearchPromptSettingsDesc:
-    "Search Everywhere에서 프롬프트 결과에 Enter를 눌렀을 때의 동작을 선택합니다",
   globalSearchPromptEnterBehaviorLabel: "Search Everywhere 프롬프트 Enter 동작",
   globalSearchPromptEnterBehaviorDesc:
     "스마트: 변수가 없으면 바로 삽입하고, 필요하면 변수 입력 창을 엽니다. 위치만: 프롬프트 목록으로 전환해 항목을 위치시킵니다.",
@@ -1658,13 +1654,16 @@ export const ko = {
   globalSearchPromptEnterBehaviorLocate: "위치만",
   globalSearchEnableFuzzySearchLabel: "퍼지 검색 사용",
   globalSearchEnableFuzzySearchDesc:
-    "활성화하면 Search Everywhere가 제목, 폴더, 태그, 프롬프트 내용, 설정 식별자에 퍼지 매칭을 사용합니다.",
+    "활성화하면 Search Everywhere가 제목, 폴더, 태그, 프롬프트 내용, 설정 항목에 퍼지 매칭을 사용합니다.",
   globalSearchFuzzySearchToggle: "퍼지",
   globalSearchFuzzySearchToggleAria: "퍼지 검색 전환",
   globalSearchFooterTips: "Enter 이동 · ↑↓ 선택 · Tab 카테고리 · Esc 닫기",
   globalSearchShortcutNudge: "다음부터는 {shortcut}로 빠르게 열 수 있어요",
   doubleShiftToSearch: "Shift 두 번으로 전역 검색 열기",
-  doubleShiftToSearchDesc: "Shift 키를 빠르게 두 번 눌러 전역 검색을 엽니다",
+  globalSearchEnabledLabel: "전역 검색 사용",
+  globalSearchEnabledDesc:
+    "끄면 전역 검색의 모든 실행 방법이 비활성화되고 {shortcut}는 사이트 기본 기능으로 돌아갑니다",
+  globalSearchEnabledDescNoShortcut: "끄면 전역 검색의 모든 실행 방법이 비활성화됩니다",
   globalSearchShortcutNudgeDismiss: "다시 알리지 않기",
 
   globalSearchContextCurrentItem: "{current}번째 항목",
@@ -1748,6 +1747,8 @@ export const ko = {
   queueRemove: "제거",
   queuePlaceholderIdle: "프롬프트를 입력하고 {key}를 눌러 전송...",
   queuePlaceholderBusy: "AI 생성 중, {key}를 눌러 대기열에 추가...",
+  queueSend: "전송",
+  queueEnqueue: "대기열에 추가",
   queueStatusIdle: "AI 대기 중",
   queueStatusBusy: "AI 생성 중",
   queueSettingLabel: "프롬프트 대기열",
@@ -1762,6 +1763,8 @@ export const ko = {
   queueBatchImport: "일괄 추가",
   queueBatchImportTitle: "대기열에 일괄 추가",
   queueBatchImportDesc: "여러 프롬프트를 붙여넣고 선택한 규칙으로 나눈 뒤 대기열에 추가합니다.",
+  queueBatchImportDescLibrary:
+    "프롬프트 라이브러리에서 프롬프트를 선택하고 선택한 방식으로 대기열에 추가합니다.",
   queueBatchSplitModeLabel: "분할 방식",
   queueBatchSplitModeLine: "줄 단위 분할",
   queueBatchSplitModeDelimiter: "사용자 지정 구분자",
@@ -1772,15 +1775,24 @@ export const ko = {
   queueBatchLibraryTab: "프롬프트 라이브러리",
   queueBatchLibraryModeLabel: "추가 방식",
   queueBatchLibraryModeSingle: "각 프롬프트를 하나의 항목으로 추가",
+  queueBatchLibraryModeLine: "각 프롬프트를 줄 단위로 분할",
   queueBatchLibrarySearchLabel: "프롬프트 라이브러리",
   queueBatchLibrarySearchPlaceholder: "프롬프트 검색",
   queueBatchLibraryEmpty: "프롬프트를 찾을 수 없습니다",
-  queueBatchLibraryVariablePrompt: "대기열에 추가하기 전에 프롬프트 탭에서 변수를 먼저 입력하세요",
+  queueBatchLibraryVariablePrompt:
+    "변수가 포함된 프롬프트는 “대기열에 추가”를 누르면 변수 입력을 요청합니다.",
+  queueBatchVariableFillEmpty:
+    "“{title}” 프롬프트는 변수를 입력해도 내용이 비어 있습니다. 하나 이상 입력하세요",
+  queueBatchLibraryVariableBadge: "변수 포함",
+  queueBatchLibraryLimitHint: "처음 {count}개만 표시합니다. 검색으로 범위를 좁혀 보세요",
+  queueBatchLibrarySelectAll: "전체 선택",
+  queueBatchLibrarySelectedCount: "{selected} / {total}개 선택됨",
   queueBatchInputLabel: "일괄 내용",
   queueBatchInputPlaceholder: "여러 프롬프트를 붙여넣으면 규칙에 따라 나누어 대기열에 추가합니다",
   queueBatchPreviewTitle: "미리보기",
   queueBatchPreviewCount: "{count}개를 추가합니다",
-  queueBatchPreviewEmpty: "추가할 수 있는 내용이 없습니다",
+  queueBatchPreviewEmptyLibrary: "프롬프트를 선택하면 여기에 미리보기가 표시됩니다",
+  queueBatchPreviewEmptyText: "내용을 붙여넣으면 여기에 미리보기가 표시됩니다",
   queueBatchPreviewMore: "추가로 {count}개가 더 있습니다",
   queueBatchImportAction: "대기열에 추가",
   queueBatchImportSuccess: "{count}개의 프롬프트를 대기열에 추가했습니다",
@@ -1821,9 +1833,9 @@ export const ko = {
   "featureTip-panel-mode-toggle-title": "패널 모드 전환",
   "featureTip-panel-mode-toggle-desc": "플로팅 모드와 가장자리 스냅 모드 사이를 빠르게 전환",
   "featureTip-panel-mode-toggle-path":
-    "{shortcut}을 누르거나 제목 표시줄을 더블 클릭하여 패널 표시 모드를 빠르게 전환",
+    "{shortcut}을 누르거나 제목 표시줄을 더블 클릭하여 플로팅과 자동 스냅 모드 사이를 전환",
   "featureTip-panel-mode-toggle-path-dblclick":
-    "제목 표시줄을 더블 클릭하여 패널 표시 모드를 빠르게 전환",
+    "제목 표시줄을 더블 클릭하여 플로팅과 자동 스냅 모드 사이를 전환",
   "featureTip-shortcuts-title": "키보드 단축키 모아보기",
   "featureTip-shortcuts-desc": "모든 키보드 단축키 확인 및 사용자 지정",
   "featureTip-shortcuts-path": "{shortcut}으로 단축키 모아보기 열기",
@@ -1854,7 +1866,8 @@ export const ko = {
   // 어댑터 구성 업데이트
   remoteConfigSettingsTitle: "어댑터 구성 업데이트",
   remoteConfigAutoUpdateLabel: "어댑터 구성 자동 업데이트",
-  remoteConfigAutoUpdateDesc: "24시간에 최대 한 번 확인합니다.",
+  remoteConfigAutoUpdateDesc:
+    "기본 지원 사이트의 최신 규칙을 자동으로 내려받아 사이트 개편으로 생긴 오류를 고칩니다. 24시간에 최대 한 번 확인합니다.",
   remoteConfigRegistrySourceLabel: "개발용 Registry 소스",
   remoteConfigRegistrySourceDesc:
     "전체 index.json URL을 입력하세요. 비워 두면 기본 소스를 사용합니다.",
@@ -1876,8 +1889,8 @@ export const ko = {
   remoteConfigResetBuiltinButton: "기본 제공 구성으로 복원",
   remoteConfigResettingButton: "복원 중…",
   remoteConfigPrivacyDesc:
-    "업데이트 확인은 정적 CDN에 GET 요청만 보내며 대화나 계정 정보는 포함하지 않습니다.",
-  sitePacksAdvancedTitle: "고급",
+    "업데이트 확인은 설정 파일만 내려받으며, 대화 내용이나 계정 정보는 업로드하지 않습니다.",
+  sitePacksAdvancedTitle: "개발자 옵션",
   remoteConfigCheckUpdated:
     "새 어댑터 구성을 다운로드했습니다. 해당 AI 페이지를 새로고침하면 적용됩니다.",
   remoteConfigCheckUpToDate: "어댑터 구성이 최신 상태입니다.",

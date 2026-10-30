@@ -12,6 +12,7 @@ import {
   DeleteIcon,
   EditIcon,
   ExportIcon,
+  EyeClosedIcon,
   EyeIcon,
   GlobeIcon,
   ImportIcon,
@@ -24,7 +25,15 @@ import {
   VariableIcon,
 } from "~components/icons"
 import { ContextMenu, MenuButton } from "~components/ConversationMenus"
-import { Button, ConfirmDialog, InputDialog, SafeSvgMarkup, Tooltip } from "~components/ui"
+import {
+  Button,
+  ConfirmDialog,
+  DialogOverlay,
+  InputDialog,
+  SafeSvgMarkup,
+  SelectDropdown,
+  Tooltip,
+} from "~components/ui"
 import {
   extractVariables,
   type ParsedVariable,
@@ -52,7 +61,7 @@ import { APP_NAME } from "~utils/config"
 import { t } from "~utils/i18n"
 import { initCopyButtons } from "~utils/icons"
 import { renderMarkdown } from "~utils/markdown"
-import { OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
+import { isEventFromEscapeLayer, OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS } from "~utils/dom-toolkit"
 import type { Prompt } from "~utils/storage"
 import { showToast } from "~utils/toast"
 import { createSafeHTML } from "~utils/trusted-types"
@@ -92,70 +101,23 @@ type ChainDraft = Omit<PromptChain, "id" | "createdAt" | "updatedAt"> & {
 }
 
 const CHAIN_EDITOR_PORTAL_STYLES = `
+/* 弹窗骨架（头部 / 内容 / 页脚、背景、圆角、阴影）来自共享的 .gh-dialog-frame，这里只放编辑器自己的部分 */
 .gh-chain-editor {
-  width: min(680px, 92vw);
-  max-height: 86vh;
-  padding: 0 !important;
-  border-radius: 12px;
-  background: var(--gh-bg, #ffffff);
   color: var(--gh-text, #1f2937);
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  box-shadow: var(--gh-shadow-lg, 0 20px 50px rgba(0, 0, 0, 0.3));
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
   animation: slideUp 0.25s ease-out;
 }
 
-.gh-chain-editor-header,
-.gh-chain-editor-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 16px 18px;
-  border-bottom: 1px solid var(--gh-border, #e5e7eb);
-}
-
-.gh-chain-editor-footer {
-  justify-content: flex-end;
-  border-top: 1px solid var(--gh-border, #e5e7eb);
-  border-bottom: none;
-}
-
-.gh-chain-editor-title {
-  color: var(--gh-text, #1f2937);
-  font-size: 16px;
-  font-weight: 650;
-}
-
-.gh-chain-editor-subtitle,
 .gh-chain-section-subtitle,
 .gh-chain-field-help {
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
   font-size: 12px;
+  font-weight: 400;
   line-height: 1.45;
 }
 
-.gh-chain-editor-close {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: var(--gh-hover, #f3f4f6);
-  color: var(--gh-text-secondary, #6b7280);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
+/* 内容区的滚动条样式（滚动与内边距来自共享的 .gh-dialog-frame-body） */
 .gh-chain-editor-scroll {
-  min-height: 0;
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 18px;
-  overscroll-behavior: contain;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
   scrollbar-color: color-mix(in srgb, var(--gh-text-tertiary, #9ca3af) 64%, transparent)
@@ -200,12 +162,11 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-field input,
-.gh-chain-field textarea,
-.gh-chain-step-row select {
+.gh-chain-field textarea {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--gh-input-border, #d1d5db);
-  border-radius: 7px;
+  border-radius: 6px;
   background: var(--gh-input-bg, var(--gh-bg, #ffffff));
   color: var(--gh-text, #1f2937);
   font: inherit;
@@ -213,8 +174,7 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   outline: none;
 }
 
-.gh-chain-field input,
-.gh-chain-step-row select {
+.gh-chain-field input {
   height: 34px;
   padding: 0 10px;
 }
@@ -229,17 +189,9 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-field input:focus,
-.gh-chain-field textarea:focus,
-.gh-chain-step-row select:focus {
+.gh-chain-field textarea:focus {
   border-color: var(--gh-primary, #4285f4);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--gh-primary, #4285f4) 12%, transparent);
-}
-
-.gh-chain-icon-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
 }
 
 .gh-chain-visibility-toggle {
@@ -291,6 +243,11 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   background: var(--gh-primary, #4285f4);
 }
 
+.gh-chain-visibility-toggle input:focus-visible + .gh-chain-visibility-switch {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .gh-chain-visibility-toggle input:checked + .gh-chain-visibility-switch::after {
   transform: translateX(12px);
 }
@@ -304,6 +261,23 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.gh-chain-icon-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 20px;
+}
+
+/* 放不下时（窄弹窗、长文案）整块换到图标控件下面，而不是把图标控件挤变形 */
+.gh-chain-visibility {
+  display: flex;
+  flex: 1 1 260px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
 }
 
 .gh-chain-icon-preview {
@@ -324,8 +298,16 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-icon-preview.empty {
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
   font-weight: 400;
+}
+
+/* 已选图标只需一个方块预览，不再铺满整行 */
+.gh-chain-icon-preview:not(.empty) {
+  flex: 0 0 44px;
+  width: 44px;
+  padding: 0;
+  justify-content: center;
 }
 
 .gh-chain-icon-preview-svg {
@@ -533,7 +515,7 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 .gh-chain-step-mode-switch {
   display: flex;
   padding: 2px;
-  border-radius: 7px;
+  border-radius: 8px;
   background: var(--gh-bg-secondary, #f3f4f6);
   border: 1px solid var(--gh-border, #e5e7eb);
   gap: 0;
@@ -543,9 +525,9 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 .gh-chain-step-mode-btn {
   padding: 4px 10px;
   border: none;
-  border-radius: 5px;
+  border-radius: 6px;
   background: transparent;
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
@@ -555,7 +537,7 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-step-mode-btn:hover {
-  color: var(--gh-text-secondary, #6b7280);
+  color: var(--gh-text, #1f2937);
 }
 
 .gh-chain-step-mode-btn.active {
@@ -566,25 +548,20 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-step-delete-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   margin-left: auto;
   flex-shrink: 0;
-  border-radius: 7px;
+  border-radius: 8px;
   border: none;
   background: transparent;
-  color: var(--gh-text-tertiary, #d1d5db);
-  opacity: 0;
+  color: var(--gh-text-secondary, #6b7280);
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
-}
-
-.gh-chain-step-row:hover .gh-chain-step-delete-btn {
-  opacity: 1;
 }
 
 .gh-chain-step-delete-btn:hover {
@@ -632,9 +609,10 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-step-inline-input::placeholder {
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
 }
 
+/* 步骤里选择提示词的可搜索下拉（共享 SelectDropdown 的按钮） */
 .gh-chain-step-prompt-select {
   width: 100%;
   height: 36px;
@@ -643,6 +621,7 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   border-radius: 8px;
   background: var(--gh-bg-secondary, #f9fafb);
   color: var(--gh-text, #1f2937);
+  font-family: inherit;
   font-size: 13px;
   outline: none;
   transition: all 0.15s;
@@ -662,9 +641,9 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 
 .gh-chain-step-empty {
   padding: 20px;
-  border: 1.5px dashed var(--gh-border, #d1d5db);
+  border: 1px solid var(--gh-border, #e5e7eb);
   border-radius: 10px;
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
   font-size: 13px;
   text-align: center;
 }
@@ -674,6 +653,20 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   flex-wrap: wrap;
   gap: 6px;
   margin-top: 8px;
+}
+
+.gh-chain-variable-group {
+  margin-top: 10px;
+}
+
+.gh-chain-variable-group .gh-chain-variable-preview {
+  margin-top: 6px;
+}
+
+.gh-chain-variable-label {
+  display: block;
+  color: var(--gh-text-secondary, #6b7280);
+  font-size: 12px;
 }
 
 .gh-chain-variable-chip,
@@ -697,8 +690,23 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
   color: var(--gh-text-secondary, #6b7280);
 }
 
+/* 内置变量是可点击的按钮：点击把它插入到"直接输入"步骤的光标处 */
+button.gh-chain-variable-chip {
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+button.gh-chain-variable-chip:hover {
+  background: color-mix(in srgb, var(--gh-primary, #4285f4) 16%, transparent);
+}
+
+button.gh-chain-variable-chip:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 55%, transparent);
+  outline-offset: 2px;
+}
+
 .gh-chain-variable-muted {
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
 }
 
 .gh-chain-preview-section {
@@ -740,11 +748,9 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-preview-nav-label {
-  color: var(--gh-text-tertiary, #9ca3af);
-  font-size: 11px;
+  color: var(--gh-text-secondary, #6b7280);
+  font-size: 12px;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
   margin-right: 4px;
   flex-shrink: 0;
 }
@@ -904,7 +910,7 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
 }
 
 .gh-chain-preview-empty {
-  color: var(--gh-text-tertiary, #9ca3af);
+  color: var(--gh-text-secondary, #6b7280);
   font-style: italic;
 }
 
@@ -918,7 +924,6 @@ const CHAIN_EDITOR_PORTAL_STYLES = `
     grid-template-columns: 1fr;
   }
 
-  .gh-chain-icon-header,
   .gh-chain-icon-control-row {
     align-items: stretch;
     flex-direction: column;
@@ -1085,6 +1090,10 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
 
   // 图标选择器弹窗状态
   const [showChainIconPicker, setShowChainIconPicker] = useState(false)
+
+  // 点击内置变量时插入到"直接输入"步骤的光标处：记住各步骤的文本框和最近聚焦的步骤
+  const inlineInputRefs = useRef<Map<string, HTMLTextAreaElement>>(new Map())
+  const lastInlineStepIdRef = useRef<string | null>(null)
 
   // 分类管理弹窗状态
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
@@ -1397,9 +1406,10 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     setPromptInputState({ show: true, title, defaultValue, onConfirm })
   }
 
+  // 一个提示词都没有时，新步骤直接用"直接输入"，不要求先去建提示词
   const createDefaultChainStep = (): PromptChainStep => ({
     id: `step_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-    mode: "prompt",
+    mode: prompts.length > 0 ? "prompt" : "inline",
     promptId: prompts[0]?.id || "",
     inlineContent: "",
     runMode: "enqueue",
@@ -1411,7 +1421,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
     description: "",
     iconSvg: CHAIN_ICON_PRESETS[0]?.svg || "",
     showInSelectionPopover: true,
-    steps: prompts[0] ? [createDefaultChainStep()] : [],
+    steps: [createDefaultChainStep()],
     lastUsedAt: undefined,
   })
 
@@ -1485,6 +1495,32 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
           ),
         },
       }
+    })
+  }
+
+  const insertChainVariable = (token: string) => {
+    const inlineSteps = (chainEditorState.draft?.steps ?? []).filter(
+      (step) => step.mode === "inline",
+    )
+    const target =
+      inlineSteps.find((step) => step.id === lastInlineStepIdRef.current) ??
+      inlineSteps[inlineSteps.length - 1]
+    if (!target) {
+      showToast(t("chainInsertVariableNoTarget"), 2200)
+      return
+    }
+
+    const textarea = inlineInputRefs.current.get(target.id)
+    const content = target.inlineContent ?? ""
+    const start = textarea?.selectionStart ?? content.length
+    const end = textarea?.selectionEnd ?? content.length
+    updateChainStep(target.id, {
+      inlineContent: content.slice(0, start) + token + content.slice(end),
+    })
+    // 内容更新后把光标放到插入的变量之后
+    window.requestAnimationFrame(() => {
+      textarea?.focus()
+      textarea?.setSelectionRange(start + token.length, start + token.length)
     })
   }
 
@@ -2170,6 +2206,11 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
         return
       }
 
+      // 弹窗里展开的下拉（如 Chain 步骤的提示词选择器）自己处理 Esc，不要连带关掉整个弹窗
+      if (isEventFromEscapeLayer(e)) {
+        return
+      }
+
       e.preventDefault()
       e.stopPropagation()
       e.stopImmediatePropagation?.()
@@ -2313,16 +2354,20 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   const getChainStepTitles = (chain: PromptChain | ChainDraft): string[] =>
     chain.steps.map((step) => {
       if (step.mode === "inline" && step.inlineContent) {
-        // 内联模式：截取前 30 个字符作为标题
+        // 内联模式：截取前 30 个字符作为标题；截断点落在 {{变量}} 中间时丢掉残缺的变量，避免出现 "{{qu..."
         const text = step.inlineContent.trim().replace(/\s+/g, " ")
-        return text.length > 30 ? `${text.slice(0, 30)}...` : text
+        if (text.length <= 30) return text
+        return `${text
+          .slice(0, 30)
+          .replace(/\{\{[^}]*$/, "")
+          .trimEnd()}...`
       }
       return getPromptTitle(step.promptId)
     })
 
   const getChainExecutionPreview = (draft: ChainDraft | PromptChain): string[] => {
-    const exampleSelection = "Selected text from conversation"
-    const exampleQuote = "> Selected text from conversation"
+    const exampleSelection = t("chainPreviewSampleSelection")
+    const exampleQuote = `> ${exampleSelection}`
     const exampleValues: Record<string, string> = {
       selection: exampleSelection,
       quote: exampleQuote,
@@ -2406,15 +2451,6 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
   }
 
   const renderChainsView = () => {
-    if (prompts.length === 0) {
-      return (
-        <div className="gh-chain-empty">
-          <div className="gh-chain-empty-title">{t("chainNoPrompts")}</div>
-          <div className="gh-chain-empty-description">{t("chainNoPromptsDescription")}</div>
-        </div>
-      )
-    }
-
     if (filteredChains.length === 0) {
       return (
         <>
@@ -2422,6 +2458,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
           <div className="gh-chain-empty">
             <div className="gh-chain-empty-title">{t("chainEmpty")}</div>
             <div className="gh-chain-empty-description">{t("chainEmptyDescription")}</div>
+            <div className="gh-chain-empty-description">{t("chainPopoverUsageHint")}</div>
             <Button
               variant="primary"
               size="sm"
@@ -2442,12 +2479,16 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
           const showInSelectionPopover = chain.showInSelectionPopover !== false
           const stepTitles = getChainStepTitles(chain)
           const flowText = stepTitles.length > 0 ? stepTitles.join(" → ") : t("chainNoSteps")
+          // 有描述时优先展示描述，没有再展示步骤摘要
+          const summaryText = chain.description?.trim() || flowText
+          const popoverToggleLabel = showInSelectionPopover
+            ? t("chainHideFromPopover")
+            : t("chainShowInPopover")
 
           return (
             <div
               key={chain.id}
               className={`gh-chain-card${draggedChainId === chain.id ? " dragging" : ""}`}
-              data-disabled={!showInSelectionPopover}
               onClick={() => openChainEditor(chain)}
               draggable
               onDragStart={(e) =>
@@ -2459,43 +2500,43 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
               <div className="gh-chain-card-main">
                 <div className="gh-chain-icon" data-enabled={showInSelectionPopover}>
                   {renderChainIcon(chain.iconSvg)}
-                  <span
-                    className="gh-chain-icon-status-dot"
-                    data-enabled={showInSelectionPopover}
-                  />
                 </div>
                 <div className="gh-chain-body">
                   <div className="gh-chain-title-row">
                     <span className="gh-chain-title">{chain.title}</span>
+                    {!showInSelectionPopover && (
+                      <span className="gh-chain-hidden-badge">{t("chainHiddenBadge")}</span>
+                    )}
                   </div>
-                  <Tooltip content={flowText} showOnlyWhenTruncated>
+                  <Tooltip content={summaryText} showOnlyWhenTruncated>
                     <div className="gh-chain-flow">
-                      <span className="gh-chain-meta-badge">{chain.steps.length}</span>
-                      <span className="gh-chain-flow-text">{flowText}</span>
+                      <span className="gh-chain-meta-badge">
+                        {t("chainStepCount", { count: String(chain.steps.length) })}
+                      </span>
+                      <span className="gh-chain-flow-text">{summaryText}</span>
                     </div>
                   </Tooltip>
                 </div>
               </div>
 
               <div className="gh-chain-card-actions">
-                <Tooltip
-                  content={
-                    showInSelectionPopover ? t("chainShownInPopover") : t("chainHiddenInPopover")
-                  }>
+                <Tooltip content={popoverToggleLabel}>
                   <button
                     className={`prompt-action-btn${showInSelectionPopover ? " active" : ""}`}
+                    aria-label={popoverToggleLabel}
                     onClick={(e) => {
                       e.stopPropagation()
                       updateChain(chain.id, {
                         showInSelectionPopover: !showInSelectionPopover,
                       })
                     }}>
-                    <CheckIcon size={15} />
+                    {showInSelectionPopover ? <EyeIcon size={15} /> : <EyeClosedIcon size={15} />}
                   </button>
                 </Tooltip>
-                <Tooltip content={t("copy")}>
+                <Tooltip content={t("chainDuplicate")}>
                   <button
                     className="prompt-action-btn"
+                    aria-label={t("chainDuplicate")}
                     onClick={(e) => {
                       e.stopPropagation()
                       const copy = duplicateChain(chain.id)
@@ -2507,6 +2548,7 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
                 <Tooltip content={t("delete")}>
                   <button
                     className="prompt-action-btn danger"
+                    aria-label={t("delete")}
                     onClick={(e) => {
                       e.stopPropagation()
                       showConfirm(t("confirmDelete"), t("chainDeleteConfirm"), () => {
@@ -2530,309 +2572,330 @@ export const PromptsTab: React.FC<PromptsTabProps> = ({
 
     const draft = chainEditorState.draft
     const variables = getChainVariables(draft)
+    const promptPickerOptions = prompts.map((prompt) => ({
+      value: prompt.id,
+      label: prompt.title,
+      description: prompt.category || undefined,
+      searchText: `${prompt.title} ${prompt.category ?? ""}`,
+    }))
 
-    return createPortal(
-      <>
+    // 弹窗外壳用共享的 DialogOverlay + .gh-dialog-frame，与「批量加入队列」同一套骨架；
+    // Esc 由本组件顶部的统一处理按弹窗层级依次关闭，这里不重复监听；
+    // 编辑器此前没有输入框按键守卫，步骤里的可搜索下拉靠 onKeyDown 处理方向键 / 回车 / Esc，保持原行为
+    return (
+      <DialogOverlay
+        onClose={closeChainEditor}
+        closeOnOverlayClick={false}
+        closeOnEscape={false}
+        editableKeyboardGuard={false}
+        dialogClassName="gh-dialog-frame gh-chain-editor"
+        dialogStyle={{ width: "min(680px, 92vw)", maxWidth: 680 }}
+        ariaLabel={draft.id ? t("chainEditorEditTitle") : t("chainEditorNewTitle")}>
         <style>{CHAIN_EDITOR_PORTAL_STYLES}</style>
-        <div
-          className="prompt-modal gh-interactive"
-          {...OPHEL_HOVER_WIDTH_RETAIN_LAYER_PROPS}
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: "var(--gh-overlay-bg, rgba(0, 0, 0, 0.5))",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            zIndex: 2147483646,
-            animation: "fadeIn 0.2s",
-          }}>
-          <div
-            className="prompt-modal-content gh-chain-editor"
-            onClick={(e) => e.stopPropagation()}>
-            <div className="gh-chain-editor-header">
-              <div>
-                <div className="gh-chain-editor-title">
-                  {draft.id ? t("chainEditorEditTitle") : t("chainEditorNewTitle")}
-                </div>
-                <div className="gh-chain-editor-subtitle">{t("chainEditorSubtitle")}</div>
-              </div>
-              <button className="gh-chain-editor-close" onClick={closeChainEditor}>
-                <ClearIcon size={18} />
-              </button>
+        <div className="gh-dialog-frame-header">
+          <div>
+            <div className="gh-dialog-frame-title">
+              {draft.id ? t("chainEditorEditTitle") : t("chainEditorNewTitle")}
             </div>
+            <div className="gh-dialog-frame-subtitle">{t("chainEditorSubtitle")}</div>
+          </div>
+          <button
+            className="gh-dialog-frame-close"
+            aria-label={t("close")}
+            onClick={closeChainEditor}>
+            <ClearIcon size={18} />
+          </button>
+        </div>
 
-            <div className="gh-chain-editor-scroll">
-              {renderChainQueueGate("editor")}
-              {renderChainQuickQuoteGate("editor")}
+        <div className="gh-dialog-frame-body gh-chain-editor-scroll">
+          {renderChainQueueGate("editor")}
+          {renderChainQuickQuoteGate("editor")}
 
-              <div className="gh-chain-form-grid">
-                <label className="gh-chain-field">
-                  <span>{t("chainName")}</span>
-                  <input
-                    type="text"
-                    value={draft.title}
-                    onChange={(e) => updateChainDraft({ title: e.target.value })}
-                    placeholder={t("chainNamePlaceholder")}
-                  />
-                </label>
+          <div className="gh-chain-form-grid">
+            <label className="gh-chain-field">
+              <span>{t("chainName")}</span>
+              <input
+                type="text"
+                value={draft.title}
+                onChange={(e) => updateChainDraft({ title: e.target.value })}
+                placeholder={t("chainNamePlaceholder")}
+              />
+            </label>
 
-                <label className="gh-chain-field">
-                  <span>{t("chainDescription")}</span>
-                  <input
-                    type="text"
-                    value={draft.description || ""}
-                    onChange={(e) => updateChainDraft({ description: e.target.value })}
-                    placeholder={t("chainDescriptionPlaceholder")}
-                  />
-                </label>
-              </div>
+            <label className="gh-chain-field">
+              <span>{t("chainDescription")}</span>
+              <input
+                type="text"
+                value={draft.description || ""}
+                onChange={(e) => updateChainDraft({ description: e.target.value })}
+                placeholder={t("chainDescriptionPlaceholder")}
+              />
+            </label>
+          </div>
 
-              <div className="gh-chain-field">
-                <div className="gh-chain-icon-header">
-                  <span>{t("chainIconSvg")}</span>
-                  <label className="gh-chain-visibility-toggle">
-                    <input
-                      type="checkbox"
-                      checked={draft.showInSelectionPopover !== false}
-                      onChange={(e) =>
-                        updateChainDraft({ showInSelectionPopover: e.target.checked })
-                      }
-                    />
-                    <span className="gh-chain-visibility-switch" aria-hidden="true" />
-                    <span className="gh-chain-visibility-toggle-text">
-                      {t("chainShowInPopover")}
-                    </span>
-                  </label>
-                </div>
-                <div className="gh-chain-icon-control-row">
-                  {/* 当前选中的图标预览 */}
-                  {draft.iconSvg ? (
-                    <div className="gh-chain-icon-preview">
-                      <SafeSvgMarkup className="gh-chain-icon-preview-svg" svg={draft.iconSvg} />
-                      <span>{t("chainIconSelected")}</span>
-                    </div>
-                  ) : (
-                    <div className="gh-chain-icon-preview empty">{t("chainIconNotSelected")}</div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowChainIconPicker(true)}
-                    className="gh-chain-icon-select-btn">
-                    {t("chainIconSelect")}
-                  </button>
-                </div>
-              </div>
-
-              <div className="gh-chain-editor-section">
-                <div className="gh-chain-section-header">
-                  <div>
-                    <div className="gh-chain-section-title">{t("chainSteps")}</div>
-                    <div className="gh-chain-section-subtitle">{t("chainStepsHelp")}</div>
+          <div className="gh-chain-field">
+            <span>{t("chainIconSvg")}</span>
+            <div className="gh-chain-icon-row">
+              <div className="gh-chain-icon-control-row">
+                {/* 当前选中的图标预览 */}
+                {draft.iconSvg ? (
+                  <div className="gh-chain-icon-preview">
+                    <SafeSvgMarkup className="gh-chain-icon-preview-svg" svg={draft.iconSvg} />
                   </div>
-                </div>
-
-                <div className="gh-chain-step-list">
-                  {draft.steps.length === 0 ? (
-                    <div className="gh-chain-step-empty">{t("chainNoSteps")}</div>
-                  ) : (
-                    draft.steps.map((step, index) => (
-                      <div
-                        key={step.id}
-                        className={`gh-chain-step-row${chainEditorState.draggedStepId === step.id ? " dragging" : ""}`}
-                        draggable
-                        onDragStart={() => handleStepDragStart(step.id)}
-                        onDragOver={(e) => handleStepDragOver(e, step.id)}
-                        onDragEnd={handleStepDragEnd}>
-                        <div className="gh-chain-step-header-row">
-                          <Tooltip content={t("drag")}>
-                            <div className="gh-chain-step-drag-handle">
-                              <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
-                                <circle cx="6" cy="4" r="1.2" />
-                                <circle cx="10" cy="4" r="1.2" />
-                                <circle cx="6" cy="8" r="1.2" />
-                                <circle cx="10" cy="8" r="1.2" />
-                                <circle cx="6" cy="12" r="1.2" />
-                                <circle cx="10" cy="12" r="1.2" />
-                              </svg>
-                            </div>
-                          </Tooltip>
-                          <div className="gh-chain-step-index">{index + 1}</div>
-                          <div className="gh-chain-step-mode-switch">
-                            <button
-                              type="button"
-                              className={`gh-chain-step-mode-btn${step.mode !== "inline" ? " active" : ""}`}
-                              onClick={() =>
-                                updateChainStep(step.id, { mode: "prompt", inlineContent: "" })
-                              }>
-                              {t("chainStepModePrompt")}
-                            </button>
-                            <button
-                              type="button"
-                              className={`gh-chain-step-mode-btn${step.mode === "inline" ? " active" : ""}`}
-                              onClick={() =>
-                                updateChainStep(step.id, { mode: "inline", promptId: "" })
-                              }>
-                              {t("chainStepModeInline")}
-                            </button>
-                          </div>
-                          <Tooltip content={t("delete")}>
-                            <button
-                              className="gh-chain-step-delete-btn"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                removeChainStep(step.id)
-                              }}>
-                              <DeleteIcon size={14} />
-                            </button>
-                          </Tooltip>
-                        </div>
-                        <div className="gh-chain-step-input-row">
-                          {step.mode === "inline" ? (
-                            <textarea
-                              className="gh-chain-step-inline-input"
-                              value={step.inlineContent || ""}
-                              onChange={(e) =>
-                                updateChainStep(step.id, { inlineContent: e.target.value })
-                              }
-                              placeholder={t("chainStepInlinePlaceholder")}
-                              rows={4}
-                            />
-                          ) : (
-                            <select
-                              className="gh-chain-step-prompt-select"
-                              value={step.promptId}
-                              onChange={(e) =>
-                                updateChainStep(step.id, { promptId: e.target.value })
-                              }>
-                              <option value="">{t("chainSelectPrompt")}</option>
-                              {prompts.map((prompt) => (
-                                <option key={prompt.id} value={prompt.id}>
-                                  {prompt.title}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                <button type="button" className="gh-chain-add-step-btn" onClick={addChainStep}>
-                  <span aria-hidden="true">+</span>
-                  {t("chainAddStep")}
+                ) : (
+                  <div className="gh-chain-icon-preview empty">{t("chainIconNotSelected")}</div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setShowChainIconPicker(true)}
+                  className="gh-chain-icon-select-btn">
+                  {t("chainIconSelect")}
                 </button>
               </div>
 
-              <div className="gh-chain-editor-section">
-                <div className="gh-chain-section-title">{t("chainVariablesPreview")}</div>
-                <div className="gh-chain-variable-preview">
-                  <span className="gh-chain-variable-chip">{`{{selection}}`}</span>
-                  <span className="gh-chain-variable-chip">{`{{quote}}`}</span>
-                  {variables.length === 0 ? (
-                    <span className="gh-chain-variable-muted">{t("chainVariablesNone")}</span>
-                  ) : (
-                    variables.map((variable) => (
-                      <span key={variable.raw} className="gh-chain-variable-chip custom">
-                        {`{{${variable.raw}}}`}
-                      </span>
-                    ))
-                  )}
-                </div>
+              {/* 图标就是它在选区工具栏里的样子：开关与用法说明放在图标控件右侧，不单独占行 */}
+              <div className="gh-chain-visibility">
+                <label className="gh-chain-visibility-toggle">
+                  <input
+                    type="checkbox"
+                    checked={draft.showInSelectionPopover !== false}
+                    onChange={(e) => updateChainDraft({ showInSelectionPopover: e.target.checked })}
+                  />
+                  <span className="gh-chain-visibility-switch" aria-hidden="true" />
+                  <span className="gh-chain-visibility-toggle-text">{t("chainShowInPopover")}</span>
+                </label>
+                <div className="gh-chain-field-help">{t("chainPopoverUsageHint")}</div>
               </div>
+            </div>
+          </div>
 
-              {draft.steps.length > 0 && (
-                <div className="gh-chain-editor-section gh-chain-preview-section">
-                  <div className="gh-chain-section-header" style={{ marginBottom: 0 }}>
-                    <div className="gh-chain-section-title">{t("chainExecutionPreview")}</div>
-                    <button
-                      type="button"
-                      className="gh-chain-preview-toggle"
-                      onClick={() =>
-                        setChainEditorState((state) => ({
-                          ...state,
-                          showExecutionPreview: !state.showExecutionPreview,
-                        }))
-                      }>
-                      {chainEditorState.showExecutionPreview ? t("collapse") : t("expand")}
-                    </button>
-                  </div>
-                  {chainEditorState.showExecutionPreview && (
-                    <>
-                      {/* 只有一步时，导航与下方步骤卡的标题完全重复，不显示 */}
-                      {draft.steps.length > 1 && (
-                        <div className="gh-chain-preview-nav-float">
-                          <span className="gh-chain-preview-nav-label">{t("chainSteps")}</span>
-                          {draft.steps.map((step, idx) => {
-                            const title = getChainStepTitles(draft)[idx] || `Step ${idx + 1}`
-                            return (
-                              <Tooltip key={step.id} content={title}>
-                                <button
-                                  type="button"
-                                  className="gh-chain-preview-nav-btn"
-                                  onClick={() => {
-                                    document
-                                      .getElementById(`chain-preview-step-${idx}`)
-                                      ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
-                                  }}>
-                                  <span className="nav-btn-num">{idx + 1}</span>
-                                  <span className="nav-btn-title">{title}</span>
-                                </button>
-                              </Tooltip>
-                            )
-                          })}
+          <div className="gh-chain-editor-section">
+            <div className="gh-chain-section-header">
+              <div>
+                <div className="gh-chain-section-title">{t("chainSteps")}</div>
+                <div className="gh-chain-section-subtitle">{t("chainStepsHelp")}</div>
+              </div>
+            </div>
+
+            <div className="gh-chain-step-list">
+              {draft.steps.length === 0 ? (
+                <div className="gh-chain-step-empty">{t("chainNoSteps")}</div>
+              ) : (
+                draft.steps.map((step, index) => (
+                  <div
+                    key={step.id}
+                    className={`gh-chain-step-row${chainEditorState.draggedStepId === step.id ? " dragging" : ""}`}
+                    draggable
+                    onDragStart={() => handleStepDragStart(step.id)}
+                    onDragOver={(e) => handleStepDragOver(e, step.id)}
+                    onDragEnd={handleStepDragEnd}>
+                    <div className="gh-chain-step-header-row">
+                      <Tooltip content={t("drag")}>
+                        <div className="gh-chain-step-drag-handle">
+                          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor">
+                            <circle cx="6" cy="4" r="1.2" />
+                            <circle cx="10" cy="4" r="1.2" />
+                            <circle cx="6" cy="8" r="1.2" />
+                            <circle cx="10" cy="8" r="1.2" />
+                            <circle cx="6" cy="12" r="1.2" />
+                            <circle cx="10" cy="12" r="1.2" />
+                          </svg>
                         </div>
-                      )}
-                      <div className="gh-chain-preview-content">
-                        {getChainExecutionPreview(draft).map((content, index) => (
-                          <div
-                            key={index}
-                            id={`chain-preview-step-${index}`}
-                            className="gh-chain-preview-step">
-                            <div className="gh-chain-preview-step-header">
-                              <span className="gh-chain-preview-step-number">{index + 1}</span>
-                              <span className="gh-chain-preview-step-title">
-                                {getChainStepTitles(draft)[index] || t("chainStep")}
-                              </span>
-                            </div>
-                            <div
-                              className="gh-chain-preview-step-body"
-                              dangerouslySetInnerHTML={{
-                                __html: content
-                                  ? createSafeHTML(renderMarkdown(content))
-                                  : createSafeHTML(
-                                      `<span class="gh-chain-preview-empty">${t("chainStepContentEmpty")}</span>`,
-                                    ),
-                              }}
-                            />
-                          </div>
-                        ))}
+                      </Tooltip>
+                      <div className="gh-chain-step-index">{index + 1}</div>
+                      <div className="gh-chain-step-mode-switch">
+                        <button
+                          type="button"
+                          className={`gh-chain-step-mode-btn${step.mode !== "inline" ? " active" : ""}`}
+                          aria-pressed={step.mode !== "inline"}
+                          onClick={() =>
+                            updateChainStep(step.id, { mode: "prompt", inlineContent: "" })
+                          }>
+                          {t("chainStepModePrompt")}
+                        </button>
+                        <button
+                          type="button"
+                          className={`gh-chain-step-mode-btn${step.mode === "inline" ? " active" : ""}`}
+                          aria-pressed={step.mode === "inline"}
+                          onClick={() =>
+                            updateChainStep(step.id, { mode: "inline", promptId: "" })
+                          }>
+                          {t("chainStepModeInline")}
+                        </button>
                       </div>
-                    </>
-                  )}
-                </div>
+                      <Tooltip content={t("delete")}>
+                        <button
+                          className="gh-chain-step-delete-btn"
+                          aria-label={t("delete")}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            removeChainStep(step.id)
+                          }}>
+                          <DeleteIcon size={14} />
+                        </button>
+                      </Tooltip>
+                    </div>
+                    <div className="gh-chain-step-input-row">
+                      {step.mode === "inline" ? (
+                        <textarea
+                          ref={(element) => {
+                            if (element) inlineInputRefs.current.set(step.id, element)
+                            else inlineInputRefs.current.delete(step.id)
+                          }}
+                          className="gh-chain-step-inline-input"
+                          value={step.inlineContent || ""}
+                          onFocus={() => {
+                            lastInlineStepIdRef.current = step.id
+                          }}
+                          onChange={(e) =>
+                            updateChainStep(step.id, { inlineContent: e.target.value })
+                          }
+                          placeholder={t("chainStepInlinePlaceholder")}
+                          rows={4}
+                        />
+                      ) : (
+                        <SelectDropdown
+                          buttonClassName="gh-chain-step-prompt-select"
+                          value={step.promptId}
+                          options={promptPickerOptions}
+                          placeholder={t("chainSelectPrompt")}
+                          ariaLabel={t("chainSelectPrompt")}
+                          searchable
+                          searchPlaceholder={t("queueBatchLibrarySearchPlaceholder")}
+                          onChange={(promptId) => updateChainStep(step.id, { promptId })}
+                        />
+                      )}
+                    </div>
+                  </div>
+                ))
               )}
             </div>
 
-            <div className="gh-chain-editor-footer">
-              <Button
-                variant="ghost"
-                onClick={closeChainEditor}
-                style={{ background: "var(--gh-hover, #f3f4f6)" }}>
-                {t("cancel")}
-              </Button>
-              <Button variant="primary" onClick={saveChainDraft}>
-                {draft.id ? t("save") : t("add")}
-              </Button>
+            <button type="button" className="gh-chain-add-step-btn" onClick={addChainStep}>
+              <span aria-hidden="true">+</span>
+              {t("chainAddStep")}
+            </button>
+          </div>
+
+          <div className="gh-chain-editor-section">
+            <div className="gh-chain-section-title">{t("chainVariablesPreview")}</div>
+            <div className="gh-chain-variable-group">
+              <span className="gh-chain-variable-label">{t("chainVariablesBuiltin")}</span>
+              <div className="gh-chain-variable-preview">
+                {/* mousedown 里阻止默认行为，点击插入时文本框不会失焦，光标位置才能保留 */}
+                {["{{selection}}", "{{quote}}"].map((token) => (
+                  <button
+                    key={token}
+                    type="button"
+                    className="gh-chain-variable-chip"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => insertChainVariable(token)}>
+                    {token}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="gh-chain-variable-group">
+              <span className="gh-chain-variable-label">{t("chainVariablesManual")}</span>
+              <div className="gh-chain-variable-preview">
+                {variables.length === 0 ? (
+                  <span className="gh-chain-variable-muted">{t("chainVariablesNone")}</span>
+                ) : (
+                  variables.map((variable) => (
+                    <span key={variable.raw} className="gh-chain-variable-chip custom">
+                      {`{{${variable.raw}}}`}
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
           </div>
+
+          {draft.steps.length > 0 && (
+            <div className="gh-chain-editor-section gh-chain-preview-section">
+              <div className="gh-chain-section-header" style={{ marginBottom: 0 }}>
+                <div className="gh-chain-section-title">{t("chainExecutionPreview")}</div>
+                <button
+                  type="button"
+                  className="gh-chain-preview-toggle"
+                  onClick={() =>
+                    setChainEditorState((state) => ({
+                      ...state,
+                      showExecutionPreview: !state.showExecutionPreview,
+                    }))
+                  }>
+                  {chainEditorState.showExecutionPreview ? t("collapse") : t("expand")}
+                </button>
+              </div>
+              {chainEditorState.showExecutionPreview && (
+                <>
+                  {/* 只有一步时，导航与下方步骤卡的标题完全重复，不显示 */}
+                  {draft.steps.length > 1 && (
+                    <div className="gh-chain-preview-nav-float">
+                      <span className="gh-chain-preview-nav-label">{t("chainSteps")}</span>
+                      {draft.steps.map((step, idx) => {
+                        const title =
+                          getChainStepTitles(draft)[idx] || `${t("chainStep")} ${idx + 1}`
+                        return (
+                          <Tooltip key={step.id} content={title}>
+                            <button
+                              type="button"
+                              className="gh-chain-preview-nav-btn"
+                              onClick={() => {
+                                document
+                                  .getElementById(`chain-preview-step-${idx}`)
+                                  ?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+                              }}>
+                              <span className="nav-btn-num">{idx + 1}</span>
+                              <span className="nav-btn-title">{title}</span>
+                            </button>
+                          </Tooltip>
+                        )
+                      })}
+                    </div>
+                  )}
+                  <div className="gh-chain-preview-content">
+                    {getChainExecutionPreview(draft).map((content, index) => (
+                      <div
+                        key={index}
+                        id={`chain-preview-step-${index}`}
+                        className="gh-chain-preview-step">
+                        <div className="gh-chain-preview-step-header">
+                          <span className="gh-chain-preview-step-number">{index + 1}</span>
+                          <span className="gh-chain-preview-step-title">
+                            {draft.steps[index]?.mode === "inline"
+                              ? t("chainStepModeInline")
+                              : getChainStepTitles(draft)[index] || t("chainStep")}
+                          </span>
+                        </div>
+                        <div
+                          className="gh-chain-preview-step-body"
+                          dangerouslySetInnerHTML={{
+                            __html: content
+                              ? createSafeHTML(renderMarkdown(content))
+                              : createSafeHTML(
+                                  `<span class="gh-chain-preview-empty">${t("chainStepContentEmpty")}</span>`,
+                                ),
+                          }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
-      </>,
-      document.body,
+
+        <div className="gh-dialog-frame-footer">
+          <Button variant="secondary" onClick={closeChainEditor}>
+            {t("cancel")}
+          </Button>
+          <Button variant="primary" onClick={saveChainDraft}>
+            {draft.id ? t("save") : t("add")}
+          </Button>
+        </div>
+      </DialogOverlay>
     )
   }
 

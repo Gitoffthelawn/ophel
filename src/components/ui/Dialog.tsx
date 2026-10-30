@@ -66,16 +66,39 @@ const DIALOG_STYLES = `
     background: var(--gh-card-bg, var(--gh-bg, #ffffff));
     color: var(--gh-text, #374151);
   }
-  .gh-dialog-btn-secondary:hover {
+  .gh-dialog-btn-secondary:hover:not(:disabled) {
     background: var(--gh-hover, #f3f4f6);
   }
   .gh-dialog-btn-primary {
     background: var(--gh-primary, #4285f4);
     color: var(--gh-text-on-primary, #ffffff);
   }
+  .gh-dialog-btn-primary:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--gh-primary, #4285f4) 88%, black);
+  }
   .gh-dialog-btn-danger {
     background: var(--gh-danger, #ef4444);
     color: var(--gh-text-on-primary, #ffffff);
+  }
+  .gh-dialog-btn-danger:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--gh-danger, #ef4444) 88%, black);
+  }
+  .gh-dialog-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+  .gh-dialog-btn:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 55%, transparent);
+    outline-offset: 2px;
+  }
+  .gh-dialog-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .gh-dialog-btn,
+    .gh-dialog-frame-close {
+      transition: none;
+    }
   }
   .gh-dialog-input {
     width: 100%;
@@ -112,6 +135,71 @@ const DIALOG_STYLES = `
   .gh-dialog-field .gh-dialog-input {
     margin-bottom: 0;
   }
+  /* 固定头部 / 可滚动内容 / 固定页脚的弹窗骨架：批量加入队列、Chain 编辑器共用 */
+  .gh-dialog.gh-dialog-frame {
+    display: flex;
+    flex-direction: column;
+    max-height: 86vh;
+    padding: 0;
+    overflow: hidden;
+  }
+  .gh-dialog-frame-header,
+  .gh-dialog-frame-footer {
+    display: flex;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+  .gh-dialog-frame-header {
+    align-items: flex-start;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--gh-border, #e5e7eb);
+  }
+  .gh-dialog-frame-footer {
+    justify-content: flex-end;
+    border-top: 1px solid var(--gh-border, #e5e7eb);
+  }
+  .gh-dialog-frame-title {
+    color: var(--gh-text, #1f2937);
+    font-size: 16px;
+    font-weight: 600;
+  }
+  .gh-dialog-frame-subtitle {
+    margin-top: 2px;
+    color: var(--gh-text-secondary, #6b7280);
+    font-size: 12px;
+    line-height: 1.45;
+  }
+  .gh-dialog-frame-close {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    background: var(--gh-hover, #f3f4f6);
+    color: var(--gh-text-secondary, #6b7280);
+    cursor: pointer;
+    transition:
+      background 0.15s,
+      color 0.15s;
+  }
+  .gh-dialog-frame-close:hover {
+    background: color-mix(in srgb, var(--gh-text, #1f2937) 10%, var(--gh-bg, #ffffff));
+    color: var(--gh-text, #1f2937);
+  }
+  .gh-dialog-frame-close:focus-visible {
+    outline: 2px solid color-mix(in srgb, var(--gh-primary, #4285f4) 55%, transparent);
+    outline-offset: 2px;
+  }
+  .gh-dialog-frame-body {
+    flex: 1;
+    min-height: 0;
+    padding: 16px 18px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
   /* 弹窗 portal 到宿主页面，宿主（如 ChatGPT 新版）对 input 全局 appearance:none
      会把原生勾选框剥成透明盒子；这里恢复原生渲染 */
   .gh-dialog-overlay input[type="checkbox"] {
@@ -140,6 +228,10 @@ export interface DialogOverlayProps {
   closeOnEscape?: boolean
   dialogClassName?: string
   dialogStyle?: React.CSSProperties
+  /** 弹窗的可访问名称（读屏器朗读），通常传标题文字 */
+  ariaLabel?: string
+  /** 是否拦截弹窗内输入框的按键事件，防止宿主站点抢走焦点；默认开启 */
+  editableKeyboardGuard?: boolean
 }
 
 /**
@@ -152,6 +244,8 @@ export const DialogOverlay: React.FC<DialogOverlayProps> = ({
   closeOnEscape = true,
   dialogClassName,
   dialogStyle,
+  ariaLabel,
+  editableKeyboardGuard = true,
 }) => {
   const overlayRef = useRef<HTMLDivElement>(null)
 
@@ -167,13 +261,13 @@ export const DialogOverlay: React.FC<DialogOverlayProps> = ({
 
   useEffect(() => {
     const overlay = overlayRef.current
-    if (!overlay) {
+    if (!overlay || !editableKeyboardGuard) {
       return
     }
 
     // 通用弹窗内部广泛依赖本地 onKeyDown 逻辑，这里使用冒泡阶段拦截，避免吞掉确认/关闭等键盘行为。
     return attachEditableKeyboardFocusGuard(overlay, { capture: false })
-  }, [])
+  }, [editableKeyboardGuard])
 
   const dialogContent = (
     <div
@@ -184,6 +278,9 @@ export const DialogOverlay: React.FC<DialogOverlayProps> = ({
       <div
         className={dialogClassName ? `gh-dialog ${dialogClassName}` : "gh-dialog"}
         style={dialogStyle}
+        role="dialog"
+        aria-modal="true"
+        aria-label={ariaLabel}
         onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
@@ -226,7 +323,7 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   extraAction,
 }) => {
   return (
-    <DialogOverlay onClose={onCancel} closeOnOverlayClick={closeOnOverlayClick}>
+    <DialogOverlay onClose={onCancel} closeOnOverlayClick={closeOnOverlayClick} ariaLabel={title}>
       <div className="gh-dialog-title">{title}</div>
       <div className="gh-dialog-message">{message}</div>
       <div
@@ -299,7 +396,7 @@ export const InputDialog: React.FC<InputDialogProps> = ({
   }
 
   return (
-    <DialogOverlay onClose={onCancel} closeOnOverlayClick={closeOnOverlayClick}>
+    <DialogOverlay onClose={onCancel} closeOnOverlayClick={closeOnOverlayClick} ariaLabel={title}>
       <div className="gh-dialog-title">{title}</div>
       <input
         ref={inputRef}

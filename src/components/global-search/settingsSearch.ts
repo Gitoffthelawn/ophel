@@ -88,6 +88,7 @@ export const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
   "chatgpt-disable-backdrop-blur": "chatgptDisableBackdropBlurLabel",
   "conversation-sync-delete": "conversationsSyncDeleteLabel",
   "global-search-fuzzy-search": "globalSearchEnableFuzzySearchLabel",
+  "global-search-enabled": "globalSearchEnabledLabel",
   "global-search-double-shift": "doubleShiftToSearch",
   "global-search-shortcut-setting-link": "globalSearchShortcutSettingLabel",
   "global-search-prompt-enter-behavior": "globalSearchPromptEnterBehaviorLabel",
@@ -149,9 +150,10 @@ export const SETTING_SEARCH_TITLE_KEY_MAP: Record<string, string> = {
   "shortcuts-global-url": "globalShortcutUrl",
   "shortcuts-browser-shortcuts": "globalShortcutsTitle",
   "shortcuts-prompt-submit-shortcut": "promptSubmitShortcutLabel",
-  // 站点设置页的分组锚点（页面布局 / 模型锁定），route 不带 subTab，落到当前站点
+  // 站点设置页的分组锚点（页面布局 / 模型锁定 / 隐藏页面），route 不带 subTab，落到当前站点
   "site-settings-layout": "tabLayout",
   "site-settings-model-lock": "tabModelLock",
+  "site-settings-hidden-paths": "hiddenPathsTitle",
   "tab-auto-focus": "autoFocusLabel",
   "tab-auto-rename": "autoRenameTabLabel",
   "tab-notification-sound": "notificationSoundLabel",
