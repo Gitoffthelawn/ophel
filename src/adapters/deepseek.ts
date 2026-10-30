@@ -47,6 +47,7 @@ import {
   type DeepSeekHistoryOutlineData,
 } from "./deepseek-history-outline"
 import {
+  dropTrailingFillDuplicates,
   isApiOutlineStale,
   mergeByBranchMessageOrder,
   shouldAttemptApiOutlineFetch,
@@ -695,7 +696,10 @@ export class DeepSeekAdapter extends SiteAdapter {
 
   private getApiBranchIndex(data: DeepSeekHistoryOutlineData): Map<number, number> {
     if (this.apiBranchIndexCache?.data === data) return this.apiBranchIndexCache.map
-    const map = new Map(data.branchMessageIds.map((id, index) => [id, index]))
+    const map = new Map<number, number>()
+    data.branchMessageIds.forEach((id, index) => {
+      if (typeof id === "number") map.set(id, index)
+    })
     this.apiBranchIndexCache = { data, map }
     return map
   }
@@ -719,7 +723,7 @@ export class DeepSeekAdapter extends SiteAdapter {
       Number(row.getAttribute("data-virtual-list-item-key")),
     )
     const branchIndex = this.getApiBranchIndex(data)
-    const branchIds = data.branchMessageIds
+    const branchIds = data.branchMessageIds.filter((id): id is number => typeof id === "number")
 
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i]
@@ -1239,12 +1243,12 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
 
     const fillEntries = [
-      ...this.dropTrailingFillDuplicates(
+      ...dropTrailingFillDuplicates(
         fillQueryEntries,
         (item) => this.normalizeUserQueryMatchText(queryFullTexts.get(item) ?? item.text),
         unmatchedQueryKeys,
       ),
-      ...this.dropTrailingFillDuplicates(
+      ...dropTrailingFillDuplicates(
         fillHeadingEntries,
         (item) => `${item.level}:${item.text}`,
         unmatchedHeadingKeys,
@@ -1257,26 +1261,6 @@ export class DeepSeekAdapter extends SiteAdapter {
       this.assignUserQueryOutlineIds(merged, queryFullTexts)
     }
     return merged
-  }
-
-  /** 从回填条目尾部丢弃与「无分支归属的 DOM 条目」同名的重复项（计数式，见上） */
-  private dropTrailingFillDuplicates(
-    fillEntries: { messageId: number; item: OutlineItem }[],
-    keyOf: (item: OutlineItem) => string,
-    unmatchedCounts: Map<string, number>,
-  ): { messageId: number; item: OutlineItem }[] {
-    if (unmatchedCounts.size === 0 || fillEntries.length === 0) return fillEntries
-
-    const kept = [...fillEntries]
-    for (let i = kept.length - 1; i >= 0; i -= 1) {
-      const key = keyOf(kept[i].item)
-      const count = unmatchedCounts.get(key) ?? 0
-      if (count === 0) continue
-      if (count === 1) unmatchedCounts.delete(key)
-      else unmatchedCounts.set(key, count - 1)
-      kept.splice(i, 1)
-    }
-    return kept
   }
 
   /**
