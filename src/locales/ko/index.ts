@@ -176,16 +176,16 @@ export const ko = {
   required: "필수",
   permissionWebdavAccess: "고급 기능 액세스",
   permissionWebdavAccessDesc:
-    "모든 웹사이트에 대한 액세스. WebDAV 동기화, AI 이미지 워터마크 제거, 그리고 설치된 Site Pack이 사이트별 승인 없이 대상 사이트에서 실행되는 데 필요합니다.",
+    "Ophel이 사이트 간 리소스에 액세스할 수 있도록 합니다. WebDAV 동기화, AI 이미지 워터마크 제거, 대화의 이미지/첨부파일 내보내기, 사이트별 승인 없이 Site Pack 실행에 사용됩니다.",
 
   // Required permissions
   permissionStorage: "저장소",
   permissionStorageDesc: "확장 프로그램 설정, 프롬프트 및 대화 데이터를 저장하는 데 사용됩니다.",
   permissionNotifications: "알림",
-  permissionNotificationsDesc:
-    "선택 사항. AI 응답이 완료되면 데스크톱 알림을 보내는 데 사용됩니다.",
+  permissionNotificationsDesc: "AI 응답이 완료되면 데스크톱 알림을 보냅니다",
   permissionCookies: "쿠키 관리",
-  permissionCookiesDesc: "빠른 SessionKey 전환을 위해 Claude 사이트 쿠키를 관리합니다.",
+  permissionCookiesDesc:
+    "claude.ai의 Session Key 쿠키를 읽고 전환하여 Claude 계정 가져오기, 테스트, 빠른 전환을 지원합니다",
   permissionTabs: "탭",
   permissionTabsDesc: "선택 사항. 현재 탭 상태를 감지하고 세션을 관리하는 데 사용됩니다.",
   permissionDNR: "네트워크 요청 규칙",
@@ -745,7 +745,8 @@ export const ko = {
   assistantMermaidDownloadFailed: "PNG 다운로드 실패",
   assistantMermaidFullscreenFailed: "전체 화면 전환 실패",
   watermarkRemovalLabel: "이미지 워터마크 제거",
-  watermarkRemovalDesc: "AI 생성 이미지에서 NanoBanana 워터마크를 자동으로 제거합니다",
+  watermarkRemovalDesc:
+    "AI 생성 이미지에서 NanoBanana 워터마크를 자동으로 제거합니다. Gemini 설정에서 미디어 워터마크를 끌 수도 있습니다.",
   refreshPrompts: "프롬프트 새로고침",
   themeDark: "다크",
   // Page width settings
@@ -1034,6 +1035,8 @@ export const ko = {
   copySuccess: "클립보드에 복사되었습니다",
   copyFailed: "복사 실패",
   exportNeedOpenFirst: "먼저 대화를 열어주세요",
+  exportOpenFailed: "대화를 열 수 없습니다. 직접 연 후 다시 시도하세요",
+  exportOpenBlockedGenerating: "현재 대화가 답변 생성 중입니다. 완료 후 다시 시도하세요",
   exportUserLabel: "사용자",
   exportMetaTitle: "내보내기 정보",
   exportMetaConvTitle: "제목",
@@ -1047,6 +1050,7 @@ export const ko = {
   exportToClipboard: "Markdown 복사",
   segmentedExportMenuItem: "세그먼트 내보내기...",
   exportMenuItem: "내보내기...",
+  exportOpenAndExportMenuItem: "열고 내보내기...",
   segmentedExportTitle: "세그먼트 내보내기",
   segmentedExportDetected: "{count}개 세그먼트 감지",
   segmentedExportSearchPlaceholder: "세그먼트 검색...",
@@ -1321,6 +1325,7 @@ export const ko = {
   openBrowserShortcuts: "브라우저 단축키 설정 열기",
   shortcutNotSet: "미설정",
   shortcutRemove: "제거",
+  shortcutsGlobalSearchOpenSettings: "전역 검색 설정 열기",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "탐색",
@@ -1389,6 +1394,8 @@ export const ko = {
   outlineDisabled: "개요 기능이 비활성화되었습니다",
   conversationsDisabled: "대화 기능이 비활성화되었습니다",
   exportStarted: "대화를 내보내는 중입니다. 이 페이지를 조작하지 마세요...",
+  exportOverlayOpening: "대화를 여는 중...",
+  exportOverlayHintBackground: "백그라운드에서 대화를 가져오는 중입니다. 잠시만 기다려 주세요.",
   exportOverlayLoadingHistory: "전체 대화를 불러오는 중...",
   exportOverlayPreparing: "내보내기 내용을 준비하는 중...",
   exportOverlayExtracting: "대화 내용을 추출하는 중...",

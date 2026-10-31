@@ -178,16 +178,16 @@ export const en = {
   // Optional permissions
   permissionWebdavAccess: "Advanced Features Access",
   permissionWebdavAccessDesc:
-    "Access to all websites. Required for WebDAV sync, AI image watermark removal, and letting installed Site Packs run on their target sites without per-site prompts.",
+    "Allow Ophel to access resources across sites for WebDAV sync, AI image watermark removal, exporting images and attachments from conversations, and running Site Packs without per-site prompts.",
 
   // Required permissions
   permissionStorage: "Storage",
   permissionStorageDesc: "Used to save extension settings, prompts, and chat data.",
   permissionNotifications: "Notifications",
-  permissionNotificationsDesc:
-    "Optional. Used to send desktop notifications when AI responses are complete.",
+  permissionNotificationsDesc: "Send a desktop notification when an AI response is complete",
   permissionCookies: "Cookie Management",
-  permissionCookiesDesc: "Manage Claude site cookies for quick SessionKey switching",
+  permissionCookiesDesc:
+    "Read and switch the Session Key cookie for claude.ai to import, test, and quickly switch Claude accounts",
   permissionTabs: "Tabs",
   permissionTabsDesc: "Optional. Used to detect current tab status and manage sessions.",
   permissionDNR: "Network Request Rules",
@@ -793,7 +793,8 @@ export const en = {
   assistantMermaidDownloadFailed: "PNG download failed",
   assistantMermaidFullscreenFailed: "Fullscreen failed",
   watermarkRemovalLabel: "Remove Image Watermark",
-  watermarkRemovalDesc: "Automatically remove NanoBanana watermark from AI generated images",
+  watermarkRemovalDesc:
+    "Automatically remove NanoBanana watermarks from AI-generated images. You can also disable media watermarks in Gemini settings.",
   refreshPrompts: "Refresh Prompts",
   themeDark: "Dark",
   // Page width settings
@@ -1111,6 +1112,8 @@ export const en = {
   copySuccess: "Copied to clipboard",
   copyFailed: "Copy failed",
   exportNeedOpenFirst: "Please open the chat first",
+  exportOpenFailed: "Couldn't open that chat. Open it manually and retry",
+  exportOpenBlockedGenerating: "Wait for the current chat to finish replying",
   exportUserLabel: "User",
   exportMetaTitle: "Export Info",
   exportMetaConvTitle: "Title",
@@ -1124,6 +1127,7 @@ export const en = {
   exportToClipboard: "Copy Markdown",
   segmentedExportMenuItem: "Export segments...",
   exportMenuItem: "Export...",
+  exportOpenAndExportMenuItem: "Open and export...",
   segmentedExportTitle: "Segmented export",
   segmentedExportDetected: "Detected {count} segments",
   segmentedExportSearchPlaceholder: "Search segments...",
@@ -1413,6 +1417,7 @@ Please output the optimized code block directly, followed by a brief summary of 
   openBrowserShortcuts: "Open Browser Shortcut Settings",
   shortcutNotSet: "Not set",
   shortcutRemove: "Remove",
+  shortcutsGlobalSearchOpenSettings: "Open Global Search settings",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "Navigation",
@@ -1483,6 +1488,8 @@ Please output the optimized code block directly, followed by a brief summary of 
   outlineDisabled: "Outline feature is disabled",
   conversationsDisabled: "Chats feature is disabled",
   exportStarted: "Exporting chat, please do not interact with this page...",
+  exportOverlayOpening: "Opening chat...",
+  exportOverlayHintBackground: "Fetching the chat in the background. Please wait.",
   exportOverlayLoadingHistory: "Loading full chat...",
   exportOverlayPreparing: "Preparing export...",
   exportOverlayExtracting: "Extracting chat...",

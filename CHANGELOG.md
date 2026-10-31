@@ -13,10 +13,12 @@ versioning follows [Semantic Versioning](https://semver.org/).
 
 - **Hide Ophel on specific pages** — Site Settings can now hide the panel and quick buttons on pages that match a path rule, so you no longer have to disable a whole site for a few pages. (#995, #998)
 - **Turn off Global Search** — Features settings has a new "Enable Global Search" switch; when it's off, Ctrl/⌘+K goes back to the website's own feature. Also fixed outline results in the search popup running their title into the text after it. (#1005)
+- **Export other chats from the list** — Export in a chat's menu now works for chats you haven't opened; on some sites Ophel opens the chat for you first. (#1007)
+- **Qwen Studio conversation management and full export** — Qwen Studio conversations now sync into Conversation Manager, and export or outline generation can use the full conversation history. (#1011, #1016)
 
 ### ✨ Improvements
 
-- **Settings reorganized** — Once you pick a site in Site Settings, all of its settings are on one page; the settings menu goes from 10 entries to 8, with repeated descriptions removed and plainer wording. (#987, #988, #989, #996, #999)
+- **Settings reorganized** — Once you pick a site in Site Settings, all of its settings are on one page; the settings menu goes from 10 entries to 8, with repeated descriptions removed and plainer wording. (#987, #988, #989, #996, #999, #1006)
 - **Panel look and theme contrast** — The panel, settings and dialogs are restyled: low-contrast text in the preset themes is fixed, and hover hints now use the app's own tooltip. (#989, #991)
 - **Phone and tablet support** — On phones, the panel slides in from the side; on tablets, tap the edge handle to expand a docked panel. (#990)
 - **Conversation sync and prompt queue** — Conversation sync says which folder it syncs into; the prompt queue accepts prompts with variables, and the chained prompt editor can search prompts. (#1000, #1001)
@@ -26,6 +28,8 @@ versioning follows [Semantic Versioning](https://semver.org/).
 - **Doubao scroll to top not sticking** — Fixed an issue where clicking Scroll to Top right after refreshing a Doubao chat reached the top and then jumped back to the bottom. (#983)
 - **Shortcut recording conflict** — Fixed an issue where a key combination pressed while recording a shortcut in settings also triggered the website's own action; Esc now only cancels the recording instead of closing settings. (#988, #989)
 - **Desktop notifications not showing on Firefox** — Fixed an issue on Firefox-based browsers where desktop notifications did not appear when AI replies finished. (#1003, #1004)
+- **No notifications with Auto Rename Tab off** — Fixed an issue where desktop notifications and the notification sound did not fire when AI replies finished with Auto Rename Tab turned off; switching chats also no longer changes the tab title in that case. (#1012)
+- **Export error on new chat pages** — Fixed an issue where exporting from a new chat page showed "Export failed"; it now shows "Please open the chat first". (#1013)
 
 ---
 

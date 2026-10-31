@@ -180,15 +180,17 @@ export const es = {
   required: "Requerido",
   permissionWebdavAccess: "Acceso a Funciones Avanzadas",
   permissionWebdavAccessDesc:
-    "Acceso a todos los sitios. Necesario para WebDAV, quitar marcas de agua y ejecutar los Site Packs instalados en sus sitios de destino sin solicitudes por sitio.",
+    "Permitir que Ophel acceda a recursos de distintos sitios para la sincronización WebDAV, la eliminación de marcas de agua en imágenes de IA, la exportación de imágenes y archivos adjuntos de las conversaciones y la ejecución de Site Packs sin solicitudes por sitio.",
 
   // Required permissions
   permissionStorage: "Almacenamiento",
   permissionStorageDesc: "Para guardar ajustes, prompts y datos de conversación.",
   permissionNotifications: "Notificaciones",
-  permissionNotificationsDesc: "Opcional. Para avisar cuando la IA termine de responder.",
+  permissionNotificationsDesc:
+    "Enviar una notificación de escritorio cuando termine una respuesta de IA",
   permissionCookies: "Gestión de Cookies",
-  permissionCookiesDesc: "Gestionar cookies de Claude para cambio rápido de SessionKey.",
+  permissionCookiesDesc:
+    "Leer y cambiar la cookie Session Key de claude.ai para importar, probar y cambiar rápidamente entre cuentas de Claude",
   permissionTabs: "Pestañas",
   permissionTabsDesc: "Opcional. Para detectar estado de pestañas y gestionar sesiones.",
   permissionDNR: "Reglas de Red",
@@ -753,7 +755,8 @@ export const es = {
   assistantMermaidDownloadFailed: "Error al descargar PNG",
   assistantMermaidFullscreenFailed: "Error al entrar en pantalla completa",
   watermarkRemovalLabel: "Quitar Marcas de Agua",
-  watermarkRemovalDesc: "Borrar marcas de NanoBanana automáticamente",
+  watermarkRemovalDesc:
+    "Borra automáticamente las marcas de agua de NanoBanana en imágenes generadas por IA. También puedes desactivar las marcas de agua de medios en la configuración de Gemini.",
   refreshPrompts: "Refrescar Prompts",
   themeDark: "Oscuro",
   // Page width settings
@@ -1043,6 +1046,8 @@ export const es = {
   copySuccess: "Copiado",
   copyFailed: "Fallo copia",
   exportNeedOpenFirst: "Abre primero el chat",
+  exportOpenFailed: "No se pudo abrir el chat. Ábrelo y reintenta",
+  exportOpenBlockedGenerating: "El chat actual aún está respondiendo. Espera",
   exportUserLabel: "Yo",
   exportMetaTitle: "Ficha",
   exportMetaConvTitle: "Título",
@@ -1056,6 +1061,7 @@ export const es = {
   exportToClipboard: "Copiar Markdown",
   segmentedExportMenuItem: "Exportar segmentos...",
   exportMenuItem: "Exportar...",
+  exportOpenAndExportMenuItem: "Abrir y exportar...",
   segmentedExportTitle: "Exportación segmentada",
   segmentedExportDetected: "{count} segmentos detectados",
   segmentedExportSearchPlaceholder: "Buscar segmentos...",
@@ -1324,6 +1330,7 @@ Dame el código y luego un resumen de mejoras.`,
   openBrowserShortcuts: "Config de Chrome",
   shortcutNotSet: "No configurado",
   shortcutRemove: "Eliminar",
+  shortcutsGlobalSearchOpenSettings: "Abrir ajustes de la búsqueda global",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "Ir a",
@@ -1392,6 +1399,8 @@ Dame el código y luego un resumen de mejoras.`,
   outlineDisabled: "Índice apagado",
   conversationsDisabled: "Chats apagado",
   exportStarted: "Exportando la conversación, no interactúes con esta página...",
+  exportOverlayOpening: "Abriendo el chat...",
+  exportOverlayHintBackground: "Obteniendo el chat en segundo plano. Espera un momento.",
   exportOverlayLoadingHistory: "Cargando conversación completa...",
   exportOverlayPreparing: "Preparando exportación...",
   exportOverlayExtracting: "Extrayendo conversación...",

@@ -178,16 +178,16 @@ export const ja = {
   required: "必須",
   permissionWebdavAccess: "高度な機能へのアクセス",
   permissionWebdavAccessDesc:
-    "すべてのウェブサイトへのアクセス。WebDAV同期、AI画像の透かし除去、およびインストール済みSite Packがサイトごとの承認なしに対象サイトで動作するために必要です。",
+    "Ophel がサイトをまたいでリソースにアクセスできるようにします。WebDAV 同期、AI 画像の透かし除去、会話内の画像・添付ファイルの書き出し、Site Pack をサイトごとの承認なしで実行するために使用します。",
 
   // Required permissions
   permissionStorage: "ストレージ",
   permissionStorageDesc: "設定、プロンプト、会話データの保存に使用します。",
   permissionNotifications: "通知",
-  permissionNotificationsDesc:
-    "オプション。AIの回答完了時にデスクトップ通知を送信するために使用します。",
+  permissionNotificationsDesc: "AI の回答が完了したらデスクトップ通知を送信します",
   permissionCookies: "クッキー管理",
-  permissionCookiesDesc: "Claudeサイトのクッキーを管理し、SessionKeyの切り替えに使用します。",
+  permissionCookiesDesc:
+    "claude.ai の Session Key クッキーを読み取り・切り替え、Claude アカウントのインポート、テスト、すばやい切り替えに使用します",
   permissionTabs: "タブ",
   permissionTabsDesc: "オプション。現在のタブ状態の検出やセッション管理に使用します。",
   permissionDNR: "ネットワークリクエストルール",
@@ -760,7 +760,8 @@ export const ja = {
   assistantMermaidDownloadFailed: "PNGのダウンロードに失敗しました",
   assistantMermaidFullscreenFailed: "全画面表示に失敗しました",
   watermarkRemovalLabel: "画像の透かし除去",
-  watermarkRemovalDesc: "AI生成画像からNanoBananaの透かしを自動的に除去します",
+  watermarkRemovalDesc:
+    "AI生成画像からNanoBananaの透かしを自動的に除去します。Geminiの設定でメディアの透かしをオフにすることもできます。",
   refreshPrompts: "プロンプトを更新",
   themeDark: "ダーク",
   // Page width settings
@@ -1070,6 +1071,8 @@ export const ja = {
   copySuccess: "コピーしました",
   copyFailed: "コピー失敗",
   exportNeedOpenFirst: "まず会話を開いてください",
+  exportOpenFailed: "会話を開けませんでした。手動で開いて再試行してください",
+  exportOpenBlockedGenerating: "現在の会話は返信を生成中です。完了後にもう一度お試しください",
   exportUserLabel: "ユーザー",
   exportMetaTitle: "書き出し情報",
   exportMetaConvTitle: "タイトル",
@@ -1083,6 +1086,7 @@ export const ja = {
   exportToClipboard: "Markdownをコピー",
   segmentedExportMenuItem: "分割出力...",
   exportMenuItem: "エクスポート...",
+  exportOpenAndExportMenuItem: "開いてエクスポート...",
   segmentedExportTitle: "分割出力",
   segmentedExportDetected: "{count} 個のセグメントを検出",
   segmentedExportSearchPlaceholder: "セグメントを検索...",
@@ -1371,6 +1375,7 @@ export const ja = {
   openBrowserShortcuts: "ブラウザのショートカット設定を開く",
   shortcutNotSet: "未設定",
   shortcutRemove: "削除",
+  shortcutsGlobalSearchOpenSettings: "グローバル検索の設定を開く",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "ナビゲーション",
@@ -1438,6 +1443,8 @@ export const ja = {
   outlineDisabled: "目次機能が無効です",
   conversationsDisabled: "会話管理機能が無効です",
   exportStarted: "会話をエクスポート中です。このページは操作しないでください...",
+  exportOverlayOpening: "会話を開いています...",
+  exportOverlayHintBackground: "バックグラウンドで会話を取得しています。しばらくお待ちください。",
   exportOverlayLoadingHistory: "会話全体を読み込んでいます...",
   exportOverlayPreparing: "エクスポート内容を準備しています...",
   exportOverlayExtracting: "会話内容を抽出しています...",

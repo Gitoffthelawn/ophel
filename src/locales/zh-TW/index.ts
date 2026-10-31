@@ -974,6 +974,8 @@ export const zhTW = {
   copySuccess: "已複製到剪貼簿",
   copyFailed: "複製失敗",
   exportNeedOpenFirst: "請先打開要匯出的對話",
+  exportOpenFailed: "無法打開該對話，請手動打開後再匯出",
+  exportOpenBlockedGenerating: "目前的對話正在產生回覆，請等待完成後再匯出其他對話",
   exportUserLabel: "用戶",
   exportMetaTitle: "匯出資訊",
   exportMetaConvTitle: "對話標題",
@@ -987,6 +989,7 @@ export const zhTW = {
   exportToClipboard: "複製 Markdown",
   segmentedExportMenuItem: "分段匯出...",
   exportMenuItem: "匯出...",
+  exportOpenAndExportMenuItem: "打開並匯出...",
   segmentedExportTitle: "分段匯出",
   segmentedExportDetected: "已識別 {count} 個片段",
   segmentedExportSearchPlaceholder: "搜尋片段...",
@@ -1082,7 +1085,8 @@ export const zhTW = {
   manualAnchorDesc: "在快捷工具欄顯示手動錨點按鈕",
   // 浮水印移除
   watermarkRemovalLabel: "移除圖片浮水印",
-  watermarkRemovalDesc: "自動移除 Gemini AI 生成圖像中的 NanoBanana 浮水印",
+  watermarkRemovalDesc:
+    "自動移除 Gemini AI 生成圖像中的 NanoBanana 浮水印；也可在 Gemini 設定中關閉媒體浮水印。",
   watermarkProcessing: "正在處理圖片...",
   watermarkProcessed: "浮水印已移除",
   watermarkFailed: "處理失敗",
@@ -1232,15 +1236,16 @@ export const zhTW = {
   // 可選權限
   permissionWebdavAccess: "進階功能權限",
   permissionWebdavAccessDesc:
-    "允許 Ophel 存取所有網站，用於 WebDAV 同步、移除 AI 圖片浮水印，以及讓適配包無需逐站點授權即可執行",
+    "允許 Ophel 跨站存取資源，用於 WebDAV 同步、AI 圖片浮水印移除、匯出對話中的圖片/附件，以及讓適配包無需逐站點授權即可執行",
 
   // 權限管理
   permissionStorage: "儲存",
   permissionStorageDesc: "儲存用戶設定和資料",
   permissionNotifications: "通知",
-  permissionNotificationsDesc: "顯示桌面通知",
+  permissionNotificationsDesc: "AI 回覆完成時傳送桌面通知",
   permissionCookies: "Cookie 管理",
-  permissionCookiesDesc: "管理 Claude 站點的 Cookie，用於快速切換 Session Key",
+  permissionCookiesDesc:
+    "讀取並切換 claude.ai 的 Session Key Cookie，用於匯入、測試和快速切換 Claude 帳號",
   permissionTabs: "標籤頁",
   permissionTabsDesc: "可選權限。用於檢測當前標籤頁狀態和管理對話。",
   permissionDNR: "網路請求規則",
@@ -1320,6 +1325,7 @@ export const zhTW = {
   openBrowserShortcuts: "開啟瀏覽器快捷鍵設置",
   shortcutNotSet: "未設置",
   shortcutRemove: "移除",
+  shortcutsGlobalSearchOpenSettings: "前往全域搜尋設定",
 
   // 快捷鍵分類
   shortcutCategoryNavigation: "導航",
@@ -1387,6 +1393,8 @@ export const zhTW = {
   outlineDisabled: "大綱功能已禁用",
   conversationsDisabled: "對話功能已禁用",
   exportStarted: "正在匯出對話，請勿操作目前頁面...",
+  exportOverlayOpening: "正在打開對話...",
+  exportOverlayHintBackground: "正在背景取得對話內容，請稍候。",
   exportOverlayLoadingHistory: "正在載入完整對話...",
   exportOverlayPreparing: "正在準備匯出內容...",
   exportOverlayExtracting: "正在擷取對話內容...",

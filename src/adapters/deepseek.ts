@@ -18,7 +18,7 @@ import {
   normalizeExportAssetUrl,
   type ExportAssetCollector,
 } from "~utils/export-assets"
-import { htmlToMarkdown, type ExportBundle } from "~utils/exporter"
+import { htmlToMarkdown, type ExportBundle, type ExportMessage } from "~utils/exporter"
 import { t } from "~utils/i18n"
 import { EVENT_OUTLINE_DATA_UPDATED } from "~utils/messaging"
 import { hashOutlineText, stripMarkdownInline } from "~utils/outline-heading-cache"
@@ -47,6 +47,7 @@ import {
   type DeepSeekHistoryOutlineData,
 } from "./deepseek-history-outline"
 import {
+  dropTrailingFillDuplicates,
   isApiOutlineStale,
   mergeByBranchMessageOrder,
   shouldAttemptApiOutlineFetch,
@@ -695,7 +696,10 @@ export class DeepSeekAdapter extends SiteAdapter {
 
   private getApiBranchIndex(data: DeepSeekHistoryOutlineData): Map<number, number> {
     if (this.apiBranchIndexCache?.data === data) return this.apiBranchIndexCache.map
-    const map = new Map(data.branchMessageIds.map((id, index) => [id, index]))
+    const map = new Map<number, number>()
+    data.branchMessageIds.forEach((id, index) => {
+      if (typeof id === "number") map.set(id, index)
+    })
     this.apiBranchIndexCache = { data, map }
     return map
   }
@@ -719,7 +723,7 @@ export class DeepSeekAdapter extends SiteAdapter {
       Number(row.getAttribute("data-virtual-list-item-key")),
     )
     const branchIndex = this.getApiBranchIndex(data)
-    const branchIds = data.branchMessageIds
+    const branchIds = data.branchMessageIds.filter((id): id is number => typeof id === "number")
 
     for (let i = 0; i < keys.length; i++) {
       const key = keys[i]
@@ -1239,12 +1243,12 @@ export class DeepSeekAdapter extends SiteAdapter {
     }
 
     const fillEntries = [
-      ...this.dropTrailingFillDuplicates(
+      ...dropTrailingFillDuplicates(
         fillQueryEntries,
         (item) => this.normalizeUserQueryMatchText(queryFullTexts.get(item) ?? item.text),
         unmatchedQueryKeys,
       ),
-      ...this.dropTrailingFillDuplicates(
+      ...dropTrailingFillDuplicates(
         fillHeadingEntries,
         (item) => `${item.level}:${item.text}`,
         unmatchedHeadingKeys,
@@ -1257,26 +1261,6 @@ export class DeepSeekAdapter extends SiteAdapter {
       this.assignUserQueryOutlineIds(merged, queryFullTexts)
     }
     return merged
-  }
-
-  /** 从回填条目尾部丢弃与「无分支归属的 DOM 条目」同名的重复项（计数式，见上） */
-  private dropTrailingFillDuplicates(
-    fillEntries: { messageId: number; item: OutlineItem }[],
-    keyOf: (item: OutlineItem) => string,
-    unmatchedCounts: Map<string, number>,
-  ): { messageId: number; item: OutlineItem }[] {
-    if (unmatchedCounts.size === 0 || fillEntries.length === 0) return fillEntries
-
-    const kept = [...fillEntries]
-    for (let i = kept.length - 1; i >= 0; i -= 1) {
-      const key = keyOf(kept[i].item)
-      const count = unmatchedCounts.get(key) ?? 0
-      if (count === 0) continue
-      if (count === 1) unmatchedCounts.delete(key)
-      else unmatchedCounts.set(key, count - 1)
-      kept.splice(i, 1)
-    }
-    return kept
   }
 
   /**
@@ -1680,7 +1664,11 @@ export class DeepSeekAdapter extends SiteAdapter {
       return this.finishExportWithSnapshots(shareMessages, collector)
     }
 
-    const apiMessages = await this.collectApiExportMessageSnapshots(collector)
+    const apiMessages = await this.collectApiExportMessageSnapshots(
+      this.getSessionId(),
+      this.shouldIncludeThoughtsInExport(),
+      collector,
+    )
     if (apiMessages?.length) {
       return this.finishExportWithSnapshots(apiMessages, collector)
     }
@@ -1730,6 +1718,22 @@ export class DeepSeekAdapter extends SiteAdapter {
     this.clearExportSnapshot()
     this.exportIncludeThoughtsOverride = null
     this.exportBundleCache = null
+  }
+
+  supportsExportByConversationId(): boolean {
+    return true
+  }
+
+  protected async fetchConversationExportMessagesById(
+    context: ExportLifecycleContext,
+    collector?: ExportAssetCollector,
+  ): Promise<ExportMessage[] | null> {
+    const snapshots = await this.collectApiExportMessageSnapshots(
+      context.conversationId,
+      context.includeThoughts,
+      collector,
+    )
+    return snapshots?.map(({ role, content }) => ({ role, content })) ?? null
   }
 
   getLatestReplyText(): string | null {
@@ -2853,11 +2857,14 @@ export class DeepSeekAdapter extends SiteAdapter {
   /**
    * 常规会话优先走 history_messages 接口拿全量 markdown（公式/代码零损耗、
    * 无需滚动收集）；接口不可用或无法证明历史完整时返回 null，回退滚动收集。
+   * sessionId 与 includeThoughts 由调用方显式传入：导出目标可能不是当前页面显示的对话，
+   * 也不能依赖仅在导出生命周期里才设置的实例状态。
    */
   private async collectApiExportMessageSnapshots(
+    sessionId: string,
+    includeThoughts: boolean,
     collector?: ExportAssetCollector,
   ): Promise<DeepSeekExportMessageSnapshot[] | null> {
-    const sessionId = this.getSessionId()
     const token = this.getUserToken()
     if (!sessionId || !token) return null
 
@@ -2874,7 +2881,6 @@ export class DeepSeekAdapter extends SiteAdapter {
       const parsed = parseDeepSeekHistoryExport(await response.json())
       if (!parsed || parsed.sessionId !== sessionId) return null
 
-      const includeThoughts = this.shouldIncludeThoughtsInExport()
       const messages: DeepSeekExportMessageSnapshot[] = []
 
       for (const message of parsed.messages) {

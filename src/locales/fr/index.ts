@@ -182,15 +182,17 @@ export const fr = {
   required: "Requis",
   permissionWebdavAccess: "Accès aux Fonctions Avancées",
   permissionWebdavAccessDesc:
-    "Accès à tous les sites. Requis pour WebDAV, la suppression des filigranes et l'exécution des Site Packs installés sur leurs sites cibles sans demandes par site.",
+    "Autoriser Ophel à accéder aux ressources de différents sites pour la synchronisation WebDAV, la suppression des filigranes des images IA, l'export des images et pièces jointes des conversations et l'exécution des Site Packs sans demande par site.",
 
   // Required permissions
   permissionStorage: "Stockage",
   permissionStorageDesc: "Pour sauvegarder réglages, prompts et conversations.",
   permissionNotifications: "Notifications",
-  permissionNotificationsDesc: "Optionnel. Pour prévenir quand l'IA a fini de répondre.",
+  permissionNotificationsDesc:
+    "Envoyer une notification de bureau lorsqu'une réponse IA est terminée",
   permissionCookies: "Gestion des Cookies",
-  permissionCookiesDesc: "Gérer les cookies de Claude pour le changement rapide de SessionKey.",
+  permissionCookiesDesc:
+    "Lire et changer le cookie Session Key de claude.ai pour importer, tester et changer rapidement de compte Claude",
   permissionTabs: "Onglets",
   permissionTabsDesc: "Optionnel. Pour détecter l'état des onglets et gérer les sessions.",
   permissionDNR: "Règles Réseau",
@@ -757,7 +759,8 @@ export const fr = {
   assistantMermaidDownloadFailed: "Échec du téléchargement PNG",
   assistantMermaidFullscreenFailed: "Échec du plein ecran",
   watermarkRemovalLabel: "Supprimer les Filigranes",
-  watermarkRemovalDesc: "Effacer les marques de NanoBanana automatiquement",
+  watermarkRemovalDesc:
+    "Supprime automatiquement le filigrane NanoBanana des images générées par IA. Vous pouvez aussi désactiver les filigranes des médias dans les paramètres Gemini.",
   refreshPrompts: "Actualiser les Prompts",
   themeDark: "Sombre",
   // Page width settings
@@ -1047,6 +1050,8 @@ export const fr = {
   copySuccess: "Copié",
   copyFailed: "Échec copie",
   exportNeedOpenFirst: "Ouvrez le chat d'abord",
+  exportOpenFailed: "Impossible d'ouvrir ce chat. Ouvrez-le manuellement",
+  exportOpenBlockedGenerating: "Le chat actuel est en train de répondre. Patientez",
   exportUserLabel: "Moi",
   exportMetaTitle: "Fiche",
   exportMetaConvTitle: "Titre",
@@ -1060,6 +1065,7 @@ export const fr = {
   exportToClipboard: "Copier Markdown",
   segmentedExportMenuItem: "Exporter segments...",
   exportMenuItem: "Exporter...",
+  exportOpenAndExportMenuItem: "Ouvrir et exporter...",
   segmentedExportTitle: "Export segmenté",
   segmentedExportDetected: "{count} segments détectés",
   segmentedExportSearchPlaceholder: "Chercher segments...",
@@ -1332,6 +1338,7 @@ Donnez le code puis un résumé des améliorations.`,
   openBrowserShortcuts: "Réglages Chrome",
   shortcutNotSet: "Non défini",
   shortcutRemove: "Supprimer",
+  shortcutsGlobalSearchOpenSettings: "Ouvrir les paramètres de la recherche globale",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "Navigation",
@@ -1400,6 +1407,8 @@ Donnez le code puis un résumé des améliorations.`,
   outlineDisabled: "Sommaire éteint",
   conversationsDisabled: "Chats éteints",
   exportStarted: "Exportation de la conversation, n'interagissez pas avec cette page...",
+  exportOverlayOpening: "Ouverture du chat...",
+  exportOverlayHintBackground: "Récupération du chat en arrière-plan. Veuillez patienter.",
   exportOverlayLoadingHistory: "Chargement de toute la conversation...",
   exportOverlayPreparing: "Préparation de l'export...",
   exportOverlayExtracting: "Extraction de la conversation...",

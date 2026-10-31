@@ -542,6 +542,14 @@ export abstract class SiteAdapter {
     return Boolean(DOMToolkit.query(selector, { shadow: this.usesShadowDOM(), useCache: false }))
   }
 
+  /**
+   * 是否为还没有真实消息的新对话落地页。落地页的欢迎/推荐内容可能命中对话选择器，
+   * 大纲、页内收藏和导出都按"没有对话"处理；URL 不跳转的临时对话发消息后不再算落地页。
+   */
+  isNewConversationLanding(): boolean {
+    return this.isNewConversation() && !this.hasUserMessagesInDom()
+  }
+
   /** 检测是否为分享页面（只读） */
   isSharePage(): boolean {
     // 大多数站点的分享链接格式：/share/{id}
@@ -619,6 +627,15 @@ export abstract class SiteAdapter {
   /** 获取对话观察器配置 */
   getConversationObserverConfig(): ConversationObserverConfig | null {
     return null
+  }
+
+  /**
+   * 订阅对话列表数据源更新：侧边栏 DOM 拿不到对话 ID、列表改由接口快照提供的站点，
+   * 在快照更新后回调，由 ConversationManager 增量同步进 store。返回取消订阅函数；
+   * 默认没有这类数据源，不会回调。
+   */
+  onConversationListChange(_callback: () => void): () => void {
+    return () => {}
   }
 
   /**
@@ -1673,6 +1690,41 @@ export abstract class SiteAdapter {
     _context: ExportLifecycleContext,
     _state: unknown,
   ): Promise<void> {}
+
+  /**
+   * 是否支持按会话 ID 通过站点接口导出：导出对话列表里的非当前对话时，
+   * 无需先打开该对话。静态功能开关，支持的站点同时实现
+   * fetchConversationExportMessagesById。默认 false：先打开对话再走 DOM 导出。
+   */
+  supportsExportByConversationId(): boolean {
+    return false
+  }
+
+  /**
+   * 按会话 ID 通过站点接口拉取导出消息（collector 非空时把附件登记进去，用于 ZIP 打包）。
+   *
+   * 目标对话可能不是当前页面显示的对话：实现只能走接口，不得读取当前页面的
+   * DOM、URL 或 getSessionId()；接口不可用或无法证明历史完整时返回 null，由调用方
+   * 决定如何降级。绝不能回落到 DOM 采集，否则会把当前页内容当成目标对话导出。
+   */
+  protected async fetchConversationExportMessagesById(
+    _context: ExportLifecycleContext,
+    _collector?: ExportAssetCollector,
+  ): Promise<ExportMessage[] | null> {
+    return null
+  }
+
+  /** 按会话 ID 通过接口导出（见 supportsExportByConversationId）；失败返回 null。 */
+  async exportConversationById(context: ExportLifecycleContext): Promise<ExportBundle | null> {
+    const collector =
+      context.format === "markdown" && context.packaging === "zip"
+        ? createExportAssetCollector()
+        : undefined
+    const messages = await this.fetchConversationExportMessagesById(context, collector)
+    if (!messages?.length) return null
+
+    return { messages, assets: collector?.assets }
+  }
 
   /**
    * 导出采集完整性报告（虚拟滚动站点可选实现）。

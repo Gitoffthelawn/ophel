@@ -183,17 +183,17 @@ export const it = {
   // Optional permissions
   permissionWebdavAccess: "Accesso alle funzionalità avanzate",
   permissionWebdavAccessDesc:
-    "Accesso a tutti i siti web. Richiesto per la sincronizzazione WebDAV, la rimozione della filigrana dell'immagine AI e l'esecuzione dei Site Pack installati sui loro siti target senza richieste per singolo sito.",
+    "Consenti a Ophel di accedere alle risorse tra siti per la sincronizzazione WebDAV, la rimozione della filigrana dalle immagini AI, l'esportazione di immagini e allegati dalle conversazioni e l'esecuzione dei Site Pack senza richieste per sito.",
 
   // Required permissions
   permissionStorage: "Archiviazione",
   permissionStorageDesc:
     "Utilizzato per salvare impostazioni dell'estensione, prompt e dati delle conversazioni.",
   permissionNotifications: "Notifiche",
-  permissionNotificationsDesc:
-    "Opzionale. Utilizzato per inviare notifiche desktop quando le risposte AI sono complete.",
+  permissionNotificationsDesc: "Invia una notifica desktop quando una risposta AI è completa",
   permissionCookies: "Gestione dei cookie",
-  permissionCookiesDesc: "Gestisci i cookie del sito Claude per un rapido passaggio a SessionKey",
+  permissionCookiesDesc:
+    "Leggi e cambia il cookie Session Key di claude.ai per importare, testare e cambiare rapidamente account Claude",
   permissionTabs: "Schede",
   permissionTabsDesc:
     "Opzionale. Utilizzato per rilevare lo stato corrente della scheda e gestire le sessioni.",
@@ -817,7 +817,7 @@ export const it = {
   assistantMermaidFullscreenFailed: "Schermo intero non riuscito",
   watermarkRemovalLabel: "Rimuovi filigrana immagine",
   watermarkRemovalDesc:
-    "Rimuovi automaticamente la filigrana NanoBanana dalle immagini generate dall'intelligenza artificiale",
+    "Rimuovi automaticamente la filigrana NanoBanana dalle immagini generate dall'intelligenza artificiale. Puoi anche disattivare le filigrane dei media nelle impostazioni di Gemini.",
   refreshPrompts: "Aggiorna prompt",
   themeDark: "Buio",
   // Page width settings
@@ -1159,6 +1159,8 @@ export const it = {
   copySuccess: "Copiato negli appunti",
   copyFailed: "Copia non riuscita",
   exportNeedOpenFirst: "Per favore apri prima la conversazione",
+  exportOpenFailed: "Impossibile aprire la conversazione. Aprila e riprova",
+  exportOpenBlockedGenerating: "La conversazione corrente sta rispondendo. Attendi",
   exportUserLabel: "Utente",
   exportMetaTitle: "Informazioni sull'esportazione",
   exportMetaConvTitle: "Titolo",
@@ -1172,6 +1174,7 @@ export const it = {
   exportToClipboard: "Copia Markdown",
   segmentedExportMenuItem: "Esporta segmenti...",
   exportMenuItem: "Esporta...",
+  exportOpenAndExportMenuItem: "Apri ed esporta...",
   segmentedExportTitle: "Esportazione segmentata",
   segmentedExportDetected: "Segmenti {count} rilevati",
   segmentedExportSearchPlaceholder: "Cerca segmenti...",
@@ -1457,6 +1460,7 @@ export const it = {
   openBrowserShortcuts: "Apri le Impostazioni dei collegamenti del browser",
   shortcutNotSet: "Non impostato",
   shortcutRemove: "Rimuovi",
+  shortcutsGlobalSearchOpenSettings: "Apri le impostazioni della ricerca globale",
 
   // Shortcut Categories
   shortcutCategoryNavigation: "Navigazione",
@@ -1527,6 +1531,8 @@ export const it = {
   outlineDisabled: "La funzionalità di contorno è disabilitata",
   conversationsDisabled: "La funzione di conversazione è disabilitata",
   exportStarted: "Esportazione conversazione in corso, non interagire con questa pagina...",
+  exportOverlayOpening: "Apertura della conversazione...",
+  exportOverlayHintBackground: "Recupero della conversazione in background. Attendi un momento.",
   exportOverlayLoadingHistory: "Caricamento conversazione completa...",
   exportOverlayPreparing: "Preparazione dell'esportazione...",
   exportOverlayExtracting: "Estrazione conversazione in corso...",
